@@ -1,5 +1,6 @@
 "use client";
 
+import { parse as parseNaturalLanguage, type ParsedResult } from "chrono-node";
 import Link from "next/link";
 import {
   startTransition,
@@ -445,6 +446,14 @@ function formatTimeRange(startTime?: string, endTime?: string) {
   return `${formatTimeLabel(startTime)} - ${formatTimeLabel(endTime)}`;
 }
 
+function getTimeKeyFromDate(date: Date) {
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function hasExplicitTime(result: ParsedResult) {
+  return result.start.isCertain("hour");
+}
+
 function getWeekdayKey(dateKey: string): WeekdayKey {
   return WEEKDAY_KEYS[parseDateKey(dateKey).getDay()];
 }
@@ -872,6 +881,11 @@ export function HaabBookingModule({
     createInitialBookingFlow(normalizeServices(injectedConfig?.services)),
   );
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [naturalLanguageBookingInput, setNaturalLanguageBookingInput] = useState("");
+  const [naturalLanguageBookingError, setNaturalLanguageBookingError] = useState<string | null>(
+    null,
+  );
+  const [isNaturalLanguageBookingFocused, setIsNaturalLanguageBookingFocused] = useState(false);
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
   const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(new Date());
   const [calendarServicePreference, setCalendarServicePreference] = useState("");
@@ -952,6 +966,8 @@ export function HaabBookingModule({
   );
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
+  const shouldDimManualBookingPanels =
+    isNaturalLanguageBookingFocused && naturalLanguageBookingInput.trim().length > 0;
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
@@ -1121,6 +1137,9 @@ export function HaabBookingModule({
     }
 
     setBookingError(null);
+    setNaturalLanguageBookingInput("");
+    setNaturalLanguageBookingError(null);
+    setIsNaturalLanguageBookingFocused(false);
     setBookingFlow({
       ...base,
       ...overrides,
@@ -1134,6 +1153,123 @@ export function HaabBookingModule({
     startTransition(() => {
       setSurface("public");
     });
+  }
+
+  function continueWithNaturalLanguageBooking() {
+    if (!selectedService) {
+      return;
+    }
+
+    const input = naturalLanguageBookingInput.trim();
+
+    if (!input) {
+      setNaturalLanguageBookingError(
+        selectedService.bookingType === "appointment"
+          ? "Enter a request like \"next Monday at 2 PM\" first."
+          : "Enter a request like \"next Friday\" first.",
+      );
+      return;
+    }
+
+    const parsed = parseNaturalLanguage(input, new Date(), {
+      forwardDate: true,
+    })[0];
+
+    if (!parsed) {
+      setNaturalLanguageBookingError(
+        selectedService.bookingType === "appointment"
+          ? "I couldn't understand that request. Try something like \"next Monday at 2 PM\"."
+          : "I couldn't understand that request. Try something like \"next Friday\".",
+      );
+      return;
+    }
+
+    const parsedDate = parsed.start.date();
+    const dateKey = getDateKey(parsedDate);
+
+    if (isPastDate(dateKey)) {
+      setNaturalLanguageBookingError(
+        "That request resolves to a past date. Try a future date instead.",
+      );
+      return;
+    }
+
+    setPublicMonthAnchor(parsedDate);
+    setBookingError(null);
+    setNaturalLanguageBookingError(null);
+
+    if (selectedService.bookingType === "appointment") {
+      if (!hasExplicitTime(parsed)) {
+        setBookingFlow((current) => ({
+          ...current,
+          dateKey,
+          time: "",
+        }));
+        setNaturalLanguageBookingError(
+          "Appointments need a time. Try something like \"next Monday at 2 PM\".",
+        );
+        return;
+      }
+
+      const requestedTime = getTimeKeyFromDate(parsedDate);
+      const availableSlots = getAvailableSlots(
+        dateKey,
+        selectedService,
+        availability,
+        bookings,
+      );
+
+      if (availableSlots.length === 0) {
+        setBookingFlow((current) => ({
+          ...current,
+          dateKey,
+          time: "",
+        }));
+        setNaturalLanguageBookingError(
+          `No appointment slots are available on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
+        );
+        return;
+      }
+
+      if (!availableSlots.includes(requestedTime)) {
+        setBookingFlow((current) => ({
+          ...current,
+          dateKey,
+          time: "",
+        }));
+        setNaturalLanguageBookingError(
+          `No slot starts at ${formatTimeLabel(requestedTime)} on ${formatDateLabel(dateKey)}. Use another phrase or pick from the available times below.`,
+        );
+        return;
+      }
+
+      setBookingFlow((current) => ({
+        ...current,
+        dateKey,
+        time: requestedTime,
+        step: 3,
+      }));
+      return;
+    }
+
+    if (!isDateAvailable(dateKey, selectedService, availability, bookings)) {
+      setBookingFlow((current) => ({
+        ...current,
+        dateKey,
+        time: "",
+      }));
+      setNaturalLanguageBookingError(
+        `That day is unavailable on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
+      );
+      return;
+    }
+
+    setBookingFlow((current) => ({
+      ...current,
+      dateKey,
+      time: "",
+      step: 3,
+    }));
   }
 
   function resetServiceEditor() {
@@ -2765,6 +2901,7 @@ export function HaabBookingModule({
                     type="button"
                     disabled={!selectedService || !available}
                     onClick={() => {
+                      setNaturalLanguageBookingError(null);
                       setBookingError(null);
                       setBookingFlow((current) => ({
                         ...current,
@@ -2783,7 +2920,10 @@ export function HaabBookingModule({
                           : "hover:border-[var(--accent)]"),
                       chosen &&
                         (isDedicatedPublicPage
-                          ? cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]")
+                          ? cn(
+                              publicSelectedChoiceClass,
+                              "border-[var(--accent)] ring-2 ring-[rgba(26,115,232,0.16)]",
+                            )
                           : publicSelectedChoiceClass),
                       !available && "cursor-default opacity-50",
                     )}
@@ -2803,7 +2943,7 @@ export function HaabBookingModule({
                             Today
                           </span>
                         ) : null}
-                        {available ? (
+                        {!chosen && available ? (
                           <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
                         ) : null}
                       </div>
@@ -2836,15 +2976,17 @@ export function HaabBookingModule({
                 <button
                   key={service.id}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
+                    setNaturalLanguageBookingInput("");
+                    setNaturalLanguageBookingError(null);
                     setBookingFlow((current) => ({
                       ...current,
                       serviceId: service.id,
                       dateKey: "",
                       time: "",
                       step: 2,
-                    }))
-                  }
+                    }));
+                  }}
                   className={cn(
                     "rounded-[30px] p-6 text-left transition",
                     isDedicatedPublicPage
@@ -2874,7 +3016,66 @@ export function HaabBookingModule({
 
         {resolvedBookingFlow.step === 2 && selectedService ? (
           <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.22fr)_minmax(360px,0.78fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
-            <div ref={publicCalendarPanelRef} className={publicPrimaryPanelClass}>
+            <div className={cn("xl:col-span-2", publicElevatedPanelClass)}>
+              <SectionTitle
+                title="Describe the booking in plain language"
+                body={
+                  selectedService.bookingType === "appointment"
+                    ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
+                    : "Type something like \"next Friday\" and continue straight to client details if that date is free."
+                }
+              />
+              <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                  <input
+                    type="text"
+                    value={naturalLanguageBookingInput}
+                    onChange={(event) => {
+                      setNaturalLanguageBookingInput(event.target.value);
+                      setNaturalLanguageBookingError(null);
+                    }}
+                    onFocus={() => setIsNaturalLanguageBookingFocused(true)}
+                    onBlur={() => setIsNaturalLanguageBookingFocused(false)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        continueWithNaturalLanguageBooking();
+                      }
+                    }}
+                    placeholder={
+                      selectedService.bookingType === "appointment"
+                        ? "Try \"next Monday at 2 PM\" or \"tomorrow at 11:30 AM\""
+                        : "Try \"next Friday\" or \"the first Tuesday in May\""
+                    }
+                    className={publicFieldClass}
+                  />
+                </label>
+                <ActionButton
+                  tone="primary"
+                  className={cn(
+                    "w-full lg:w-auto",
+                    isDedicatedPublicPage && cn(publicPillButtonClass, "justify-center"),
+                  )}
+                  onClick={continueWithNaturalLanguageBooking}
+                >
+                  Continue to client details
+                </ActionButton>
+              </div>
+              {naturalLanguageBookingError ? (
+                <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                  {naturalLanguageBookingError}
+                </div>
+              ) : null}
+            </div>
+
+            <div
+              ref={publicCalendarPanelRef}
+              className={cn(
+                publicPrimaryPanelClass,
+                "transition-opacity duration-200",
+                shouldDimManualBookingPanels && "opacity-50",
+              )}
+            >
               <SectionTitle
                 title="Pick a date and time"
                 body={
@@ -2890,9 +3091,11 @@ export function HaabBookingModule({
               className={cn(
                 "self-start xl:sticky xl:top-8",
                 publicElevatedPanelClass,
+                "transition-opacity duration-200",
                 selectedService.bookingType === "appointment" && bookingFlow.dateKey
                   ? "flex flex-col overflow-hidden"
                   : "",
+                shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
                 selectedService.bookingType === "appointment" &&
@@ -2942,7 +3145,10 @@ export function HaabBookingModule({
                         <button
                           key={slot}
                           type="button"
-                          onClick={() => updateBookingFlow("time", slot)}
+                          onClick={() => {
+                            setNaturalLanguageBookingError(null);
+                            updateBookingFlow("time", slot);
+                          }}
                           className={cn(
                             "relative flex w-full items-start justify-between gap-4 rounded-[24px] px-5 py-4 text-left transition",
                             isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-[var(--surface-soft)]",
