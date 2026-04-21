@@ -25,7 +25,7 @@ type WeekdayKey =
   | "friday"
   | "saturday";
 type SetupStep = 1 | 2 | 3 | 4;
-type BookingStep = 1 | 2 | 3 | 4 | 5;
+type BookingStep = 1 | 2 | 3 | 4;
 
 type ProviderInfo = {
   fullName: string;
@@ -843,6 +843,10 @@ export function HaabBookingModule({
   const [publicCalendarPanelHeight, setPublicCalendarPanelHeight] = useState<number | null>(
     null,
   );
+  const publicDetailsPanelRef = useRef<HTMLDivElement | null>(null);
+  const [publicDetailsPanelHeight, setPublicDetailsPanelHeight] = useState<number | null>(
+    null,
+  );
 
   useEffect(() => {
     if (integratedMode) {
@@ -914,11 +918,8 @@ export function HaabBookingModule({
       ? calendarServicePreference
       : (services[0]?.id ?? "");
   const publicShellClass = isDedicatedPublicPage
-    ? "rounded-[40px] bg-[rgba(248,249,250,0.74)] shadow-[0_40px_100px_rgba(25,28,29,0.08)] backdrop-blur-[24px]"
-    : "rounded-[34px] border border-[var(--line)] bg-white/90 shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
-  const publicHeroClass = isDedicatedPublicPage
-    ? "rounded-[40px] bg-[linear-gradient(140deg,rgba(248,249,250,0.66),rgba(255,255,255,0.9))] px-6 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_28px_64px_rgba(25,28,29,0.05)] sm:px-8 xl:px-12 xl:py-10"
-    : "rounded-[32px] border border-[var(--line)] bg-[linear-gradient(140deg,rgba(234,241,255,0.85),rgba(255,255,255,0.98))] p-6 sm:p-8 xl:p-10";
+    ? "w-full"
+    : "w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
   const publicPrimaryPanelClass = isDedicatedPublicPage
     ? "rounded-[34px] bg-[rgba(243,244,245,0.86)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_26px_64px_rgba(25,28,29,0.05)] xl:p-8"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-8";
@@ -955,6 +956,39 @@ export function HaabBookingModule({
     const syncHeight = () => {
       const nextHeight = Math.ceil(node.getBoundingClientRect().height);
       setPublicCalendarPanelHeight((current) =>
+        current === nextHeight ? current : nextHeight,
+      );
+    };
+
+    frameId = window.requestAnimationFrame(syncHeight);
+
+    const observer = new ResizeObserver(() => {
+      syncHeight();
+    });
+
+    observer.observe(node);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer.disconnect();
+    };
+  }, [resolvedBookingFlow.step]);
+
+  useEffect(() => {
+    if (resolvedBookingFlow.step !== 3) {
+      return;
+    }
+
+    const node = publicDetailsPanelRef.current;
+
+    if (!node || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    let frameId = 0;
+    const syncHeight = () => {
+      const nextHeight = Math.ceil(node.getBoundingClientRect().height);
+      setPublicDetailsPanelHeight((current) =>
         current === nextHeight ? current : nextHeight,
       );
     };
@@ -1325,7 +1359,7 @@ export function HaabBookingModule({
     setBookingError(null);
     setBookingFlow((current) => ({
       ...current,
-      step: 5,
+      step: 4,
       successBookingId: nextBooking.id,
     }));
   }
@@ -1463,7 +1497,7 @@ export function HaabBookingModule({
 
   function renderSetupWizard() {
     return (
-      <div className="space-y-8 p-5 sm:p-8">
+      <>
         <div className="rounded-[30px] border border-[var(--line)] bg-[linear-gradient(140deg,rgba(234,241,255,0.85),rgba(255,255,255,0.96))] p-6 sm:p-8">
           <SectionTitle
             eyebrow="Standalone Setup"
@@ -1504,7 +1538,7 @@ export function HaabBookingModule({
         </div>
 
         {setupStep === 1 ? (
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
               <SectionTitle
                 title="Tell us about the provider"
@@ -1584,7 +1618,7 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 2 ? (
-          <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-8 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
             <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
               <SectionTitle
                 title="Define what clients can book"
@@ -1760,7 +1794,7 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 3 ? (
-          <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+          <div className="mt-8 rounded-[28px] border border-[var(--line)] bg-white p-6">
             <SectionTitle
               title="Set the weekly availability schedule"
               body="Appointment services generate real slots from these windows. Full-day services simply need the weekday enabled and free of conflicts."
@@ -1813,7 +1847,7 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 4 ? (
-          <div className="grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+          <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
             <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
               <SectionTitle
                 eyebrow="Ready To Launch"
@@ -1855,12 +1889,12 @@ export function HaabBookingModule({
         ) : null}
 
         {setupError ? (
-          <div className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+          <div className="mt-8 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
             {setupError}
           </div>
         ) : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
           <ActionButton
             tone="ghost"
             disabled={setupStep === 1}
@@ -1874,7 +1908,7 @@ export function HaabBookingModule({
             </ActionButton>
           ) : null}
         </div>
-      </div>
+      </>
     );
   }
 
@@ -2563,61 +2597,6 @@ export function HaabBookingModule({
     );
   }
 
-  function renderProgress() {
-    const progressSteps = hasInteractiveServiceStep
-      ? [
-          { number: 1, label: "Service", active: resolvedBookingFlow.step === 1, flowStep: 1 },
-          { number: 2, label: "Date & Time", active: resolvedBookingFlow.step === 2, flowStep: 2 },
-          { number: 3, label: "Details", active: resolvedBookingFlow.step === 3, flowStep: 3 },
-          { number: 4, label: "Confirm", active: resolvedBookingFlow.step === 4, flowStep: 4 },
-        ]
-      : [
-          { number: 1, label: "Date & Time", active: resolvedBookingFlow.step === 2, flowStep: 2 },
-          { number: 2, label: "Details", active: resolvedBookingFlow.step === 3, flowStep: 3 },
-          { number: 3, label: "Confirm", active: resolvedBookingFlow.step === 4, flowStep: 4 },
-        ];
-
-    return (
-      <div
-        className={cn(
-          "grid gap-3",
-          hasInteractiveServiceStep ? "sm:grid-cols-4" : "sm:grid-cols-3",
-        )}
-      >
-        {progressSteps.map((step) => {
-          const complete = resolvedBookingFlow.step > step.flowStep;
-          return (
-            <div
-              key={step.label}
-              className={cn(
-                "rounded-[24px] px-4 py-4",
-                !isDedicatedPublicPage && "border",
-                isDedicatedPublicPage &&
-                  "shadow-[inset_0_1px_0_rgba(255,255,255,0.76),0_22px_44px_rgba(25,28,29,0.04)] backdrop-blur-[18px]",
-                step.active &&
-                  (isDedicatedPublicPage
-                    ? "bg-[rgba(255,255,255,0.84)] text-[var(--ink)]"
-                    : "border-[var(--accent)] bg-white"),
-                !step.active &&
-                  (isDedicatedPublicPage
-                    ? "bg-[rgba(243,244,245,0.76)]"
-                    : "border-[var(--line)] bg-[var(--surface-soft)]"),
-              )}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                Step {step.number}
-              </p>
-              <p className="mt-2 text-sm font-semibold text-[var(--ink)]">{step.label}</p>
-              <p className="mt-1 text-sm text-[var(--muted)]">
-                {complete ? "Done" : step.active ? "Current" : "Next"}
-              </p>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
-
   function renderPublicCalendar() {
     const weeks = createMonthMatrix(publicMonthAnchor);
 
@@ -2758,72 +2737,12 @@ export function HaabBookingModule({
   }
 
   function renderPublicFlow() {
-    const heroStats = selectedService
-      ? [
-          { label: "Service", value: selectedService.name },
-          { label: "Booking type", value: getBookingTypeLabel(selectedService.bookingType) },
-          { label: "Length", value: formatDuration(selectedService) },
-          {
-            label: "Capacity",
-            value: selectedService.capacity ?? "Not specified",
-          },
-        ]
-      : [
-          {
-            label: "Services",
-            value: `${services.length} option${services.length === 1 ? "" : "s"} available`,
-          },
-          { label: "Schedule", value: "Live availability only" },
-          { label: "Booking style", value: "Appointment or Full Day" },
-          { label: "Confirmation", value: "Instant iCal download" },
-        ];
-
     return (
-      <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
-        <div className={publicHeroClass}>
-          <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(360px,0.92fr)] xl:items-end">
-            <div className={cn("max-w-2xl", isDedicatedPublicPage && "xl:pl-6")}>
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
-                Online booking
-              </p>
-              <h3 className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)] sm:text-4xl">
-                Book with {provider.businessName || provider.fullName || "this provider"}
-              </h3>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-base">
-                {hasInteractiveServiceStep
-                  ? "Choose a service, select an available date or day-only reservation, enter client details, and confirm the booking with an iCal download on success."
-                  : "Select an available date or day-only reservation, enter client details, and confirm the booking with an iCal download on success."}
-              </p>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              {heroStats.map((item) => (
-                <div
-                  key={item.label}
-                  className={cn(
-                    "rounded-[24px] px-4 py-4",
-                    isDedicatedPublicPage
-                      ? "bg-[rgba(255,255,255,0.72)] shadow-[inset_0_1px_0_rgba(255,255,255,0.84),0_22px_44px_rgba(25,28,29,0.04)] backdrop-blur-[18px]"
-                      : "border border-white/90 bg-white/88",
-                  )}
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 text-sm font-semibold text-[var(--ink)] sm:text-base">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-6">{renderProgress()}</div>
-        </div>
-
+      <>
         {resolvedBookingFlow.step === 1 ? (
-          <div className="space-y-6">
+          <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             <SectionTitle
-              title="Step 1: Choose a service"
+              title="Choose a service"
               body={
                 services.length === 1
                   ? "Only one service is available, so the module skips this step automatically."
@@ -2872,10 +2791,10 @@ export function HaabBookingModule({
         ) : null}
 
         {resolvedBookingFlow.step === 2 && selectedService ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.22fr)_minmax(360px,0.78fr)]">
+          <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.22fr)_minmax(360px,0.78fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             <div ref={publicCalendarPanelRef} className={publicPrimaryPanelClass}>
               <SectionTitle
-                title={`Step ${hasInteractiveServiceStep ? 2 : 1}: Pick a date and time`}
+                title="Pick a date and time"
                 body={
                   selectedService.bookingType === "appointment"
                     ? "Available slots are generated from your weekly schedule and filtered against existing bookings."
@@ -3016,11 +2935,11 @@ export function HaabBookingModule({
         ) : null}
 
         {resolvedBookingFlow.step === 3 && selectedService ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-            <div className={publicPrimaryPanelClass}>
+          <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
+            <div ref={publicDetailsPanelRef} className={publicPrimaryPanelClass}>
               <SectionTitle
                 title={`Step ${hasInteractiveServiceStep ? 3 : 2}: Client details`}
-                body="Capture the essentials for confirmations, contact, and any booking-specific preparation."
+                body="Enter the booking details here and confirm directly from the live summary."
               />
               <div className="mt-6 grid gap-4">
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -3085,15 +3004,26 @@ export function HaabBookingModule({
               </div>
             </div>
 
-            <div className={cn("self-start xl:sticky xl:top-8", publicSoftPanelClass)}>
+            <div
+              className={cn("self-start xl:sticky xl:top-8", publicSoftPanelClass)}
+              style={
+                publicDetailsPanelHeight
+                  ? { minHeight: `${publicDetailsPanelHeight}px` }
+                  : undefined
+              }
+            >
               <SectionTitle
                 eyebrow="Booking summary"
-                title="Review before confirmation"
-                body="The final confirmation step shows the exact service, date, time, and capacity snapshot that will be stored."
+                title="Live booking summary"
+                body="This panel updates as the client details are entered so you can confirm from the same screen."
               />
               <div className={cn("mt-6 space-y-3 text-sm text-[var(--muted)]", publicInsetCardClass)}>
                 <p>
                   <span className="font-semibold text-[var(--ink)]">Service:</span> {selectedService.name}
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--ink)]">Type:</span>{" "}
+                  {getBookingTypeLabel(selectedService.bookingType)}
                 </p>
                 <p>
                   <span className="font-semibold text-[var(--ink)]">When:</span>{" "}
@@ -3111,6 +3041,30 @@ export function HaabBookingModule({
                     {selectedService.capacity}
                   </p>
                 ) : null}
+                <p>
+                  <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
+                  {bookingFlow.clientName.trim() || "Not entered yet"}
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--ink)]">Email:</span>{" "}
+                  {bookingFlow.clientEmail.trim() || "Not entered yet"}
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--ink)]">Phone:</span>{" "}
+                  {bookingFlow.clientPhone.trim() || "Not entered yet"}
+                </p>
+                <p>
+                  <span className="font-semibold text-[var(--ink)]">Notes:</span>{" "}
+                  {bookingFlow.notes.trim() || "None"}
+                </p>
+                {provider.customQuestionLabel ? (
+                  <p>
+                    <span className="font-semibold text-[var(--ink)]">
+                      {provider.customQuestionLabel}:
+                    </span>{" "}
+                    {bookingFlow.customAnswer.trim() || "Not entered yet"}
+                  </p>
+                ) : null}
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <ActionButton tone="ghost" onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}>
@@ -3119,67 +3073,9 @@ export function HaabBookingModule({
                 <ActionButton
                   tone="primary"
                   className={cn(isDedicatedPublicPage && "justify-center")}
-                  onClick={() => setBookingFlow((current) => ({ ...current, step: 4 }))}
+                  onClick={confirmBooking}
                 >
-                  Continue to confirmation
-                </ActionButton>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {resolvedBookingFlow.step === 4 && selectedService ? (
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-            <div className={publicPrimaryPanelClass}>
-              <SectionTitle
-                title={`Step ${hasInteractiveServiceStep ? 4 : 3}: Confirm booking`}
-                body="Everything below is the final review state the client sees before the booking is created."
-              />
-              <div className={cn("mt-6", publicInsetCardClass)}>
-                <div className="grid gap-3 text-sm text-[var(--muted)]">
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Service:</span> {selectedService.name}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Type:</span>{" "}
-                    {getBookingTypeLabel(selectedService.bookingType)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Date:</span>{" "}
-                    {formatDateLabel(bookingFlow.dateKey)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Time:</span>{" "}
-                    {selectedService.bookingType === "appointment"
-                      ? `${formatTimeLabel(bookingFlow.time)} · ${formatDuration(selectedService)}`
-                      : "Full Day"}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
-                    {bookingFlow.clientName}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Email:</span>{" "}
-                    {bookingFlow.clientEmail}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Phone:</span>{" "}
-                    {bookingFlow.clientPhone}
-                  </p>
-                  {selectedService.capacity ? (
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Capacity:</span>{" "}
-                      {selectedService.capacity}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ActionButton tone="ghost" onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}>
-                  Back
-                </ActionButton>
-                <ActionButton tone="primary" className={cn(isDedicatedPublicPage && "justify-center")} onClick={confirmBooking}>
-                  Confirm booking
+                  Confirm
                 </ActionButton>
               </div>
               {bookingError ? (
@@ -3188,110 +3084,118 @@ export function HaabBookingModule({
                 </div>
               ) : null}
             </div>
-
-            <div className={cn("self-start xl:sticky xl:top-8", publicSoftPanelClass)}>
-              <SectionTitle
-                eyebrow="What happens next"
-                title="Success includes calendar export"
-                body="After confirmation, the success screen keeps the details visible and offers quick add-to-calendar, reschedule, and cancel actions."
-              />
-              <div className={cn("mt-6 text-sm leading-6 text-[var(--muted)]", publicInsetCardClass)}>
-                <p>Bookings update the dashboard, bookings list, and monthly calendar immediately.</p>
-                <p className="mt-3">Full-day reservations block the entire day.</p>
-                <p className="mt-3">Timed appointments block only overlapping slots.</p>
-              </div>
-            </div>
           </div>
         ) : null}
 
-        {resolvedBookingFlow.step === 5 && successfulBooking ? (
-          <div className="grid gap-5 xl:grid-cols-[1fr_0.85fr]">
+        {resolvedBookingFlow.step === 4 && successfulBooking ? (
+          <div
+            className={cn(
+              "grid gap-5 p-5 sm:p-8",
+              isDedicatedPublicPage
+                ? "mx-auto w-full xl:max-w-[50vw] xl:px-10 xl:py-10"
+                : "xl:grid-cols-[1fr_0.85fr]",
+            )}
+          >
             <div className={publicPrimaryPanelClass}>
-              <SectionTitle
-                eyebrow="Success"
-                title="Booking confirmed"
-                body={`A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`}
-              />
-              <div className={cn("mt-6", publicInsetCardClass)}>
-                <div className="grid gap-3 text-sm text-[var(--muted)]">
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Service:</span>{" "}
-                    {successfulBooking.serviceName}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Date:</span>{" "}
-                    {formatDateLabel(successfulBooking.dateKey)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Time:</span>{" "}
-                    {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
-                    {successfulBooking.clientName}
-                  </p>
-                  {successfulBooking.capacitySnapshot ? (
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Capacity:</span>{" "}
-                      {successfulBooking.capacitySnapshot}
+              <div>
+                {isDedicatedPublicPage ? (
+                  <div className="text-center">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
+                      Success
                     </p>
-                  ) : null}
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Status:</span>{" "}
-                    {successfulBooking.status}
-                  </p>
+                    <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+                      Booking confirmed
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                      A confirmation-ready record is stored for {successfulBooking.clientEmail}.
+                    </p>
+                  </div>
+                ) : (
+                  <SectionTitle
+                    eyebrow="Success"
+                    title="Booking confirmed"
+                    body={`A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`}
+                  />
+                )}
+                <div className={cn("mt-6", publicInsetCardClass)}>
+                  <div className="grid gap-3 text-sm text-[var(--muted)]">
+                    <p>
+                      <span className="font-semibold text-[var(--ink)]">Service:</span>{" "}
+                      {successfulBooking.serviceName}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-[var(--ink)]">Date:</span>{" "}
+                      {formatDateLabel(successfulBooking.dateKey)}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-[var(--ink)]">Time:</span>{" "}
+                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
+                      {successfulBooking.clientName}
+                    </p>
+                    {successfulBooking.capacitySnapshot ? (
+                      <p>
+                        <span className="font-semibold text-[var(--ink)]">Capacity:</span>{" "}
+                        {successfulBooking.capacitySnapshot}
+                      </p>
+                    ) : null}
+                    <p>
+                      <span className="font-semibold text-[var(--ink)]">Status:</span>{" "}
+                      {successfulBooking.status}
+                    </p>
+                  </div>
+                </div>
+                <div className={cn("mt-6 flex flex-wrap gap-3", isDedicatedPublicPage && "justify-center")}>
+                  <a
+                    download={`${businessSlug}-${successfulBooking.id}.ics`}
+                    href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
+                      buildIcsContent(successfulBooking, provider),
+                    )}`}
+                    className={buttonClasses("primary")}
+                  >
+                    Add to calendar
+                  </a>
+                  <ActionButton tone="ghost" onClick={() => openReschedule(successfulBooking.id)}>
+                    Reschedule
+                  </ActionButton>
+                  <ActionButton tone="danger" onClick={() => setCancellationId(successfulBooking.id)}>
+                    Cancel booking
+                  </ActionButton>
+                  <ActionButton tone="secondary" onClick={() => startFreshBooking()}>
+                    Book another
+                  </ActionButton>
                 </div>
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  download={`${businessSlug}-${successfulBooking.id}.ics`}
-                  href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
-                    buildIcsContent(successfulBooking, provider),
-                  )}`}
-                  className={buttonClasses("primary")}
-                >
-                  Add to calendar
-                </a>
-                <ActionButton tone="ghost" onClick={() => openReschedule(successfulBooking.id)}>
-                  Reschedule
-                </ActionButton>
-                <ActionButton tone="danger" onClick={() => setCancellationId(successfulBooking.id)}>
-                  Cancel booking
-                </ActionButton>
-                <ActionButton tone="secondary" onClick={() => startFreshBooking()}>
-                  Book another
-                </ActionButton>
-              </div>
             </div>
 
-            <div className={publicSoftPanelClass}>
-              <SectionTitle
-                title={isDedicatedPublicPage ? "Next steps" : "Share or return"}
-                body={
-                  isDedicatedPublicPage
-                    ? "Keep this page open if you want to reschedule, cancel, or create another booking right away."
-                    : "The booking remains visible to both client and provider. The provider workspace also reflects the new record instantly."
-                }
-              />
-              <div className="mt-6 flex flex-col gap-3">
-                <ActionButton tone="primary" onClick={copyPublicLink}>
-                  {copiedLink ? "Copied public URL" : "Copy public booking URL"}
-                </ActionButton>
-                {!isDedicatedPublicPage && surfaceMode === "adaptive" ? (
-                  <ActionButton tone="secondary" onClick={() => setSurface("management")}>
-                    Open provider workspace
+            {!isDedicatedPublicPage ? (
+              <div className={publicSoftPanelClass}>
+                <SectionTitle
+                  title="Share or return"
+                  body="The booking remains visible to both client and provider. The provider workspace also reflects the new record instantly."
+                />
+                <div className="mt-6 flex flex-col gap-3">
+                  <ActionButton tone="primary" onClick={copyPublicLink}>
+                    {copiedLink ? "Copied public URL" : "Copy public booking URL"}
                   </ActionButton>
-                ) : null}
-                {!isDedicatedPublicPage && surfaceMode !== "adaptive" ? (
-                  <ActionLink href="/" tone="secondary">
-                    Open provider workspace
-                  </ActionLink>
-                ) : null}
+                  {surfaceMode === "adaptive" ? (
+                    <ActionButton tone="secondary" onClick={() => setSurface("management")}>
+                      Open provider workspace
+                    </ActionButton>
+                  ) : null}
+                  {surfaceMode !== "adaptive" ? (
+                    <ActionLink href="/" tone="secondary">
+                      Open provider workspace
+                    </ActionLink>
+                  ) : null}
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
         ) : null}
-      </div>
+      </>
     );
   }
 
@@ -3359,7 +3263,14 @@ export function HaabBookingModule({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8">
-        <div className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[32px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]">
+        <div
+          className={cn(
+            "max-h-[92vh] w-full max-w-5xl overflow-auto",
+            isDedicatedPublicPage
+              ? "rounded-[34px] bg-[#f3f4f5] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_26px_64px_rgba(25,28,29,0.05)] xl:p-8"
+              : "rounded-[32px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+          )}
+        >
           <SectionTitle
             eyebrow="Reschedule Booking"
             title={booking.serviceName}
@@ -3374,7 +3285,14 @@ export function HaabBookingModule({
           />
           <div className="mt-6 grid gap-5 xl:grid-cols-[1fr_0.88fr]">
             <div className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3">
+              <div
+                className={cn(
+                  "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
+                  isDedicatedPublicPage
+                    ? "bg-[rgba(255,255,255,0.72)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_24px_48px_rgba(25,28,29,0.04)] backdrop-blur-[18px]"
+                    : "border border-[var(--line)] bg-[var(--surface-soft)]",
+                )}
+              >
                 <div className="flex items-center gap-2">
                   <ActionButton
                     tone="ghost"
@@ -3432,6 +3350,8 @@ export function HaabBookingModule({
                   <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
                     {week.map((date) => {
                       const dateKey = getDateKey(date);
+                      const inMonth =
+                        date.getMonth() === rescheduleState.monthAnchor.getMonth();
                       const available = isDateAvailable(
                         dateKey,
                         service,
@@ -3458,11 +3378,25 @@ export function HaabBookingModule({
                             )
                           }
                           className={cn(
-                            "min-h-[84px] rounded-[24px] border p-3 text-left transition",
-                            available
-                              ? "border-[var(--line)] bg-[var(--surface-soft)] hover:border-[var(--accent)]"
-                              : "border-[var(--line)] bg-white opacity-45",
-                            selected && "border-[var(--accent)] bg-[var(--accent-soft)]",
+                            "min-h-[84px] rounded-[24px] p-3 text-left transition",
+                            isDedicatedPublicPage &&
+                              "shadow-[inset_0_1px_0_rgba(255,255,255,0.76),0_20px_42px_rgba(25,28,29,0.04)]",
+                            inMonth
+                              ? isDedicatedPublicPage
+                                ? "bg-[rgba(255,255,255,0.78)]"
+                                : "border border-[var(--line)] bg-[var(--surface-soft)]"
+                              : isDedicatedPublicPage
+                                ? "bg-[rgba(243,244,245,0.72)]"
+                                : "border border-[var(--line)] bg-white",
+                            available &&
+                              (isDedicatedPublicPage
+                                ? "hover:bg-[rgba(255,255,255,0.88)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
+                                : "hover:border-[var(--accent)]"),
+                            selected &&
+                              (isDedicatedPublicPage
+                                ? "bg-[rgba(255,255,255,0.92)] ring-2 ring-[rgba(26,115,232,0.18)]"
+                                : "border-[var(--accent)] bg-[var(--accent-soft)]"),
+                            !available && "cursor-default opacity-45",
                           )}
                         >
                           <span className="text-sm font-semibold text-[var(--ink)]">
@@ -3476,7 +3410,13 @@ export function HaabBookingModule({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6">
+            <div
+              className={cn(
+                isDedicatedPublicPage
+                  ? publicElevatedPanelClass
+                  : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6",
+              )}
+            >
               <SectionTitle
                 eyebrow={formatCompactDate(rescheduleState.dateKey)}
                 title={
@@ -3499,10 +3439,19 @@ export function HaabBookingModule({
                           )
                         }
                         className={cn(
-                          "min-h-11 rounded-2xl border px-4 text-sm font-semibold transition",
-                          rescheduleState.time === slot
-                            ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                            : "border-[var(--line)] bg-white hover:border-[var(--accent)]",
+                          "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
+                          isDedicatedPublicPage &&
+                            "bg-[rgba(243,244,245,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+                          !isDedicatedPublicPage &&
+                            "border border-[var(--line)] bg-white",
+                          rescheduleState.time === slot &&
+                            (isDedicatedPublicPage
+                              ? "bg-[rgba(255,255,255,0.9)] text-[var(--accent)] shadow-[0_26px_52px_rgba(25,28,29,0.06),inset_0_1px_0_rgba(255,255,255,0.84)]"
+                              : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"),
+                          rescheduleState.time !== slot &&
+                            (isDedicatedPublicPage
+                              ? "hover:bg-[rgba(255,255,255,0.82)]"
+                              : "hover:border-[var(--accent)]"),
                         )}
                       >
                         {formatTimeLabel(slot)}
@@ -3516,7 +3465,14 @@ export function HaabBookingModule({
                   ) : null}
                 </div>
               ) : (
-                <div className="mt-6 rounded-3xl border border-white bg-white/90 p-4 text-sm leading-6 text-[var(--muted)]">
+                <div
+                  className={cn(
+                    "mt-6 p-4 text-sm leading-6 text-[var(--muted)]",
+                    isDedicatedPublicPage
+                      ? publicInsetCardClass
+                      : "rounded-3xl border border-white bg-white/90",
+                  )}
+                >
                   This new day is free and will replace the original full-day reservation as soon as you confirm.
                 </div>
               )}
@@ -3568,7 +3524,7 @@ export function HaabBookingModule({
 
   if (isSetupOpen) {
     return (
-      <section className={publicShellClass}>
+      <section className={cn(publicShellClass, "p-5 sm:p-8")}>
         {renderSetupWizard()}
       </section>
     );
