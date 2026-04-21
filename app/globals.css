@@ -1,26 +1,99 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f9fa;
+  --surface: rgba(248, 249, 250, 0.86);
+  --surface-soft: #f3f4f5;
+  --surface-lowest: #ffffff;
+  --surface-highest: #eceef2;
+  --foreground: #191c1d;
+  --ink: #191c1d;
+  --muted: #5f6368;
+  --line: #c1c6d6;
+  --outline-ghost: rgba(193, 198, 214, 0.15);
+  --primary: #005bbf;
+  --primary-container: #1a73e8;
+  --accent: #1a73e8;
+  --accent-strong: #005bbf;
+  --accent-soft: rgba(26, 115, 232, 0.12);
+  --action-teal: #00bfa5;
+  --action-teal-deep: #006b5c;
+  --secondary-fixed: #68fadd;
+  --secondary-container: rgba(104, 250, 221, 0.22);
+  --full-day: #1f658f;
+  --shadow-air: rgba(25, 28, 29, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-plex-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background:
+    radial-gradient(circle at 14% 12%, rgba(26, 115, 232, 0.18), transparent 34%),
+    radial-gradient(circle at 82% 12%, rgba(0, 191, 165, 0.14), transparent 28%),
+    linear-gradient(180deg, #fbfcfd 0%, #f8f9fa 100%);
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background: transparent;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), sans-serif;
+  isolation: isolate;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: auto;
+  pointer-events: none;
+  z-index: -1;
+  filter: blur(80px);
+}
+
+body::before {
+  top: 5vh;
+  left: -6vw;
+  width: 28rem;
+  height: 28rem;
+  border-radius: 999px;
+  background: rgba(26, 115, 232, 0.12);
+}
+
+body::after {
+  right: -10vw;
+  bottom: 8vh;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 999px;
+  background: rgba(0, 191, 165, 0.1);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+code {
+  font-family: var(--font-plex-mono), monospace;
+}
+
+::selection {
+  background: rgba(26, 115, 232, 0.18);
 }

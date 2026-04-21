@@ -1,65 +1,92 @@
-import Image from "next/image";
+import { HaabBookingModule } from "@/components/haab-booking-module";
+
+const screenOverview = [
+  {
+    title: "Setup Wizard",
+    body: "Four steps collect provider details, services, and weekly availability, then publish a clean public booking page for standalone mode.",
+  },
+  {
+    title: "Provider Workspace",
+    body: "Dashboard, bookings, monthly calendar, services, and settings all sit inside one management shell with instant in-memory updates.",
+  },
+  {
+    title: "Public Booking Flow",
+    body: "Clients move through service selection, date and time, details, review, and a success screen with iCal export.",
+  },
+  {
+    title: "Integrated Mode",
+    body: "When provider data, services, availability, and existing bookings are injected, setup disappears and the module uses the parent app configuration.",
+  },
+];
+
+const flowOverview = [
+  "Providers configure services that can be either timed appointments or full-day reservations.",
+  "The calendar and booking engine use the same weekly schedule and booking state, so availability stays consistent everywhere.",
+  "Clients can create, review, reschedule, or cancel bookings from the same self-contained module.",
+  "The public booking URL points to a dedicated route that reads the same standalone state or injected data.",
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[34px] border border-[var(--line)] bg-[linear-gradient(145deg,rgba(234,241,255,0.9),rgba(255,255,255,0.96))] p-6 shadow-[0_36px_90px_rgba(15,23,42,0.08)] sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
+            Haab Calendar
           </p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-[-0.06em] text-[var(--ink)] sm:text-5xl">
+            Reusable appointment and booking management module
+          </h1>
+          <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
+            A Next.js 16 application designed as a single drop-in booking module for
+            doctors, padel courts, advisors, event venues, and coworking spaces.
+            It supports both timed appointments and full-day reservations from day one.
+          </p>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {screenOverview.map((item) => (
+              <article
+                key={item.title}
+                className="rounded-[28px] border border-white/90 bg-white/88 p-5"
+              >
+                <h2 className="text-lg font-semibold text-[var(--ink)]">{item.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.body}</p>
+              </article>
+            ))}
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+
+        <section className="rounded-[34px] border border-[var(--line)] bg-white p-6 shadow-[0_36px_90px_rgba(15,23,42,0.08)] sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
+            User Flow Overview
+          </p>
+          <div className="mt-5 space-y-4">
+            {flowOverview.map((item, index) => (
+              <div
+                key={item}
+                className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-4"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                  Flow {index + 1}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+              Reusability notes
+            </p>
+            <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+              The exported <code className="rounded bg-white px-1.5 py-0.5 text-[var(--ink)]">HaabBookingModule</code>{" "}
+              keeps its own standalone store, but it also accepts injected provider,
+              service, availability, and booking data so a host application can skip
+              setup and control the surrounding experience.
+            </p>
+          </div>
+        </section>
+      </section>
+
+      <HaabBookingModule />
+    </main>
   );
 }
