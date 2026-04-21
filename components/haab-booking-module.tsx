@@ -490,6 +490,31 @@ function createWeekWindow(start: Date, weeksToShow: number) {
   );
 }
 
+function createRollingWeekWindow(reference: Date, pastDays: number, weeksToShow: number) {
+  const start = getWeekStart(addDays(reference, -pastDays));
+  const end = addDays(start, weeksToShow * 7 - 1);
+
+  return {
+    start,
+    end,
+    startKey: getDateKey(start),
+    endKey: getDateKey(end),
+    weeks: createWeekWindow(start, weeksToShow),
+  };
+}
+
+function clampDateKey(dateKey: string, minimumDateKey: string, maximumDateKey: string) {
+  if (compareDateKeys(dateKey, minimumDateKey) < 0) {
+    return minimumDateKey;
+  }
+
+  if (compareDateKeys(dateKey, maximumDateKey) > 0) {
+    return maximumDateKey;
+  }
+
+  return dateKey;
+}
+
 function compareMonthAnchors(left: Date, right: Date) {
   if (left.getFullYear() !== right.getFullYear()) {
     return left.getFullYear() - right.getFullYear();
@@ -926,6 +951,7 @@ export function HaabBookingModule({
     (service) => service.id === resolvedBookingFlow.serviceId,
   );
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
+  const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
@@ -941,24 +967,44 @@ export function HaabBookingModule({
     ? "w-full"
     : "w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
   const publicPrimaryPanelClass = isDedicatedPublicPage
-    ? "rounded-[34px] bg-[rgba(243,244,245,0.86)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_26px_64px_rgba(25,28,29,0.05)] xl:p-8"
+    ? "rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] xl:p-8"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-8";
   const publicElevatedPanelClass = isDedicatedPublicPage
-    ? "rounded-[32px] bg-[rgba(255,255,255,0.78)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_30px_70px_rgba(25,28,29,0.06)] backdrop-blur-[20px] xl:p-7"
+    ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
   const publicSoftPanelClass = isDedicatedPublicPage
-    ? "rounded-[32px] bg-[rgba(243,244,245,0.84)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.84),0_24px_54px_rgba(25,28,29,0.04)] xl:p-7"
+    ? "rounded-[32px] bg-[rgba(243,244,245,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6 xl:p-7";
   const publicInsetCardClass = isDedicatedPublicPage
-    ? "rounded-[28px] bg-[rgba(255,255,255,0.72)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] backdrop-blur-[18px]"
+    ? "rounded-[28px] bg-[rgba(255,255,255,0.88)] p-5 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-5";
-  const calendarNavPillClass =
-    "rounded-full border border-[rgba(193,198,214,0.5)] bg-[rgba(255,255,255,0.78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]";
+  const publicGlassBarClass = isDedicatedPublicPage
+    ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.5)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_22px_48px_rgba(25,28,29,0.08)] backdrop-blur-[20px]"
+    : "border border-[var(--line)] bg-white";
+  const publicStatusStripClass = isDedicatedPublicPage
+    ? "border border-[rgba(255,255,255,0.38)] bg-[rgba(248,249,250,0.9)] shadow-[0_14px_32px_rgba(25,28,29,0.05)]"
+    : "border border-[var(--line)] bg-[var(--surface-soft)]";
+  const publicQuietChoiceClass = isDedicatedPublicPage
+    ? "bg-[rgba(248,249,250,0.92)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[0_12px_30px_rgba(25,28,29,0.04)]"
+    : "border border-[var(--line)] bg-white";
+  const publicSoftChoiceClass = isDedicatedPublicPage
+    ? "bg-[rgba(243,244,245,0.9)] ring-1 ring-[rgba(193,198,214,0.14)]"
+    : "border border-[var(--line)] bg-[var(--surface-soft)]";
+  const publicSelectedChoiceClass = isDedicatedPublicPage
+    ? "border border-[rgba(255,255,255,0.64)] bg-[rgba(255,255,255,0.58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_24px_52px_rgba(25,28,29,0.08)] backdrop-blur-[18px]"
+    : "border-[var(--accent)] bg-[var(--accent-soft)]";
+  const calendarNavPillClass = isDedicatedPublicPage
+    ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.24)] hover:bg-[rgba(255,255,255,0.62)] hover:text-[var(--ink)]"
+    : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[rgba(255,255,255,0.78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]";
+  const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6 text-[15px]" : "";
+  const publicGhostButtonClass = isDedicatedPublicPage
+    ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[rgba(255,255,255,0.58)] hover:text-[var(--ink)]"
+    : "";
   const publicFieldClass = isDedicatedPublicPage
-    ? "min-h-14 rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[inset_0_-2px_0_rgba(26,115,232,0.05),inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.96)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "min-h-14 rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.2)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
   const publicTextareaClass = isDedicatedPublicPage
-    ? "rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[inset_0_-2px_0_rgba(26,115,232,0.05),inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.96)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.2)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-[var(--line)] px-4 py-3 outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   useEffect(() => {
@@ -1391,11 +1437,19 @@ export function HaabBookingModule({
       return;
     }
 
+    const rescheduleWindow = createRollingWeekWindow(new Date(), 7, 4);
+    const initialDateKey = clampDateKey(
+      booking.dateKey,
+      rescheduleWindow.startKey,
+      rescheduleWindow.endKey,
+    );
+    const initialTime = initialDateKey === booking.dateKey ? (booking.startTime ?? "") : "";
+
     setRescheduleState({
       bookingId,
-      dateKey: booking.dateKey,
-      time: booking.startTime ?? "",
-      monthAnchor: parseDateKey(booking.dateKey),
+      dateKey: initialDateKey,
+      time: initialTime,
+      monthAnchor: parseDateKey(initialDateKey),
     });
   }
 
@@ -2642,9 +2696,7 @@ export function HaabBookingModule({
         <div
           className={cn(
             "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
-            isDedicatedPublicPage
-              ? "bg-[rgba(255,255,255,0.72)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_24px_48px_rgba(25,28,29,0.04)] backdrop-blur-[18px]"
-              : "border border-[var(--line)] bg-white",
+            publicGlassBarClass,
           )}
         >
           <div className="flex items-center gap-2">
@@ -2679,9 +2731,7 @@ export function HaabBookingModule({
         <div
           className={cn(
             "flex flex-wrap items-center justify-between gap-3 rounded-[22px] px-4 py-3",
-            isDedicatedPublicPage
-              ? "bg-[rgba(243,244,245,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
-              : "border border-[var(--line)] bg-[var(--surface-soft)]",
+            publicStatusStripClass,
           )}
         >
           <p className="text-sm font-medium text-[var(--muted)]">
@@ -2724,23 +2774,17 @@ export function HaabBookingModule({
                     }}
                     className={cn(
                       "min-h-[88px] rounded-[24px] p-3 text-left transition md:min-h-[104px]",
-                      isDedicatedPublicPage &&
-                        "shadow-[inset_0_1px_0_rgba(255,255,255,0.76),0_20px_42px_rgba(25,28,29,0.04)]",
                       inMonth
-                        ? isDedicatedPublicPage
-                          ? "bg-[rgba(255,255,255,0.78)]"
-                          : "border border-[var(--line)] bg-white"
-                        : isDedicatedPublicPage
-                          ? "bg-[rgba(243,244,245,0.72)]"
-                          : "border border-[var(--line)] bg-[var(--surface-soft)]",
+                        ? publicQuietChoiceClass
+                        : publicSoftChoiceClass,
                       available &&
                         (isDedicatedPublicPage
-                          ? "hover:bg-[rgba(255,255,255,0.88)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
+                          ? "hover:bg-[rgba(255,255,255,0.72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
                           : "hover:border-[var(--accent)]"),
                       chosen &&
                         (isDedicatedPublicPage
-                          ? "bg-[rgba(255,255,255,0.92)] ring-2 ring-[rgba(26,115,232,0.18)]"
-                          : "border-[var(--accent)] bg-[var(--accent-soft)]"),
+                          ? cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]")
+                          : publicSelectedChoiceClass),
                       !available && "cursor-default opacity-50",
                     )}
                   >
@@ -2804,7 +2848,7 @@ export function HaabBookingModule({
                   className={cn(
                     "rounded-[30px] p-6 text-left transition",
                     isDedicatedPublicPage
-                      ? "bg-[rgba(255,255,255,0.78)] shadow-[inset_0_1px_0_rgba(255,255,255,0.84),0_26px_54px_rgba(25,28,29,0.05)] backdrop-blur-[20px] hover:translate-y-[-2px] hover:bg-[rgba(255,255,255,0.92)]"
+                      ? "bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_18px_42px_rgba(25,28,29,0.06)] hover:translate-y-[-2px] hover:bg-[rgba(255,255,255,0.9)]"
                       : "border border-[var(--line)] bg-white hover:border-[var(--accent)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.08)]",
                   )}
                 >
@@ -2901,17 +2945,14 @@ export function HaabBookingModule({
                           onClick={() => updateBookingFlow("time", slot)}
                           className={cn(
                             "relative flex w-full items-start justify-between gap-4 rounded-[24px] px-5 py-4 text-left transition",
-                            isDedicatedPublicPage &&
-                              "bg-[rgba(243,244,245,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
-                            !isDedicatedPublicPage &&
-                              "border border-[var(--line)] bg-[var(--surface-soft)]",
+                            isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-[var(--surface-soft)]",
                             isSelected &&
                               (isDedicatedPublicPage
-                                ? "bg-[rgba(255,255,255,0.9)] shadow-[0_26px_52px_rgba(25,28,29,0.06),inset_0_1px_0_rgba(255,255,255,0.84)]"
+                                ? cn(publicSelectedChoiceClass, "text-[var(--ink)]")
                                 : "border-[var(--accent)] bg-[var(--accent-soft)]"),
                             !isSelected &&
                               (isDedicatedPublicPage
-                                ? "hover:bg-[rgba(255,255,255,0.82)]"
+                                ? "hover:bg-[rgba(255,255,255,0.72)]"
                                 : "hover:border-[var(--accent)]"),
                           )}
                         >
@@ -2940,7 +2981,7 @@ export function HaabBookingModule({
                   )}
                   <ActionButton
                     tone="primary"
-                    className={cn("shrink-0", isDedicatedPublicPage && "w-full justify-center")}
+                    className={cn("shrink-0", isDedicatedPublicPage && cn(publicPillButtonClass, "w-full justify-center"))}
                     disabled={!bookingFlow.time}
                     onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
                   >
@@ -2958,7 +2999,7 @@ export function HaabBookingModule({
                   </div>
                   <ActionButton
                     tone="primary"
-                    className={cn(isDedicatedPublicPage && "w-full justify-center")}
+                    className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, "w-full justify-center"))}
                     disabled={
                       !isDateAvailable(bookingFlow.dateKey, selectedService, availability, bookings)
                     }
@@ -3109,14 +3150,14 @@ export function HaabBookingModule({
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <ActionButton
                   tone="ghost"
-                  className="w-full px-6"
+                  className={cn("w-full px-6", isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
                   onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}
                 >
                   Back
                 </ActionButton>
                 <ActionButton
                   tone="primary"
-                  className={cn("w-full px-6", isDedicatedPublicPage && "justify-center")}
+                  className={cn("w-full px-6", isDedicatedPublicPage && cn(publicPillButtonClass, "justify-center"))}
                   onClick={confirmBooking}
                 >
                   Confirm
@@ -3145,20 +3186,26 @@ export function HaabBookingModule({
                 {isDedicatedPublicPage ? (
                   <div className="text-center">
                     <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
-                      Success
+                      {isSuccessfulBookingCancelled ? "Cancelled" : "Success"}
                     </p>
                     <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                      Booking confirmed
+                      {isSuccessfulBookingCancelled ? "Booking cancelled" : "Booking confirmed"}
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                      A confirmation-ready record is stored for {successfulBooking.clientEmail}.
+                      {isSuccessfulBookingCancelled
+                        ? `This booking has been cancelled for ${successfulBooking.clientEmail}.`
+                        : `A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`}
                     </p>
                   </div>
                 ) : (
                   <SectionTitle
-                    eyebrow="Success"
-                    title="Booking confirmed"
-                    body={`A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`}
+                    eyebrow={isSuccessfulBookingCancelled ? "Cancelled" : "Success"}
+                    title={isSuccessfulBookingCancelled ? "Booking cancelled" : "Booking confirmed"}
+                    body={
+                      isSuccessfulBookingCancelled
+                        ? `This booking has been cancelled for ${successfulBooking.clientEmail}.`
+                        : `A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`
+                    }
                   />
                 )}
                 <div className={cn("mt-6", publicInsetCardClass)}>
@@ -3194,22 +3241,46 @@ export function HaabBookingModule({
                   </div>
                 </div>
                 <div className={cn("mt-6 flex flex-wrap gap-3", isDedicatedPublicPage && "justify-center")}>
-                  <a
-                    download={`${businessSlug}-${successfulBooking.id}.ics`}
-                    href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
-                      buildIcsContent(successfulBooking, provider),
-                    )}`}
-                    className={buttonClasses("primary")}
+                  {isSuccessfulBookingCancelled ? (
+                    <button
+                      type="button"
+                      disabled
+                      className={buttonClasses("primary", publicPillButtonClass)}
+                    >
+                      Add to calendar
+                    </button>
+                  ) : (
+                    <a
+                      download={`${businessSlug}-${successfulBooking.id}.ics`}
+                      href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
+                        buildIcsContent(successfulBooking, provider),
+                      )}`}
+                      className={buttonClasses("primary", publicPillButtonClass)}
+                    >
+                      Add to calendar
+                    </a>
+                  )}
+                  <ActionButton
+                    tone="ghost"
+                    className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => openReschedule(successfulBooking.id)}
                   >
-                    Add to calendar
-                  </a>
-                  <ActionButton tone="ghost" onClick={() => openReschedule(successfulBooking.id)}>
                     Reschedule
                   </ActionButton>
-                  <ActionButton tone="danger" onClick={() => setCancellationId(successfulBooking.id)}>
+                  <ActionButton
+                    tone="danger"
+                    className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => setCancellationId(successfulBooking.id)}
+                  >
                     Cancel booking
                   </ActionButton>
-                  <ActionButton tone="secondary" onClick={() => startFreshBooking()}>
+                  <ActionButton
+                    tone="secondary"
+                    className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+                    onClick={() => startFreshBooking()}
+                  >
                     Book another
                   </ActionButton>
                 </div>
@@ -3258,7 +3329,14 @@ export function HaabBookingModule({
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4">
-        <div className="w-full max-w-lg rounded-[32px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]">
+        <div
+          className={cn(
+            "w-full max-w-lg p-6",
+            isDedicatedPublicPage
+              ? "rounded-[32px] bg-[rgba(248,249,250,0.98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
+              : "rounded-[32px] border border-[var(--line)] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+          )}
+        >
           <SectionTitle
             eyebrow="Cancel Booking"
             title={booking.serviceName}
@@ -3271,10 +3349,18 @@ export function HaabBookingModule({
             Cancelling frees the slot immediately across the dashboard, public flow, and calendar.
           </p>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
-            <ActionButton tone="ghost" onClick={() => setCancellationId(null)}>
+            <ActionButton
+              tone="ghost"
+              className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+              onClick={() => setCancellationId(null)}
+            >
               Keep booking
             </ActionButton>
-            <ActionButton tone="danger" onClick={confirmCancellation}>
+            <ActionButton
+              tone="danger"
+              className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+              onClick={confirmCancellation}
+            >
               Confirm cancellation
             </ActionButton>
           </div>
@@ -3295,7 +3381,11 @@ export function HaabBookingModule({
       return null;
     }
 
-    const weeks = createMonthMatrix(rescheduleState.monthAnchor);
+    const rescheduleWindow = createRollingWeekWindow(new Date(), 7, 4);
+    const rescheduleWindowLabel = `${formatCompactDate(rescheduleWindow.startKey)} - ${formatCompactDate(
+      rescheduleWindow.endKey,
+    )}`;
+    const weeks = rescheduleWindow.weeks;
     const slots =
       service.bookingType === "appointment"
         ? getAvailableSlots(
@@ -3313,7 +3403,7 @@ export function HaabBookingModule({
           className={cn(
             "max-h-[92vh] w-full max-w-5xl overflow-auto",
             isDedicatedPublicPage
-              ? "rounded-[34px] bg-[#f3f4f5] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_26px_64px_rgba(25,28,29,0.05)] xl:p-8"
+              ? "rounded-[34px] bg-[rgba(248,249,250,0.98)] p-6 ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)] xl:p-8"
               : "rounded-[32px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
           )}
         >
@@ -3324,7 +3414,11 @@ export function HaabBookingModule({
               service.bookingType === "appointment" ? "Choose a new slot" : "Choose a new day"
             }`}
             action={
-              <ActionButton tone="ghost" onClick={() => setRescheduleState(null)}>
+              <ActionButton
+                tone="ghost"
+                className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                onClick={() => setRescheduleState(null)}
+              >
                 Close
               </ActionButton>
             }
@@ -3334,22 +3428,15 @@ export function HaabBookingModule({
               <div
                 className={cn(
                   "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
-                  isDedicatedPublicPage
-                    ? "bg-[rgba(255,255,255,0.72)] shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_24px_48px_rgba(25,28,29,0.04)] backdrop-blur-[18px]"
-                    : "border border-[var(--line)] bg-[var(--surface-soft)]",
+                  isDedicatedPublicPage ? publicGlassBarClass : "border border-[var(--line)] bg-[var(--surface-soft)]",
                 )}
               >
                 <div className="flex items-center gap-2">
                   <ActionButton
                     tone="ghost"
                     className={calendarNavPillClass}
-                    onClick={() =>
-                      setRescheduleState((current) =>
-                        current
-                          ? { ...current, monthAnchor: shiftMonth(current.monthAnchor, -1) }
-                          : current,
-                      )
-                    }
+                    disabled
+                    onClick={() => undefined}
                   >
                     Previous
                   </ActionButton>
@@ -3358,7 +3445,14 @@ export function HaabBookingModule({
                     className={calendarNavPillClass}
                     onClick={() =>
                       setRescheduleState((current) =>
-                        current ? { ...current, monthAnchor: new Date() } : current,
+                        current
+                          ? {
+                              ...current,
+                              dateKey: todayKey(),
+                              time: "",
+                              monthAnchor: new Date(),
+                            }
+                          : current,
                       )
                     }
                   >
@@ -3367,19 +3461,14 @@ export function HaabBookingModule({
                   <ActionButton
                     tone="ghost"
                     className={calendarNavPillClass}
-                    onClick={() =>
-                      setRescheduleState((current) =>
-                        current
-                          ? { ...current, monthAnchor: shiftMonth(current.monthAnchor, 1) }
-                          : current,
-                      )
-                    }
+                    disabled
+                    onClick={() => undefined}
                   >
                     Next
                   </ActionButton>
                 </div>
                 <p className="text-base font-semibold text-[var(--ink)]">
-                  {formatMonthLabel(rescheduleState.monthAnchor)}
+                  {rescheduleWindowLabel}
                 </p>
               </div>
               <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
@@ -3396,8 +3485,7 @@ export function HaabBookingModule({
                   <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
                     {week.map((date) => {
                       const dateKey = getDateKey(date);
-                      const inMonth =
-                        date.getMonth() === rescheduleState.monthAnchor.getMonth();
+                      const inMonth = date.getMonth() === new Date().getMonth();
                       const available = isDateAvailable(
                         dateKey,
                         service,
@@ -3419,28 +3507,27 @@ export function HaabBookingModule({
                                     ...current,
                                     dateKey,
                                     time: "",
+                                    monthAnchor: date,
                                   }
                                 : current,
                             )
                           }
                           className={cn(
                             "min-h-[84px] rounded-[24px] p-3 text-left transition",
-                            isDedicatedPublicPage &&
-                              "shadow-[inset_0_1px_0_rgba(255,255,255,0.76),0_20px_42px_rgba(25,28,29,0.04)]",
                             inMonth
                               ? isDedicatedPublicPage
-                                ? "bg-[rgba(255,255,255,0.78)]"
+                                ? publicQuietChoiceClass
                                 : "border border-[var(--line)] bg-[var(--surface-soft)]"
                               : isDedicatedPublicPage
-                                ? "bg-[rgba(243,244,245,0.72)]"
+                                ? publicSoftChoiceClass
                                 : "border border-[var(--line)] bg-white",
                             available &&
                               (isDedicatedPublicPage
-                                ? "hover:bg-[rgba(255,255,255,0.88)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
+                                ? "hover:bg-[rgba(255,255,255,0.72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
                                 : "hover:border-[var(--accent)]"),
                             selected &&
                               (isDedicatedPublicPage
-                                ? "bg-[rgba(255,255,255,0.92)] ring-2 ring-[rgba(26,115,232,0.18)]"
+                                ? cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]")
                                 : "border-[var(--accent)] bg-[var(--accent-soft)]"),
                             !available && "cursor-default opacity-45",
                           )}
@@ -3486,17 +3573,14 @@ export function HaabBookingModule({
                         }
                         className={cn(
                           "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                          isDedicatedPublicPage &&
-                            "bg-[rgba(243,244,245,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
-                          !isDedicatedPublicPage &&
-                            "border border-[var(--line)] bg-white",
+                          isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-white",
                           rescheduleState.time === slot &&
                             (isDedicatedPublicPage
-                              ? "bg-[rgba(255,255,255,0.9)] text-[var(--accent)] shadow-[0_26px_52px_rgba(25,28,29,0.06),inset_0_1px_0_rgba(255,255,255,0.84)]"
+                              ? cn(publicSelectedChoiceClass, "text-[var(--accent)]")
                               : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"),
                           rescheduleState.time !== slot &&
                             (isDedicatedPublicPage
-                              ? "hover:bg-[rgba(255,255,255,0.82)]"
+                              ? "hover:bg-[rgba(255,255,255,0.72)]"
                               : "hover:border-[var(--accent)]"),
                         )}
                       >
@@ -3523,11 +3607,16 @@ export function HaabBookingModule({
                 </div>
               )}
               <div className="mt-6 flex flex-wrap justify-end gap-3">
-                <ActionButton tone="ghost" onClick={() => setRescheduleState(null)}>
+                <ActionButton
+                  tone="ghost"
+                  className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                  onClick={() => setRescheduleState(null)}
+                >
                   Cancel
                 </ActionButton>
                 <ActionButton
                   tone="primary"
+                  className={cn(isDedicatedPublicPage && publicPillButtonClass)}
                   disabled={
                     !rescheduleState.dateKey ||
                     (service.bookingType === "appointment" && !rescheduleState.time)
