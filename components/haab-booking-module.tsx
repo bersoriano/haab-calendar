@@ -478,6 +478,26 @@ function createMonthMatrix(anchor: Date) {
   );
 }
 
+function getWeekStart(date: Date) {
+  return addDays(new Date(date.getFullYear(), date.getMonth(), date.getDate()), -date.getDay());
+}
+
+function createWeekWindow(start: Date, weeksToShow: number) {
+  return Array.from({ length: weeksToShow }, (_, weekIndex) =>
+    Array.from({ length: 7 }, (_, dayIndex) =>
+      addDays(start, weekIndex * 7 + dayIndex),
+    ),
+  );
+}
+
+function compareMonthAnchors(left: Date, right: Date) {
+  if (left.getFullYear() !== right.getFullYear()) {
+    return left.getFullYear() - right.getFullYear();
+  }
+
+  return left.getMonth() - right.getMonth();
+}
+
 function isActiveBooking(booking: BookingRecord) {
   return booking.status !== "cancelled";
 }
@@ -909,9 +929,9 @@ export function HaabBookingModule({
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
-  const hasInteractiveServiceStep = services.length > 1;
   const isPublicView = surfaceMode === "public-only" || surface === "public";
   const isDedicatedPublicPage = surfaceMode === "public-only";
+  const hasMultipleServices = services.length > 1;
   const calendarServiceId =
     calendarServicePreference &&
     services.some((service) => service.id === calendarServicePreference)
@@ -2598,7 +2618,24 @@ export function HaabBookingModule({
   }
 
   function renderPublicCalendar() {
-    const weeks = createMonthMatrix(publicMonthAnchor);
+    const earliestVisibleDate = addDays(new Date(), -7);
+    const earliestVisibleDateKey = getDateKey(earliestVisibleDate);
+    const earliestVisibleMonthAnchor = new Date(
+      earliestVisibleDate.getFullYear(),
+      earliestVisibleDate.getMonth(),
+      1,
+    );
+    const monthGridStart = getWeekStart(
+      new Date(publicMonthAnchor.getFullYear(), publicMonthAnchor.getMonth(), 1),
+    );
+    const earliestVisibleWeekStart = getWeekStart(earliestVisibleDate);
+    const visibleGridStart =
+      compareDateKeys(getDateKey(monthGridStart), earliestVisibleDateKey) < 0
+        ? earliestVisibleWeekStart
+        : monthGridStart;
+    const canGoToPreviousPublicMonth =
+      compareMonthAnchors(publicMonthAnchor, earliestVisibleMonthAnchor) > 0;
+    const weeks = createWeekWindow(visibleGridStart, 4);
 
     return (
       <div className="space-y-5">
@@ -2614,6 +2651,7 @@ export function HaabBookingModule({
             <ActionButton
               tone="ghost"
               className={calendarNavPillClass}
+              disabled={!canGoToPreviousPublicMonth}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, -1))}
             >
               Previous
@@ -2821,7 +2859,7 @@ export function HaabBookingModule({
               }
             >
               <SectionTitle
-                eyebrow={selectedService.name}
+                eyebrow={hasMultipleServices ? selectedService.name : undefined}
                 title={
                   selectedService.bookingType === "appointment"
                     ? "Available time slots"
@@ -2938,7 +2976,7 @@ export function HaabBookingModule({
           <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             <div ref={publicDetailsPanelRef} className={publicPrimaryPanelClass}>
               <SectionTitle
-                title={`Step ${hasInteractiveServiceStep ? 3 : 2}: Client details`}
+                title="Client details"
                 body="Enter the booking details here and confirm directly from the live summary."
               />
               <div className="mt-6 grid gap-4">
@@ -3018,9 +3056,11 @@ export function HaabBookingModule({
                 body="This panel updates as the client details are entered so you can confirm from the same screen."
               />
               <div className={cn("mt-6 space-y-3 text-sm text-[var(--muted)]", publicInsetCardClass)}>
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Service:</span> {selectedService.name}
-                </p>
+                {hasMultipleServices ? (
+                  <p>
+                    <span className="font-semibold text-[var(--ink)]">Service:</span> {selectedService.name}
+                  </p>
+                ) : null}
                 <p>
                   <span className="font-semibold text-[var(--ink)]">Type:</span>{" "}
                   {getBookingTypeLabel(selectedService.bookingType)}
@@ -3066,13 +3106,17 @@ export function HaabBookingModule({
                   </p>
                 ) : null}
               </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ActionButton tone="ghost" onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <ActionButton
+                  tone="ghost"
+                  className="w-full px-6"
+                  onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}
+                >
                   Back
                 </ActionButton>
                 <ActionButton
                   tone="primary"
-                  className={cn(isDedicatedPublicPage && "justify-center")}
+                  className={cn("w-full px-6", isDedicatedPublicPage && "justify-center")}
                   onClick={confirmBooking}
                 >
                   Confirm
@@ -3119,10 +3163,12 @@ export function HaabBookingModule({
                 )}
                 <div className={cn("mt-6", publicInsetCardClass)}>
                   <div className="grid gap-3 text-sm text-[var(--muted)]">
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Service:</span>{" "}
-                      {successfulBooking.serviceName}
-                    </p>
+                    {hasMultipleServices ? (
+                      <p>
+                        <span className="font-semibold text-[var(--ink)]">Service:</span>{" "}
+                        {successfulBooking.serviceName}
+                      </p>
+                    ) : null}
                     <p>
                       <span className="font-semibold text-[var(--ink)]">Date:</span>{" "}
                       {formatDateLabel(successfulBooking.dateKey)}
