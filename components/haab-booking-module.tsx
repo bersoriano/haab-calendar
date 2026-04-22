@@ -231,6 +231,10 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
 });
 
+const compactBadgeTextClass = "text-[11px] font-semibold uppercase tracking-[0.08em]";
+const compactChipTextClass = "text-[11px] font-semibold uppercase tracking-[0.12em]";
+const compactMetaTextClass = "text-[11px] font-semibold uppercase tracking-[0.18em]";
+
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
@@ -783,7 +787,8 @@ function ToneBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-[0.75rem] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] backdrop-blur-[20px]",
+        "inline-flex items-center rounded-[0.75rem] px-3 py-1 backdrop-blur-[20px]",
+        compactBadgeTextClass,
         tone === "primary" &&
           "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
         tone === "secondary" &&
@@ -823,6 +828,23 @@ function SectionTitle({
         {body ? <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{body}</p> : null}
       </div>
       {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  );
+}
+
+function SummaryField({
+  label,
+  value,
+}: {
+  label: string;
+  value: ReactNode;
+}) {
+  return (
+    <div className="grid">
+      <dt className={cn("text-[var(--muted)]", compactMetaTextClass)}>{label}</dt>
+      <dd className="min-w-0 break-words text-sm font-medium leading-6 text-[var(--ink)]">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -1012,7 +1034,13 @@ export function HaabBookingModule({
   const calendarNavPillClass = isDedicatedPublicPage
     ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.24)] hover:bg-[rgba(255,255,255,0.62)] hover:text-[var(--ink)]"
     : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[rgba(255,255,255,0.78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]";
-  const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6 text-[15px]" : "";
+  const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6" : "";
+  const publicPrimaryActionClass = isDedicatedPublicPage
+    ? cn(publicPillButtonClass, "justify-center")
+    : "";
+  const publicPrimaryWideActionClass = isDedicatedPublicPage
+    ? cn(publicPrimaryActionClass, "w-full")
+    : "";
   const publicGhostButtonClass = isDedicatedPublicPage
     ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[rgba(255,255,255,0.58)] hover:text-[var(--ink)]"
     : "";
@@ -1146,6 +1174,28 @@ export function HaabBookingModule({
       serviceId: nextServiceId,
       step: overrides?.step ?? nextStep,
     });
+  }
+
+  function downloadBookingCalendarFile(booking: BookingRecord) {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const blob = new Blob([buildIcsContent(booking, provider)], {
+      type: "text/calendar;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `${businessSlug || "booking"}-${booking.id}.ics`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 0);
   }
 
   function launchPublicFlow(overrides?: Partial<BookingFlow>) {
@@ -2934,16 +2984,21 @@ export function HaabBookingModule({
                       </span>
                       <div className="flex items-center gap-1.5">
                         {chosen ? (
-                          <span className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--accent)]">
+                          <span className={cn("rounded-full bg-white px-2 py-1 text-[var(--accent)]", compactChipTextClass)}>
                             Selected
                           </span>
                         ) : null}
                         {!chosen && isToday ? (
-                          <span className="rounded-full bg-[var(--surface-soft)] px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                          <span
+                            className={cn(
+                              "rounded-full bg-[var(--surface-soft)] px-2 py-1 text-[var(--muted)]",
+                              compactChipTextClass,
+                            )}
+                          >
                             Today
                           </span>
                         ) : null}
-                        {!chosen && available ? (
+                        {!chosen && !isToday && available ? (
                           <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
                         ) : null}
                       </div>
@@ -3052,10 +3107,7 @@ export function HaabBookingModule({
                 </label>
                 <ActionButton
                   tone="primary"
-                  className={cn(
-                    "w-full lg:w-auto",
-                    isDedicatedPublicPage && cn(publicPillButtonClass, "justify-center"),
-                  )}
+                  className={cn("w-full lg:w-auto", publicPrimaryActionClass)}
                   onClick={continueWithNaturalLanguageBooking}
                 >
                   Continue to client details
@@ -3172,11 +3224,11 @@ export function HaabBookingModule({
                             <p className="text-base font-semibold text-[var(--ink)]">
                               {formatTimeLabel(slot)}
                             </p>
-                            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                            <p className={cn("mt-1 text-[var(--muted)]", compactMetaTextClass)}>
                               Ends {formatTimeLabel(slotEnd)}
                             </p>
                           </div>
-                          <span className="pt-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--action-teal-deep)]">
+                          <span className={cn("pt-1 text-[var(--action-teal-deep)]", compactMetaTextClass)}>
                             {isSelected ? "Selected" : "Open"}
                           </span>
                         </button>
@@ -3187,7 +3239,7 @@ export function HaabBookingModule({
                   )}
                   <ActionButton
                     tone="primary"
-                    className={cn("shrink-0", isDedicatedPublicPage && cn(publicPillButtonClass, "w-full justify-center"))}
+                    className={cn("shrink-0", publicPrimaryWideActionClass)}
                     disabled={!bookingFlow.time}
                     onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
                   >
@@ -3205,7 +3257,7 @@ export function HaabBookingModule({
                   </div>
                   <ActionButton
                     tone="primary"
-                    className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, "w-full justify-center"))}
+                    className={publicPrimaryWideActionClass}
                     disabled={
                       !isDateAvailable(bookingFlow.dateKey, selectedService, availability, bookings)
                     }
@@ -3228,7 +3280,7 @@ export function HaabBookingModule({
               />
               <div className="mt-6 grid gap-4">
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                     Full name
                   </span>
                   <input
@@ -3239,7 +3291,7 @@ export function HaabBookingModule({
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                     Email
                   </span>
                   <input
@@ -3251,7 +3303,7 @@ export function HaabBookingModule({
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                     Phone number
                   </span>
                   <input
@@ -3262,7 +3314,7 @@ export function HaabBookingModule({
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                     Notes
                   </span>
                   <textarea
@@ -3275,7 +3327,7 @@ export function HaabBookingModule({
                 </label>
                 {provider.customQuestionLabel ? (
                   <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                    <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                       {provider.customQuestionLabel}
                     </span>
                     <input
@@ -3290,7 +3342,11 @@ export function HaabBookingModule({
             </div>
 
             <div
-              className={cn("self-start xl:sticky xl:top-8", publicSoftPanelClass)}
+              className={cn(
+                "self-start xl:sticky xl:top-8",
+                publicSoftPanelClass,
+                "flex min-h-full flex-col",
+              )}
               style={
                 publicDetailsPanelHeight
                   ? { minHeight: `${publicDetailsPanelHeight}px` }
@@ -3298,60 +3354,53 @@ export function HaabBookingModule({
               }
             >
               <SectionTitle
-                eyebrow="Booking summary"
-                title="Live booking summary"
-                body="This panel updates as the client details are entered so you can confirm from the same screen."
+                title="Booking summary"
+                body="Review the live booking details here before confirming."
               />
-              <div className={cn("mt-6 space-y-3 text-sm text-[var(--muted)]", publicInsetCardClass)}>
-                {hasMultipleServices ? (
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Service:</span> {selectedService.name}
-                  </p>
-                ) : null}
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Type:</span>{" "}
-                  {getBookingTypeLabel(selectedService.bookingType)}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">When:</span>{" "}
-                  {bookingFlow.dateKey
-                    ? `${formatDateLabel(bookingFlow.dateKey)} · ${
-                        selectedService.bookingType === "appointment"
-                          ? formatTimeLabel(bookingFlow.time)
-                          : "Full Day"
-                      }`
-                    : "Not selected"}
-                </p>
-                {selectedService.capacity ? (
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">Capacity:</span>{" "}
-                    {selectedService.capacity}
-                  </p>
-                ) : null}
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
-                  {bookingFlow.clientName.trim() || "Not entered yet"}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Email:</span>{" "}
-                  {bookingFlow.clientEmail.trim() || "Not entered yet"}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Phone:</span>{" "}
-                  {bookingFlow.clientPhone.trim() || "Not entered yet"}
-                </p>
-                <p>
-                  <span className="font-semibold text-[var(--ink)]">Notes:</span>{" "}
-                  {bookingFlow.notes.trim() || "None"}
-                </p>
-                {provider.customQuestionLabel ? (
-                  <p>
-                    <span className="font-semibold text-[var(--ink)]">
-                      {provider.customQuestionLabel}:
-                    </span>{" "}
-                    {bookingFlow.customAnswer.trim() || "Not entered yet"}
-                  </p>
-                ) : null}
+              <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
+                <dl className="grid gap-4">
+                  {hasMultipleServices ? (
+                    <SummaryField label="Service" value={selectedService.name} />
+                  ) : null}
+                  <SummaryField
+                    label="Type"
+                    value={getBookingTypeLabel(selectedService.bookingType)}
+                  />
+                  <SummaryField
+                    label="When"
+                    value={
+                      bookingFlow.dateKey
+                        ? `${formatDateLabel(bookingFlow.dateKey)} · ${
+                            selectedService.bookingType === "appointment"
+                              ? formatTimeLabel(bookingFlow.time)
+                              : "Full Day"
+                          }`
+                        : "Not selected"
+                    }
+                  />
+                  {selectedService.capacity ? (
+                    <SummaryField label="Capacity" value={selectedService.capacity} />
+                  ) : null}
+                  <SummaryField
+                    label="Client"
+                    value={bookingFlow.clientName.trim() || "Not entered yet"}
+                  />
+                  <SummaryField
+                    label="Email"
+                    value={bookingFlow.clientEmail.trim() || "Not entered yet"}
+                  />
+                  <SummaryField
+                    label="Phone"
+                    value={bookingFlow.clientPhone.trim() || "Not entered yet"}
+                  />
+                  <SummaryField label="Notes" value={bookingFlow.notes.trim() || "None"} />
+                  {provider.customQuestionLabel ? (
+                    <SummaryField
+                      label={provider.customQuestionLabel}
+                      value={bookingFlow.customAnswer.trim() || "Not entered yet"}
+                    />
+                  ) : null}
+                </dl>
               </div>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <ActionButton
@@ -3447,25 +3496,14 @@ export function HaabBookingModule({
                   </div>
                 </div>
                 <div className={cn("mt-6 flex flex-wrap gap-3", isDedicatedPublicPage && "justify-center")}>
-                  {isSuccessfulBookingCancelled ? (
-                    <button
-                      type="button"
-                      disabled
-                      className={buttonClasses("primary", publicPillButtonClass)}
-                    >
-                      Add to calendar
-                    </button>
-                  ) : (
-                    <a
-                      download={`${businessSlug}-${successfulBooking.id}.ics`}
-                      href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
-                        buildIcsContent(successfulBooking, provider),
-                      )}`}
-                      className={buttonClasses("primary", publicPillButtonClass)}
-                    >
-                      Add to calendar
-                    </a>
-                  )}
+                  <ActionButton
+                    tone="primary"
+                    className={cn("px-6", publicPrimaryActionClass)}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                  >
+                    Add to calendar
+                  </ActionButton>
                   <ActionButton
                     tone="ghost"
                     className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
@@ -3751,6 +3789,7 @@ export function HaabBookingModule({
 
             <div
               className={cn(
+                "flex h-full flex-col",
                 isDedicatedPublicPage
                   ? publicElevatedPanelClass
                   : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6",
@@ -3812,24 +3851,24 @@ export function HaabBookingModule({
                   This new day is free and will replace the original full-day reservation as soon as you confirm.
                 </div>
               )}
-              <div className="mt-6 flex flex-wrap justify-end gap-3">
+              <div className="mt-auto grid grid-cols-2 gap-3 pt-6">
                 <ActionButton
-                  tone="ghost"
-                  className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                  tone="danger"
+                  className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
                   onClick={() => setRescheduleState(null)}
                 >
                   Cancel
                 </ActionButton>
                 <ActionButton
                   tone="primary"
-                  className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+                  className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
                   disabled={
                     !rescheduleState.dateKey ||
                     (service.bookingType === "appointment" && !rescheduleState.time)
                   }
                   onClick={confirmReschedule}
                 >
-                  Save new booking time
+                  Save new time
                 </ActionButton>
               </div>
             </div>
