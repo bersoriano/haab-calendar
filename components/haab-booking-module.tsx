@@ -810,7 +810,7 @@ function SectionTitle({
   action,
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   body?: string;
   action?: ReactNode;
 }) {
@@ -920,12 +920,8 @@ export function HaabBookingModule({
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
-  const publicCalendarPanelRef = useRef<HTMLDivElement | null>(null);
-  const [publicCalendarPanelHeight, setPublicCalendarPanelHeight] = useState<number | null>(
-    null,
-  );
-  const publicDetailsPanelRef = useRef<HTMLDivElement | null>(null);
-  const [publicDetailsPanelHeight, setPublicDetailsPanelHeight] = useState<number | null>(
+  const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
+  const [publicPrimaryPanelHeight, setPublicPrimaryPanelHeight] = useState<number | null>(
     null,
   );
 
@@ -1052,11 +1048,15 @@ export function HaabBookingModule({
     : "rounded-2xl border border-[var(--line)] px-4 py-3 outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   useEffect(() => {
-    if (resolvedBookingFlow.step !== 2) {
+    if (
+      resolvedBookingFlow.step !== 2 &&
+      resolvedBookingFlow.step !== 3 &&
+      resolvedBookingFlow.step !== 4
+    ) {
       return;
     }
 
-    const node = publicCalendarPanelRef.current;
+    const node = publicPrimaryPanelRef.current;
 
     if (!node || typeof ResizeObserver === "undefined") {
       return;
@@ -1065,40 +1065,7 @@ export function HaabBookingModule({
     let frameId = 0;
     const syncHeight = () => {
       const nextHeight = Math.ceil(node.getBoundingClientRect().height);
-      setPublicCalendarPanelHeight((current) =>
-        current === nextHeight ? current : nextHeight,
-      );
-    };
-
-    frameId = window.requestAnimationFrame(syncHeight);
-
-    const observer = new ResizeObserver(() => {
-      syncHeight();
-    });
-
-    observer.observe(node);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      observer.disconnect();
-    };
-  }, [resolvedBookingFlow.step]);
-
-  useEffect(() => {
-    if (resolvedBookingFlow.step !== 3) {
-      return;
-    }
-
-    const node = publicDetailsPanelRef.current;
-
-    if (!node || typeof ResizeObserver === "undefined") {
-      return;
-    }
-
-    let frameId = 0;
-    const syncHeight = () => {
-      const nextHeight = Math.ceil(node.getBoundingClientRect().height);
-      setPublicDetailsPanelHeight((current) =>
+      setPublicPrimaryPanelHeight((current) =>
         current === nextHeight ? current : nextHeight,
       );
     };
@@ -3014,6 +2981,11 @@ export function HaabBookingModule({
   }
 
   function renderPublicFlow() {
+    const isPublicSelectionStep = resolvedBookingFlow.step === 2;
+    const isPublicDetailsStep = resolvedBookingFlow.step === 3;
+    const isPublicSuccessStep =
+      isDedicatedPublicPage && resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
+
     return (
       <>
         {resolvedBookingFlow.step === 1 ? (
@@ -3069,365 +3041,553 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {resolvedBookingFlow.step === 2 && selectedService ? (
-          <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.22fr)_minmax(360px,0.78fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
-            <div className={cn("xl:col-span-2", publicElevatedPanelClass)}>
-              <SectionTitle
-                title="Describe the booking in plain language"
-                body={
-                  selectedService.bookingType === "appointment"
-                    ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
-                    : "Type something like \"next Friday\" and continue straight to client details if that date is free."
-                }
-              />
-              <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <input
-                    type="text"
-                    value={naturalLanguageBookingInput}
-                    onChange={(event) => {
-                      setNaturalLanguageBookingInput(event.target.value);
-                      setNaturalLanguageBookingError(null);
-                    }}
-                    onFocus={() => setIsNaturalLanguageBookingFocused(true)}
-                    onBlur={() => setIsNaturalLanguageBookingFocused(false)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        continueWithNaturalLanguageBooking();
-                      }
-                    }}
-                    placeholder={
-                      selectedService.bookingType === "appointment"
-                        ? "Try \"next Monday at 2 PM\" or \"tomorrow at 11:30 AM\""
-                        : "Try \"next Friday\" or \"the first Tuesday in May\""
-                    }
-                    className={publicFieldClass}
-                  />
-                </label>
-                <ActionButton
-                  tone="primary"
-                  className={cn("w-full lg:w-auto", publicPrimaryActionClass)}
-                  onClick={continueWithNaturalLanguageBooking}
-                >
-                  Continue to client details
-                </ActionButton>
-              </div>
-              {naturalLanguageBookingError ? (
-                <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                  {naturalLanguageBookingError}
-                </div>
-              ) : null}
-            </div>
-
-            <div
-              ref={publicCalendarPanelRef}
-              className={cn(
-                publicPrimaryPanelClass,
-                "transition-opacity duration-200",
-                shouldDimManualBookingPanels && "opacity-50",
-              )}
-            >
-              <SectionTitle
-                title="Pick a date and time"
-                body={
-                  selectedService.bookingType === "appointment"
-                    ? "Available slots are generated from your weekly schedule and filtered against existing bookings."
-                    : "Select a date and confirm the full-day reservation when the day is free."
-                }
-              />
-              <div className="mt-6">{renderPublicCalendar()}</div>
-            </div>
-
+        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
+          <div
+            className={cn(
+              "grid gap-5 p-5 sm:p-8",
+              isDedicatedPublicPage && "xl:px-10 xl:py-10",
+              "lg:[grid-template-columns:minmax(0,1.22fr)_minmax(360px,0.78fr)]",
+            )}
+          >
             <div
               className={cn(
-                "self-start xl:sticky xl:top-8",
+                "lg:col-span-2 transition-opacity duration-300",
                 publicElevatedPanelClass,
-                "transition-opacity duration-200",
-                selectedService.bookingType === "appointment" && bookingFlow.dateKey
-                  ? "flex flex-col overflow-hidden"
-                  : "",
-                shouldDimManualBookingPanels && "opacity-50",
+                (isPublicDetailsStep || isPublicSuccessStep) && "opacity-50",
               )}
-              style={
-                selectedService.bookingType === "appointment" &&
-                bookingFlow.dateKey &&
-                publicCalendarPanelHeight
-                  ? { maxHeight: `${publicCalendarPanelHeight}px` }
-                  : undefined
-              }
             >
-              <SectionTitle
-                eyebrow={hasMultipleServices ? selectedService.name : undefined}
-                title={
-                  selectedService.bookingType === "appointment"
-                    ? "Available time slots"
-                    : "Full-day reservation"
-                }
-                body={
-                  bookingFlow.dateKey
-                    ? formatDateLabel(bookingFlow.dateKey)
-                    : "Select a highlighted date from the calendar first."
-                }
-              />
-              {!bookingFlow.dateKey ? (
-                <div className="mt-6">
-                  <EmptyState
-                    title="Choose a date"
-                    body="Only real free dates are highlighted. Once you pick one, the next action becomes available here."
-                  />
-                </div>
-              ) : selectedService.bookingType === "appointment" ? (
-                <div className="mt-6 flex min-h-0 flex-1 flex-col gap-4">
-                  {publicSlots.length === 0 ? (
-                    <div className="min-h-0 flex-1">
-                      <EmptyState
-                        title="No slots left on this date"
-                        body="Pick another available date from the calendar to continue."
-                      />
-                    </div>
-                  ) : (
-                    <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                      <div className="space-y-2">
-                      {publicSlots.map((slot) => {
-                        const slotEnd = addMinutes(slot, selectedService.durationMinutes ?? 30);
-                        const isSelected = bookingFlow.time === slot;
-
-                        return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => {
-                            setNaturalLanguageBookingError(null);
-                            updateBookingFlow("time", slot);
-                          }}
-                          className={cn(
-                            "relative flex w-full items-start justify-between gap-4 rounded-[24px] px-5 py-4 text-left transition",
-                            isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-[var(--surface-soft)]",
-                            isSelected &&
-                              (isDedicatedPublicPage
-                                ? cn(publicSelectedChoiceClass, "text-[var(--ink)]")
-                                : "border-[var(--accent)] bg-[var(--accent-soft)]"),
-                            !isSelected &&
-                              (isDedicatedPublicPage
-                                ? "hover:bg-[rgba(255,255,255,0.72)]"
-                                : "hover:border-[var(--accent)]"),
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "absolute bottom-4 left-0 top-4 w-1 rounded-full transition",
-                              isSelected ? "bg-[var(--secondary-fixed)]" : "bg-transparent",
-                            )}
-                          />
-                          <div className="pl-4">
-                            <p className="text-base font-semibold text-[var(--ink)]">
-                              {formatTimeLabel(slot)}
-                            </p>
-                            <p className={cn("mt-1 text-[var(--muted)]", compactMetaTextClass)}>
-                              Ends {formatTimeLabel(slotEnd)}
-                            </p>
-                          </div>
-                          <span className={cn("pt-1 text-[var(--action-teal-deep)]", compactMetaTextClass)}>
-                            {isSelected ? "Selected" : "Open"}
-                          </span>
-                        </button>
-                        );
-                      })}
-                      </div>
-                    </div>
-                  )}
+                <SectionTitle
+                  title="Describe the booking in plain language"
+                  body={
+                    selectedService.bookingType === "appointment"
+                      ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
+                      : "Type something like \"next Friday\" and continue straight to client details if that date is free."
+                  }
+                />
+                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+                  <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                    <input
+                      type="text"
+                      value={naturalLanguageBookingInput}
+                      disabled={isPublicDetailsStep || isPublicSuccessStep}
+                      onChange={(event) => {
+                        setNaturalLanguageBookingInput(event.target.value);
+                        setNaturalLanguageBookingError(null);
+                      }}
+                      onFocus={() => setIsNaturalLanguageBookingFocused(true)}
+                      onBlur={() => setIsNaturalLanguageBookingFocused(false)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          continueWithNaturalLanguageBooking();
+                        }
+                      }}
+                      placeholder={
+                        selectedService.bookingType === "appointment"
+                          ? "Try \"next Monday at 2 PM\" or \"tomorrow at 11:30 AM\""
+                          : "Try \"next Friday\" or \"the first Tuesday in May\""
+                      }
+                      className={publicFieldClass}
+                    />
+                  </label>
                   <ActionButton
                     tone="primary"
-                    className={cn("shrink-0", publicPrimaryWideActionClass)}
-                    disabled={!bookingFlow.time}
-                    onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
+                    className={cn("w-full lg:w-auto", publicPrimaryActionClass)}
+                    disabled={isPublicDetailsStep || isPublicSuccessStep}
+                    onClick={continueWithNaturalLanguageBooking}
                   >
                     Continue to client details
                   </ActionButton>
                 </div>
-              ) : (
-                <div className="mt-6 space-y-4">
-                  <div className={publicInsetCardClass}>
-                    <p className="text-sm font-medium text-[var(--muted)]">
-                      {isDateAvailable(bookingFlow.dateKey, selectedService, availability, bookings)
-                        ? "This day is currently free for a full-day reservation."
-                        : "This day is unavailable. Choose another date from the calendar."}
-                    </p>
+                {naturalLanguageBookingError ? (
+                  <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                    {naturalLanguageBookingError}
                   </div>
-                  <ActionButton
-                    tone="primary"
-                    className={publicPrimaryWideActionClass}
-                    disabled={
-                      !isDateAvailable(bookingFlow.dateKey, selectedService, availability, bookings)
-                    }
-                    onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
-                  >
-                    Book full day
-                  </ActionButton>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {resolvedBookingFlow.step === 3 && selectedService ? (
-          <div className={cn("grid gap-5 p-5 sm:p-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
-            <div ref={publicDetailsPanelRef} className={publicPrimaryPanelClass}>
-              <SectionTitle
-                title="Client details"
-                body="Enter the booking details here and confirm directly from the live summary."
-              />
-              <div className="mt-6 grid gap-4">
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                    Full name
-                  </span>
-                  <input
-                    value={bookingFlow.clientName}
-                    onChange={(event) => updateBookingFlow("clientName", event.target.value)}
-                    placeholder="Jamie Rivera"
-                    className={publicFieldClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                    Email
-                  </span>
-                  <input
-                    value={bookingFlow.clientEmail}
-                    onChange={(event) => updateBookingFlow("clientEmail", event.target.value)}
-                    placeholder="jamie@example.com"
-                    type="email"
-                    className={publicFieldClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                    Phone number
-                  </span>
-                  <input
-                    value={bookingFlow.clientPhone}
-                    onChange={(event) => updateBookingFlow("clientPhone", event.target.value)}
-                    placeholder="+1 (555) 123-4567"
-                    className={publicFieldClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                    Notes
-                  </span>
-                  <textarea
-                    value={bookingFlow.notes}
-                    onChange={(event) => updateBookingFlow("notes", event.target.value)}
-                    placeholder="Anything we should know before your booking?"
-                    rows={4}
-                    className={publicTextareaClass}
-                  />
-                </label>
-                {provider.customQuestionLabel ? (
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                    <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                      {provider.customQuestionLabel}
-                    </span>
-                    <input
-                      value={bookingFlow.customAnswer}
-                      onChange={(event) => updateBookingFlow("customAnswer", event.target.value)}
-                      placeholder="Add your answer here"
-                      className={publicFieldClass}
-                    />
-                  </label>
                 ) : null}
-              </div>
+            </div>
+
+            <div
+              ref={publicPrimaryPanelRef}
+              className={cn(
+                publicPrimaryPanelClass,
+                isPublicSelectionStep && "transition-opacity duration-200",
+                isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
+              )}
+            >
+              {isPublicSelectionStep ? (
+                <>
+                  <SectionTitle
+                    title="Pick a date and time"
+                    body={
+                      selectedService.bookingType === "appointment"
+                        ? "Available slots are generated from your weekly schedule and filtered against existing bookings."
+                        : "Select a date and confirm the full-day reservation when the day is free."
+                    }
+                  />
+                  <div className="mt-6">{renderPublicCalendar()}</div>
+                </>
+              ) : isPublicDetailsStep || isPublicSuccessStep ? (
+                <>
+                  <SectionTitle
+                    title="Client details"
+                    body={
+                      isPublicSuccessStep
+                        ? "The confirmed client details remain visible below."
+                        : "Enter the booking details here and confirm directly from the live summary."
+                    }
+                  />
+                  <div className="relative mt-6">
+                    <div
+                      className={cn(
+                        "grid gap-4 transition-[filter,opacity] duration-300",
+                        isPublicSuccessStep && "pointer-events-none blur-[6px] opacity-45",
+                      )}
+                    >
+                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                          Full name
+                        </span>
+                        <input
+                          value={bookingFlow.clientName}
+                          onChange={(event) => updateBookingFlow("clientName", event.target.value)}
+                          placeholder="Jamie Rivera"
+                          className={publicFieldClass}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                          Email
+                        </span>
+                        <input
+                          value={bookingFlow.clientEmail}
+                          onChange={(event) => updateBookingFlow("clientEmail", event.target.value)}
+                          placeholder="jamie@example.com"
+                          type="email"
+                          className={publicFieldClass}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                          Phone number
+                        </span>
+                        <input
+                          value={bookingFlow.clientPhone}
+                          onChange={(event) => updateBookingFlow("clientPhone", event.target.value)}
+                          placeholder="+1 (555) 123-4567"
+                          className={publicFieldClass}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                          Notes
+                        </span>
+                        <textarea
+                          value={bookingFlow.notes}
+                          onChange={(event) => updateBookingFlow("notes", event.target.value)}
+                          placeholder="Anything we should know before your booking?"
+                          rows={4}
+                          className={publicTextareaClass}
+                        />
+                      </label>
+                      {provider.customQuestionLabel ? (
+                        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                          <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                            {provider.customQuestionLabel}
+                          </span>
+                          <input
+                            value={bookingFlow.customAnswer}
+                            onChange={(event) =>
+                              updateBookingFlow("customAnswer", event.target.value)
+                            }
+                            placeholder="Add your answer here"
+                            className={publicFieldClass}
+                          />
+                        </label>
+                      ) : null}
+                    </div>
+                    {isPublicSuccessStep ? (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[28px] bg-[rgba(248,249,250,0.52)] backdrop-blur-[10px]">
+                        <div className="px-6 text-center">
+                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
+                            {isSuccessfulBookingCancelled ? "Booking" : "Success"}
+                          </p>
+                          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
+                            {isSuccessfulBookingCancelled ? (
+                              <>
+                                Booking
+                                <br />
+                                Cancelled
+                              </>
+                            ) : (
+                              <>
+                                Success
+                                <br />
+                                Booking Confirmed
+                              </>
+                            )}
+                          </h3>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                  {isPublicSuccessStep && successfulBooking ? (
+                    <div className="mx-auto mt-6 flex w-full max-w-[820px] flex-wrap items-center justify-center gap-3">
+                      <ActionButton
+                        tone="primary"
+                        className={cn("px-6", publicPrimaryActionClass)}
+                        disabled={isSuccessfulBookingCancelled}
+                        onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                      >
+                        Add to calendar
+                      </ActionButton>
+                      <ActionButton
+                        tone="ghost"
+                        className={cn(
+                          isDedicatedPublicPage &&
+                            cn(publicPillButtonClass, publicGhostButtonClass),
+                        )}
+                        disabled={isSuccessfulBookingCancelled}
+                        onClick={() => openReschedule(successfulBooking.id)}
+                      >
+                        Reschedule
+                      </ActionButton>
+                      <ActionButton
+                        tone="danger"
+                        className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+                        disabled={isSuccessfulBookingCancelled}
+                        onClick={() => setCancellationId(successfulBooking.id)}
+                      >
+                        Cancel booking
+                      </ActionButton>
+                      <ActionButton
+                        tone="secondary"
+                        className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+                        onClick={() => startFreshBooking()}
+                      >
+                        Book another
+                      </ActionButton>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
             </div>
 
             <div
               className={cn(
-                "self-start xl:sticky xl:top-8",
-                publicSoftPanelClass,
-                "flex min-h-full flex-col",
+                "self-start lg:sticky lg:top-8",
+                publicElevatedPanelClass,
+                isPublicSelectionStep &&
+                  selectedService.bookingType === "appointment" &&
+                  bookingFlow.dateKey &&
+                  "flex flex-col overflow-hidden",
+                (isPublicDetailsStep || isPublicSuccessStep) && "flex min-h-full flex-col",
+                isPublicSelectionStep && "transition-opacity duration-200",
+                isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
-                publicDetailsPanelHeight
-                  ? { minHeight: `${publicDetailsPanelHeight}px` }
-                  : undefined
+                isPublicSelectionStep &&
+                selectedService.bookingType === "appointment" &&
+                bookingFlow.dateKey &&
+                publicPrimaryPanelHeight
+                  ? { maxHeight: `${publicPrimaryPanelHeight}px` }
+                  : (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                    ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                    : undefined
               }
             >
-              <SectionTitle
-                title="Booking summary"
-                body="Review the live booking details here before confirming."
-              />
-              <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
-                <dl className="grid gap-4">
-                  {hasMultipleServices ? (
-                    <SummaryField label="Service" value={selectedService.name} />
-                  ) : null}
-                  <SummaryField
-                    label="Type"
-                    value={getBookingTypeLabel(selectedService.bookingType)}
-                  />
-                  <SummaryField
-                    label="When"
-                    value={
+              {isPublicSelectionStep ? (
+                <>
+                  <SectionTitle
+                    eyebrow={hasMultipleServices ? selectedService.name : undefined}
+                    title={
+                      selectedService.bookingType === "appointment"
+                        ? "Available time slots"
+                        : "Full-day reservation"
+                    }
+                    body={
                       bookingFlow.dateKey
-                        ? `${formatDateLabel(bookingFlow.dateKey)} · ${
-                            selectedService.bookingType === "appointment"
-                              ? formatTimeLabel(bookingFlow.time)
-                              : "Full Day"
-                          }`
-                        : "Not selected"
+                        ? formatDateLabel(bookingFlow.dateKey)
+                        : "Select a highlighted date from the calendar first."
                     }
                   />
-                  {selectedService.capacity ? (
-                    <SummaryField label="Capacity" value={selectedService.capacity} />
+                  {!bookingFlow.dateKey ? (
+                    <div className="mt-6">
+                      <EmptyState
+                        title="Choose a date"
+                        body="Only real free dates are highlighted. Once you pick one, the next action becomes available here."
+                      />
+                    </div>
+                  ) : selectedService.bookingType === "appointment" ? (
+                    <div className="mt-6 flex min-h-0 flex-1 flex-col gap-4">
+                      {publicSlots.length === 0 ? (
+                        <div className="min-h-0 flex-1">
+                          <EmptyState
+                            title="No slots left on this date"
+                            body="Pick another available date from the calendar to continue."
+                          />
+                        </div>
+                      ) : (
+                        <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                          <div className="space-y-2">
+                            {publicSlots.map((slot) => {
+                              const slotEnd = addMinutes(
+                                slot,
+                                selectedService.durationMinutes ?? 30,
+                              );
+                              const isSelected = bookingFlow.time === slot;
+
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  onClick={() => {
+                                    setNaturalLanguageBookingError(null);
+                                    updateBookingFlow("time", slot);
+                                  }}
+                                  className={cn(
+                                    "relative flex w-full items-start justify-between gap-4 rounded-[24px] px-5 py-4 text-left transition",
+                                    isDedicatedPublicPage
+                                      ? publicQuietChoiceClass
+                                      : "border border-[var(--line)] bg-[var(--surface-soft)]",
+                                    isSelected &&
+                                      (isDedicatedPublicPage
+                                        ? cn(publicSelectedChoiceClass, "text-[var(--ink)]")
+                                        : "border-[var(--accent)] bg-[var(--accent-soft)]"),
+                                    !isSelected &&
+                                      (isDedicatedPublicPage
+                                        ? "hover:bg-[rgba(255,255,255,0.72)]"
+                                        : "hover:border-[var(--accent)]"),
+                                  )}
+                                >
+                                  <span
+                                    className={cn(
+                                      "absolute bottom-4 left-0 top-4 w-1 rounded-full transition",
+                                      isSelected
+                                        ? "bg-[var(--secondary-fixed)]"
+                                        : "bg-transparent",
+                                    )}
+                                  />
+                                  <div className="pl-4">
+                                    <p className="text-base font-semibold text-[var(--ink)]">
+                                      {formatTimeLabel(slot)}
+                                    </p>
+                                    <p
+                                      className={cn(
+                                        "mt-1 text-[var(--muted)]",
+                                        compactMetaTextClass,
+                                      )}
+                                    >
+                                      Ends {formatTimeLabel(slotEnd)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={cn(
+                                      "pt-1 text-[var(--action-teal-deep)]",
+                                      compactMetaTextClass,
+                                    )}
+                                  >
+                                    {isSelected ? "Selected" : "Open"}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <ActionButton
+                        tone="primary"
+                        className={cn("shrink-0", publicPrimaryWideActionClass)}
+                        disabled={!bookingFlow.time}
+                        onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
+                      >
+                        Continue to client details
+                      </ActionButton>
+                    </div>
+                  ) : (
+                    <div className="mt-6 space-y-4">
+                      <div className={publicInsetCardClass}>
+                        <p className="text-sm font-medium text-[var(--muted)]">
+                          {isDateAvailable(
+                            bookingFlow.dateKey,
+                            selectedService,
+                            availability,
+                            bookings,
+                          )
+                            ? "This day is currently free for a full-day reservation."
+                            : "This day is unavailable. Choose another date from the calendar."}
+                        </p>
+                      </div>
+                      <ActionButton
+                        tone="primary"
+                        className={publicPrimaryWideActionClass}
+                        disabled={
+                          !isDateAvailable(
+                            bookingFlow.dateKey,
+                            selectedService,
+                            availability,
+                            bookings,
+                          )
+                        }
+                        onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
+                      >
+                        Book full day
+                      </ActionButton>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <SectionTitle
+                    title={
+                      isPublicSuccessStep && successfulBooking && !isSuccessfulBookingCancelled ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span
+                            aria-hidden="true"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              className="h-4 w-4"
+                              stroke="currentColor"
+                              strokeWidth="2.2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20 7 9 18l-5-5" />
+                            </svg>
+                          </span>
+                          <span>Booking summary - Confirmed</span>
+                        </span>
+                      ) : (
+                        "Booking summary"
+                      )
+                    }
+                    body={
+                      isPublicSuccessStep
+                        ? "The confirmed booking details remain visible here."
+                        : "Review the live booking details here before confirming."
+                    }
+                  />
+                  <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
+                    <dl className="grid gap-4">
+                      {hasMultipleServices ? (
+                        <SummaryField
+                          label="Service"
+                          value={
+                            isPublicSuccessStep && successfulBooking
+                              ? successfulBooking.serviceName
+                              : selectedService.name
+                          }
+                        />
+                      ) : null}
+                      <SummaryField
+                        label="Type"
+                        value={getBookingTypeLabel(selectedService.bookingType)}
+                      />
+                      <SummaryField
+                        label="When"
+                        value={
+                          isPublicSuccessStep && successfulBooking
+                            ? `${formatDateLabel(successfulBooking.dateKey)} · ${formatTimeRange(
+                                successfulBooking.startTime,
+                                successfulBooking.endTime,
+                              )}`
+                            : bookingFlow.dateKey
+                              ? `${formatDateLabel(bookingFlow.dateKey)} · ${
+                                  selectedService.bookingType === "appointment"
+                                    ? formatTimeLabel(bookingFlow.time)
+                                    : "Full Day"
+                                }`
+                              : "Not selected"
+                        }
+                      />
+                      {selectedService.capacity ? (
+                        <SummaryField label="Capacity" value={selectedService.capacity} />
+                      ) : null}
+                      <SummaryField
+                        label="Client"
+                        value={
+                          isPublicSuccessStep && successfulBooking
+                            ? successfulBooking.clientName
+                            : bookingFlow.clientName.trim() || "Not entered yet"
+                        }
+                      />
+                      <SummaryField
+                        label="Email"
+                        value={
+                          isPublicSuccessStep && successfulBooking
+                            ? successfulBooking.clientEmail
+                            : bookingFlow.clientEmail.trim() || "Not entered yet"
+                        }
+                      />
+                      <SummaryField
+                        label="Phone"
+                        value={
+                          isPublicSuccessStep && successfulBooking
+                            ? successfulBooking.clientPhone
+                            : bookingFlow.clientPhone.trim() || "Not entered yet"
+                        }
+                      />
+                      <SummaryField
+                        label="Notes"
+                        value={
+                          isPublicSuccessStep && successfulBooking
+                            ? successfulBooking.notes || "None"
+                            : bookingFlow.notes.trim() || "None"
+                        }
+                      />
+                      {provider.customQuestionLabel ? (
+                        <SummaryField
+                          label={provider.customQuestionLabel}
+                          value={
+                            isPublicSuccessStep && successfulBooking
+                              ? successfulBooking.customAnswer || "Not entered yet"
+                              : bookingFlow.customAnswer.trim() || "Not entered yet"
+                          }
+                        />
+                      ) : null}
+                      {isPublicSuccessStep && successfulBooking ? (
+                        <SummaryField label="Status" value={successfulBooking.status} />
+                      ) : null}
+                    </dl>
+                  </div>
+                  {!isPublicSuccessStep ? (
+                    <>
+                      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                        <ActionButton
+                          tone="ghost"
+                          className={cn(
+                            "w-full px-6",
+                            isDedicatedPublicPage &&
+                              cn(publicPillButtonClass, publicGhostButtonClass),
+                          )}
+                          onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}
+                        >
+                          Back
+                        </ActionButton>
+                        <ActionButton
+                          tone="primary"
+                          className={cn("w-full px-6", publicPrimaryActionClass)}
+                          onClick={confirmBooking}
+                        >
+                          Confirm
+                        </ActionButton>
+                      </div>
+                      {bookingError ? (
+                        <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                          {bookingError}
+                        </div>
+                      ) : null}
+                    </>
                   ) : null}
-                  <SummaryField
-                    label="Client"
-                    value={bookingFlow.clientName.trim() || "Not entered yet"}
-                  />
-                  <SummaryField
-                    label="Email"
-                    value={bookingFlow.clientEmail.trim() || "Not entered yet"}
-                  />
-                  <SummaryField
-                    label="Phone"
-                    value={bookingFlow.clientPhone.trim() || "Not entered yet"}
-                  />
-                  <SummaryField label="Notes" value={bookingFlow.notes.trim() || "None"} />
-                  {provider.customQuestionLabel ? (
-                    <SummaryField
-                      label={provider.customQuestionLabel}
-                      value={bookingFlow.customAnswer.trim() || "Not entered yet"}
-                    />
-                  ) : null}
-                </dl>
-              </div>
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <ActionButton
-                  tone="ghost"
-                  className={cn("w-full px-6", isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
-                  onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}
-                >
-                  Back
-                </ActionButton>
-                <ActionButton
-                  tone="primary"
-                  className={cn("w-full px-6", isDedicatedPublicPage && cn(publicPillButtonClass, "justify-center"))}
-                  onClick={confirmBooking}
-                >
-                  Confirm
-                </ActionButton>
-              </div>
-              {bookingError ? (
-                <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                  {bookingError}
-                </div>
-              ) : null}
+                </>
+              )}
             </div>
           </div>
         ) : null}
 
-        {resolvedBookingFlow.step === 4 && successfulBooking ? (
+        {resolvedBookingFlow.step === 4 && successfulBooking && !isDedicatedPublicPage ? (
           <div
             className={cn(
               "grid gap-5 p-5 sm:p-8",
@@ -3495,7 +3655,7 @@ export function HaabBookingModule({
                     </p>
                   </div>
                 </div>
-                <div className={cn("mt-6 flex flex-wrap gap-3", isDedicatedPublicPage && "justify-center")}>
+                <div className="mx-auto mt-6 flex w-full max-w-[820px] flex-wrap items-center justify-center gap-3">
                   <ActionButton
                     tone="primary"
                     className={cn("px-6", publicPrimaryActionClass)}
