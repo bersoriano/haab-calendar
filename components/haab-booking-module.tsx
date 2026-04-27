@@ -6,6 +6,7 @@ import {
   startTransition,
   useDeferredValue,
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -73,11 +74,23 @@ type BookingRecord = {
   updatedAt: string;
 };
 
+type BookingHoldRecord = {
+  id: string;
+  serviceId: string;
+  bookingType: BookingType;
+  dateKey: string;
+  startTime?: string;
+  endTime?: string;
+  createdAt: string;
+  expiresAt: number;
+};
+
 type ModuleStore = {
   provider: ProviderInfo;
   services: Service[];
   availability: WeeklyAvailability;
   bookings: BookingRecord[];
+  bookingHolds: BookingHoldRecord[];
   setupComplete: boolean;
 };
 
@@ -108,6 +121,14 @@ type BookingFlow = {
   notes: string;
   customAnswer: string;
   successBookingId?: string;
+};
+
+type BookingHold = {
+  id: string;
+  selectionKey: string;
+  startedAt: number;
+  expiresAt: number;
+  released: boolean;
 };
 
 type RescheduleState = {
@@ -234,6 +255,7 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
 const compactBadgeTextClass = "text-[11px] font-semibold uppercase tracking-[0.08em]";
 const compactChipTextClass = "text-[11px] font-semibold uppercase tracking-[0.12em]";
 const compactMetaTextClass = "text-[11px] font-semibold uppercase tracking-[0.18em]";
+const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -241,6 +263,10 @@ function cn(...values: Array<string | false | null | undefined>) {
 
 function createId(prefix: string) {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function currentTimestamp() {
+  return new Date().getTime();
 }
 
 function pad(value: number) {
@@ -280,6 +306,7 @@ function createEmptyStore(): ModuleStore {
     services: [],
     availability: createDefaultAvailability(),
     bookings: [],
+    bookingHolds: [],
     setupComplete: false,
   };
 }
@@ -360,6 +387,22 @@ function normalizeBookings(source?: BookingRecord[] | null): BookingRecord[] {
   return sortBookings(source ?? []);
 }
 
+function pruneBookingHolds(holds: BookingHoldRecord[], now = currentTimestamp()) {
+  return holds.filter((hold) => hold.expiresAt > now);
+}
+
+function normalizeBookingHolds(source?: BookingHoldRecord[] | null): BookingHoldRecord[] {
+  return pruneBookingHolds(
+    (source ?? []).filter(
+      (hold) =>
+        Boolean(hold.id) &&
+        Boolean(hold.serviceId) &&
+        Boolean(hold.dateKey) &&
+        typeof hold.expiresAt === "number",
+    ),
+  );
+}
+
 function normalizeStore(source?: Partial<ModuleStore> | null): ModuleStore {
   const empty = createEmptyStore();
 
@@ -368,6 +411,7 @@ function normalizeStore(source?: Partial<ModuleStore> | null): ModuleStore {
     services: normalizeServices(source?.services),
     availability: normalizeAvailability(source?.availability),
     bookings: normalizeBookings(source?.bookings),
+    bookingHolds: normalizeBookingHolds(source?.bookingHolds),
     setupComplete: Boolean(source?.setupComplete ?? empty.setupComplete),
   };
 }
@@ -448,6 +492,14 @@ function formatTimeRange(startTime?: string, endTime?: string) {
   }
 
   return `${formatTimeLabel(startTime)} - ${formatTimeLabel(endTime)}`;
+}
+
+function formatCountdown(milliseconds: number) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${pad(seconds)}`;
 }
 
 function getTimeKeyFromDate(date: Date) {
@@ -549,7 +601,17 @@ function getBookingsForDate(
     (booking) =>
       booking.dateKey === dateKey &&
       booking.id !== ignoredBookingId &&
-      isActiveBooking(booking),
+    isActiveBooking(booking),
+  );
+}
+
+function getBookingHoldsForDate(
+  bookingHolds: BookingHoldRecord[],
+  dateKey: string,
+  ignoredHoldId?: string,
+) {
+  return bookingHolds.filter(
+    (hold) => hold.dateKey === dateKey && hold.id !== ignoredHoldId,
   );
 }
 
@@ -559,6 +621,8 @@ function getAvailableSlots(
   availability: WeeklyAvailability,
   bookings: BookingRecord[],
   ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
 ) {
   if (service.bookingType !== "appointment" || !service.durationMinutes) {
     return [];
@@ -576,8 +640,12 @@ function getAvailableSlots(
   }
 
   const dateBookings = getBookingsForDate(bookings, dateKey, ignoredBookingId);
+  const dateHolds = getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId);
 
-  if (dateBookings.some((booking) => booking.bookingType === "full-day")) {
+  if (
+    dateBookings.some((booking) => booking.bookingType === "full-day") ||
+    dateHolds.some((hold) => hold.bookingType === "full-day")
+  ) {
     return [];
   }
 
@@ -586,15 +654,22 @@ function getAvailableSlots(
 
   while (toMinutes(cursor) + service.durationMinutes <= toMinutes(daySchedule.endTime)) {
     const slotEnd = addMinutes(cursor, service.durationMinutes);
-    const blocked = dateBookings.some((booking) => {
+    const blockedByBooking = dateBookings.some((booking) => {
       if (!booking.startTime || !booking.endTime) {
         return false;
       }
 
       return overlapExists(cursor, slotEnd, booking.startTime, booking.endTime);
     });
+    const blockedByHold = dateHolds.some((hold) => {
+      if (!hold.startTime || !hold.endTime) {
+        return false;
+      }
 
-    if (!blocked) {
+      return overlapExists(cursor, slotEnd, hold.startTime, hold.endTime);
+    });
+
+    if (!blockedByBooking && !blockedByHold) {
       slots.push(cursor);
     }
 
@@ -610,6 +685,8 @@ function isDateAvailable(
   availability: WeeklyAvailability,
   bookings: BookingRecord[],
   ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
 ) {
   if (isPastDate(dateKey)) {
     return false;
@@ -623,10 +700,29 @@ function isDateAvailable(
   }
 
   if (service.bookingType === "appointment") {
-    return getAvailableSlots(dateKey, service, availability, bookings, ignoredBookingId).length > 0;
+    return getAvailableSlots(
+      dateKey,
+      service,
+      availability,
+      bookings,
+      ignoredBookingId,
+      bookingHolds,
+      ignoredHoldId,
+    ).length > 0;
   }
 
-  return getBookingsForDate(bookings, dateKey, ignoredBookingId).length === 0;
+  return (
+    getBookingsForDate(bookings, dateKey, ignoredBookingId).length === 0 &&
+    getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId).length === 0
+  );
+}
+
+function getBookingHoldSelectionKey(service: Service, dateKey: string, time: string) {
+  return [
+    service.id,
+    dateKey,
+    service.bookingType === "appointment" ? time : "full-day",
+  ].join(":");
 }
 
 function getBookingTypeLabel(type: BookingType) {
@@ -849,6 +945,44 @@ function SummaryField({
   );
 }
 
+function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" }) {
+  const isCancelled = status === "cancelled";
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "inline-flex h-8 w-8 items-center justify-center rounded-full",
+          isCancelled
+            ? "bg-[#fff1f2] text-[#be123c]"
+            : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",
+        )}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          className="h-4 w-4"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {isCancelled ? (
+            <>
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </>
+          ) : (
+            <path d="M20 7 9 18l-5-5" />
+          )}
+        </svg>
+      </span>
+      <span>Booking summary - {isCancelled ? "Cancelled" : "Confirmed"}</span>
+    </span>
+  );
+}
+
 function EmptyState({
   title,
   body,
@@ -889,6 +1023,7 @@ export function HaabBookingModule({
   const [shadowBookings, setShadowBookings] = useState<BookingRecord[]>(() =>
     normalizeBookings(injectedConfig?.bookings),
   );
+  const [shadowBookingHolds, setShadowBookingHolds] = useState<BookingHoldRecord[]>([]);
   const [surface, setSurface] = useState<Surface>(
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
@@ -908,6 +1043,8 @@ export function HaabBookingModule({
     null,
   );
   const [isNaturalLanguageBookingFocused, setIsNaturalLanguageBookingFocused] = useState(false);
+  const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
+  const [bookingHoldNow, setBookingHoldNow] = useState(() => currentTimestamp());
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
   const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(new Date());
   const [calendarServicePreference, setCalendarServicePreference] = useState("");
@@ -953,12 +1090,40 @@ export function HaabBookingModule({
     }
   }, [hydrated, integratedMode, standaloneStore, storageKey]);
 
+  useEffect(() => {
+    if (integratedMode) {
+      return;
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== storageKey) {
+        return;
+      }
+
+      if (!event.newValue) {
+        return;
+      }
+
+      try {
+        setStandaloneStore(normalizeStore(JSON.parse(event.newValue) as ModuleStore));
+        setHydrated(true);
+      } catch {
+        // Ignore malformed external storage writes and keep the current in-memory store.
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [integratedMode, storageKey]);
+
   const activeStore: ModuleStore = integratedMode
     ? {
         provider: normalizeProvider(injectedConfig?.provider),
         services: normalizeServices(injectedConfig?.services),
         availability: normalizeAvailability(injectedConfig?.availability),
         bookings: shadowBookings,
+        bookingHolds: shadowBookingHolds,
         setupComplete: true,
       }
     : standaloneStore;
@@ -966,6 +1131,8 @@ export function HaabBookingModule({
   const provider = activeStore.provider;
   const services = activeStore.services;
   const bookings = activeStore.bookings;
+  const bookingHolds = activeStore.bookingHolds;
+  const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
   const businessSlug =
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
@@ -984,6 +1151,19 @@ export function HaabBookingModule({
   );
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
+  const bookingHoldSelectionKey =
+    selectedService &&
+    resolvedBookingFlow.step === 3 &&
+    bookingFlow.dateKey &&
+    (selectedService.bookingType === "full-day" || bookingFlow.time)
+      ? getBookingHoldSelectionKey(selectedService, bookingFlow.dateKey, bookingFlow.time)
+      : null;
+  const bookingHoldRemainingMs =
+    bookingHold && bookingHold.selectionKey === bookingHoldSelectionKey
+      ? Math.max(0, BOOKING_HOLD_DURATION_MS - (bookingHoldNow - bookingHold.startedAt))
+      : BOOKING_HOLD_DURATION_MS;
+  const isBookingHoldExpired =
+    Boolean(bookingHoldSelectionKey && bookingHold) && bookingHoldRemainingMs <= 0;
   const shouldDimManualBookingPanels =
     isNaturalLanguageBookingFocused && naturalLanguageBookingInput.trim().length > 0;
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
@@ -1084,6 +1264,18 @@ export function HaabBookingModule({
     };
   }, [resolvedBookingFlow.step]);
 
+  useEffect(() => {
+    if (bookingHolds.length === 0) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setBookingHoldNow(currentTimestamp());
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [bookingHolds.length]);
+
   function emitStoreChange(next: ModuleStore) {
     onStoreChange?.(next);
   }
@@ -1096,26 +1288,133 @@ export function HaabBookingModule({
     });
   }
 
-  function commitBookings(nextBookings: BookingRecord[]) {
+  function readStandaloneStoreSnapshot() {
+    if (integratedMode || typeof window === "undefined") {
+      return null;
+    }
+
+    const raw = window.localStorage.getItem(storageKey);
+
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return normalizeStore(JSON.parse(raw) as ModuleStore);
+    } catch {
+      return null;
+    }
+  }
+
+  function persistStandaloneStore(nextStore: ModuleStore) {
+    if (integratedMode || typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(storageKey, JSON.stringify(nextStore));
+  }
+
+  function commitBookingHolds(nextHolds: BookingHoldRecord[], standaloneBase?: ModuleStore) {
+    const normalized = pruneBookingHolds(nextHolds);
+
+    if (integratedMode) {
+      setShadowBookingHolds(normalized);
+      emitStoreChange({
+        provider: normalizeProvider(injectedConfig?.provider),
+        services: normalizeServices(injectedConfig?.services),
+        availability: normalizeAvailability(injectedConfig?.availability),
+        bookings: shadowBookings,
+        bookingHolds: normalized,
+        setupComplete: true,
+      });
+      return;
+    }
+
+    const nextStore = {
+      ...(standaloneBase ?? standaloneStore),
+      bookingHolds: normalized,
+    };
+
+    setStandaloneStore(nextStore);
+    persistStandaloneStore(nextStore);
+    emitStoreChange(nextStore);
+  }
+
+  function releaseBookingHold(holdId?: string) {
+    if (!holdId) {
+      return;
+    }
+
+    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const baseStore = latestStandaloneStore ?? activeStore;
+    const nextHolds = baseStore.bookingHolds.filter((hold) => hold.id !== holdId);
+
+    if (!integratedMode && latestStandaloneStore) {
+      setStandaloneStore(latestStandaloneStore);
+    }
+
+    commitBookingHolds(nextHolds, baseStore);
+  }
+
+  const releaseExpiredBookingHold = useEffectEvent((holdId: string) => {
+    releaseBookingHold(holdId);
+  });
+
+  useEffect(() => {
+    if (!bookingHoldSelectionKey || !bookingHold) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      const now = currentTimestamp();
+
+      setBookingHoldNow(now);
+
+      if (!bookingHold.released && now >= bookingHold.expiresAt) {
+        releaseExpiredBookingHold(bookingHold.id);
+        setBookingHold((current) =>
+          current?.id === bookingHold.id ? { ...current, released: true } : current,
+        );
+      }
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [bookingHoldSelectionKey, bookingHold]);
+
+  function commitBookings(
+    nextBookings: BookingRecord[],
+    standaloneBase?: ModuleStore,
+    nextBookingHolds?: BookingHoldRecord[],
+  ) {
     const normalized = sortBookings(nextBookings);
+    const normalizedHolds = pruneBookingHolds(
+      nextBookingHolds ?? standaloneBase?.bookingHolds ?? activeStore.bookingHolds,
+    );
 
     if (integratedMode) {
       setShadowBookings(normalized);
+      setShadowBookingHolds(normalizedHolds);
       onBookingsChange?.(normalized);
       emitStoreChange({
         provider: normalizeProvider(injectedConfig?.provider),
         services: normalizeServices(injectedConfig?.services),
         availability: normalizeAvailability(injectedConfig?.availability),
         bookings: normalized,
+        bookingHolds: normalizedHolds,
         setupComplete: true,
       });
       return;
     }
 
-    updateStandaloneStore((current) => ({
-      ...current,
+    const nextStore = {
+      ...(standaloneBase ?? standaloneStore),
       bookings: normalized,
-    }));
+      bookingHolds: normalizedHolds,
+    };
+
+    setStandaloneStore(nextStore);
+    persistStandaloneStore(nextStore);
+    emitStoreChange(nextStore);
   }
 
   function startFreshBooking(overrides?: Partial<BookingFlow>) {
@@ -1135,6 +1434,9 @@ export function HaabBookingModule({
     setNaturalLanguageBookingInput("");
     setNaturalLanguageBookingError(null);
     setIsNaturalLanguageBookingFocused(false);
+    releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+    setBookingHold(null);
+    setBookingHoldNow(currentTimestamp());
     setBookingFlow({
       ...base,
       ...overrides,
@@ -1234,6 +1536,8 @@ export function HaabBookingModule({
         selectedService,
         availability,
         bookings,
+        undefined,
+        activeBookingHolds,
       );
 
       if (availableSlots.length === 0) {
@@ -1260,16 +1564,20 @@ export function HaabBookingModule({
         return;
       }
 
-      setBookingFlow((current) => ({
-        ...current,
-        dateKey,
-        time: requestedTime,
-        step: 3,
-      }));
+      beginClientDetailsStep(dateKey, requestedTime);
       return;
     }
 
-    if (!isDateAvailable(dateKey, selectedService, availability, bookings)) {
+    if (
+      !isDateAvailable(
+        dateKey,
+        selectedService,
+        availability,
+        bookings,
+        undefined,
+        activeBookingHolds,
+      )
+    ) {
       setBookingFlow((current) => ({
         ...current,
         dateKey,
@@ -1281,12 +1589,7 @@ export function HaabBookingModule({
       return;
     }
 
-    setBookingFlow((current) => ({
-      ...current,
-      dateKey,
-      time: "",
-      step: 3,
-    }));
+    beginClientDetailsStep(dateKey, "");
   }
 
   function resetServiceEditor() {
@@ -1502,8 +1805,114 @@ export function HaabBookingModule({
     }));
   }
 
+  function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
+    if (!selectedService || !dateKey) {
+      return;
+    }
+
+    if (selectedService.bookingType === "appointment" && !time) {
+      return;
+    }
+
+    const now = currentTimestamp();
+    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const baseStore = latestStandaloneStore ?? activeStore;
+    const latestService =
+      baseStore.services.find((service) => service.id === selectedService.id) ?? selectedService;
+    const currentHoldId = bookingHold?.released ? undefined : bookingHold?.id;
+    const currentHolds = pruneBookingHolds(baseStore.bookingHolds, now).filter(
+      (hold) => hold.id !== currentHoldId,
+    );
+
+    if (
+      latestService.bookingType === "appointment" &&
+      !getAvailableSlots(
+        dateKey,
+        latestService,
+        baseStore.availability,
+        baseStore.bookings,
+        undefined,
+        currentHolds,
+      ).includes(time)
+    ) {
+      setBookingError(
+        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
+      );
+      return;
+    }
+
+    if (
+      latestService.bookingType === "full-day" &&
+      !isDateAvailable(
+        dateKey,
+        latestService,
+        baseStore.availability,
+        baseStore.bookings,
+        undefined,
+        currentHolds,
+      )
+    ) {
+      setBookingError(
+        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
+      );
+      return;
+    }
+
+    const startedAt = now;
+    const expiresAt = startedAt + BOOKING_HOLD_DURATION_MS;
+    const holdRecord: BookingHoldRecord = {
+      id: createId("hold"),
+      serviceId: latestService.id,
+      bookingType: latestService.bookingType,
+      dateKey,
+      startTime: latestService.bookingType === "appointment" ? time : undefined,
+      endTime:
+        latestService.bookingType === "appointment" && latestService.durationMinutes
+          ? addMinutes(time, latestService.durationMinutes)
+          : undefined,
+      createdAt: new Date(startedAt).toISOString(),
+      expiresAt,
+    };
+
+    if (!integratedMode && latestStandaloneStore) {
+      setStandaloneStore(latestStandaloneStore);
+    }
+
+    setBookingError(null);
+    commitBookingHolds([...currentHolds, holdRecord], baseStore);
+    setBookingHold({
+      id: holdRecord.id,
+      selectionKey: getBookingHoldSelectionKey(latestService, dateKey, time),
+      startedAt,
+      expiresAt,
+      released: false,
+    });
+    setBookingHoldNow(startedAt);
+    setBookingFlow((current) => ({
+      ...current,
+      serviceId: latestService.id,
+      dateKey,
+      time,
+      step: 3,
+    }));
+  }
+
   function confirmBooking() {
-    if (!selectedService) {
+    const now = currentTimestamp();
+    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const validationStore = latestStandaloneStore ?? activeStore;
+    const validationService =
+      validationStore.services.find(
+        (service) => service.id === resolvedBookingFlow.serviceId,
+      ) ?? selectedService;
+    const ignoredHoldId = bookingHold?.released ? undefined : bookingHold?.id;
+    const validationHolds = pruneBookingHolds(validationStore.bookingHolds, now);
+
+    if (!integratedMode && latestStandaloneStore) {
+      setStandaloneStore(latestStandaloneStore);
+    }
+
+    if (!validationService) {
       setBookingError("Choose a service before confirming the booking.");
       return;
     }
@@ -1513,7 +1922,7 @@ export function HaabBookingModule({
       return;
     }
 
-    if (selectedService.bookingType === "appointment" && !bookingFlow.time) {
+    if (validationService.bookingType === "appointment" && !bookingFlow.time) {
       setBookingError("Select a time slot before continuing.");
       return;
     }
@@ -1528,54 +1937,71 @@ export function HaabBookingModule({
     }
 
     if (
-      selectedService.bookingType === "appointment" &&
+      validationService.bookingType === "appointment" &&
       !getAvailableSlots(
         bookingFlow.dateKey,
-        selectedService,
-        availability,
-        bookings,
+        validationService,
+        validationStore.availability,
+        validationStore.bookings,
+        undefined,
+        validationHolds,
+        ignoredHoldId,
       ).includes(bookingFlow.time)
     ) {
-      setBookingError("That slot was no longer free. Pick another time and try again.");
-      setBookingFlow((current) => ({ ...current, step: 2 }));
+      setBookingError(
+        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
+      );
       return;
     }
 
     if (
-      selectedService.bookingType === "full-day" &&
-      !isDateAvailable(bookingFlow.dateKey, selectedService, availability, bookings)
+      validationService.bookingType === "full-day" &&
+      !isDateAvailable(
+        bookingFlow.dateKey,
+        validationService,
+        validationStore.availability,
+        validationStore.bookings,
+        undefined,
+        validationHolds,
+        ignoredHoldId,
+      )
     ) {
-      setBookingError("That day is no longer available. Choose another date.");
-      setBookingFlow((current) => ({ ...current, step: 2 }));
+      setBookingError(
+        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
+      );
       return;
     }
 
     const createdAt = new Date().toISOString();
     const nextBooking: BookingRecord = {
       id: createId("booking"),
-      serviceId: selectedService.id,
-      serviceName: selectedService.name,
-      bookingType: selectedService.bookingType,
+      serviceId: validationService.id,
+      serviceName: validationService.name,
+      bookingType: validationService.bookingType,
       dateKey: bookingFlow.dateKey,
       startTime:
-        selectedService.bookingType === "appointment" ? bookingFlow.time : undefined,
+        validationService.bookingType === "appointment" ? bookingFlow.time : undefined,
       endTime:
-        selectedService.bookingType === "appointment" && selectedService.durationMinutes
-          ? addMinutes(bookingFlow.time, selectedService.durationMinutes)
+        validationService.bookingType === "appointment" && validationService.durationMinutes
+          ? addMinutes(bookingFlow.time, validationService.durationMinutes)
           : undefined,
       clientName: bookingFlow.clientName.trim(),
       clientEmail: bookingFlow.clientEmail.trim(),
       clientPhone: bookingFlow.clientPhone.trim(),
       notes: bookingFlow.notes.trim(),
       customAnswer: bookingFlow.customAnswer.trim(),
-      capacitySnapshot: selectedService.capacity,
+      capacitySnapshot: validationService.capacity,
       status: "confirmed",
       createdAt,
       updatedAt: createdAt,
     };
 
-    commitBookings([...bookings, nextBooking]);
+    const nextHolds = validationHolds.filter((hold) => hold.id !== ignoredHoldId);
+
+    commitBookings([...validationStore.bookings, nextBooking], validationStore, nextHolds);
     setBookingError(null);
+    setBookingHold(null);
+    setBookingHoldNow(now);
     setBookingFlow((current) => ({
       ...current,
       step: 4,
@@ -1611,8 +2037,18 @@ export function HaabBookingModule({
       return;
     }
 
-    const booking = bookings.find((candidate) => candidate.id === rescheduleState.bookingId);
-    const service = services.find((candidate) => candidate.id === booking?.serviceId);
+    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const validationStore = latestStandaloneStore ?? activeStore;
+    const booking = validationStore.bookings.find(
+      (candidate) => candidate.id === rescheduleState.bookingId,
+    );
+    const service = validationStore.services.find(
+      (candidate) => candidate.id === booking?.serviceId,
+    );
+
+    if (!integratedMode && latestStandaloneStore) {
+      setStandaloneStore(latestStandaloneStore);
+    }
 
     if (!booking || !service) {
       return;
@@ -1623,25 +2059,34 @@ export function HaabBookingModule({
     }
 
     if (service.bookingType === "appointment") {
+      const validationHolds = pruneBookingHolds(validationStore.bookingHolds);
       const nextSlots = getAvailableSlots(
         rescheduleState.dateKey,
         service,
-        availability,
-        bookings,
+        validationStore.availability,
+        validationStore.bookings,
         booking.id,
+        validationHolds,
       );
 
       if (!nextSlots.includes(rescheduleState.time)) {
         return;
       }
     } else if (
-      !isDateAvailable(rescheduleState.dateKey, service, availability, bookings, booking.id)
+      !isDateAvailable(
+        rescheduleState.dateKey,
+        service,
+        validationStore.availability,
+        validationStore.bookings,
+        booking.id,
+        pruneBookingHolds(validationStore.bookingHolds),
+      )
     ) {
       return;
     }
 
     commitBookings(
-      bookings.map((candidate) =>
+      validationStore.bookings.map((candidate) =>
         candidate.id === booking.id
           ? {
               ...candidate,
@@ -1657,6 +2102,7 @@ export function HaabBookingModule({
             }
           : candidate,
       ),
+      validationStore,
     );
     setRescheduleState(null);
   }
@@ -1666,8 +2112,15 @@ export function HaabBookingModule({
       return;
     }
 
+    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const validationStore = latestStandaloneStore ?? activeStore;
+
+    if (!integratedMode && latestStandaloneStore) {
+      setStandaloneStore(latestStandaloneStore);
+    }
+
     commitBookings(
-      bookings.map((booking) =>
+      validationStore.bookings.map((booking) =>
         booking.id === cancellationId
           ? {
               ...booking,
@@ -1676,6 +2129,7 @@ export function HaabBookingModule({
             }
           : booking,
       ),
+      validationStore,
     );
     setCancellationId(null);
   }
@@ -1719,7 +2173,15 @@ export function HaabBookingModule({
     services.find((service) => service.id === calendarServiceId) ?? services[0];
   const publicSlots =
     selectedService && bookingFlow.dateKey && selectedService.bookingType === "appointment"
-      ? getAvailableSlots(bookingFlow.dateKey, selectedService, availability, bookings)
+      ? getAvailableSlots(
+          bookingFlow.dateKey,
+          selectedService,
+          availability,
+          bookings,
+          undefined,
+          activeBookingHolds,
+          bookingHold?.released ? undefined : bookingHold?.id,
+        )
       : [];
 
   function renderSetupWizard() {
@@ -2453,7 +2915,14 @@ export function HaabBookingModule({
                 const dayBookings = getBookingsForDate(bookings, dateKey);
                 const canTest =
                   activeCalendarService &&
-                  isDateAvailable(dateKey, activeCalendarService, availability, bookings);
+                  isDateAvailable(
+                    dateKey,
+                    activeCalendarService,
+                    availability,
+                    bookings,
+                    undefined,
+                    activeBookingHolds,
+                  );
                 const inMonth = date.getMonth() === calendarMonthAnchor.getMonth();
 
                 return (
@@ -2907,7 +3376,15 @@ export function HaabBookingModule({
                 const dateKey = getDateKey(date);
                 const inMonth = date.getMonth() === publicMonthAnchor.getMonth();
                 const available = selectedService
-                  ? isDateAvailable(dateKey, selectedService, availability, bookings)
+                  ? isDateAvailable(
+                      dateKey,
+                      selectedService,
+                      availability,
+                      bookings,
+                      undefined,
+                      activeBookingHolds,
+                      bookingHold?.released ? undefined : bookingHold?.id,
+                    )
                   : false;
                 const chosen = bookingFlow.dateKey === dateKey;
                 const isToday = dateKey === todayKey();
@@ -3398,7 +3875,7 @@ export function HaabBookingModule({
                         tone="primary"
                         className={cn("shrink-0", publicPrimaryWideActionClass)}
                         disabled={!bookingFlow.time}
-                        onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
+                        onClick={() => beginClientDetailsStep()}
                       >
                         Continue to client details
                       </ActionButton>
@@ -3412,6 +3889,9 @@ export function HaabBookingModule({
                             selectedService,
                             availability,
                             bookings,
+                            undefined,
+                            activeBookingHolds,
+                            bookingHold?.released ? undefined : bookingHold?.id,
                           )
                             ? "This day is currently free for a full-day reservation."
                             : "This day is unavailable. Choose another date from the calendar."}
@@ -3426,9 +3906,12 @@ export function HaabBookingModule({
                             selectedService,
                             availability,
                             bookings,
+                            undefined,
+                            activeBookingHolds,
+                            bookingHold?.released ? undefined : bookingHold?.id,
                           )
                         }
-                        onClick={() => setBookingFlow((current) => ({ ...current, step: 3 }))}
+                        onClick={() => beginClientDetailsStep()}
                       >
                         Book full day
                       </ActionButton>
@@ -3439,26 +3922,10 @@ export function HaabBookingModule({
                 <>
                   <SectionTitle
                     title={
-                      isPublicSuccessStep && successfulBooking && !isSuccessfulBookingCancelled ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span
-                            aria-hidden="true"
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]"
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              className="h-4 w-4"
-                              stroke="currentColor"
-                              strokeWidth="2.2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M20 7 9 18l-5-5" />
-                            </svg>
-                          </span>
-                          <span>Booking summary - Confirmed</span>
-                        </span>
+                      isPublicSuccessStep && successfulBooking ? (
+                        <SummaryStatusTitle
+                          status={isSuccessfulBookingCancelled ? "cancelled" : "confirmed"}
+                        />
                       ) : (
                         "Booking summary"
                       )
@@ -3553,6 +4020,47 @@ export function HaabBookingModule({
                     </dl>
                   </div>
                   {!isPublicSuccessStep ? (
+                    <div
+                      className={cn(
+                        "mt-4 rounded-[24px] px-5 py-4",
+                        publicStatusStripClass,
+                        isBookingHoldExpired &&
+                          "bg-[#fff1f2] text-[#be123c] ring-1 ring-[#fecdd3]",
+                      )}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p
+                          className={cn(
+                            compactMetaTextClass,
+                            isBookingHoldExpired ? "text-[#be123c]" : "text-[var(--muted)]",
+                          )}
+                        >
+                          Time remaining
+                        </p>
+                        <p
+                          className={cn(
+                            "text-lg font-semibold tabular-nums text-[var(--ink)]",
+                            isBookingHoldExpired && "text-[#be123c]",
+                          )}
+                        >
+                          {isBookingHoldExpired
+                            ? "Expired"
+                            : formatCountdown(bookingHoldRemainingMs)}
+                        </p>
+                      </div>
+                      <p
+                        className={cn(
+                          "mt-2 text-sm leading-6 text-[var(--muted)]",
+                          isBookingHoldExpired && "text-[#be123c]",
+                        )}
+                      >
+                        {isBookingHoldExpired
+                          ? "The time slot may not be available, but you can still try to book."
+                          : "Finish within 10 minutes to keep this booking selection fresh."}
+                      </p>
+                    </div>
+                  ) : null}
+                  {!isPublicSuccessStep ? (
                     <>
                       <div className="mt-6 grid gap-3 sm:grid-cols-2">
                         <ActionButton
@@ -3562,7 +4070,12 @@ export function HaabBookingModule({
                             isDedicatedPublicPage &&
                               cn(publicPillButtonClass, publicGhostButtonClass),
                           )}
-                          onClick={() => setBookingFlow((current) => ({ ...current, step: 2 }))}
+                          onClick={() => {
+                            setBookingHold(null);
+                            setBookingHoldNow(currentTimestamp());
+                            setBookingError(null);
+                            setBookingFlow((current) => ({ ...current, step: 2 }));
+                          }}
                         >
                           Back
                         </ActionButton>
@@ -3571,7 +4084,7 @@ export function HaabBookingModule({
                           className={cn("w-full px-6", publicPrimaryActionClass)}
                           onClick={confirmBooking}
                         >
-                          Confirm
+                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
                         </ActionButton>
                       </div>
                       {bookingError ? (
@@ -3798,6 +4311,7 @@ export function HaabBookingModule({
             availability,
             bookings,
             booking.id,
+            activeBookingHolds,
           )
         : [];
 
@@ -3896,6 +4410,7 @@ export function HaabBookingModule({
                         availability,
                         bookings,
                         booking.id,
+                        activeBookingHolds,
                       );
                       const selected = rescheduleState.dateKey === dateKey;
 
