@@ -258,9 +258,9 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
   weekday: "short",
 });
 
-const compactBadgeTextClass = "text-[11px] font-semibold uppercase tracking-[0.08em]";
-const compactChipTextClass = "text-[11px] font-semibold uppercase tracking-[0.12em]";
-const compactMetaTextClass = "text-[11px] font-semibold uppercase tracking-[0.18em]";
+const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
+const compactChipTextClass = "text-xs font-semibold uppercase tracking-[0.12em]";
+const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.18em]";
 const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
 const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";
 
@@ -1113,7 +1113,7 @@ function PublicProgressIndicator({
                 </span>
                 <span
                   className={cn(
-                    "max-w-[7.5rem] text-center text-[11px] font-semibold uppercase tracking-[0.14em] leading-tight transition-colors",
+                    "max-w-[7.5rem] text-center text-xs font-semibold uppercase tracking-[0.14em] leading-tight transition-colors",
                     status === "complete" && "text-[var(--ink)]",
                     status === "current" && "text-[var(--primary)]",
                     status === "upcoming" && "text-[var(--muted)]",
@@ -3781,15 +3781,15 @@ export function HaabBookingModule({
                       </span>
                       <div className="flex items-center gap-1.5">
                         {chosen ? (
-                          <span className={cn("rounded-full bg-white px-2 py-1 text-[var(--accent)]", compactChipTextClass)}>
+                          <span className={cn("shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)]", compactBadgeTextClass)}>
                             Selected
                           </span>
                         ) : null}
                         {!chosen && isToday ? (
                           <span
                             className={cn(
-                              "rounded-full bg-[var(--surface-soft)] px-2 py-1 text-[var(--muted)]",
-                              compactChipTextClass,
+                              "shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)]",
+                              compactBadgeTextClass,
                             )}
                           >
                             Today

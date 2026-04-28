@@ -28,7 +28,7 @@ const flowOverview = [
 
 export default function Home() {
   return (
-    <main className="mx-auto flex w-full max-w-[1480px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
+    <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
       <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[34px] border border-[var(--line)] bg-[linear-gradient(145deg,rgba(234,241,255,0.9),rgba(255,255,255,0.96))] p-6 shadow-[0_36px_90px_rgba(15,23,42,0.08)] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">

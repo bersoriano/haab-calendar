@@ -36,6 +36,7 @@
 }
 
 html {
+  font-size: 106.25%;
   background:
     radial-gradient(circle at 14% 12%, rgba(26, 115, 232, 0.18), transparent 34%),
     radial-gradient(circle at 82% 12%, rgba(0, 191, 165, 0.14), transparent 28%),
