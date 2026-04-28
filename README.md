@@ -42,7 +42,6 @@ export default function Example() {
           fullName: "Dr. Maya Alvarez",
           businessName: "Haab Health Studio",
           email: "bookings@example.com",
-          customQuestionLabel: "Anything else we should prepare for?",
           publicSlug: "haab-health-studio",
         },
         services: [

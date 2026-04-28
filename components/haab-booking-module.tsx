@@ -33,7 +33,6 @@ type ProviderInfo = {
   fullName: string;
   businessName: string;
   email: string;
-  customQuestionLabel: string;
   publicSlug: string;
 };
 
@@ -44,7 +43,8 @@ type Service = {
   durationMinutes?: number;
   description: string;
   capacity?: string;
-  notesOrPrice?: string;
+  cost?: string;
+  notes?: string;
 };
 
 type DayAvailability = {
@@ -67,7 +67,6 @@ type BookingRecord = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
-  customAnswer: string;
   capacitySnapshot?: string;
   status: BookingStatus;
   createdAt: string;
@@ -107,7 +106,8 @@ type ServiceDraft = {
   durationMinutes: number;
   description: string;
   capacity: string;
-  notesOrPrice: string;
+  cost: string;
+  notes: string;
 };
 
 type BookingFlow = {
@@ -119,7 +119,6 @@ type BookingFlow = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
-  customAnswer: string;
   successBookingId?: string;
 };
 
@@ -182,7 +181,8 @@ const QUICK_START_TEMPLATES: Array<{
       durationMinutes: 30,
       description: "A focused first consultation for history, goals, and next steps.",
       capacity: "1 client",
-      notesOrPrice: "Display: $120 consult",
+      cost: "$120 consult",
+      notes: "",
     },
   },
   {
@@ -193,7 +193,8 @@ const QUICK_START_TEMPLATES: Array<{
       durationMinutes: 60,
       description: "Reserve a court for training, matches, or private play.",
       capacity: "Max 4 players",
-      notesOrPrice: "Display: $40 per hour",
+      cost: "$40 per hour",
+      notes: "",
     },
   },
   {
@@ -204,7 +205,8 @@ const QUICK_START_TEMPLATES: Array<{
       durationMinutes: 60,
       description: "Structured planning session covering goals, priorities, and action items.",
       capacity: "1 household",
-      notesOrPrice: "Display: Premium advisory session",
+      cost: "Premium advisory session",
+      notes: "",
     },
   },
   {
@@ -215,7 +217,8 @@ const QUICK_START_TEMPLATES: Array<{
       durationMinutes: 60,
       description: "Full-day venue reservation for events, receptions, and private functions.",
       capacity: "Fits up to 100 guests",
-      notesOrPrice: "Display: Full-day venue package",
+      cost: "Full-day venue package",
+      notes: "",
     },
   },
   {
@@ -226,7 +229,8 @@ const QUICK_START_TEMPLATES: Array<{
       durationMinutes: 60,
       description: "Quiet dedicated office booking for an entire workday.",
       capacity: "Seats up to 3 people",
-      notesOrPrice: "Display: Day pass bundle",
+      cost: "Day pass bundle",
+      notes: "",
     },
   },
 ];
@@ -256,6 +260,7 @@ const compactBadgeTextClass = "text-[11px] font-semibold uppercase tracking-[0.0
 const compactChipTextClass = "text-[11px] font-semibold uppercase tracking-[0.12em]";
 const compactMetaTextClass = "text-[11px] font-semibold uppercase tracking-[0.18em]";
 const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
+const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";
 
 function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
@@ -300,7 +305,6 @@ function createEmptyStore(): ModuleStore {
       fullName: "",
       businessName: "",
       email: "",
-      customQuestionLabel: "Anything else we should prepare for?",
       publicSlug: "",
     },
     services: [],
@@ -318,7 +322,8 @@ function createBlankServiceDraft(): ServiceDraft {
     durationMinutes: 30,
     description: "",
     capacity: "",
-    notesOrPrice: "",
+    cost: "",
+    notes: "",
   };
 }
 
@@ -334,7 +339,6 @@ function createInitialBookingFlow(services: Service[]): BookingFlow {
     clientEmail: "",
     clientPhone: "",
     notes: "",
-    customAnswer: "",
     successBookingId: undefined,
   };
 }
@@ -365,8 +369,6 @@ function normalizeProvider(source?: Partial<ProviderInfo> | null): ProviderInfo 
     fullName: source?.fullName ?? "",
     businessName: source?.businessName ?? "",
     email: source?.email ?? "",
-    customQuestionLabel:
-      source?.customQuestionLabel ?? "Anything else we should prepare for?",
     publicSlug:
       source?.publicSlug ??
       slugify(source?.businessName || source?.fullName || "haab-calendar"),
@@ -375,11 +377,17 @@ function normalizeProvider(source?: Partial<ProviderInfo> | null): ProviderInfo 
 
 function normalizeServices(source?: Service[] | null): Service[] {
   return (source ?? []).map((service) => ({
-    ...service,
+    id: service.id,
+    name: service.name,
+    bookingType: service.bookingType,
     durationMinutes:
-      service.bookingType === "appointment"
-        ? service.durationMinutes ?? 30
-        : undefined,
+      service.bookingType === "full-day"
+        ? undefined
+        : service.durationMinutes,
+    description: service.description,
+    capacity: service.capacity,
+    cost: service.cost,
+    notes: service.notes,
   }));
 }
 
@@ -403,7 +411,7 @@ function normalizeBookingHolds(source?: BookingHoldRecord[] | null): BookingHold
   );
 }
 
-function normalizeStore(source?: Partial<ModuleStore> | null): ModuleStore {
+function normalizeStore(source?: ModuleStore | null): ModuleStore {
   const empty = createEmptyStore();
 
   return {
@@ -762,6 +770,10 @@ function formatDuration(service: Service) {
   return `${service.durationMinutes} min`;
 }
 
+function formatCapacityLabel(service: Service) {
+  return service.capacity || (service.bookingType === "appointment" ? "1 client" : "Not set");
+}
+
 function escapeIcsText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
@@ -769,7 +781,7 @@ function escapeIcsText(value: string) {
 function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
   const safeSummary = escapeIcsText(booking.serviceName);
   const safeDescription = escapeIcsText(
-    `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || booking.customAnswer || "N/A"}`,
+    `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || "N/A"}`,
   );
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const eventId = `${booking.id}@haab-calendar.local`;
@@ -945,8 +957,9 @@ function SummaryField({
   );
 }
 
-function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" }) {
+function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" | "updated" }) {
   const isCancelled = status === "cancelled";
+  const isUpdated = status === "updated";
 
   return (
     <span className="inline-flex items-center gap-2">
@@ -956,7 +969,9 @@ function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" }) {
           "inline-flex h-8 w-8 items-center justify-center rounded-full",
           isCancelled
             ? "bg-[#fff1f2] text-[#be123c]"
-            : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",
+            : isUpdated
+              ? "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)]"
+              : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",
         )}
       >
         <svg
@@ -973,12 +988,21 @@ function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" }) {
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
             </>
+          ) : isUpdated ? (
+            <>
+              <path d="M20 11a8 8 0 0 0-14.8-4.2L4 9" />
+              <path d="M4 4v5h5" />
+              <path d="M4 13a8 8 0 0 0 14.8 4.2L20 15" />
+              <path d="M20 20v-5h-5" />
+            </>
           ) : (
             <path d="M20 7 9 18l-5-5" />
           )}
         </svg>
       </span>
-      <span>Booking summary - {isCancelled ? "Cancelled" : "Confirmed"}</span>
+      <span>
+        Booking summary - {isCancelled ? "Cancelled" : isUpdated ? "Updated" : "Confirmed"}
+      </span>
     </span>
   );
 }
@@ -1003,7 +1027,7 @@ function EmptyState({
 
 export function HaabBookingModule({
   injectedConfig,
-  storageKey = "haab-calendar-standalone",
+  storageKey = DEFAULT_STORAGE_KEY,
   initialSurface = "management",
   surfaceMode = "adaptive",
   requestedPublicSlug,
@@ -1043,6 +1067,10 @@ export function HaabBookingModule({
     null,
   );
   const [isNaturalLanguageBookingFocused, setIsNaturalLanguageBookingFocused] = useState(false);
+  const [
+    wasBookingUpdatedWithNaturalLanguage,
+    setWasBookingUpdatedWithNaturalLanguage,
+  ] = useState(false);
   const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
   const [bookingHoldNow, setBookingHoldNow] = useState(() => currentTimestamp());
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
@@ -1434,6 +1462,7 @@ export function HaabBookingModule({
     setNaturalLanguageBookingInput("");
     setNaturalLanguageBookingError(null);
     setIsNaturalLanguageBookingFocused(false);
+    setWasBookingUpdatedWithNaturalLanguage(false);
     releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
     setBookingHold(null);
     setBookingHoldNow(currentTimestamp());
@@ -1479,6 +1508,7 @@ export function HaabBookingModule({
       return;
     }
 
+    const isUpdatingExistingSelection = resolvedBookingFlow.step === 3;
     const input = naturalLanguageBookingInput.trim();
 
     if (!input) {
@@ -1519,11 +1549,13 @@ export function HaabBookingModule({
 
     if (selectedService.bookingType === "appointment") {
       if (!hasExplicitTime(parsed)) {
-        setBookingFlow((current) => ({
-          ...current,
-          dateKey,
-          time: "",
-        }));
+        if (!isUpdatingExistingSelection) {
+          setBookingFlow((current) => ({
+            ...current,
+            dateKey,
+            time: "",
+          }));
+        }
         setNaturalLanguageBookingError(
           "Appointments need a time. Try something like \"next Monday at 2 PM\".",
         );
@@ -1538,14 +1570,17 @@ export function HaabBookingModule({
         bookings,
         undefined,
         activeBookingHolds,
+        bookingHold?.released ? undefined : bookingHold?.id,
       );
 
       if (availableSlots.length === 0) {
-        setBookingFlow((current) => ({
-          ...current,
-          dateKey,
-          time: "",
-        }));
+        if (!isUpdatingExistingSelection) {
+          setBookingFlow((current) => ({
+            ...current,
+            dateKey,
+            time: "",
+          }));
+        }
         setNaturalLanguageBookingError(
           `No appointment slots are available on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
         );
@@ -1553,18 +1588,25 @@ export function HaabBookingModule({
       }
 
       if (!availableSlots.includes(requestedTime)) {
-        setBookingFlow((current) => ({
-          ...current,
-          dateKey,
-          time: "",
-        }));
+        if (!isUpdatingExistingSelection) {
+          setBookingFlow((current) => ({
+            ...current,
+            dateKey,
+            time: "",
+          }));
+        }
         setNaturalLanguageBookingError(
           `No slot starts at ${formatTimeLabel(requestedTime)} on ${formatDateLabel(dateKey)}. Use another phrase or pick from the available times below.`,
         );
         return;
       }
 
-      beginClientDetailsStep(dateKey, requestedTime);
+      const didBeginDetails = beginClientDetailsStep(dateKey, requestedTime);
+
+      if (didBeginDetails && isUpdatingExistingSelection) {
+        setWasBookingUpdatedWithNaturalLanguage(true);
+      }
+
       return;
     }
 
@@ -1576,20 +1618,27 @@ export function HaabBookingModule({
         bookings,
         undefined,
         activeBookingHolds,
+        bookingHold?.released ? undefined : bookingHold?.id,
       )
     ) {
-      setBookingFlow((current) => ({
-        ...current,
-        dateKey,
-        time: "",
-      }));
+      if (!isUpdatingExistingSelection) {
+        setBookingFlow((current) => ({
+          ...current,
+          dateKey,
+          time: "",
+        }));
+      }
       setNaturalLanguageBookingError(
         `That day is unavailable on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
       );
       return;
     }
 
-    beginClientDetailsStep(dateKey, "");
+    const didBeginDetails = beginClientDetailsStep(dateKey, "");
+
+    if (didBeginDetails && isUpdatingExistingSelection) {
+      setWasBookingUpdatedWithNaturalLanguage(true);
+    }
   }
 
   function resetServiceEditor() {
@@ -1605,7 +1654,8 @@ export function HaabBookingModule({
       durationMinutes: service.durationMinutes ?? 30,
       description: service.description,
       capacity: service.capacity ?? "",
-      notesOrPrice: service.notesOrPrice ?? "",
+      cost: service.cost ?? "",
+      notes: service.notes ?? "",
     });
   }
 
@@ -1630,7 +1680,8 @@ export function HaabBookingModule({
           : undefined,
       description: serviceDraft.description.trim(),
       capacity: serviceDraft.capacity.trim() || undefined,
-      notesOrPrice: serviceDraft.notesOrPrice.trim() || undefined,
+      cost: serviceDraft.cost.trim() || undefined,
+      notes: serviceDraft.notes.trim() || undefined,
     };
 
     if (integratedMode) {
@@ -1807,11 +1858,11 @@ export function HaabBookingModule({
 
   function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
     if (!selectedService || !dateKey) {
-      return;
+      return false;
     }
 
     if (selectedService.bookingType === "appointment" && !time) {
-      return;
+      return false;
     }
 
     const now = currentTimestamp();
@@ -1838,7 +1889,7 @@ export function HaabBookingModule({
       setBookingError(
         "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
       );
-      return;
+      return false;
     }
 
     if (
@@ -1855,7 +1906,7 @@ export function HaabBookingModule({
       setBookingError(
         "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
       );
-      return;
+      return false;
     }
 
     const startedAt = now;
@@ -1895,6 +1946,7 @@ export function HaabBookingModule({
       time,
       step: 3,
     }));
+    return true;
   }
 
   function confirmBooking() {
@@ -1989,7 +2041,6 @@ export function HaabBookingModule({
       clientEmail: bookingFlow.clientEmail.trim(),
       clientPhone: bookingFlow.clientPhone.trim(),
       notes: bookingFlow.notes.trim(),
-      customAnswer: bookingFlow.customAnswer.trim(),
       capacitySnapshot: validationService.capacity,
       status: "confirmed",
       createdAt,
@@ -2262,17 +2313,6 @@ export function HaabBookingModule({
                     className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
                   />
                 </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Custom question label
-                  <input
-                    value={provider.customQuestionLabel}
-                    onChange={(event) =>
-                      updateProvider("customQuestionLabel", event.target.value)
-                    }
-                    placeholder="Anything else we should prepare for?"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
-                  />
-                </label>
               </div>
             </div>
 
@@ -2354,7 +2394,8 @@ export function HaabBookingModule({
                           </p>
                           <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
                             {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
-                            {service.notesOrPrice ? <span>{service.notesOrPrice}</span> : null}
+                            {service.cost ? <span>Total: {service.cost}</span> : null}
+                            {service.notes ? <span>Notes: {service.notes}</span> : null}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -2456,16 +2497,30 @@ export function HaabBookingModule({
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Notes or price display
+                  Total
                   <input
-                    value={serviceDraft.notesOrPrice}
+                    value={serviceDraft.cost}
                     onChange={(event) =>
                       setServiceDraft((current) => ({
                         ...current,
-                        notesOrPrice: event.target.value,
+                        cost: event.target.value,
                       }))
                     }
-                    placeholder="Display: $80 / session"
+                    placeholder="$80 / session"
+                    className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                  Notes
+                  <input
+                    value={serviceDraft.notes}
+                    onChange={(event) =>
+                      setServiceDraft((current) => ({
+                        ...current,
+                        notes: event.target.value,
+                      }))
+                    }
+                    placeholder="Bring prior records or arrive 10 minutes early."
                     className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
                   />
                 </label>
@@ -3027,7 +3082,8 @@ export function HaabBookingModule({
                       </p>
                       <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                         {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
-                        {service.notesOrPrice ? <span>{service.notesOrPrice}</span> : null}
+                        {service.cost ? <span>Total: {service.cost}</span> : null}
+                        {service.notes ? <span>Notes: {service.notes}</span> : null}
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -3134,14 +3190,28 @@ export function HaabBookingModule({
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Notes or price display
+              Total
               <input
                 disabled={integratedMode}
-                value={serviceDraft.notesOrPrice}
+                value={serviceDraft.cost}
                 onChange={(event) =>
                   setServiceDraft((current) => ({
                     ...current,
-                    notesOrPrice: event.target.value,
+                    cost: event.target.value,
+                  }))
+                }
+                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Notes
+              <input
+                disabled={integratedMode}
+                value={serviceDraft.notes}
+                onChange={(event) =>
+                  setServiceDraft((current) => ({
+                    ...current,
+                    notes: event.target.value,
                   }))
                 }
                 className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
@@ -3203,15 +3273,6 @@ export function HaabBookingModule({
                 disabled={integratedMode}
                 value={provider.email}
                 onChange={(event) => updateProvider("email", event.target.value)}
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Custom question label
-              <input
-                disabled={integratedMode}
-                value={provider.customQuestionLabel}
-                onChange={(event) => updateProvider("customQuestionLabel", event.target.value)}
                 className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
               />
             </label>
@@ -3510,7 +3571,8 @@ export function HaabBookingModule({
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                     {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
-                    {service.notesOrPrice ? <span>{service.notesOrPrice}</span> : null}
+                    {service.cost ? <span>Total: {service.cost}</span> : null}
+                    {service.notes ? <span>Notes: {service.notes}</span> : null}
                   </div>
                 </button>
               ))}
@@ -3523,22 +3585,33 @@ export function HaabBookingModule({
             className={cn(
               "grid gap-5 p-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
-              "lg:[grid-template-columns:minmax(0,1.22fr)_minmax(360px,0.78fr)]",
+              isPublicSelectionStep
+                ? "lg:[grid-template-columns:minmax(0,1.22fr)_minmax(360px,0.78fr)]"
+                : "lg:grid-cols-3",
             )}
           >
             <div
               className={cn(
-                "lg:col-span-2 transition-opacity duration-300",
+                "transition-opacity duration-300",
+                isPublicSelectionStep ? "lg:col-span-2" : "lg:col-span-3",
                 publicElevatedPanelClass,
-                (isPublicDetailsStep || isPublicSuccessStep) && "opacity-50",
+                isPublicSuccessStep && "opacity-50",
               )}
             >
                 <SectionTitle
-                  title="Describe the booking in plain language"
+                  title={
+                    isPublicDetailsStep
+                      ? "Update Booking to a new date and time - Describe the booking in plain language."
+                      : "Describe the booking in plain language"
+                  }
                   body={
-                    selectedService.bookingType === "appointment"
-                      ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
-                      : "Type something like \"next Friday\" and continue straight to client details if that date is free."
+                    isPublicDetailsStep
+                      ? selectedService.bookingType === "appointment"
+                        ? "Type a new request like \"next Monday at 2 PM\" to update this booking if that slot is free."
+                        : "Type a new request like \"next Friday\" to update this booking if that date is free."
+                      : selectedService.bookingType === "appointment"
+                        ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
+                        : "Type something like \"next Friday\" and continue straight to client details if that date is free."
                   }
                 />
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -3546,7 +3619,7 @@ export function HaabBookingModule({
                     <input
                       type="text"
                       value={naturalLanguageBookingInput}
-                      disabled={isPublicDetailsStep || isPublicSuccessStep}
+                      disabled={isPublicSuccessStep}
                       onChange={(event) => {
                         setNaturalLanguageBookingInput(event.target.value);
                         setNaturalLanguageBookingError(null);
@@ -3570,10 +3643,10 @@ export function HaabBookingModule({
                   <ActionButton
                     tone="primary"
                     className={cn("w-full lg:w-auto", publicPrimaryActionClass)}
-                    disabled={isPublicDetailsStep || isPublicSuccessStep}
+                    disabled={isPublicSuccessStep}
                     onClick={continueWithNaturalLanguageBooking}
                   >
-                    Continue to client details
+                    {isPublicDetailsStep ? "Update booking" : "Continue to client details"}
                   </ActionButton>
                 </div>
                 {naturalLanguageBookingError ? (
@@ -3666,21 +3739,6 @@ export function HaabBookingModule({
                           className={publicTextareaClass}
                         />
                       </label>
-                      {provider.customQuestionLabel ? (
-                        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                          <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                            {provider.customQuestionLabel}
-                          </span>
-                          <input
-                            value={bookingFlow.customAnswer}
-                            onChange={(event) =>
-                              updateBookingFlow("customAnswer", event.target.value)
-                            }
-                            placeholder="Add your answer here"
-                            className={publicFieldClass}
-                          />
-                        </label>
-                      ) : null}
                     </div>
                     {isPublicSuccessStep ? (
                       <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[28px] bg-[rgba(248,249,250,0.52)] backdrop-blur-[10px]">
@@ -3748,6 +3806,55 @@ export function HaabBookingModule({
                 </>
               ) : null}
             </div>
+
+            {(isPublicDetailsStep || isPublicSuccessStep) ? (
+              <div
+                className={cn(
+                  "self-start lg:sticky lg:top-8 flex min-h-full flex-col",
+                  publicSoftPanelClass,
+                )}
+                style={
+                  publicPrimaryPanelHeight
+                    ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                    : undefined
+                }
+              >
+                <SectionTitle title="About the Appointment" />
+                <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
+                  <dl className="grid gap-4">
+                    <SummaryField
+                      label="Type of service"
+                      value={
+                        isPublicSuccessStep && successfulBooking
+                          ? successfulBooking.serviceName
+                          : selectedService.name
+                      }
+                    />
+                    <SummaryField
+                      label="Type"
+                      value={getBookingTypeLabel(
+                        isPublicSuccessStep && successfulBooking
+                          ? successfulBooking.bookingType
+                          : selectedService.bookingType,
+                      )}
+                    />
+                    <SummaryField
+                      label="Capacity"
+                      value={
+                        isPublicSuccessStep && successfulBooking
+                          ? successfulBooking.capacitySnapshot || formatCapacityLabel(selectedService)
+                          : formatCapacityLabel(selectedService)
+                      }
+                    />
+                    <SummaryField label="Length" value={formatDuration(selectedService)} />
+                    <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                    {selectedService.notes ? (
+                      <SummaryField label="Notes" value={selectedService.notes} />
+                    ) : null}
+                  </dl>
+                </div>
+              </div>
+            ) : null}
 
             <div
               className={cn(
@@ -3926,6 +4033,8 @@ export function HaabBookingModule({
                         <SummaryStatusTitle
                           status={isSuccessfulBookingCancelled ? "cancelled" : "confirmed"}
                         />
+                      ) : isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
+                        <SummaryStatusTitle status="updated" />
                       ) : (
                         "Booking summary"
                       )
@@ -3938,20 +4047,6 @@ export function HaabBookingModule({
                   />
                   <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
                     <dl className="grid gap-4">
-                      {hasMultipleServices ? (
-                        <SummaryField
-                          label="Service"
-                          value={
-                            isPublicSuccessStep && successfulBooking
-                              ? successfulBooking.serviceName
-                              : selectedService.name
-                          }
-                        />
-                      ) : null}
-                      <SummaryField
-                        label="Type"
-                        value={getBookingTypeLabel(selectedService.bookingType)}
-                      />
                       <SummaryField
                         label="When"
                         value={
@@ -3966,12 +4061,9 @@ export function HaabBookingModule({
                                     ? formatTimeLabel(bookingFlow.time)
                                     : "Full Day"
                                 }`
-                              : "Not selected"
+                          : "Not selected"
                         }
                       />
-                      {selectedService.capacity ? (
-                        <SummaryField label="Capacity" value={selectedService.capacity} />
-                      ) : null}
                       <SummaryField
                         label="Client"
                         value={
@@ -4004,16 +4096,6 @@ export function HaabBookingModule({
                             : bookingFlow.notes.trim() || "None"
                         }
                       />
-                      {provider.customQuestionLabel ? (
-                        <SummaryField
-                          label={provider.customQuestionLabel}
-                          value={
-                            isPublicSuccessStep && successfulBooking
-                              ? successfulBooking.customAnswer || "Not entered yet"
-                              : bookingFlow.customAnswer.trim() || "Not entered yet"
-                          }
-                        />
-                      ) : null}
                       {isPublicSuccessStep && successfulBooking ? (
                         <SummaryField label="Status" value={successfulBooking.status} />
                       ) : null}
@@ -4074,6 +4156,7 @@ export function HaabBookingModule({
                             setBookingHold(null);
                             setBookingHoldNow(currentTimestamp());
                             setBookingError(null);
+                            setWasBookingUpdatedWithNaturalLanguage(false);
                             setBookingFlow((current) => ({ ...current, step: 2 }));
                           }}
                         >
