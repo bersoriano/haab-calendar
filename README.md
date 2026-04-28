@@ -9,7 +9,7 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 2. Provider Workspace
    Top navigation for `Dashboard`, `Bookings`, `Calendar`, `Services`, and `Settings`.
 3. Public Booking Flow
-   Step-by-step client wizard for service selection, date and time, client details, review, success, and iCal export.
+   Step-by-step client wizard for service selection, date and time, My Details, review, success, and iCal export.
 4. Public Route
    Dedicated `/public/[slug]` page for the generated booking URL.
 

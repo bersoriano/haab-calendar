@@ -68,6 +68,7 @@ type BookingRecord = {
   clientPhone: string;
   notes: string;
   capacitySnapshot?: string;
+  cost: string;
   status: BookingStatus;
   createdAt: string;
   updatedAt: string;
@@ -392,7 +393,26 @@ function normalizeServices(source?: Service[] | null): Service[] {
 }
 
 function normalizeBookings(source?: BookingRecord[] | null): BookingRecord[] {
-  return sortBookings(source ?? []);
+  return sortBookings(
+    (source ?? []).map((booking) => ({
+      id: booking.id,
+      serviceId: booking.serviceId,
+      serviceName: booking.serviceName,
+      bookingType: booking.bookingType,
+      dateKey: booking.dateKey,
+      startTime: booking.startTime,
+      endTime: booking.endTime,
+      clientName: booking.clientName,
+      clientEmail: booking.clientEmail,
+      clientPhone: booking.clientPhone,
+      notes: booking.notes ?? "",
+      capacitySnapshot: booking.capacitySnapshot,
+      cost: booking.cost ?? "",
+      status: booking.status,
+      createdAt: booking.createdAt,
+      updatedAt: booking.updatedAt,
+    })),
+  );
 }
 
 function pruneBookingHolds(holds: BookingHoldRecord[], now = currentTimestamp()) {
@@ -924,7 +944,7 @@ function SectionTitle({
 }) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div className="max-w-2xl">
+      <div className="">
         {eyebrow ? (
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
             {eyebrow}
@@ -1085,10 +1105,17 @@ export function HaabBookingModule({
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const publicFlowGridRef = useRef<HTMLDivElement | null>(null);
   const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
+  const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
+  const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
   const [publicPrimaryPanelHeight, setPublicPrimaryPanelHeight] = useState<number | null>(
     null,
   );
+  const [publicFloatingBarFrame, setPublicFloatingBarFrame] = useState<{
+    centerX: number;
+    width: number;
+  } | null>(null);
 
   useEffect(() => {
     if (integratedMode) {
@@ -1249,11 +1276,11 @@ export function HaabBookingModule({
     ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[rgba(255,255,255,0.58)] hover:text-[var(--ink)]"
     : "";
   const publicFieldClass = isDedicatedPublicPage
-    ? "min-h-14 rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.2)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
-    : "min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
+    ? "min-h-14 rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    : "min-h-12 rounded-2xl border border-white px-4 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
   const publicTextareaClass = isDedicatedPublicPage
-    ? "rounded-[24px] bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.2)] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
-    : "rounded-2xl border border-[var(--line)] px-4 py-3 outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
+    ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   useEffect(() => {
     if (
@@ -1264,15 +1291,37 @@ export function HaabBookingModule({
       return;
     }
 
-    const node = publicPrimaryPanelRef.current;
+    const primaryNode = publicPrimaryPanelRef.current;
 
-    if (!node || typeof ResizeObserver === "undefined") {
+    if (!primaryNode || typeof ResizeObserver === "undefined") {
       return;
     }
 
     let frameId = 0;
     const syncHeight = () => {
-      const nextHeight = Math.ceil(node.getBoundingClientRect().height);
+      const measurementNodes =
+        resolvedBookingFlow.step === 2
+          ? [primaryNode]
+          : [
+              publicPrimaryPanelRef.current,
+              publicAboutPanelRef.current,
+              publicSummaryPanelRef.current,
+            ].filter((node): node is HTMLDivElement => Boolean(node));
+
+      const previousMinHeights = measurementNodes.map((node) => node.style.minHeight);
+
+      measurementNodes.forEach((node) => {
+        node.style.minHeight = "";
+      });
+
+      const nextHeight = Math.max(
+        ...measurementNodes.map((node) => Math.ceil(node.scrollHeight)),
+      );
+
+      measurementNodes.forEach((node, index) => {
+        node.style.minHeight = previousMinHeights[index] ?? "";
+      });
+
       setPublicPrimaryPanelHeight((current) =>
         current === nextHeight ? current : nextHeight,
       );
@@ -1284,11 +1333,60 @@ export function HaabBookingModule({
       syncHeight();
     });
 
-    observer.observe(node);
+    const observedNodes =
+      resolvedBookingFlow.step === 2
+        ? [primaryNode]
+        : [
+            publicPrimaryPanelRef.current,
+            publicAboutPanelRef.current,
+            publicSummaryPanelRef.current,
+          ].filter((node): node is HTMLDivElement => Boolean(node));
+
+    observedNodes.forEach((node) => observer.observe(node));
 
     return () => {
       window.cancelAnimationFrame(frameId);
       observer.disconnect();
+    };
+  }, [resolvedBookingFlow.step]);
+
+  useEffect(() => {
+    if (resolvedBookingFlow.step !== 3 && resolvedBookingFlow.step !== 4) {
+      return;
+    }
+
+    const node = publicFlowGridRef.current;
+
+    if (!node || typeof ResizeObserver === "undefined") {
+      return;
+    }
+
+    let frameId = 0;
+    const syncFrame = () => {
+      const rect = node.getBoundingClientRect();
+      const styles = window.getComputedStyle(node);
+      const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
+      const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
+      const width = Math.round(Math.max(0, rect.width - paddingLeft - paddingRight));
+      const centerX = Math.round(rect.left + paddingLeft + width / 2);
+
+      setPublicFloatingBarFrame((current) =>
+        current?.width === width && current.centerX === centerX
+          ? current
+          : { centerX, width },
+      );
+    };
+
+    frameId = window.requestAnimationFrame(syncFrame);
+
+    const observer = new ResizeObserver(syncFrame);
+    observer.observe(node);
+    window.addEventListener("resize", syncFrame);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      observer.disconnect();
+      window.removeEventListener("resize", syncFrame);
     };
   }, [resolvedBookingFlow.step]);
 
@@ -2042,12 +2140,15 @@ export function HaabBookingModule({
       clientPhone: bookingFlow.clientPhone.trim(),
       notes: bookingFlow.notes.trim(),
       capacitySnapshot: validationService.capacity,
+      cost: validationService.cost ?? "",
       status: "confirmed",
       createdAt,
       updatedAt: createdAt,
     };
 
     const nextHolds = validationHolds.filter((hold) => hold.id !== ignoredHoldId);
+
+    console.log("Haab Calendar booking confirmed:", nextBooking);
 
     commitBookings([...validationStore.bookings, nextBooking], validationStore, nextHolds);
     setBookingError(null);
@@ -2745,6 +2846,9 @@ export function HaabBookingModule({
                             ? `Capacity: ${booking.capacitySnapshot}`
                             : "Capacity not set"}
                         </p>
+                        <p className="mt-1 text-sm text-[var(--muted)]">
+                          {booking.cost ? `Total: ${booking.cost}` : "Total not set"}
+                        </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
@@ -2865,6 +2969,7 @@ export function HaabBookingModule({
                           ? `Capacity: ${booking.capacitySnapshot}`
                           : "Capacity not set"}
                       </p>
+                      <p>{booking.cost ? `Total: ${booking.cost}` : "Total not set"}</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
@@ -3521,8 +3626,7 @@ export function HaabBookingModule({
   function renderPublicFlow() {
     const isPublicSelectionStep = resolvedBookingFlow.step === 2;
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
-    const isPublicSuccessStep =
-      isDedicatedPublicPage && resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
+    const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
 
     return (
       <>
@@ -3582,9 +3686,12 @@ export function HaabBookingModule({
 
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
           <div
+            ref={publicFlowGridRef}
             className={cn(
               "grid gap-5 p-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
+              (isPublicDetailsStep || isPublicSuccessStep) &&
+                "!pb-[24rem] sm:!pb-56 lg:!pb-48 xl:!pb-48",
               isPublicSelectionStep
                 ? "lg:[grid-template-columns:minmax(0,1.22fr)_minmax(360px,0.78fr)]"
                 : "lg:grid-cols-3",
@@ -3610,8 +3717,8 @@ export function HaabBookingModule({
                         ? "Type a new request like \"next Monday at 2 PM\" to update this booking if that slot is free."
                         : "Type a new request like \"next Friday\" to update this booking if that date is free."
                       : selectedService.bookingType === "appointment"
-                        ? "Type something like \"next Monday at 2 PM\" and continue straight to client details if that slot is free."
-                        : "Type something like \"next Friday\" and continue straight to client details if that date is free."
+                        ? "Type something like \"next Monday at 2 PM\" and continue straight to My Details if that slot is free."
+                        : "Type something like \"next Friday\" and continue straight to My Details if that date is free."
                   }
                 />
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -3646,7 +3753,7 @@ export function HaabBookingModule({
                     disabled={isPublicSuccessStep}
                     onClick={continueWithNaturalLanguageBooking}
                   >
-                    {isPublicDetailsStep ? "Update booking" : "Continue to client details"}
+                    {isPublicDetailsStep ? "Update booking" : "Continue to My Details"}
                   </ActionButton>
                 </div>
                 {naturalLanguageBookingError ? (
@@ -3663,6 +3770,11 @@ export function HaabBookingModule({
                 isPublicSelectionStep && "transition-opacity duration-200",
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
+              style={
+                (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                  ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                  : undefined
+              }
             >
               {isPublicSelectionStep ? (
                 <>
@@ -3679,10 +3791,10 @@ export function HaabBookingModule({
               ) : isPublicDetailsStep || isPublicSuccessStep ? (
                 <>
                   <SectionTitle
-                    title="Client details"
+                    title="My Details"
                     body={
                       isPublicSuccessStep
-                        ? "The confirmed client details remain visible below."
+                        ? "The confirmed My Details remain visible below."
                         : "Enter the booking details here and confirm directly from the live summary."
                     }
                   />
@@ -3743,9 +3855,6 @@ export function HaabBookingModule({
                     {isPublicSuccessStep ? (
                       <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[28px] bg-[rgba(248,249,250,0.52)] backdrop-blur-[10px]">
                         <div className="px-6 text-center">
-                          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
-                            {isSuccessfulBookingCancelled ? "Booking" : "Success"}
-                          </p>
                           <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
                             {isSuccessfulBookingCancelled ? (
                               <>
@@ -3765,50 +3874,13 @@ export function HaabBookingModule({
                       </div>
                     ) : null}
                   </div>
-                  {isPublicSuccessStep && successfulBooking ? (
-                    <div className="mx-auto mt-6 flex w-full max-w-[820px] flex-wrap items-center justify-center gap-3">
-                      <ActionButton
-                        tone="primary"
-                        className={cn("px-6", publicPrimaryActionClass)}
-                        disabled={isSuccessfulBookingCancelled}
-                        onClick={() => downloadBookingCalendarFile(successfulBooking)}
-                      >
-                        Add to calendar
-                      </ActionButton>
-                      <ActionButton
-                        tone="ghost"
-                        className={cn(
-                          isDedicatedPublicPage &&
-                            cn(publicPillButtonClass, publicGhostButtonClass),
-                        )}
-                        disabled={isSuccessfulBookingCancelled}
-                        onClick={() => openReschedule(successfulBooking.id)}
-                      >
-                        Reschedule
-                      </ActionButton>
-                      <ActionButton
-                        tone="danger"
-                        className={cn(isDedicatedPublicPage && publicPillButtonClass)}
-                        disabled={isSuccessfulBookingCancelled}
-                        onClick={() => setCancellationId(successfulBooking.id)}
-                      >
-                        Cancel booking
-                      </ActionButton>
-                      <ActionButton
-                        tone="secondary"
-                        className={cn(isDedicatedPublicPage && publicPillButtonClass)}
-                        onClick={() => startFreshBooking()}
-                      >
-                        Book another
-                      </ActionButton>
-                    </div>
-                  ) : null}
                 </>
               ) : null}
             </div>
 
             {(isPublicDetailsStep || isPublicSuccessStep) ? (
               <div
+                ref={publicAboutPanelRef}
                 className={cn(
                   "self-start lg:sticky lg:top-8 flex min-h-full flex-col",
                   publicSoftPanelClass,
@@ -3847,7 +3919,14 @@ export function HaabBookingModule({
                       }
                     />
                     <SummaryField label="Length" value={formatDuration(selectedService)} />
-                    <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                    <SummaryField
+                      label="Total"
+                      value={
+                        isPublicSuccessStep && successfulBooking
+                          ? successfulBooking.cost || selectedService.cost || "Not set"
+                          : selectedService.cost || "Not set"
+                      }
+                    />
                     {selectedService.notes ? (
                       <SummaryField label="Notes" value={selectedService.notes} />
                     ) : null}
@@ -3857,6 +3936,7 @@ export function HaabBookingModule({
             ) : null}
 
             <div
+              ref={publicSummaryPanelRef}
               className={cn(
                 "self-start lg:sticky lg:top-8",
                 publicElevatedPanelClass,
@@ -3984,7 +4064,7 @@ export function HaabBookingModule({
                         disabled={!bookingFlow.time}
                         onClick={() => beginClientDetailsStep()}
                       >
-                        Continue to client details
+                        Continue to My Details
                       </ActionButton>
                     </div>
                   ) : (
@@ -4101,16 +4181,36 @@ export function HaabBookingModule({
                       ) : null}
                     </dl>
                   </div>
+                </>
+              )}
+            </div>
+
+            {(isPublicDetailsStep || isPublicSuccessStep) ? (
+              <div
+                className={cn(
+                  "fixed bottom-20 left-1/2 z-40 w-[calc(100vw-4.5rem)] -translate-x-1/2 !p-4 sm:w-[calc(100vw-7rem)] sm:!p-5",
+                  publicElevatedPanelClass,
+                )}
+                style={
+                  publicFloatingBarFrame
+                    ? {
+                        left: `${publicFloatingBarFrame.centerX}px`,
+                        width: `${publicFloatingBarFrame.width}px`,
+                      }
+                    : undefined
+                }
+              >
+                <div
+                  className={cn(
+                    "flex flex-col gap-5",
+                    isPublicSuccessStep
+                      ? "lg:items-center lg:justify-end"
+                      : "lg:flex-row lg:items-center lg:justify-between",
+                  )}
+                >
                   {!isPublicSuccessStep ? (
-                    <div
-                      className={cn(
-                        "mt-4 rounded-[24px] px-5 py-4",
-                        publicStatusStripClass,
-                        isBookingHoldExpired &&
-                          "bg-[#fff1f2] text-[#be123c] ring-1 ring-[#fecdd3]",
-                      )}
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
                         <p
                           className={cn(
                             compactMetaTextClass,
@@ -4132,7 +4232,7 @@ export function HaabBookingModule({
                       </div>
                       <p
                         className={cn(
-                          "mt-2 text-sm leading-6 text-[var(--muted)]",
+                          "mt-1 text-sm leading-6 text-[var(--muted)]",
                           isBookingHoldExpired && "text-[#be123c]",
                         )}
                       >
@@ -4142,17 +4242,70 @@ export function HaabBookingModule({
                       </p>
                     </div>
                   ) : null}
-                  {!isPublicSuccessStep ? (
-                    <>
-                      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+
+                  <div
+                    className={cn(
+                      "flex w-full flex-wrap items-center gap-3",
+                      isPublicSuccessStep
+                        ? "justify-center"
+                        : "justify-end lg:w-auto",
+                    )}
+                  >
+                    {isPublicSuccessStep && successfulBooking ? (
+                      <>
+                        <ActionButton
+                          tone="primary"
+                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                          disabled={isSuccessfulBookingCancelled}
+                          onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                        >
+                          Add to calendar
+                        </ActionButton>
                         <ActionButton
                           tone="ghost"
                           className={cn(
-                            "w-full px-6",
+                            "min-w-[150px]",
+                            isDedicatedPublicPage &&
+                              cn(publicPillButtonClass, publicGhostButtonClass),
+                          )}
+                          disabled={isSuccessfulBookingCancelled}
+                          onClick={() => openReschedule(successfulBooking.id)}
+                        >
+                          Reschedule
+                        </ActionButton>
+                        <ActionButton
+                          tone="danger"
+                          className={cn(
+                            "min-w-[150px]",
+                            isDedicatedPublicPage && publicPillButtonClass,
+                          )}
+                          disabled={isSuccessfulBookingCancelled}
+                          onClick={() => setCancellationId(successfulBooking.id)}
+                        >
+                          Cancel booking
+                        </ActionButton>
+                        <ActionButton
+                          tone="secondary"
+                          className={cn(
+                            "min-w-[150px]",
+                            isDedicatedPublicPage && publicPillButtonClass,
+                          )}
+                          onClick={() => startFreshBooking()}
+                        >
+                          Book another
+                        </ActionButton>
+                      </>
+                    ) : (
+                      <>
+                        <ActionButton
+                          tone="ghost"
+                          className={cn(
+                            "min-w-[150px] px-6",
                             isDedicatedPublicPage &&
                               cn(publicPillButtonClass, publicGhostButtonClass),
                           )}
                           onClick={() => {
+                            releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
                             setBookingHold(null);
                             setBookingHoldNow(currentTimestamp());
                             setBookingError(null);
@@ -4164,154 +4317,25 @@ export function HaabBookingModule({
                         </ActionButton>
                         <ActionButton
                           tone="primary"
-                          className={cn("w-full px-6", publicPrimaryActionClass)}
+                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
                           onClick={confirmBooking}
                         >
                           {isBookingHoldExpired ? "Try booking" : "Confirm"}
                         </ActionButton>
-                      </div>
-                      {bookingError ? (
-                        <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                          {bookingError}
-                        </div>
-                      ) : null}
-                    </>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </div>
-        ) : null}
-
-        {resolvedBookingFlow.step === 4 && successfulBooking && !isDedicatedPublicPage ? (
-          <div
-            className={cn(
-              "grid gap-5 p-5 sm:p-8",
-              isDedicatedPublicPage
-                ? "mx-auto w-full xl:max-w-[50vw] xl:px-10 xl:py-10"
-                : "xl:grid-cols-[1fr_0.85fr]",
-            )}
-          >
-            <div className={publicPrimaryPanelClass}>
-              <div>
-                {isDedicatedPublicPage ? (
-                  <div className="text-center">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
-                      {isSuccessfulBookingCancelled ? "Cancelled" : "Success"}
-                    </p>
-                    <h3 className="mt-1 text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
-                      {isSuccessfulBookingCancelled ? "Booking cancelled" : "Booking confirmed"}
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                      {isSuccessfulBookingCancelled
-                        ? `This booking has been cancelled for ${successfulBooking.clientEmail}.`
-                        : `A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`}
-                    </p>
-                  </div>
-                ) : (
-                  <SectionTitle
-                    eyebrow={isSuccessfulBookingCancelled ? "Cancelled" : "Success"}
-                    title={isSuccessfulBookingCancelled ? "Booking cancelled" : "Booking confirmed"}
-                    body={
-                      isSuccessfulBookingCancelled
-                        ? `This booking has been cancelled for ${successfulBooking.clientEmail}.`
-                        : `A confirmation-ready record is stored for ${successfulBooking.clientEmail}.`
-                    }
-                  />
-                )}
-                <div className={cn("mt-6", publicInsetCardClass)}>
-                  <div className="grid gap-3 text-sm text-[var(--muted)]">
-                    {hasMultipleServices ? (
-                      <p>
-                        <span className="font-semibold text-[var(--ink)]">Service:</span>{" "}
-                        {successfulBooking.serviceName}
-                      </p>
-                    ) : null}
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Date:</span>{" "}
-                      {formatDateLabel(successfulBooking.dateKey)}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Time:</span>{" "}
-                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
-                    </p>
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Client:</span>{" "}
-                      {successfulBooking.clientName}
-                    </p>
-                    {successfulBooking.capacitySnapshot ? (
-                      <p>
-                        <span className="font-semibold text-[var(--ink)]">Capacity:</span>{" "}
-                        {successfulBooking.capacitySnapshot}
-                      </p>
-                    ) : null}
-                    <p>
-                      <span className="font-semibold text-[var(--ink)]">Status:</span>{" "}
-                      {successfulBooking.status}
-                    </p>
+                      </>
+                    )}
                   </div>
                 </div>
-                <div className="mx-auto mt-6 flex w-full max-w-[820px] flex-wrap items-center justify-center gap-3">
-                  <ActionButton
-                    tone="primary"
-                    className={cn("px-6", publicPrimaryActionClass)}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => downloadBookingCalendarFile(successfulBooking)}
-                  >
-                    Add to calendar
-                  </ActionButton>
-                  <ActionButton
-                    tone="ghost"
-                    className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => openReschedule(successfulBooking.id)}
-                  >
-                    Reschedule
-                  </ActionButton>
-                  <ActionButton
-                    tone="danger"
-                    className={cn(isDedicatedPublicPage && publicPillButtonClass)}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => setCancellationId(successfulBooking.id)}
-                  >
-                    Cancel booking
-                  </ActionButton>
-                  <ActionButton
-                    tone="secondary"
-                    className={cn(isDedicatedPublicPage && publicPillButtonClass)}
-                    onClick={() => startFreshBooking()}
-                  >
-                    Book another
-                  </ActionButton>
-                </div>
-              </div>
-            </div>
-
-            {!isDedicatedPublicPage ? (
-              <div className={publicSoftPanelClass}>
-                <SectionTitle
-                  title="Share or return"
-                  body="The booking remains visible to both client and provider. The provider workspace also reflects the new record instantly."
-                />
-                <div className="mt-6 flex flex-col gap-3">
-                  <ActionButton tone="primary" onClick={copyPublicLink}>
-                    {copiedLink ? "Copied public URL" : "Copy public booking URL"}
-                  </ActionButton>
-                  {surfaceMode === "adaptive" ? (
-                    <ActionButton tone="secondary" onClick={() => setSurface("management")}>
-                      Open provider workspace
-                    </ActionButton>
-                  ) : null}
-                  {surfaceMode !== "adaptive" ? (
-                    <ActionLink href="/" tone="secondary">
-                      Open provider workspace
-                    </ActionLink>
-                  ) : null}
-                </div>
+                {!isPublicSuccessStep && bookingError ? (
+                  <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                    {bookingError}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
         ) : null}
+
       </>
     );
   }
