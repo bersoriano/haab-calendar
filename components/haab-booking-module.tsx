@@ -2,6 +2,7 @@
 
 import { parse as parseNaturalLanguage, type ParsedResult } from "chrono-node";
 import Link from "next/link";
+import QRCode from "qrcode";
 import {
   startTransition,
   useDeferredValue,
@@ -847,6 +848,10 @@ function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
   ].join("\n");
 }
 
+function buildCalendarDataUrl(booking: BookingRecord, provider: ProviderInfo) {
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(buildIcsContent(booking, provider))}`;
+}
+
 function buttonClasses(
   tone: "primary" | "secondary" | "ghost" | "danger",
   className?: string,
@@ -1061,6 +1066,7 @@ export function HaabBookingModule({
   );
 
   const [hydrated, setHydrated] = useState(integratedMode);
+  const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   const [standaloneStore, setStandaloneStore] = useState<ModuleStore>(() =>
     createEmptyStore(),
   );
@@ -1115,6 +1121,11 @@ export function HaabBookingModule({
   const [publicFloatingBarFrame, setPublicFloatingBarFrame] = useState<{
     centerX: number;
     width: number;
+  } | null>(null);
+  const [calendarQrCode, setCalendarQrCode] = useState<{
+    bookingId: string;
+    error: string;
+    url: string;
   } | null>(null);
 
   useEffect(() => {
@@ -1283,6 +1294,10 @@ export function HaabBookingModule({
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   useEffect(() => {
+    setIsMobileBrowser(window.matchMedia('(pointer: coarse)').matches);
+  }, []);
+
+  useEffect(() => {
     if (
       resolvedBookingFlow.step !== 2 &&
       resolvedBookingFlow.step !== 3 &&
@@ -1322,9 +1337,12 @@ export function HaabBookingModule({
         node.style.minHeight = previousMinHeights[index] ?? "";
       });
 
-      setPublicPrimaryPanelHeight((current) =>
-        current === nextHeight ? current : nextHeight,
-      );
+      setPublicPrimaryPanelHeight((current) => {
+        if (current === null) return nextHeight;
+        // On the success step, never shrink — preserve the height from the details step
+        if (resolvedBookingFlow.step === 4) return Math.max(current, nextHeight);
+        return nextHeight;
+      });
     };
 
     frameId = window.requestAnimationFrame(syncHeight);
@@ -1401,6 +1419,44 @@ export function HaabBookingModule({
 
     return () => window.clearInterval(intervalId);
   }, [bookingHolds.length]);
+
+  useEffect(() => {
+    if (!successfulBooking || successfulBooking.status === "cancelled") {
+      return;
+    }
+
+    let cancelled = false;
+    const bookingId = successfulBooking.id;
+
+    QRCode.toDataURL(buildIcsContent(successfulBooking, provider), {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      scale: 8,
+      width: 400,
+    })
+      .then((url) => {
+        if (cancelled) {
+          return;
+        }
+
+        setCalendarQrCode({ bookingId, error: "", url });
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setCalendarQrCode({
+          bookingId,
+          error: "Unable to generate the calendar QR code.",
+          url: "",
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [provider, successfulBooking]);
 
   function emitStoreChange(next: ModuleStore) {
     onStoreChange?.(next);
@@ -1948,10 +2004,19 @@ export function HaabBookingModule({
   }
 
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
-    setBookingFlow((current) => ({
-      ...current,
-      [key]: value,
-    }));
+    setBookingFlow((current) => {
+      const next = { ...current, [key]: value };
+      if (
+        bookingError === "Client name, email, and phone number are required." &&
+        (key === "clientName" || key === "clientEmail" || key === "clientPhone") &&
+        String(next.clientName).trim() &&
+        String(next.clientEmail).trim() &&
+        String(next.clientPhone).trim()
+      ) {
+        setBookingError(null);
+      }
+      return next;
+    });
   }
 
   function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
@@ -3878,7 +3943,7 @@ export function HaabBookingModule({
               ) : null}
             </div>
 
-            {(isPublicDetailsStep || isPublicSuccessStep) ? (
+            {(isPublicDetailsStep || (isPublicSuccessStep && !isMobileBrowser)) ? (
               <div
                 ref={publicAboutPanelRef}
                 className={cn(
@@ -3891,46 +3956,49 @@ export function HaabBookingModule({
                     : undefined
                 }
               >
-                <SectionTitle title="About the Appointment" />
+                <SectionTitle
+                  title={
+                    isPublicSuccessStep && successfulBooking && !isSuccessfulBookingCancelled
+                      ? "Download event to your phone"
+                      : "About the Appointment"
+                  }
+                />
                 <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
-                  <dl className="grid gap-4">
-                    <SummaryField
-                      label="Type of service"
-                      value={
-                        isPublicSuccessStep && successfulBooking
-                          ? successfulBooking.serviceName
-                          : selectedService.name
-                      }
-                    />
-                    <SummaryField
-                      label="Type"
-                      value={getBookingTypeLabel(
-                        isPublicSuccessStep && successfulBooking
-                          ? successfulBooking.bookingType
-                          : selectedService.bookingType,
+                  {isPublicSuccessStep && successfulBooking && !isSuccessfulBookingCancelled ? (
+                    <div className="flex h-full flex-col items-center justify-center">
+                      {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
+                        <div
+                          aria-label="QR code to add this booking to a calendar"
+                          className="w-full aspect-square bg-contain bg-center bg-no-repeat"
+                          role="img"
+                          style={{ backgroundImage: `url(${calendarQrCode.url})` }}
+                        />
+                      ) : (
+                        <p className="px-5 text-sm leading-6 text-[var(--muted)]">
+                          {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.error
+                            ? calendarQrCode.error
+                            : "Preparing calendar QR..."}
+                        </p>
                       )}
-                    />
-                    <SummaryField
-                      label="Capacity"
-                      value={
-                        isPublicSuccessStep && successfulBooking
-                          ? successfulBooking.capacitySnapshot || formatCapacityLabel(selectedService)
-                          : formatCapacityLabel(selectedService)
-                      }
-                    />
-                    <SummaryField label="Length" value={formatDuration(selectedService)} />
-                    <SummaryField
-                      label="Total"
-                      value={
-                        isPublicSuccessStep && successfulBooking
-                          ? successfulBooking.cost || selectedService.cost || "Not set"
-                          : selectedService.cost || "Not set"
-                      }
-                    />
-                    {selectedService.notes ? (
-                      <SummaryField label="Notes" value={selectedService.notes} />
-                    ) : null}
-                  </dl>
+                      <p className="mt-4 text-sm leading-6 text-[var(--muted)] text-center">
+                        Scan to add this booking to your calendar.
+                      </p>
+                    </div>
+                  ) : (
+                    <dl className="grid gap-4">
+                      <SummaryField label="Type of service" value={selectedService.name} />
+                      <SummaryField
+                        label="Type"
+                        value={getBookingTypeLabel(selectedService.bookingType)}
+                      />
+                      <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                      <SummaryField label="Length" value={formatDuration(selectedService)} />
+                      <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                      {selectedService.notes ? (
+                        <SummaryField label="Notes" value={selectedService.notes} />
+                      ) : null}
+                    </dl>
+                  )}
                 </div>
               </div>
             ) : null}
