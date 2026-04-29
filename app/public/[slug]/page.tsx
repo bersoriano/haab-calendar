@@ -8,7 +8,7 @@ export default async function PublicBookingPage({
   const { slug } = await params;
 
   return (
-    <main className="relative isolate min-h-screen overflow-hidden bg-[#eef2f5]">
+    <main className="relative isolate min-h-screen overflow-x-clip bg-[#eef2f5]">
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-[url('/bkg2.jpg')] bg-cover bg-center bg-no-repeat"

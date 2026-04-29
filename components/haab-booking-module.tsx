@@ -1035,9 +1035,11 @@ function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" | "u
 function PublicProgressIndicator({
   currentStep,
   isDedicatedPublicPage,
+  isStuck = false,
 }: {
   currentStep: 2 | 3 | 4;
   isDedicatedPublicPage: boolean;
+  isStuck?: boolean;
 }) {
   const steps = [
     { key: 2 as const, label: "Date & Time" },
@@ -1049,9 +1051,11 @@ function PublicProgressIndicator({
     <nav
       aria-label="Booking progress"
       className={cn(
-        "rounded-[28px] px-5 py-4 sm:px-7 sm:py-5",
+        "rounded-[28px] px-5 py-4 sm:px-7 sm:py-5 transition-[background-color,backdrop-filter] duration-200",
         isDedicatedPublicPage
-          ? "border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px]"
+          ? isStuck
+            ? "border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)]"
+            : "border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px]"
           : "border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
       )}
     >
@@ -1215,6 +1219,8 @@ export function HaabBookingModule({
     null,
   );
   const [isNaturalLanguageBookingFocused, setIsNaturalLanguageBookingFocused] = useState(false);
+  const [isNLBookingOpen, setIsNLBookingOpen] = useState(false);
+  const [isNLChangeDateOpen, setIsNLChangeDateOpen] = useState(false);
   const [
     wasBookingUpdatedWithNaturalLanguage,
     setWasBookingUpdatedWithNaturalLanguage,
@@ -1233,17 +1239,14 @@ export function HaabBookingModule({
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
-  const publicFlowGridRef = useRef<HTMLDivElement | null>(null);
   const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
   const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
+  const stickyHeaderSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [isStickyHeaderStuck, setIsStickyHeaderStuck] = useState(false);
   const [publicPrimaryPanelHeight, setPublicPrimaryPanelHeight] = useState<number | null>(
     null,
   );
-  const [publicFloatingBarFrame, setPublicFloatingBarFrame] = useState<{
-    centerX: number;
-    width: number;
-  } | null>(null);
   const [calendarQrCode, setCalendarQrCode] = useState<{
     bookingId: string;
     error: string;
@@ -1374,6 +1377,11 @@ export function HaabBookingModule({
   const publicElevatedPanelClass = isDedicatedPublicPage
     ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
+  const stickyBarPanelClass = isDedicatedPublicPage
+    ? isStickyHeaderStuck
+      ? "rounded-[32px] border border-white bg-white p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] xl:p-7 transition-[background-color,backdrop-filter] duration-200"
+      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] xl:p-7 transition-[background-color,backdrop-filter] duration-200"
+    : publicElevatedPanelClass;
   const publicSoftPanelClass = isDedicatedPublicPage
     ? "rounded-[32px] bg-[rgba(243,244,245,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6 xl:p-7";
@@ -1401,9 +1409,6 @@ export function HaabBookingModule({
   const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6" : "";
   const publicPrimaryActionClass = isDedicatedPublicPage
     ? cn(publicPillButtonClass, "justify-center")
-    : "";
-  const publicPrimaryWideActionClass = isDedicatedPublicPage
-    ? cn(publicPrimaryActionClass, "w-full")
     : "";
   const publicGhostButtonClass = isDedicatedPublicPage
     ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[rgba(255,255,255,0.58)] hover:text-[var(--ink)]"
@@ -1491,46 +1496,6 @@ export function HaabBookingModule({
   }, [resolvedBookingFlow.step]);
 
   useEffect(() => {
-    if (resolvedBookingFlow.step !== 3 && resolvedBookingFlow.step !== 4) {
-      return;
-    }
-
-    const node = publicFlowGridRef.current;
-
-    if (!node || typeof ResizeObserver === "undefined") {
-      return;
-    }
-
-    let frameId = 0;
-    const syncFrame = () => {
-      const rect = node.getBoundingClientRect();
-      const styles = window.getComputedStyle(node);
-      const paddingLeft = Number.parseFloat(styles.paddingLeft) || 0;
-      const paddingRight = Number.parseFloat(styles.paddingRight) || 0;
-      const width = Math.round(Math.max(0, rect.width - paddingLeft - paddingRight));
-      const centerX = Math.round(rect.left + paddingLeft + width / 2);
-
-      setPublicFloatingBarFrame((current) =>
-        current?.width === width && current.centerX === centerX
-          ? current
-          : { centerX, width },
-      );
-    };
-
-    frameId = window.requestAnimationFrame(syncFrame);
-
-    const observer = new ResizeObserver(syncFrame);
-    observer.observe(node);
-    window.addEventListener("resize", syncFrame);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      observer.disconnect();
-      window.removeEventListener("resize", syncFrame);
-    };
-  }, [resolvedBookingFlow.step]);
-
-  useEffect(() => {
     if (bookingHolds.length === 0) {
       return;
     }
@@ -1541,6 +1506,23 @@ export function HaabBookingModule({
 
     return () => window.clearInterval(intervalId);
   }, [bookingHolds.length]);
+
+  useEffect(() => {
+    const sentinel = stickyHeaderSentinelRef.current;
+    if (!sentinel || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsStickyHeaderStuck(!entry.isIntersecting);
+      },
+      { threshold: 0, rootMargin: "-16px 0px 0px 0px" },
+    );
+    observer.observe(sentinel);
+
+    return () => observer.disconnect();
+  }, [resolvedBookingFlow.step]);
 
   useEffect(() => {
     if (!successfulBooking || successfulBooking.status === "cancelled") {
@@ -1738,6 +1720,7 @@ export function HaabBookingModule({
     setNaturalLanguageBookingInput("");
     setNaturalLanguageBookingError(null);
     setIsNaturalLanguageBookingFocused(false);
+    setIsNLBookingOpen(false);
     setWasBookingUpdatedWithNaturalLanguage(false);
     releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
     setBookingHold(null);
@@ -1881,6 +1864,7 @@ export function HaabBookingModule({
 
       if (didBeginDetails && isUpdatingExistingSelection) {
         setWasBookingUpdatedWithNaturalLanguage(true);
+        setIsNLChangeDateOpen(false);
       }
 
       return;
@@ -3815,21 +3799,175 @@ export function HaabBookingModule({
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
     const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
 
+    const step2IsAppointment = selectedService?.bookingType === "appointment";
+    const step2DateChosen = Boolean(bookingFlow.dateKey);
+    const step2TimeChosen = Boolean(bookingFlow.time);
+    const step2DateAvailableForFullDay =
+      !step2IsAppointment &&
+      step2DateChosen &&
+      Boolean(selectedService) &&
+      isDateAvailable(
+        bookingFlow.dateKey,
+        selectedService!,
+        availability,
+        bookings,
+        undefined,
+        activeBookingHolds,
+        bookingHold?.released ? undefined : bookingHold?.id,
+      );
+    const step2CanContinue = step2IsAppointment
+      ? step2DateChosen && step2TimeChosen
+      : step2DateChosen && step2DateAvailableForFullDay;
+    const step2Summary = step2IsAppointment
+      ? step2DateChosen && step2TimeChosen
+        ? `${formatDateLabel(bookingFlow.dateKey)} · ${formatTimeLabel(bookingFlow.time)}`
+        : step2DateChosen
+          ? formatDateLabel(bookingFlow.dateKey)
+          : "Not yet"
+      : step2DateChosen
+        ? `${formatDateLabel(bookingFlow.dateKey)} · Full day`
+        : "Not yet";
+    const step2Helper = step2IsAppointment
+      ? !step2DateChosen
+        ? "Pick a date and time to continue."
+        : !step2TimeChosen
+          ? "Pick a time slot to continue."
+          : "Ready to continue. Click the button to enter your details."
+      : !step2DateChosen
+        ? "Pick a date to reserve the full day."
+        : step2DateAvailableForFullDay
+          ? "This day is free. Click the button to enter your details."
+          : "This day isn't available. Pick another date.";
+    const step2ButtonLabel = step2IsAppointment ? "Continue to My Details" : "Book full day";
+
     return (
       <>
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
         selectedService ? (
-          <div
-            className={cn(
-              "px-5 pt-5 sm:px-8 sm:pt-8",
-              isDedicatedPublicPage && "xl:px-10 xl:pt-10",
-            )}
-          >
-            <PublicProgressIndicator
-              currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
-              isDedicatedPublicPage={isDedicatedPublicPage}
-            />
+          <>
+            <div ref={stickyHeaderSentinelRef} aria-hidden="true" className="h-0" />
+            <div
+              className={cn(
+                "sticky top-4 z-30 px-5 pt-5 sm:px-8 sm:pt-8 transition-shadow duration-200",
+                isDedicatedPublicPage && "xl:px-10 xl:pt-10",
+                isStickyHeaderStuck &&
+                  "drop-shadow-[0_8px_24px_rgba(15,23,42,0.08)]",
+              )}
+            >
+            <div className="space-y-3">
+              <PublicProgressIndicator
+                currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
+                isDedicatedPublicPage={isDedicatedPublicPage}
+                isStuck={isStickyHeaderStuck}
+              />
+              {isPublicSelectionStep ? (
+                <div className={cn("!p-4 sm:!p-5", stickyBarPanelClass)}>
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
+                          Your selection
+                        </p>
+                        <p className="text-lg font-semibold text-[var(--ink)]">
+                          {step2Summary}
+                        </p>
+                      </div>
+                      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                        {step2Helper}
+                      </p>
+                    </div>
+                    <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                      <ActionButton
+                        tone="primary"
+                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                        disabled={!step2CanContinue}
+                        onClick={() => beginClientDetailsStep()}
+                      >
+                        {step2ButtonLabel}
+                      </ActionButton>
+                    </div>
+                  </div>
+                </div>
+              ) : isPublicDetailsStep ? (
+                <div className={cn("!p-4 sm:!p-5", stickyBarPanelClass)}>
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <p
+                          className={cn(
+                            compactMetaTextClass,
+                            isBookingHoldExpired
+                              ? "text-[#be123c]"
+                              : "text-[var(--muted)]",
+                          )}
+                        >
+                          Time remaining
+                        </p>
+                        <p
+                          className={cn(
+                            "text-lg font-semibold tabular-nums text-[var(--ink)]",
+                            isBookingHoldExpired && "text-[#be123c]",
+                          )}
+                        >
+                          {isBookingHoldExpired
+                            ? "Expired"
+                            : formatCountdown(bookingHoldRemainingMs)}
+                        </p>
+                      </div>
+                      <p
+                        className={cn(
+                          "mt-1 text-sm leading-6 text-[var(--muted)]",
+                          isBookingHoldExpired && "text-[#be123c]",
+                        )}
+                      >
+                        {isBookingHoldExpired
+                          ? "The time slot may not be available, but you can still try to book."
+                          : "Finish within 10 minutes to keep this booking selection fresh."}
+                      </p>
+                    </div>
+                    <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                      <ActionButton
+                        tone="ghost"
+                        className={cn(
+                          "min-w-[150px] px-6",
+                          isDedicatedPublicPage &&
+                            cn(publicPillButtonClass, publicGhostButtonClass),
+                        )}
+                        onClick={() => {
+                          releaseBookingHold(
+                            bookingHold?.released ? undefined : bookingHold?.id,
+                          );
+                          setBookingHold(null);
+                          setBookingHoldNow(currentTimestamp());
+                          setBookingError(null);
+                          setWasBookingUpdatedWithNaturalLanguage(false);
+                          setIsNLBookingOpen(false);
+                          setNaturalLanguageBookingInput("");
+                          setNaturalLanguageBookingError(null);
+                          setBookingFlow((current) => ({ ...current, step: 2 }));
+                        }}
+                      >
+                        Back
+                      </ActionButton>
+                      <ActionButton
+                        tone="primary"
+                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                        onClick={confirmBooking}
+                      >
+                        {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                      </ActionButton>
+                    </div>
+                  </div>
+                  {bookingError ? (
+                    <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                      {bookingError}
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
+          </>
         ) : null}
         {resolvedBookingFlow.step === 1 ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
@@ -3887,83 +4025,14 @@ export function HaabBookingModule({
 
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
           <div
-            ref={publicFlowGridRef}
             className={cn(
               "grid gap-5 p-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
-              (isPublicDetailsStep || isPublicSuccessStep) &&
-                "!pb-[24rem] sm:!pb-56 lg:!pb-48 xl:!pb-48",
               isPublicSelectionStep
-                ? "lg:[grid-template-columns:minmax(0,1.22fr)_minmax(360px,0.78fr)]"
+                ? "lg:grid-cols-1"
                 : "lg:grid-cols-3",
             )}
           >
-            <div
-              className={cn(
-                "transition-opacity duration-300",
-                isPublicSelectionStep ? "lg:col-span-2" : "lg:col-span-3",
-                publicElevatedPanelClass,
-                isPublicSuccessStep && "opacity-50",
-              )}
-            >
-                <SectionTitle
-                  title={
-                    isPublicDetailsStep
-                      ? "Update Booking to a new date and time - Describe the booking in plain language."
-                      : "Describe the booking in plain language"
-                  }
-                  body={
-                    isPublicDetailsStep
-                      ? selectedService.bookingType === "appointment"
-                        ? "Type a new request like \"next Monday at 2 PM\" to update this booking if that slot is free."
-                        : "Type a new request like \"next Friday\" to update this booking if that date is free."
-                      : selectedService.bookingType === "appointment"
-                        ? "Type something like \"next Monday at 2 PM\" and continue straight to My Details if that slot is free."
-                        : "Type something like \"next Friday\" and continue straight to My Details if that date is free."
-                  }
-                />
-                <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                    <input
-                      type="text"
-                      value={naturalLanguageBookingInput}
-                      disabled={isPublicSuccessStep}
-                      onChange={(event) => {
-                        setNaturalLanguageBookingInput(event.target.value);
-                        setNaturalLanguageBookingError(null);
-                      }}
-                      onFocus={() => setIsNaturalLanguageBookingFocused(true)}
-                      onBlur={() => setIsNaturalLanguageBookingFocused(false)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          continueWithNaturalLanguageBooking();
-                        }
-                      }}
-                      placeholder={
-                        selectedService.bookingType === "appointment"
-                          ? "Try \"next Monday at 2 PM\" or \"tomorrow at 11:30 AM\""
-                          : "Try \"next Friday\" or \"the first Tuesday in May\""
-                      }
-                      className={publicFieldClass}
-                    />
-                  </label>
-                  <ActionButton
-                    tone="primary"
-                    className={cn("w-full lg:w-auto", publicPrimaryActionClass)}
-                    disabled={isPublicSuccessStep}
-                    onClick={continueWithNaturalLanguageBooking}
-                  >
-                    {isPublicDetailsStep ? "Update booking" : "Continue to My Details"}
-                  </ActionButton>
-                </div>
-                {naturalLanguageBookingError ? (
-                  <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                    {naturalLanguageBookingError}
-                  </div>
-                ) : null}
-            </div>
-
             <div
               ref={publicPrimaryPanelRef}
               className={cn(
@@ -3981,12 +4050,95 @@ export function HaabBookingModule({
                 <>
                   <SectionTitle
                     title="Pick a date and time"
-                    body={
-                      selectedService.bookingType === "appointment"
-                        ? "Available slots are generated from your weekly schedule and filtered against existing bookings."
-                        : "Select a date and confirm the full-day reservation when the day is free."
-                    }
                   />
+                  <div className="mt-4">
+                    {!isNLBookingOpen ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNLBookingOpen(true);
+                          setNaturalLanguageBookingError(null);
+                        }}
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
+                      >
+                        <svg
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="h-3.5 w-3.5"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Type a date and time instead
+                      </button>
+                    ) : (
+                      <div className="space-y-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+                        <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
+                          <span>
+                            {selectedService.bookingType === "appointment"
+                              ? "Describe a date and time"
+                              : "Describe a date"}
+                          </span>
+                          <input
+                            type="text"
+                            value={naturalLanguageBookingInput}
+                            autoFocus
+                            onChange={(event) => {
+                              setNaturalLanguageBookingInput(event.target.value);
+                              setNaturalLanguageBookingError(null);
+                            }}
+                            onFocus={() => setIsNaturalLanguageBookingFocused(true)}
+                            onBlur={() => setIsNaturalLanguageBookingFocused(false)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                continueWithNaturalLanguageBooking();
+                              }
+                            }}
+                            placeholder={
+                              selectedService.bookingType === "appointment"
+                                ? "e.g. \"next Monday at 2 PM\""
+                                : "e.g. \"next Friday\""
+                            }
+                            className={publicFieldClass}
+                          />
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          <ActionButton
+                            tone="primary"
+                            className={cn("flex-1", publicPrimaryActionClass)}
+                            onClick={continueWithNaturalLanguageBooking}
+                          >
+                            Continue to My Details
+                          </ActionButton>
+                          <ActionButton
+                            tone="ghost"
+                            className={
+                              isDedicatedPublicPage
+                                ? cn(publicPillButtonClass, publicGhostButtonClass)
+                                : undefined
+                            }
+                            onClick={() => {
+                              setIsNLBookingOpen(false);
+                              setNaturalLanguageBookingInput("");
+                              setNaturalLanguageBookingError(null);
+                            }}
+                          >
+                            Cancel
+                          </ActionButton>
+                        </div>
+                        {naturalLanguageBookingError ? (
+                          <div className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                            {naturalLanguageBookingError}
+                          </div>
+                        ) : null}
+                      </div>
+                    )}
+                  </div>
                   <div className="mt-6">{renderPublicCalendar()}</div>
                 </>
               ) : isPublicDetailsStep || isPublicSuccessStep ? (
@@ -4262,14 +4414,6 @@ export function HaabBookingModule({
                           </div>
                         </div>
                       )}
-                      <ActionButton
-                        tone="primary"
-                        className={cn("shrink-0", publicPrimaryWideActionClass)}
-                        disabled={!bookingFlow.time}
-                        onClick={() => beginClientDetailsStep()}
-                      >
-                        Continue to My Details
-                      </ActionButton>
                     </div>
                   ) : (
                     <div className="mt-6 space-y-4">
@@ -4288,24 +4432,6 @@ export function HaabBookingModule({
                             : "This day is unavailable. Choose another date from the calendar."}
                         </p>
                       </div>
-                      <ActionButton
-                        tone="primary"
-                        className={publicPrimaryWideActionClass}
-                        disabled={
-                          !isDateAvailable(
-                            bookingFlow.dateKey,
-                            selectedService,
-                            availability,
-                            bookings,
-                            undefined,
-                            activeBookingHolds,
-                            bookingHold?.released ? undefined : bookingHold?.id,
-                          )
-                        }
-                        onClick={() => beginClientDetailsStep()}
-                      >
-                        Book full day
-                      </ActionButton>
                     </div>
                   )}
                 </>
@@ -4384,157 +4510,136 @@ export function HaabBookingModule({
                         <SummaryField label="Status" value={successfulBooking.status} />
                       ) : null}
                     </dl>
+                    {isPublicDetailsStep ? (
+                      <div className="mt-4 border-t border-[var(--line)] pt-4">
+                        {!isNLChangeDateOpen ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsNLChangeDateOpen(true);
+                              setNaturalLanguageBookingInput("");
+                              setNaturalLanguageBookingError(null);
+                            }}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
+                          >
+                            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                            Change date/time
+                          </button>
+                        ) : (
+                          <div className="space-y-3">
+                            <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
+                              New date/time
+                              <input
+                                type="text"
+                                value={naturalLanguageBookingInput}
+                                autoFocus
+                                onChange={(event) => {
+                                  setNaturalLanguageBookingInput(event.target.value);
+                                  setNaturalLanguageBookingError(null);
+                                }}
+                                onFocus={() => setIsNaturalLanguageBookingFocused(true)}
+                                onBlur={() => setIsNaturalLanguageBookingFocused(false)}
+                                onKeyDown={(event) => {
+                                  if (event.key === "Enter") {
+                                    event.preventDefault();
+                                    continueWithNaturalLanguageBooking();
+                                  }
+                                }}
+                                placeholder={
+                                  selectedService.bookingType === "appointment"
+                                    ? "e.g. \"next Monday at 2 PM\""
+                                    : "e.g. \"next Friday\""
+                                }
+                                className={publicFieldClass}
+                              />
+                            </label>
+                            <div className="flex gap-2">
+                              <ActionButton
+                                tone="primary"
+                                className={cn("flex-1", publicPrimaryActionClass)}
+                                onClick={continueWithNaturalLanguageBooking}
+                              >
+                                Update
+                              </ActionButton>
+                              <ActionButton
+                                tone="ghost"
+                                className={isDedicatedPublicPage ? cn(publicPillButtonClass, publicGhostButtonClass) : undefined}
+                                onClick={() => {
+                                  setIsNLChangeDateOpen(false);
+                                  setNaturalLanguageBookingInput("");
+                                  setNaturalLanguageBookingError(null);
+                                }}
+                              >
+                                Cancel
+                              </ActionButton>
+                            </div>
+                            {naturalLanguageBookingError ? (
+                              <div className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                                {naturalLanguageBookingError}
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
                   </div>
                 </>
               )}
             </div>
 
-            {(isPublicDetailsStep || isPublicSuccessStep) ? (
+            {isPublicSuccessStep && successfulBooking ? (
               <div
                 className={cn(
-                  "fixed bottom-20 left-1/2 z-40 w-[calc(100vw-4.5rem)] -translate-x-1/2 !p-4 sm:w-[calc(100vw-7rem)] sm:!p-5",
+                  "lg:col-span-3 !p-4 sm:!p-5",
                   publicElevatedPanelClass,
                 )}
-                style={
-                  publicFloatingBarFrame
-                    ? {
-                        left: `${publicFloatingBarFrame.centerX}px`,
-                        width: `${publicFloatingBarFrame.width}px`,
-                      }
-                    : undefined
-                }
               >
-                <div
-                  className={cn(
-                    "flex flex-col gap-5",
-                    isPublicSuccessStep
-                      ? "lg:items-center lg:justify-end"
-                      : "lg:flex-row lg:items-center lg:justify-between",
-                  )}
-                >
-                  {!isPublicSuccessStep ? (
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <p
-                          className={cn(
-                            compactMetaTextClass,
-                            isBookingHoldExpired ? "text-[#be123c]" : "text-[var(--muted)]",
-                          )}
-                        >
-                          Time remaining
-                        </p>
-                        <p
-                          className={cn(
-                            "text-lg font-semibold tabular-nums text-[var(--ink)]",
-                            isBookingHoldExpired && "text-[#be123c]",
-                          )}
-                        >
-                          {isBookingHoldExpired
-                            ? "Expired"
-                            : formatCountdown(bookingHoldRemainingMs)}
-                        </p>
-                      </div>
-                      <p
-                        className={cn(
-                          "mt-1 text-sm leading-6 text-[var(--muted)]",
-                          isBookingHoldExpired && "text-[#be123c]",
-                        )}
-                      >
-                        {isBookingHoldExpired
-                          ? "The time slot may not be available, but you can still try to book."
-                          : "Finish within 10 minutes to keep this booking selection fresh."}
-                      </p>
-                    </div>
-                  ) : null}
-
-                  <div
-                    className={cn(
-                      "flex w-full flex-wrap items-center gap-3",
-                      isPublicSuccessStep
-                        ? "justify-center"
-                        : "justify-end lg:w-auto",
-                    )}
+                <div className="flex w-full flex-wrap items-center justify-center gap-3">
+                  <ActionButton
+                    tone="primary"
+                    className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => downloadBookingCalendarFile(successfulBooking)}
                   >
-                    {isPublicSuccessStep && successfulBooking ? (
-                      <>
-                        <ActionButton
-                          tone="primary"
-                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                          disabled={isSuccessfulBookingCancelled}
-                          onClick={() => downloadBookingCalendarFile(successfulBooking)}
-                        >
-                          Add to calendar
-                        </ActionButton>
-                        <ActionButton
-                          tone="ghost"
-                          className={cn(
-                            "min-w-[150px]",
-                            isDedicatedPublicPage &&
-                              cn(publicPillButtonClass, publicGhostButtonClass),
-                          )}
-                          disabled={isSuccessfulBookingCancelled}
-                          onClick={() => openReschedule(successfulBooking.id)}
-                        >
-                          Reschedule
-                        </ActionButton>
-                        <ActionButton
-                          tone="danger"
-                          className={cn(
-                            "min-w-[150px]",
-                            isDedicatedPublicPage && publicPillButtonClass,
-                          )}
-                          disabled={isSuccessfulBookingCancelled}
-                          onClick={() => setCancellationId(successfulBooking.id)}
-                        >
-                          Cancel booking
-                        </ActionButton>
-                        <ActionButton
-                          tone="secondary"
-                          className={cn(
-                            "min-w-[150px]",
-                            isDedicatedPublicPage && publicPillButtonClass,
-                          )}
-                          onClick={() => startFreshBooking()}
-                        >
-                          Book another
-                        </ActionButton>
-                      </>
-                    ) : (
-                      <>
-                        <ActionButton
-                          tone="ghost"
-                          className={cn(
-                            "min-w-[150px] px-6",
-                            isDedicatedPublicPage &&
-                              cn(publicPillButtonClass, publicGhostButtonClass),
-                          )}
-                          onClick={() => {
-                            releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
-                            setBookingHold(null);
-                            setBookingHoldNow(currentTimestamp());
-                            setBookingError(null);
-                            setWasBookingUpdatedWithNaturalLanguage(false);
-                            setBookingFlow((current) => ({ ...current, step: 2 }));
-                          }}
-                        >
-                          Back
-                        </ActionButton>
-                        <ActionButton
-                          tone="primary"
-                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                          onClick={confirmBooking}
-                        >
-                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
-                        </ActionButton>
-                      </>
+                    Add to calendar
+                  </ActionButton>
+                  <ActionButton
+                    tone="ghost"
+                    className={cn(
+                      "min-w-[150px]",
+                      isDedicatedPublicPage &&
+                        cn(publicPillButtonClass, publicGhostButtonClass),
                     )}
-                  </div>
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => openReschedule(successfulBooking.id)}
+                  >
+                    Reschedule
+                  </ActionButton>
+                  <ActionButton
+                    tone="danger"
+                    className={cn(
+                      "min-w-[150px]",
+                      isDedicatedPublicPage && publicPillButtonClass,
+                    )}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => setCancellationId(successfulBooking.id)}
+                  >
+                    Cancel booking
+                  </ActionButton>
+                  <ActionButton
+                    tone="secondary"
+                    className={cn(
+                      "min-w-[150px]",
+                      isDedicatedPublicPage && publicPillButtonClass,
+                    )}
+                    onClick={() => startFreshBooking()}
+                  >
+                    Book another
+                  </ActionButton>
                 </div>
-                {!isPublicSuccessStep && bookingError ? (
-                  <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                    {bookingError}
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
