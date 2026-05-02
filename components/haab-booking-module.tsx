@@ -259,7 +259,6 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
-const compactChipTextClass = "text-xs font-semibold uppercase tracking-[0.12em]";
 const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.18em]";
 const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
 const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";
@@ -848,10 +847,6 @@ function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
   ].join("\n");
 }
 
-function buildCalendarDataUrl(booking: BookingRecord, provider: ProviderInfo) {
-  return `data:text/calendar;charset=utf-8,${encodeURIComponent(buildIcsContent(booking, provider))}`;
-}
-
 function buttonClasses(
   tone: "primary" | "secondary" | "ghost" | "danger",
   className?: string,
@@ -1369,8 +1364,8 @@ export function HaabBookingModule({
     isStickyHeaderStuck && resolvedBookingFlow.step === 2;
   const stickyBarPanelClass = isDedicatedPublicPage
     ? isStickyHeaderActive
-      ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] transition-[background-color,backdrop-filter] duration-200"
-      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] transition-[background-color,backdrop-filter] duration-200"
+      ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
+      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
     : "rounded-[28px] border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]";
   const publicSoftPanelClass = isDedicatedPublicPage
     ? "rounded-[32px] bg-[rgba(243,244,245,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
@@ -1411,7 +1406,16 @@ export function HaabBookingModule({
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   useEffect(() => {
-    setIsMobileBrowser(window.matchMedia('(pointer: coarse)').matches);
+    const mediaQuery = window.matchMedia("(pointer: coarse)");
+    const syncMobileBrowser = () => setIsMobileBrowser(mediaQuery.matches);
+    const frameId = window.requestAnimationFrame(syncMobileBrowser);
+
+    mediaQuery.addEventListener("change", syncMobileBrowser);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      mediaQuery.removeEventListener("change", syncMobileBrowser);
+    };
   }, []);
 
   useEffect(() => {
@@ -3838,15 +3842,15 @@ export function HaabBookingModule({
             <div ref={stickyHeaderSentinelRef} aria-hidden="true" className="h-0" />
             <div
               className={cn(
-                "px-5 pt-5 sm:px-8 sm:pt-8 transition-[background-color,backdrop-filter,filter] duration-200",
+                "relative isolate px-5 pt-5 sm:px-8 sm:pt-8 transition-[filter,padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:-inset-x-8 before:-top-8 before:-bottom-9 before:z-0 before:bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.7)_46%,rgba(255,255,255,0.34)_72%,rgba(255,255,255,0)_100%)] before:opacity-0 before:backdrop-blur-[28px] before:transition-opacity before:duration-500 before:ease-out before:[-webkit-mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] before:[mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] sm:before:-inset-x-10 sm:before:-top-10 sm:before:-bottom-11 xl:before:-inset-x-12 xl:before:-top-12 xl:before:-bottom-12",
                 isPublicSelectionStep && "sticky top-4 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
-                  "bg-[rgba(255,255,255,0.45)] backdrop-blur-[20px] drop-shadow-[0_8px_24px_rgba(15,23,42,0.08)]",
+                  "pb-6 drop-shadow-[0_14px_34px_rgba(15,23,42,0.1)] before:opacity-100 sm:pb-8 xl:pb-10",
               )}
             >
-            <div className={stickyBarPanelClass}>
-              <div className="px-5 py-4 sm:px-7 sm:py-5">
+            <div className={cn("relative z-10", stickyBarPanelClass)}>
+              <div className="px-5 py-5 sm:px-7 sm:py-6">
                 <PublicProgressIndicator
                   currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                   isDedicatedPublicPage={isDedicatedPublicPage}
@@ -3855,8 +3859,8 @@ export function HaabBookingModule({
               {isPublicSelectionStep ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
-                  <div className="px-5 py-4 sm:px-7 sm:py-5">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
                           <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
@@ -3886,8 +3890,8 @@ export function HaabBookingModule({
               ) : isPublicDetailsStep ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
-                  <div className="px-5 py-4 sm:px-7 sm:py-5">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
                           <p
