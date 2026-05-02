@@ -1035,11 +1035,9 @@ function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" | "u
 function PublicProgressIndicator({
   currentStep,
   isDedicatedPublicPage,
-  isStuck = false,
 }: {
   currentStep: 2 | 3 | 4;
   isDedicatedPublicPage: boolean;
-  isStuck?: boolean;
 }) {
   const steps = [
     { key: 2 as const, label: "Date & Time" },
@@ -1048,17 +1046,7 @@ function PublicProgressIndicator({
   ];
 
   return (
-    <nav
-      aria-label="Booking progress"
-      className={cn(
-        "rounded-[28px] px-5 py-4 sm:px-7 sm:py-5 transition-[background-color,backdrop-filter] duration-200",
-        isDedicatedPublicPage
-          ? isStuck
-            ? "border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)]"
-            : "border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px]"
-          : "border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]",
-      )}
-    >
+    <nav aria-label="Booking progress">
       <ol className="flex items-start" role="list">
         {steps.map((step, index) => {
           const isFinished = currentStep === 4;
@@ -1377,11 +1365,13 @@ export function HaabBookingModule({
   const publicElevatedPanelClass = isDedicatedPublicPage
     ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
+  const isStickyHeaderActive =
+    isStickyHeaderStuck && resolvedBookingFlow.step === 2;
   const stickyBarPanelClass = isDedicatedPublicPage
-    ? isStickyHeaderStuck
-      ? "rounded-[32px] border border-white bg-white p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] xl:p-7 transition-[background-color,backdrop-filter] duration-200"
-      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] xl:p-7 transition-[background-color,backdrop-filter] duration-200"
-    : publicElevatedPanelClass;
+    ? isStickyHeaderActive
+      ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] transition-[background-color,backdrop-filter] duration-200"
+      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] transition-[background-color,backdrop-filter] duration-200"
+    : "rounded-[28px] border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]";
   const publicSoftPanelClass = isDedicatedPublicPage
     ? "rounded-[32px] bg-[rgba(243,244,245,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6 xl:p-7";
@@ -3848,122 +3838,130 @@ export function HaabBookingModule({
             <div ref={stickyHeaderSentinelRef} aria-hidden="true" className="h-0" />
             <div
               className={cn(
-                "sticky top-4 z-30 px-5 pt-5 sm:px-8 sm:pt-8 transition-shadow duration-200",
+                "px-5 pt-5 sm:px-8 sm:pt-8 transition-[background-color,backdrop-filter,filter] duration-200",
+                isPublicSelectionStep && "sticky top-4 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
-                isStickyHeaderStuck &&
-                  "drop-shadow-[0_8px_24px_rgba(15,23,42,0.08)]",
+                isStickyHeaderActive &&
+                  "bg-[rgba(255,255,255,0.45)] backdrop-blur-[20px] drop-shadow-[0_8px_24px_rgba(15,23,42,0.08)]",
               )}
             >
-            <div className="space-y-3">
-              <PublicProgressIndicator
-                currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
-                isDedicatedPublicPage={isDedicatedPublicPage}
-                isStuck={isStickyHeaderStuck}
-              />
+            <div className={stickyBarPanelClass}>
+              <div className="px-5 py-4 sm:px-7 sm:py-5">
+                <PublicProgressIndicator
+                  currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
+                  isDedicatedPublicPage={isDedicatedPublicPage}
+                />
+              </div>
               {isPublicSelectionStep ? (
-                <div className={cn("!p-4 sm:!p-5", stickyBarPanelClass)}>
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
-                          Your selection
-                        </p>
-                        <p className="text-lg font-semibold text-[var(--ink)]">
-                          {step2Summary}
+                <>
+                  <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
+                  <div className="px-5 py-4 sm:px-7 sm:py-5">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
+                            Your selection
+                          </p>
+                          <p className="text-lg font-semibold text-[var(--ink)]">
+                            {step2Summary}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                          {step2Helper}
                         </p>
                       </div>
-                      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                        {step2Helper}
-                      </p>
-                    </div>
-                    <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
-                      <ActionButton
-                        tone="primary"
-                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                        disabled={!step2CanContinue}
-                        onClick={() => beginClientDetailsStep()}
-                      >
-                        {step2ButtonLabel}
-                      </ActionButton>
+                      <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                        <ActionButton
+                          tone="primary"
+                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                          disabled={!step2CanContinue}
+                          onClick={() => beginClientDetailsStep()}
+                        >
+                          {step2ButtonLabel}
+                        </ActionButton>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </>
               ) : isPublicDetailsStep ? (
-                <div className={cn("!p-4 sm:!p-5", stickyBarPanelClass)}>
-                  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-3">
+                <>
+                  <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
+                  <div className="px-5 py-4 sm:px-7 sm:py-5">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <p
+                            className={cn(
+                              compactMetaTextClass,
+                              isBookingHoldExpired
+                                ? "text-[#be123c]"
+                                : "text-[var(--muted)]",
+                            )}
+                          >
+                            Time remaining
+                          </p>
+                          <p
+                            className={cn(
+                              "text-lg font-semibold tabular-nums text-[var(--ink)]",
+                              isBookingHoldExpired && "text-[#be123c]",
+                            )}
+                          >
+                            {isBookingHoldExpired
+                              ? "Expired"
+                              : formatCountdown(bookingHoldRemainingMs)}
+                          </p>
+                        </div>
                         <p
                           className={cn(
-                            compactMetaTextClass,
-                            isBookingHoldExpired
-                              ? "text-[#be123c]"
-                              : "text-[var(--muted)]",
-                          )}
-                        >
-                          Time remaining
-                        </p>
-                        <p
-                          className={cn(
-                            "text-lg font-semibold tabular-nums text-[var(--ink)]",
+                            "mt-1 text-sm leading-6 text-[var(--muted)]",
                             isBookingHoldExpired && "text-[#be123c]",
                           )}
                         >
                           {isBookingHoldExpired
-                            ? "Expired"
-                            : formatCountdown(bookingHoldRemainingMs)}
+                            ? "The time slot may not be available, but you can still try to book."
+                            : "Finish within 10 minutes to keep this booking selection fresh."}
                         </p>
                       </div>
-                      <p
-                        className={cn(
-                          "mt-1 text-sm leading-6 text-[var(--muted)]",
-                          isBookingHoldExpired && "text-[#be123c]",
-                        )}
-                      >
-                        {isBookingHoldExpired
-                          ? "The time slot may not be available, but you can still try to book."
-                          : "Finish within 10 minutes to keep this booking selection fresh."}
-                      </p>
+                      <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                        <ActionButton
+                          tone="ghost"
+                          className={cn(
+                            "min-w-[150px] px-6",
+                            isDedicatedPublicPage &&
+                              cn(publicPillButtonClass, publicGhostButtonClass),
+                          )}
+                          onClick={() => {
+                            releaseBookingHold(
+                              bookingHold?.released ? undefined : bookingHold?.id,
+                            );
+                            setBookingHold(null);
+                            setBookingHoldNow(currentTimestamp());
+                            setBookingError(null);
+                            setWasBookingUpdatedWithNaturalLanguage(false);
+                            setIsNLBookingOpen(false);
+                            setNaturalLanguageBookingInput("");
+                            setNaturalLanguageBookingError(null);
+                            setBookingFlow((current) => ({ ...current, step: 2 }));
+                          }}
+                        >
+                          Back
+                        </ActionButton>
+                        <ActionButton
+                          tone="primary"
+                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                          onClick={confirmBooking}
+                        >
+                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                        </ActionButton>
+                      </div>
                     </div>
-                    <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
-                      <ActionButton
-                        tone="ghost"
-                        className={cn(
-                          "min-w-[150px] px-6",
-                          isDedicatedPublicPage &&
-                            cn(publicPillButtonClass, publicGhostButtonClass),
-                        )}
-                        onClick={() => {
-                          releaseBookingHold(
-                            bookingHold?.released ? undefined : bookingHold?.id,
-                          );
-                          setBookingHold(null);
-                          setBookingHoldNow(currentTimestamp());
-                          setBookingError(null);
-                          setWasBookingUpdatedWithNaturalLanguage(false);
-                          setIsNLBookingOpen(false);
-                          setNaturalLanguageBookingInput("");
-                          setNaturalLanguageBookingError(null);
-                          setBookingFlow((current) => ({ ...current, step: 2 }));
-                        }}
-                      >
-                        Back
-                      </ActionButton>
-                      <ActionButton
-                        tone="primary"
-                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                        onClick={confirmBooking}
-                      >
-                        {isBookingHoldExpired ? "Try booking" : "Confirm"}
-                      </ActionButton>
-                    </div>
+                    {bookingError ? (
+                      <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                        {bookingError}
+                      </div>
+                    ) : null}
                   </div>
-                  {bookingError ? (
-                    <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                      {bookingError}
-                    </div>
-                  ) : null}
-                </div>
+                </>
               ) : null}
             </div>
           </div>
@@ -4145,11 +4143,6 @@ export function HaabBookingModule({
                 <>
                   <SectionTitle
                     title="My Details"
-                    body={
-                      isPublicSuccessStep
-                        ? "The confirmed My Details remain visible below."
-                        : "Enter the booking details here and confirm directly from the live summary."
-                    }
                   />
                   <div className="relative mt-6">
                     <div
