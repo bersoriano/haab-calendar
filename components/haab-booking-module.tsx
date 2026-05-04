@@ -3625,7 +3625,7 @@ export function HaabBookingModule({
   }
 
   function renderPublicCalendar() {
-    const earliestVisibleDate = addDays(new Date(), -7);
+    const earliestVisibleDate = new Date();
     const earliestVisibleDateKey = getDateKey(earliestVisibleDate);
     const earliestVisibleMonthAnchor = new Date(
       earliestVisibleDate.getFullYear(),
