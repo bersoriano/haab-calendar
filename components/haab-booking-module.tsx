@@ -1141,6 +1141,105 @@ function PublicProgressIndicator({
   );
 }
 
+function BookingHoldCountdownBar({
+  isCancelled,
+  isConfirmed,
+  isExpired,
+  remainingMs,
+  remainingRatio,
+}: {
+  isCancelled?: boolean;
+  isConfirmed?: boolean;
+  isExpired: boolean;
+  remainingMs: number;
+  remainingRatio: number;
+}) {
+  const isUrgent = remainingMs <= 2 * 60 * 1000 || isExpired;
+  const isWarning = !isUrgent && remainingMs <= 5 * 60 * 1000;
+  const remainingPercent = Math.max(0, Math.min(100, remainingRatio * 100));
+  const displayedRemainingPercent = isExpired
+    ? 100
+    : Math.max(isUrgent && remainingPercent > 0 ? 8 : 0, remainingPercent);
+  const statusLabel = isCancelled
+    ? "Booking cancelled"
+    : isConfirmed
+      ? "Booking secured"
+      : isExpired
+        ? "Hold expired"
+        : isUrgent
+          ? "Hold ending soon"
+          : isWarning
+            ? "Hold ending soon"
+            : "";
+  const helperText = isCancelled
+    ? "This reservation is no longer active."
+    : isConfirmed
+      ? "Your appointment is confirmed and the temporary hold is complete."
+      : isExpired
+        ? "This slot may be released, but you can still try booking it."
+        : "Finish your details before the temporary hold expires.";
+
+  return (
+    <div
+      className={cn(
+        "overflow-hidden px-0 py-0 transition-colors duration-300",
+        isCancelled || isUrgent || isExpired
+          ? "text-[#be123c]"
+          : isConfirmed
+            ? "text-[var(--accent-strong)]"
+            : isWarning
+              ? "text-[#92400e]"
+              : "text-[var(--accent-strong)]",
+      )}
+    >
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+            Booking hold
+          </p>
+          {statusLabel ? (
+            <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+              {statusLabel}
+            </p>
+          ) : null}
+        </div>
+        {!isConfirmed && !isCancelled ? (
+          <p
+            className={cn(
+              "font-semibold tabular-nums",
+              isExpired
+                ? "text-sm uppercase tracking-[0.14em]"
+                : "text-2xl tracking-[-0.04em]",
+            )}
+          >
+            {isExpired ? "Expired" : formatCountdown(remainingMs)}
+          </p>
+        ) : null}
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
+        <div
+          aria-hidden="true"
+          className={cn(
+            "h-full rounded-full transition-[width,background-color] duration-500 ease-out",
+            isCancelled || isUrgent || isExpired
+              ? "bg-[#e11d48]"
+              : isConfirmed
+                ? "bg-[var(--accent)]"
+                : isWarning
+                  ? "bg-[#f59e0b]"
+                  : "bg-[var(--accent)]",
+          )}
+          style={{
+            width:
+              isConfirmed || isCancelled ? "100%" : `${displayedRemainingPercent}%`,
+          }}
+        />
+      </div>
+      <p className="mt-2 text-sm leading-5 opacity-85">{helperText}</p>
+    </div>
+  );
+}
+
 function EmptyState({
   title,
   body,
@@ -1332,12 +1431,25 @@ export function HaabBookingModule({
     (selectedService.bookingType === "full-day" || bookingFlow.time)
       ? getBookingHoldSelectionKey(selectedService, bookingFlow.dateKey, bookingFlow.time)
       : null;
+  const hasActiveBookingHold = Boolean(
+    bookingHoldSelectionKey &&
+      bookingHold &&
+      bookingHold.selectionKey === bookingHoldSelectionKey,
+  );
   const bookingHoldRemainingMs =
     bookingHold && bookingHold.selectionKey === bookingHoldSelectionKey
       ? Math.max(0, BOOKING_HOLD_DURATION_MS - (bookingHoldNow - bookingHold.startedAt))
       : BOOKING_HOLD_DURATION_MS;
-  const isBookingHoldExpired =
-    Boolean(bookingHoldSelectionKey && bookingHold) && bookingHoldRemainingMs <= 0;
+  const bookingHoldRemainingRatio = Math.max(
+    0,
+    Math.min(1, bookingHoldRemainingMs / BOOKING_HOLD_DURATION_MS),
+  );
+  const isBookingHoldExpired = hasActiveBookingHold && bookingHoldRemainingMs <= 0;
+  const shouldShowHoldWarningToast =
+    resolvedBookingFlow.step === 3 &&
+    hasActiveBookingHold &&
+    !isBookingHoldExpired &&
+    bookingHoldRemainingMs <= 2 * 60 * 1000;
   const shouldDimManualBookingPanels =
     isNaturalLanguageBookingFocused && naturalLanguageBookingInput.trim().length > 0;
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
@@ -1361,7 +1473,10 @@ export function HaabBookingModule({
     ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
   const isStickyHeaderActive =
-    isStickyHeaderStuck && resolvedBookingFlow.step === 2;
+    isStickyHeaderStuck &&
+    (resolvedBookingFlow.step === 2 ||
+      resolvedBookingFlow.step === 3 ||
+      resolvedBookingFlow.step === 4);
   const stickyBarPanelClass = isDedicatedPublicPage
     ? isStickyHeaderActive
       ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
@@ -3843,7 +3958,8 @@ export function HaabBookingModule({
             <div
               className={cn(
                 "relative isolate px-5 pt-5 sm:px-8 sm:pt-8 transition-[filter,padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:-inset-x-8 before:-top-8 before:-bottom-9 before:z-0 before:bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.7)_46%,rgba(255,255,255,0.34)_72%,rgba(255,255,255,0)_100%)] before:opacity-0 before:backdrop-blur-[28px] before:transition-opacity before:duration-500 before:ease-out before:[-webkit-mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] before:[mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] sm:before:-inset-x-10 sm:before:-top-10 sm:before:-bottom-11 xl:before:-inset-x-12 xl:before:-top-12 xl:before:-bottom-12",
-                isPublicSelectionStep && "sticky top-4 z-30",
+                (isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
+                  "sticky top-4 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
                   "pb-6 drop-shadow-[0_14px_34px_rgba(15,23,42,0.1)] before:opacity-100 sm:pb-8 xl:pb-10",
@@ -3856,6 +3972,17 @@ export function HaabBookingModule({
                   isDedicatedPublicPage={isDedicatedPublicPage}
                 />
               </div>
+              {isPublicDetailsStep || isPublicSuccessStep ? (
+                <div className="px-5 pb-5 sm:px-7 sm:pb-6">
+                  <BookingHoldCountdownBar
+                    isCancelled={isPublicSuccessStep && isSuccessfulBookingCancelled}
+                    isConfirmed={isPublicSuccessStep && !isSuccessfulBookingCancelled}
+                    isExpired={isBookingHoldExpired}
+                    remainingMs={bookingHoldRemainingMs}
+                    remainingRatio={bookingHoldRemainingRatio}
+                  />
+                </div>
+              ) : null}
               {isPublicSelectionStep ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
@@ -3891,73 +4018,37 @@ export function HaabBookingModule({
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <p
-                            className={cn(
-                              compactMetaTextClass,
-                              isBookingHoldExpired
-                                ? "text-[#be123c]"
-                                : "text-[var(--muted)]",
-                            )}
-                          >
-                            Time remaining
-                          </p>
-                          <p
-                            className={cn(
-                              "text-lg font-semibold tabular-nums text-[var(--ink)]",
-                              isBookingHoldExpired && "text-[#be123c]",
-                            )}
-                          >
-                            {isBookingHoldExpired
-                              ? "Expired"
-                              : formatCountdown(bookingHoldRemainingMs)}
-                          </p>
-                        </div>
-                        <p
-                          className={cn(
-                            "mt-1 text-sm leading-6 text-[var(--muted)]",
-                            isBookingHoldExpired && "text-[#be123c]",
-                          )}
-                        >
-                          {isBookingHoldExpired
-                            ? "The time slot may not be available, but you can still try to book."
-                            : "Finish within 10 minutes to keep this booking selection fresh."}
-                        </p>
-                      </div>
-                      <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
-                        <ActionButton
-                          tone="ghost"
-                          className={cn(
-                            "min-w-[150px] px-6",
-                            isDedicatedPublicPage &&
-                              cn(publicPillButtonClass, publicGhostButtonClass),
-                          )}
-                          onClick={() => {
-                            releaseBookingHold(
-                              bookingHold?.released ? undefined : bookingHold?.id,
-                            );
-                            setBookingHold(null);
-                            setBookingHoldNow(currentTimestamp());
-                            setBookingError(null);
-                            setWasBookingUpdatedWithNaturalLanguage(false);
-                            setIsNLBookingOpen(false);
-                            setNaturalLanguageBookingInput("");
-                            setNaturalLanguageBookingError(null);
-                            setBookingFlow((current) => ({ ...current, step: 2 }));
-                          }}
-                        >
-                          Back
-                        </ActionButton>
-                        <ActionButton
-                          tone="primary"
-                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                          onClick={confirmBooking}
-                        >
-                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
-                        </ActionButton>
-                      </div>
+                    <div className="flex w-full flex-wrap items-center justify-end gap-3">
+                      <ActionButton
+                        tone="ghost"
+                        className={cn(
+                          "min-w-[150px] px-6",
+                          isDedicatedPublicPage &&
+                            cn(publicPillButtonClass, publicGhostButtonClass),
+                        )}
+                        onClick={() => {
+                          releaseBookingHold(
+                            bookingHold?.released ? undefined : bookingHold?.id,
+                          );
+                          setBookingHold(null);
+                          setBookingHoldNow(currentTimestamp());
+                          setBookingError(null);
+                          setWasBookingUpdatedWithNaturalLanguage(false);
+                          setIsNLBookingOpen(false);
+                          setNaturalLanguageBookingInput("");
+                          setNaturalLanguageBookingError(null);
+                          setBookingFlow((current) => ({ ...current, step: 2 }));
+                        }}
+                      >
+                        Back
+                      </ActionButton>
+                      <ActionButton
+                        tone="primary"
+                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                        onClick={confirmBooking}
+                      >
+                        {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                      </ActionButton>
                     </div>
                     {bookingError ? (
                       <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
@@ -5101,6 +5192,24 @@ export function HaabBookingModule({
           renderPublicFlow()
         )}
       </section>
+
+      {shouldShowHoldWarningToast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed right-4 top-4 z-40 max-w-sm rounded-[28px] bg-white px-5 py-4 text-[#be123c] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_24px_60px_rgba(190,18,60,0.16)] ring-1 ring-[#fecdd3] sm:right-6 sm:top-6"
+        >
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+            Hold ending soon
+          </p>
+          <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+            Your booking hold is ending soon.
+          </p>
+          <p className="mt-1 text-sm leading-5">
+            Confirm now, or the selected time may become available to someone else.
+          </p>
+        </div>
+      ) : null}
 
       {renderCancellationModal()}
       {renderRescheduleModal()}
