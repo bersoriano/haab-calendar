@@ -245,3 +245,51 @@ In integrated mode, callbacks fire but there's no mechanism for handling async f
 3. Day/week calendar views for providers
 4. Toast notification system for consistent feedback
 5. Mobile-optimized date picker and bottom sheets
+
+---
+
+## 8. Findings From Manage-Booking Feature Review
+
+These were surfaced while designing the self-service "Manage my booking" flow (recommendation 1.3). They are not part of that feature's scope but warrant their own work.
+
+### Important
+
+**8.1 - Reschedule window is anchored to "today", not to the booking date**
+`createRollingWeekWindow(new Date(), 7, 4)` in `confirmReschedule` / `renderRescheduleModal` produces a 4-week window starting from today. For a booking that is several weeks in the future, the user can only move it *earlier*, never later. This is the same window used by the public success-screen reschedule flow.
+- **Why it matters now:** Once self-service booking management ships and the manage link can be opened weeks after the original booking, the asymmetry becomes more visible. A client trying to push an appointment out by a week will see the option simply isn't there.
+- **Recommendation:** Anchor the reschedule window to `max(today, bookingDate - N days)` and extend it to `bookingDate + N days` — or align with the per-service "advance booking window" proposed in 1.4. Either way the window should always include some range around the existing booking date, not just today's forward window.
+- **Related:** 1.4 (configurable booking window per service).
+
+**8.2 - Cancellation is irreversible with only a confirm prompt**
+`confirmCancellation` immediately commits the status change with no undo affordance. The only friction is the modal's "Confirm cancellation" button.
+- **Why it matters now:** With self-service cancellation reachable from any device via a token link, accidental cancels become more likely (mistapped link in an email/.ics, user thought they were cancelling a different booking, etc.).
+- **Recommendation:** Implement the 5-second undo toast pattern from 5.3. After the modal confirms, show a persistent toast with "Booking cancelled — Undo (5s)". Only finalize the status change after the timer elapses without an undo click. Pairs naturally with the toast notification system from 5.2.
+- **Related:** 5.2 (toast system), 5.3 (undo for destructive actions).
+
+**8.3 - No audit trail for booking lifecycle events**
+`BookingRecord` carries only the *current* status, dateKey, startTime, etc. When a booking is rescheduled or cancelled, the previous values are overwritten. The status field flips to "rescheduled" but the original date/time is lost.
+- **Why it matters now:** The manage page would be substantially more useful if it could show "Originally Tuesday May 5 at 3:00 PM, rescheduled to Thursday May 7 at 4:00 PM on May 4." This is also valuable for providers (dispute resolution, no-show context) and for any future email confirmations of changes.
+- **Recommendation:** Add an `events: BookingEvent[]` array on `BookingRecord` capturing `{ type, at, by, payload }` for `created` / `rescheduled` / `cancelled`. Render a compact timeline on the manage page and in the provider's booking detail. Once Supabase lands, this becomes a separate `booking_events` table.
+- **Related:** 6.3 (booking history / audit trail).
+
+### Critical
+
+**8.4 - Reschedule silently fails on slot conflict** ✅ Addressed in manage-booking work
+`confirmReschedule` validates the chosen slot against current availability and `return`s without any user feedback if the slot is no longer free (race against another booker, hold expired, etc.). The user clicks "Confirm reschedule", the modal stays open, nothing happens.
+- **Status:** Folded into the self-service booking management feature design — once the manage link can be opened from any device and Supabase sync is in place, reschedule conflicts become a guaranteed real-world scenario rather than an edge case. The modal will surface an inline error and refresh the visible slot list.
+- **Note:** Listed here for traceability; no separate work needed.
+
+### Manage-Booking Feature: Explicit Non-Goals
+
+The self-service "Manage my booking" feature (recommendation 1.3) deliberately does **not** include the following items. Each is documented elsewhere as separate work; recording the deferral here so the boundary is unambiguous and so future contributors don't mistake these omissions for oversights.
+
+| Non-goal | Reason | Where it lives |
+|----------|--------|----------------|
+| Email confirmation containing the manage link | Email sending is its own piece of work; once it lands, the link will naturally be added to the email body | Recommendation 1.1 |
+| Undo on cancellation (5-second toast) | Distinct concern — pairs with the toast notification system | Recommendation 5.3 / finding 8.2 |
+| Reschedule window expansion (anchored to booking date, not "today") | Scope change that affects all reschedule entry points, not just the manage page | Recommendation 1.4 / finding 8.1 |
+| Booking event/audit log (history of reschedules and cancellations) | Schema change that benefits multiple surfaces; fits naturally with the Supabase migration | Recommendation 6.3 / finding 8.3 |
+| Token rotation / "regenerate management link" | A manage token is generated once at booking creation and lives for the booking's lifetime. If a user forwards the link, they share access — that is the trade-off of the no-auth model and is surfaced in the success-screen copy ("anyone with the link can manage this booking"). Rotation would require either auth or a parallel "old token still works" window — both belong to a future scope | n/a (deliberate product decision) |
+| Restructuring of the 5,218-line `haab-booking-module.tsx` | The feature deliberately adds new files (`lib/booking-tokens.ts`, the new route) rather than splitting the monolith. The split is its own project | Recommendation 7.1 |
+| Backend/Supabase integration | The data layer is shaped for a clean swap (`findBookingByToken` helper, lookup state machine), but the swap itself is separate work | `BACKEND_RECOMMENDATIONS.md` |
+| Test framework introduction | Repo currently has no tests of any kind. Adding a framework is a separate scope decision | `TESTING_RECOMMENDATIONS.md` |
