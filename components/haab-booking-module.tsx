@@ -1120,7 +1120,7 @@ function PublicProgressIndicator({
                 </span>
                 <span
                   className={cn(
-                    "max-w-[7.5rem] text-center text-xs font-semibold uppercase tracking-[0.14em] leading-tight transition-colors",
+                    "max-w-[4.25rem] text-center text-[0.625rem] font-semibold uppercase tracking-[0.04em] leading-tight transition-colors sm:max-w-[7.5rem] sm:text-xs sm:tracking-[0.14em]",
                     status === "complete" && "text-[var(--ink)]",
                     status === "current" && "text-[var(--primary)]",
                     status === "upcoming" && "text-[var(--muted)]",
