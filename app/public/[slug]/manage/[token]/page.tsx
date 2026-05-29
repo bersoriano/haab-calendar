@@ -21,7 +21,7 @@ export default async function ManageBookingPage({
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-48 bg-[linear-gradient(180deg,rgba(255,255,255,0.42),rgba(248,249,250,0))]"
       />
-      <div className="relative mx-auto flex w-full max-w-[1680px] flex-1 px-4 py-6 sm:px-6 lg:px-10">
+      <div className="relative mx-auto flex w-full max-w-[1680px] flex-1 px-4 pt-0 pb-2 sm:px-6 lg:px-10">
         <HaabBookingModule
           requestedPublicSlug={slug}
           surfaceMode="public-only"

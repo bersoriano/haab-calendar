@@ -11,6 +11,7 @@ import {
 } from "@/lib/booking-tokens";
 import {
   startTransition,
+  useCallback,
   useDeferredValue,
   useEffect,
   useEffectEvent,
@@ -270,7 +271,7 @@ const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
 });
 
 const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
-const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.18em]";
+const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.1em]";
 const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
 const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";
 
@@ -1208,7 +1209,7 @@ function BookingHoldCountdownBar({
             ? "text-[var(--accent-strong)]"
             : isWarning
               ? "text-[#92400e]"
-              : "text-[var(--accent-strong)]",
+              : "text-[var(--ink)]",
       )}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1246,7 +1247,7 @@ function BookingHoldCountdownBar({
                 ? "bg-[var(--accent)]"
                 : isWarning
                   ? "bg-[#f59e0b]"
-                  : "bg-[var(--accent)]",
+                  : "bg-[#9ca3af]",
           )}
           style={{
             width:
@@ -1349,7 +1350,27 @@ export function HaabBookingModule({
   const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
   const stickyHeaderSentinelRef = useRef<HTMLDivElement | null>(null);
+  const stickyHeaderObserverRef = useRef<IntersectionObserver | null>(null);
   const [isStickyHeaderStuck, setIsStickyHeaderStuck] = useState(false);
+  const [isPublicFlowFadingOut, setIsPublicFlowFadingOut] = useState(false);
+  const attachStickyHeaderSentinel = useCallback((node: HTMLDivElement | null) => {
+    stickyHeaderSentinelRef.current = node;
+    if (stickyHeaderObserverRef.current) {
+      stickyHeaderObserverRef.current.disconnect();
+      stickyHeaderObserverRef.current = null;
+    }
+    if (!node || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsStickyHeaderStuck(!entry.isIntersecting);
+      },
+      { root: null, threshold: 0, rootMargin: "0px" },
+    );
+    observer.observe(node);
+    stickyHeaderObserverRef.current = observer;
+  }, []);
   const [publicPrimaryPanelHeight, setPublicPrimaryPanelHeight] = useState<number | null>(
     null,
   );
@@ -1531,10 +1552,7 @@ export function HaabBookingModule({
     ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
   const isStickyHeaderActive =
-    isStickyHeaderStuck &&
-    (resolvedBookingFlow.step === 2 ||
-      resolvedBookingFlow.step === 3 ||
-      resolvedBookingFlow.step === 4);
+    isStickyHeaderStuck && resolvedBookingFlow.step === 2;
   const stickyBarPanelClass = isDedicatedPublicPage
     ? isStickyHeaderActive
       ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
@@ -1675,20 +1693,19 @@ export function HaabBookingModule({
   }, [bookingHolds.length]);
 
   useEffect(() => {
-    const sentinel = stickyHeaderSentinelRef.current;
-    if (!sentinel || typeof IntersectionObserver === "undefined") {
+    return () => {
+      if (stickyHeaderObserverRef.current) {
+        stickyHeaderObserverRef.current.disconnect();
+        stickyHeaderObserverRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (resolvedBookingFlow.step !== 2 || typeof window === "undefined") {
       return;
     }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsStickyHeaderStuck(!entry.isIntersecting);
-      },
-      { threshold: 0, rootMargin: "-16px 0px 0px 0px" },
-    );
-    observer.observe(sentinel);
-
-    return () => observer.disconnect();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [resolvedBookingFlow.step]);
 
   useEffect(() => {
@@ -4030,13 +4047,13 @@ export function HaabBookingModule({
         ? `${formatDateLabel(bookingFlow.dateKey)} · ${formatTimeLabel(bookingFlow.time)}`
         : step2DateChosen
           ? formatDateLabel(bookingFlow.dateKey)
-          : "Not yet"
+          : "Select a Day"
       : step2DateChosen
         ? `${formatDateLabel(bookingFlow.dateKey)} · Full day`
-        : "Not yet";
+        : "Select a Day";
     const step2Helper = step2IsAppointment
       ? !step2DateChosen
-        ? "Pick a date and time to continue."
+        ? "Pick a date from the calendar and time slot below to continue."
         : !step2TimeChosen
           ? "Pick a time slot to continue."
           : "Ready to continue. Click the button to enter your details."
@@ -4045,22 +4062,32 @@ export function HaabBookingModule({
         : step2DateAvailableForFullDay
           ? "This day is free. Click the button to enter your details."
           : "This day isn't available. Pick another date.";
-    const step2ButtonLabel = step2IsAppointment ? "Continue to My Details" : "Book full day";
+    const step2ButtonLabel = step2IsAppointment
+      ? !step2DateChosen
+        ? "Select a Date"
+        : !step2TimeChosen
+          ? "Select a Time"
+          : "Continue to My Details"
+      : "Book full day";
 
     return (
-      <>
+      <div
+        className={cn(
+          "transition-opacity duration-300 ease-out",
+          isPublicFlowFadingOut ? "opacity-0" : "opacity-100",
+        )}
+      >
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
         selectedService ? (
           <>
-            <div ref={stickyHeaderSentinelRef} aria-hidden="true" className="h-0" />
+            <div ref={attachStickyHeaderSentinel} aria-hidden="true" className="h-px" />
             <div
               className={cn(
-                "relative isolate px-5 pt-5 sm:px-8 sm:pt-8 transition-[filter,padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:-inset-x-8 before:-top-8 before:-bottom-9 before:z-0 before:bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.7)_46%,rgba(255,255,255,0.34)_72%,rgba(255,255,255,0)_100%)] before:opacity-0 before:backdrop-blur-[28px] before:transition-opacity before:duration-500 before:ease-out before:[-webkit-mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] before:[mask-image:radial-gradient(ellipse_at_center,black_64%,transparent_86%)] sm:before:-inset-x-10 sm:before:-top-10 sm:before:-bottom-11 xl:before:-inset-x-12 xl:before:-top-12 xl:before:-bottom-12",
-                (isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
-                  "sticky top-4 z-30",
+                "relative px-5 pt-5 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[48px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
+                isPublicSelectionStep && "sticky top-0 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
-                  "pb-6 drop-shadow-[0_14px_34px_rgba(15,23,42,0.1)] before:opacity-100 sm:pb-8 xl:pb-10",
+                  "pb-6 before:opacity-100 sm:pb-8 xl:pb-10",
               )}
             >
             <div className={cn("relative z-10", stickyBarPanelClass)}>
@@ -4089,9 +4116,9 @@ export function HaabBookingModule({
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
                           <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
-                            Your selection
+                            Appointment Date:
                           </p>
-                          <p className="text-lg font-semibold text-[var(--ink)]">
+                          <p className="text-sm font-semibold text-[var(--ink)]">
                             {step2Summary}
                           </p>
                         </div>
@@ -4104,7 +4131,38 @@ export function HaabBookingModule({
                           tone="primary"
                           className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
                           disabled={!step2CanContinue}
-                          onClick={() => beginClientDetailsStep()}
+                          onClick={() => {
+                            const fadeAndAdvance = () => {
+                              setIsPublicFlowFadingOut(true);
+                              window.setTimeout(() => {
+                                beginClientDetailsStep();
+                                window.requestAnimationFrame(() => {
+                                  setIsPublicFlowFadingOut(false);
+                                });
+                              }, 220);
+                            };
+                            if (typeof window === "undefined" || window.scrollY <= 0) {
+                              if (typeof window === "undefined") {
+                                beginClientDetailsStep();
+                                return;
+                              }
+                              fadeAndAdvance();
+                              return;
+                            }
+                            let done = false;
+                            const finish = () => {
+                              if (done) return;
+                              done = true;
+                              window.removeEventListener("scrollend", finish);
+                              clearTimeout(timeoutId);
+                              fadeAndAdvance();
+                            };
+                            const timeoutId = window.setTimeout(finish, 700);
+                            if ("onscrollend" in window) {
+                              window.addEventListener("scrollend", finish, { once: true });
+                            }
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                          }}
                         >
                           {step2ButtonLabel}
                         </ActionButton>
@@ -4819,7 +4877,10 @@ export function HaabBookingModule({
                     <Link
                       href={`/public/${businessSlug}`}
                       className={cn(
-                        "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white",
+                        "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
+                        isSuccessfulBookingCancelled
+                          ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
+                          : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-white",
                         isDedicatedPublicPage && publicPillButtonClass,
                       )}
                     >
@@ -4827,7 +4888,7 @@ export function HaabBookingModule({
                     </Link>
                   ) : (
                     <ActionButton
-                      tone="secondary"
+                      tone={isSuccessfulBookingCancelled ? "primary" : "secondary"}
                       className={cn(
                         "min-w-[150px]",
                         isDedicatedPublicPage && publicPillButtonClass,
@@ -4877,7 +4938,7 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-      </>
+      </div>
     );
   }
 
@@ -4911,7 +4972,7 @@ export function HaabBookingModule({
             )}`}
           />
           <p className="mt-6 text-sm leading-6 text-[var(--muted)]">
-            Cancelling frees the slot immediately across the dashboard, public flow, and calendar.
+            Cancelling frees the slot immediately.
           </p>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <ActionButton
