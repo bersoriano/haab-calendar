@@ -1296,6 +1296,7 @@ export function HaabBookingModule({
 
   const [hydrated, setHydrated] = useState(integratedMode);
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
+  const [isDesktopColumns, setIsDesktopColumns] = useState(false);
   const [standaloneStore, setStandaloneStore] = useState<ModuleStore>(() =>
     createEmptyStore(),
   );
@@ -1606,6 +1607,19 @@ export function HaabBookingModule({
     return () => {
       window.cancelAnimationFrame(frameId);
       mediaQuery.removeEventListener("change", syncMobileBrowser);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const syncDesktopColumns = () => setIsDesktopColumns(mediaQuery.matches);
+    const frameId = window.requestAnimationFrame(syncDesktopColumns);
+
+    mediaQuery.addEventListener("change", syncDesktopColumns);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      mediaQuery.removeEventListener("change", syncDesktopColumns);
     };
   }, []);
 
@@ -4290,7 +4304,9 @@ export function HaabBookingModule({
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
-                (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                isDesktopColumns &&
+                (isPublicDetailsStep || isPublicSuccessStep) &&
+                publicPrimaryPanelHeight
                   ? { minHeight: `${publicPrimaryPanelHeight}px` }
                   : undefined
               }
@@ -4483,7 +4499,7 @@ export function HaabBookingModule({
                   publicSoftPanelClass,
                 )}
                 style={
-                  publicPrimaryPanelHeight
+                  isDesktopColumns && publicPrimaryPanelHeight
                     ? { minHeight: `${publicPrimaryPanelHeight}px` }
                     : undefined
                 }
@@ -4549,12 +4565,15 @@ export function HaabBookingModule({
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
+                isDesktopColumns &&
                 isPublicSelectionStep &&
                 selectedService.bookingType === "appointment" &&
                 bookingFlow.dateKey &&
                 publicPrimaryPanelHeight
                   ? { maxHeight: `${publicPrimaryPanelHeight}px` }
-                  : (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                  : isDesktopColumns &&
+                      (isPublicDetailsStep || isPublicSuccessStep) &&
+                      publicPrimaryPanelHeight
                     ? { minHeight: `${publicPrimaryPanelHeight}px` }
                     : undefined
               }
