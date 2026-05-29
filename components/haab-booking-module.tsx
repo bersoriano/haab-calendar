@@ -4148,7 +4148,7 @@ export function HaabBookingModule({
             <div ref={attachStickyHeaderSentinel} aria-hidden="true" className="h-px" />
             <div
               className={cn(
-                "relative px-5 pt-5 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[48px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
+                "relative px-4 pt-4 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[32px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
                 isPublicSelectionStep && "sticky top-0 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
@@ -4297,7 +4297,7 @@ export function HaabBookingModule({
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
           <div
             className={cn(
-              "grid gap-5 p-5 sm:p-8",
+              "grid gap-4 p-4 sm:gap-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
               isPublicSelectionStep
                 ? "lg:grid-cols-1"
