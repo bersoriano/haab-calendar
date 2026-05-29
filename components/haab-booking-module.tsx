@@ -4307,6 +4307,7 @@ export function HaabBookingModule({
             <div
               ref={publicPrimaryPanelRef}
               className={cn(
+                "order-1 lg:order-none",
                 publicPrimaryPanelClass,
                 isPublicSelectionStep && "transition-opacity duration-200",
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
@@ -4503,7 +4504,7 @@ export function HaabBookingModule({
               <div
                 ref={publicAboutPanelRef}
                 className={cn(
-                  "self-start lg:sticky lg:top-8 flex min-h-full flex-col",
+                  "order-3 lg:order-none self-start lg:sticky lg:top-8 flex min-h-full flex-col",
                   publicSoftPanelClass,
                 )}
                 style={
@@ -4562,7 +4563,7 @@ export function HaabBookingModule({
             <div
               ref={publicSummaryPanelRef}
               className={cn(
-                "self-start lg:sticky lg:top-8",
+                "order-2 lg:order-none self-start lg:sticky lg:top-8",
                 publicElevatedPanelClass,
                 isPublicSelectionStep &&
                   selectedService.bookingType === "appointment" &&
