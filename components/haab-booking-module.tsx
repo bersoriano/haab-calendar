@@ -4620,7 +4620,7 @@ export function HaabBookingModule({
                         </div>
                       ) : (
                         <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-1 sm:space-y-2 sm:gap-0">
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
                             {publicSlots.map((slot) => {
                               const slotEnd = addMinutes(
                                 slot,
