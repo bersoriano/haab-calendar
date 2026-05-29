@@ -4090,6 +4090,51 @@ export function HaabBookingModule({
           : "Continue to My Details"
       : "Book full day";
 
+    const advanceToDetailsStep = () => {
+      const fadeAndAdvance = () => {
+        setIsPublicFlowFadingOut(true);
+        window.setTimeout(() => {
+          beginClientDetailsStep();
+          window.requestAnimationFrame(() => {
+            setIsPublicFlowFadingOut(false);
+          });
+        }, 220);
+      };
+      if (typeof window === "undefined" || window.scrollY <= 0) {
+        if (typeof window === "undefined") {
+          beginClientDetailsStep();
+          return;
+        }
+        fadeAndAdvance();
+        return;
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        window.removeEventListener("scrollend", finish);
+        clearTimeout(timeoutId);
+        fadeAndAdvance();
+      };
+      const timeoutId = window.setTimeout(finish, 700);
+      if ("onscrollend" in window) {
+        window.addEventListener("scrollend", finish, { once: true });
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const goBackToSelectionStep = () => {
+      releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      setBookingHold(null);
+      setBookingHoldNow(currentTimestamp());
+      setBookingError(null);
+      setWasBookingUpdatedWithNaturalLanguage(false);
+      setIsNLBookingOpen(false);
+      setNaturalLanguageBookingInput("");
+      setNaturalLanguageBookingError(null);
+      setBookingFlow((current) => ({ ...current, step: 2 }));
+    };
+
     return (
       <div
         className={cn(
@@ -4146,43 +4191,12 @@ export function HaabBookingModule({
                           {step2Helper}
                         </p>
                       </div>
-                      <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                      <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex lg:w-auto">
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
                           disabled={!step2CanContinue}
-                          onClick={() => {
-                            const fadeAndAdvance = () => {
-                              setIsPublicFlowFadingOut(true);
-                              window.setTimeout(() => {
-                                beginClientDetailsStep();
-                                window.requestAnimationFrame(() => {
-                                  setIsPublicFlowFadingOut(false);
-                                });
-                              }, 220);
-                            };
-                            if (typeof window === "undefined" || window.scrollY <= 0) {
-                              if (typeof window === "undefined") {
-                                beginClientDetailsStep();
-                                return;
-                              }
-                              fadeAndAdvance();
-                              return;
-                            }
-                            let done = false;
-                            const finish = () => {
-                              if (done) return;
-                              done = true;
-                              window.removeEventListener("scrollend", finish);
-                              clearTimeout(timeoutId);
-                              fadeAndAdvance();
-                            };
-                            const timeoutId = window.setTimeout(finish, 700);
-                            if ("onscrollend" in window) {
-                              window.addEventListener("scrollend", finish, { once: true });
-                            }
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
+                          onClick={advanceToDetailsStep}
                         >
                           {step2ButtonLabel}
                         </ActionButton>
@@ -4194,7 +4208,7 @@ export function HaabBookingModule({
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
-                    <div className="flex w-full flex-wrap items-center justify-end gap-3">
+                    <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex">
                       <ActionButton
                         tone="ghost"
                         className={cn(
@@ -4202,19 +4216,7 @@ export function HaabBookingModule({
                           isDedicatedPublicPage &&
                             cn(publicPillButtonClass, publicGhostButtonClass),
                         )}
-                        onClick={() => {
-                          releaseBookingHold(
-                            bookingHold?.released ? undefined : bookingHold?.id,
-                          );
-                          setBookingHold(null);
-                          setBookingHoldNow(currentTimestamp());
-                          setBookingError(null);
-                          setWasBookingUpdatedWithNaturalLanguage(false);
-                          setIsNLBookingOpen(false);
-                          setNaturalLanguageBookingInput("");
-                          setNaturalLanguageBookingError(null);
-                          setBookingFlow((current) => ({ ...current, step: 2 }));
-                        }}
+                        onClick={goBackToSelectionStep}
                       >
                         Back
                       </ActionButton>
@@ -4960,6 +4962,50 @@ export function HaabBookingModule({
                 ) : null}
               </div>
             ) : null}
+          </div>
+        ) : null}
+
+        {(isPublicSelectionStep || isPublicDetailsStep) && selectedService ? (
+          <div className="sticky bottom-0 z-30 mt-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
+            <div
+              className={cn(
+                "flex gap-3 rounded-[24px] px-4 py-3",
+                publicElevatedPanelClass,
+                "!p-3",
+              )}
+            >
+              {isPublicSelectionStep ? (
+                <ActionButton
+                  tone="primary"
+                  className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                  disabled={!step2CanContinue}
+                  onClick={advanceToDetailsStep}
+                >
+                  {step2ButtonLabel}
+                </ActionButton>
+              ) : (
+                <>
+                  <ActionButton
+                    tone="ghost"
+                    className={cn(
+                      "min-h-12",
+                      isDedicatedPublicPage &&
+                        cn(publicPillButtonClass, publicGhostButtonClass),
+                    )}
+                    onClick={goBackToSelectionStep}
+                  >
+                    Back
+                  </ActionButton>
+                  <ActionButton
+                    tone="primary"
+                    className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                    onClick={confirmBooking}
+                  >
+                    {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                  </ActionButton>
+                </>
+              )}
+            </div>
           </div>
         ) : null}
 
