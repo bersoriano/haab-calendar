@@ -367,6 +367,24 @@ export function HaabBookingModule({
     ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
+  // Admin glass tokens — surface-only (no padding baked in); used exclusively in non-public admin render paths
+  const adminPanelClass =
+    "rounded-[28px] bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)]";
+  const adminElevatedClass =
+    "rounded-[28px] bg-[rgba(255,255,255,0.92)] ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)]";
+  const adminSoftClass =
+    "rounded-[28px] bg-[rgba(243,244,245,0.94)] ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)]";
+  const adminInsetClass =
+    "rounded-[24px] bg-[rgba(255,255,255,0.88)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]";
+  const adminBarClass =
+    "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.5)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_22px_48px_rgba(25,28,29,0.08)] backdrop-blur-[20px]";
+  const adminFieldClass =
+    "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]";
+  const adminChoiceQuietClass =
+    "bg-[rgba(248,249,250,0.92)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[0_12px_30px_rgba(25,28,29,0.04)]";
+  const adminChoiceSelectedClass =
+    "border border-[rgba(255,255,255,0.64)] bg-[rgba(255,255,255,0.58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_24px_52px_rgba(25,28,29,0.08)] backdrop-blur-[18px]";
+
   useEffect(() => {
     const mediaQuery = window.matchMedia("(pointer: coarse)");
     const syncMobileBrowser = () => setIsMobileBrowser(mediaQuery.matches);
@@ -1407,7 +1425,7 @@ export function HaabBookingModule({
   function renderSetupWizard() {
     return (
       <>
-        <div className="rounded-[30px] border border-[var(--line)] bg-[linear-gradient(140deg,rgba(234,241,255,0.85),rgba(255,255,255,0.96))] p-6 sm:p-8">
+        <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
           <SectionTitle
             eyebrow="Standalone Setup"
             title="Configure the module in four focused steps"
@@ -1448,7 +1466,7 @@ export function HaabBookingModule({
 
         {setupStep === 1 ? (
           <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+            <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 title="Tell us about the provider"
                 body="These details feed confirmations, branding, and the public booking URL."
@@ -1460,7 +1478,7 @@ export function HaabBookingModule({
                     value={provider.fullName}
                     onChange={(event) => updateProvider("fullName", event.target.value)}
                     placeholder="Dr. Maya Alvarez"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1469,7 +1487,7 @@ export function HaabBookingModule({
                     value={provider.businessName}
                     onChange={(event) => updateProvider("businessName", event.target.value)}
                     placeholder="Haab Health Studio"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1479,13 +1497,13 @@ export function HaabBookingModule({
                     onChange={(event) => updateProvider("email", event.target.value)}
                     placeholder="bookings@haabcalendar.com"
                     type="email"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6">
+            <div className={cn(adminSoftClass, "p-6")}>
               <SectionTitle
                 eyebrow="Examples"
                 title="Designed for multiple booking models"
@@ -1495,7 +1513,7 @@ export function HaabBookingModule({
                 {QUICK_START_TEMPLATES.map((template) => (
                   <div
                     key={template.label}
-                    className="rounded-2xl border border-white bg-white/90 px-4 py-4"
+                    className={cn(adminInsetClass, "px-4 py-4")}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-[var(--ink)]">
@@ -1517,7 +1535,7 @@ export function HaabBookingModule({
 
         {setupStep === 2 ? (
           <div className="mt-8 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+            <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 title="Define what clients can book"
                 body="Each service can be a timed appointment or a full-day reservation. Capacity and notes stay visible throughout the booking flow."
@@ -1545,7 +1563,7 @@ export function HaabBookingModule({
                   services.map((service) => (
                     <div
                       key={service.id}
-                      className="rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-5"
+                      className={cn(adminInsetClass, "p-5")}
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -1582,7 +1600,7 @@ export function HaabBookingModule({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+            <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 eyebrow={editingServiceId ? "Editing Service" : "New Service"}
                 title={editingServiceId ? "Update service details" : "Add a new service"}
@@ -1597,7 +1615,7 @@ export function HaabBookingModule({
                       setServiceDraft((current) => ({ ...current, name: event.target.value }))
                     }
                     placeholder="Court Rental"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1610,7 +1628,7 @@ export function HaabBookingModule({
                         bookingType: event.target.value as BookingType,
                       }))
                     }
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   >
                     <option value="appointment">Appointment</option>
                     <option value="full-day">Full Day</option>
@@ -1627,7 +1645,7 @@ export function HaabBookingModule({
                           durationMinutes: Number(event.target.value),
                         }))
                       }
-                      className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+                      className={cn("min-h-12", adminFieldClass)}
                     >
                       {DURATION_OPTIONS.map((duration) => (
                         <option key={duration} value={duration}>
@@ -1651,7 +1669,7 @@ export function HaabBookingModule({
                     }
                     placeholder="Explain what the booking covers in one or two lines."
                     rows={4}
-                    className="rounded-2xl border border-[var(--line)] px-4 py-3 outline-none transition focus:border-[var(--accent)]"
+                    className={adminFieldClass}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1662,7 +1680,7 @@ export function HaabBookingModule({
                       setServiceDraft((current) => ({ ...current, capacity: event.target.value }))
                     }
                     placeholder="Max 12 people"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1676,7 +1694,7 @@ export function HaabBookingModule({
                       }))
                     }
                     placeholder="$80 / session"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -1690,7 +1708,7 @@ export function HaabBookingModule({
                       }))
                     }
                     placeholder="Bring prior records or arrive 10 minutes early."
-                    className="min-h-12 rounded-2xl border border-[var(--line)] px-4 outline-none transition focus:border-[var(--accent)]"
+                    className={cn("min-h-12", adminFieldClass)}
                   />
                 </label>
               </div>
@@ -1707,7 +1725,7 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 3 ? (
-          <div className="mt-8 rounded-[28px] border border-[var(--line)] bg-white p-6">
+          <div className={cn("mt-8", adminPanelClass, "p-6")}>
             <SectionTitle
               title="Set the weekly availability schedule"
               body="Appointment services generate real slots from these windows. Full-day services simply need the weekday enabled and free of conflicts."
@@ -1716,7 +1734,7 @@ export function HaabBookingModule({
               {WEEKDAY_KEYS.map((day) => (
                 <div
                   key={day}
-                  className="grid gap-3 rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]"
+                  className={cn(adminInsetClass, "grid gap-3 p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]")}
                 >
                   <label className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
                     <input
@@ -1738,7 +1756,7 @@ export function HaabBookingModule({
                         updateAvailabilityDay(day, { startTime: event.target.value })
                       }
                       type="time"
-                      className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                      className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                     />
                   </label>
                   <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
@@ -1750,7 +1768,7 @@ export function HaabBookingModule({
                         updateAvailabilityDay(day, { endTime: event.target.value })
                       }
                       type="time"
-                      className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                      className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                     />
                   </label>
                 </div>
@@ -1761,13 +1779,13 @@ export function HaabBookingModule({
 
         {setupStep === 4 ? (
           <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
-            <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+            <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 eyebrow="Ready To Launch"
                 title="Your booking page is prepared"
                 body="Publish the standalone setup now, then manage bookings from the provider workspace or test the client journey immediately."
               />
-              <div className="mt-6 rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+              <div className={cn("mt-6", adminInsetClass, "p-4")}>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                   Public booking URL
                 </p>
@@ -1787,7 +1805,7 @@ export function HaabBookingModule({
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6">
+            <div className={cn(adminSoftClass, "p-6")}>
               <SectionTitle
                 title="What is ready right away"
                 body="Management dashboard, searchable booking list, calendar, editable services, settings, public booking wizard, rescheduling, cancellation, and iCal export are all wired to the same store."
@@ -1853,7 +1871,7 @@ export function HaabBookingModule({
           ].map((stat) => (
             <div
               key={stat.label}
-              className="rounded-[28px] border border-[var(--line)] bg-white p-5"
+              className={cn(adminInsetClass, "p-5")}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                 {stat.label}
@@ -1867,7 +1885,7 @@ export function HaabBookingModule({
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+          <div className={cn(adminPanelClass, "p-6")}>
             <SectionTitle
               title="Upcoming bookings"
               body="Provider-side actions let you cancel or reschedule any booking without leaving the dashboard."
@@ -1887,7 +1905,7 @@ export function HaabBookingModule({
                 upcomingBookings.map((booking) => (
                   <div
                     key={booking.id}
-                    className="rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-4"
+                    className={cn(adminInsetClass, "p-4")}
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
@@ -1933,13 +1951,13 @@ export function HaabBookingModule({
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6">
+          <div className={cn(adminElevatedClass, "p-6")}>
             <SectionTitle
               eyebrow="Share"
               title="Public booking page"
               body="Give clients a direct link to the step-by-step booking wizard. The same public page is used by the standalone demo and any future host application."
             />
-            <div className="mt-6 rounded-3xl border border-white bg-white/90 p-4">
+            <div className={cn("mt-6", adminInsetClass, "p-4")}>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                 Booking link
               </p>
@@ -1950,7 +1968,7 @@ export function HaabBookingModule({
                 {copiedLink ? "Copied" : "Copy link"}
               </ActionButton>
             </div>
-            <div className="mt-8 rounded-3xl border border-white bg-white/90 p-4">
+            <div className={cn("mt-8", adminInsetClass, "p-4")}>
               <p className="text-sm font-semibold text-[var(--ink)]">Quick testing</p>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
                 Use the monthly calendar tab to click a free day and jump straight into the booking flow with a service preselected.
@@ -1974,12 +1992,12 @@ export function HaabBookingModule({
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
             placeholder="Search client, service, email, or phone"
-            className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+            className={cn("min-h-12", adminFieldClass)}
           />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as "all" | BookingStatus)}
-            className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+            className={cn("min-h-12", adminFieldClass)}
           >
             <option value="all">All statuses</option>
             <option value="confirmed">Confirmed</option>
@@ -1989,7 +2007,7 @@ export function HaabBookingModule({
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value as "all" | BookingType)}
-            className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 outline-none transition focus:border-[var(--accent)]"
+            className={cn("min-h-12", adminFieldClass)}
           >
             <option value="all">All types</option>
             <option value="appointment">Appointments</option>
@@ -2006,7 +2024,7 @@ export function HaabBookingModule({
             filteredBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="rounded-[28px] border border-[var(--line)] bg-white p-5"
+                className={cn(adminInsetClass, "p-5")}
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div>
@@ -2078,7 +2096,7 @@ export function HaabBookingModule({
               <select
                 value={activeCalendarService?.id ?? ""}
                 onChange={(event) => setCalendarServicePreference(event.target.value)}
-                className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm outline-none transition focus:border-[var(--accent)]"
+                className={cn("min-h-11 text-sm", adminFieldClass)}
               >
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>
@@ -2090,7 +2108,7 @@ export function HaabBookingModule({
           }
         />
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[var(--line)] bg-white px-4 py-3">
+        <div className={cn("flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3", adminBarClass)}>
           <div className="flex items-center gap-2">
             <ActionButton
               tone="ghost"
@@ -2168,11 +2186,11 @@ export function HaabBookingModule({
                         : undefined
                     }
                     className={cn(
-                      "min-h-[148px] rounded-[26px] border p-3 text-left transition",
+                      "min-h-[148px] rounded-[26px] p-3 text-left transition",
                       inMonth
-                        ? "border-[var(--line)] bg-white"
-                        : "border-[var(--line)] bg-[var(--surface-soft)] text-[var(--muted)]",
-                      canTest && "hover:border-[var(--accent)] hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]",
+                        ? adminChoiceQuietClass
+                        : cn(adminChoiceQuietClass, "text-[var(--muted)] opacity-75"),
+                      canTest && "hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]",
                       !canTest && "cursor-default",
                     )}
                   >
@@ -2223,7 +2241,7 @@ export function HaabBookingModule({
             body="Create, edit, and review every offering from one place. Integrated mode keeps this list visible while preventing internal edits."
           />
           {integratedMode ? (
-            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm font-medium text-[var(--muted)]">
+            <div className={cn(adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
               Configured by parent app. Service editing is intentionally read-only in this mode.
             </div>
           ) : null}
@@ -2237,7 +2255,7 @@ export function HaabBookingModule({
               services.map((service) => (
                 <div
                   key={service.id}
-                  className="rounded-[28px] border border-[var(--line)] bg-white p-5"
+                  className={cn(adminInsetClass, "p-5")}
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
@@ -2282,7 +2300,7 @@ export function HaabBookingModule({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+        <div className={cn(adminPanelClass, "p-6")}>
           <SectionTitle
             eyebrow={editingServiceId ? "Edit Service" : "Add New Service"}
             title={editingServiceId ? "Update this service" : "Create another service"}
@@ -2297,7 +2315,7 @@ export function HaabBookingModule({
                 onChange={(event) =>
                   setServiceDraft((current) => ({ ...current, name: event.target.value }))
                 }
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2311,7 +2329,7 @@ export function HaabBookingModule({
                     bookingType: event.target.value as BookingType,
                   }))
                 }
-                className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               >
                 <option value="appointment">Appointment</option>
                 <option value="full-day">Full Day</option>
@@ -2329,7 +2347,7 @@ export function HaabBookingModule({
                       durationMinutes: Number(event.target.value),
                     }))
                   }
-                  className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 >
                   {DURATION_OPTIONS.map((duration) => (
                     <option key={duration} value={duration}>
@@ -2348,7 +2366,7 @@ export function HaabBookingModule({
                   setServiceDraft((current) => ({ ...current, description: event.target.value }))
                 }
                 rows={4}
-                className="rounded-2xl border border-[var(--line)] px-4 py-3 disabled:opacity-45"
+                className={cn(adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2359,7 +2377,7 @@ export function HaabBookingModule({
                 onChange={(event) =>
                   setServiceDraft((current) => ({ ...current, capacity: event.target.value }))
                 }
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2373,7 +2391,7 @@ export function HaabBookingModule({
                     cost: event.target.value,
                   }))
                 }
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2387,7 +2405,7 @@ export function HaabBookingModule({
                     notes: event.target.value,
                   }))
                 }
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
           </div>
@@ -2407,13 +2425,13 @@ export function HaabBookingModule({
   function renderSettings() {
     return (
       <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+        <div className={cn(adminPanelClass, "p-6")}>
           <SectionTitle
             title="Provider information"
             body="These fields drive the management shell, public page branding, and confirmation details."
           />
           {integratedMode ? (
-            <div className="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--muted)]">
+            <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm text-[var(--muted)]")}>
               Configured by parent app. These settings are visible but not editable.
             </div>
           ) : (
@@ -2428,7 +2446,7 @@ export function HaabBookingModule({
                 disabled={integratedMode}
                 value={provider.fullName}
                 onChange={(event) => updateProvider("fullName", event.target.value)}
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2437,7 +2455,7 @@ export function HaabBookingModule({
                 disabled={integratedMode}
                 value={provider.businessName}
                 onChange={(event) => updateProvider("businessName", event.target.value)}
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
@@ -2446,12 +2464,12 @@ export function HaabBookingModule({
                 disabled={integratedMode}
                 value={provider.email}
                 onChange={(event) => updateProvider("email", event.target.value)}
-                className="min-h-12 rounded-2xl border border-[var(--line)] px-4 disabled:opacity-45"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
           </div>
 
-          <div className="mt-6 rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+          <div className={cn("mt-6", adminInsetClass, "p-4")}>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
               Public booking URL
             </p>
@@ -2472,7 +2490,7 @@ export function HaabBookingModule({
           ) : null}
         </div>
 
-        <div className="rounded-[28px] border border-[var(--line)] bg-white p-6">
+        <div className={cn(adminPanelClass, "p-6")}>
           <SectionTitle
             title="Weekly availability"
             body="Availability changes are reflected immediately in both the public booking flow and the provider calendar."
@@ -2481,7 +2499,7 @@ export function HaabBookingModule({
             {WEEKDAY_KEYS.map((day) => (
               <div
                 key={day}
-                className="grid gap-3 rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]"
+                className={cn(adminInsetClass, "grid gap-3 p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]")}
               >
                 <label className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
                   <input
@@ -2504,7 +2522,7 @@ export function HaabBookingModule({
                       updateAvailabilityDay(day, { startTime: event.target.value })
                     }
                     type="time"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
@@ -2516,7 +2534,7 @@ export function HaabBookingModule({
                       updateAvailabilityDay(day, { endTime: event.target.value })
                     }
                     type="time"
-                    className="min-h-12 rounded-2xl border border-[var(--line)] bg-white px-4 disabled:opacity-45"
+                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                   />
                 </label>
               </div>
@@ -4131,7 +4149,7 @@ export function HaabBookingModule({
 
               <div className="flex w-full max-w-xl flex-col gap-3 xl:items-end">
                 {surfaceMode === "adaptive" && !isPublicView ? (
-                  <div className="flex w-full rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-1">
+                  <div className={cn("flex w-full rounded-2xl p-1", adminBarClass)}>
                     {(["management", "public"] as Surface[]).map((item) => (
                       <button
                         key={item}
@@ -4150,7 +4168,7 @@ export function HaabBookingModule({
                   </div>
                 ) : null}
 
-                <div className="flex w-full flex-col gap-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
+                <div className={cn("flex w-full flex-col gap-3 rounded-[24px] p-4", adminElevatedClass)}>
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                     Public booking URL
                   </p>
@@ -4183,7 +4201,7 @@ export function HaabBookingModule({
                       "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
                       adminTab === value
                         ? "bg-[var(--ink)] text-white"
-                        : "bg-[var(--surface-soft)] text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]",
+                        : "bg-[rgba(248,249,250,0.72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]",
                     )}
                   >
                     {label}

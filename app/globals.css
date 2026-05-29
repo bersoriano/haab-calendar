@@ -37,10 +37,7 @@
 
 html {
   font-size: 106.25%;
-  background:
-    radial-gradient(circle at 14% 12%, rgba(26, 115, 232, 0.18), transparent 34%),
-    radial-gradient(circle at 82% 12%, rgba(0, 191, 165, 0.14), transparent 28%),
-    linear-gradient(180deg, #fbfcfd 0%, #f8f9fa 100%);
+  background: var(--background);
 }
 
 body {
@@ -49,34 +46,6 @@ body {
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
   isolation: isolate;
-}
-
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: auto;
-  pointer-events: none;
-  z-index: -1;
-  filter: blur(80px);
-}
-
-body::before {
-  top: 5vh;
-  left: -6vw;
-  width: 28rem;
-  height: 28rem;
-  border-radius: 999px;
-  background: rgba(26, 115, 232, 0.12);
-}
-
-body::after {
-  right: -10vw;
-  bottom: 8vh;
-  width: 24rem;
-  height: 24rem;
-  border-radius: 999px;
-  background: rgba(0, 191, 165, 0.1);
 }
 
 a {

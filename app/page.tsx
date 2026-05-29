@@ -30,7 +30,7 @@ export default function Home() {
   return (
     <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
       <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[34px] border border-[var(--line)] bg-[linear-gradient(145deg,rgba(234,241,255,0.9),rgba(255,255,255,0.96))] p-6 shadow-[0_36px_90px_rgba(15,23,42,0.08)] sm:p-8">
+        <div className="rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
             Haab Calendar
           </p>
@@ -46,7 +46,7 @@ export default function Home() {
             {screenOverview.map((item) => (
               <article
                 key={item.title}
-                className="rounded-[28px] border border-white/90 bg-white/88 p-5"
+                className="rounded-[28px] bg-[rgba(255,255,255,0.88)] p-5 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
               >
                 <h2 className="text-lg font-semibold text-[var(--ink)]">{item.title}</h2>
                 <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.body}</p>
@@ -55,7 +55,7 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="rounded-[34px] border border-[var(--line)] bg-white p-6 shadow-[0_36px_90px_rgba(15,23,42,0.08)] sm:p-8">
+        <section className="rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.26em] text-[var(--muted)]">
             User Flow Overview
           </p>
@@ -63,7 +63,7 @@ export default function Home() {
             {flowOverview.map((item, index) => (
               <div
                 key={item}
-                className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-4"
+                className="rounded-[28px] bg-[rgba(255,255,255,0.88)] p-4 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
               >
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                   Flow {index + 1}
@@ -72,7 +72,7 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <div className="mt-6 rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-5">
+          <div className="mt-6 rounded-[28px] bg-[rgba(255,255,255,0.88)] p-5 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
               Reusability notes
             </p>
