@@ -3892,14 +3892,17 @@ export function HaabBookingModule({
       <div className="space-y-5">
         <div
           className={cn(
-            "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
+            "flex flex-col gap-3 rounded-[24px] px-4 py-3 sm:flex-row-reverse sm:items-center sm:justify-between",
             publicGlassBarClass,
           )}
         >
+          <p className="text-center text-base font-semibold text-[var(--ink)] sm:text-right">
+            {formatMonthLabel(publicMonthAnchor)}
+          </p>
           <div className="flex items-center gap-2">
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               disabled={!canGoToPreviousPublicMonth}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, -1))}
             >
@@ -3907,22 +3910,19 @@ export function HaabBookingModule({
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor(new Date())}
             >
               Today
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, 1))}
             >
               Next
             </ActionButton>
           </div>
-          <p className="text-base font-semibold text-[var(--ink)]">
-            {formatMonthLabel(publicMonthAnchor)}
-          </p>
         </div>
 
         <div
@@ -3939,14 +3939,14 @@ export function HaabBookingModule({
           </p>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+        <div className="grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
           {WEEKDAY_KEYS.map((day) => (
             <p key={day}>{weekdayShortFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
-        <div className="grid gap-2">
+        <div className="grid gap-1.5 sm:gap-2">
           {weeks.map((week) => (
-            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
+            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {week.map((date) => {
                 const dateKey = getDateKey(date);
                 const inMonth = date.getMonth() === publicMonthAnchor.getMonth();
@@ -3979,7 +3979,7 @@ export function HaabBookingModule({
                       }));
                     }}
                     className={cn(
-                      "min-h-[88px] rounded-[24px] p-3 text-left transition md:min-h-[104px]",
+                      "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
                       inMonth
                         ? publicQuietChoiceClass
                         : publicSoftChoiceClass,
@@ -3997,28 +3997,34 @@ export function HaabBookingModule({
                       !available && "cursor-default opacity-50",
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-[var(--ink)]">
+                    <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                      <span className="text-base font-semibold text-[var(--ink)] sm:text-sm">
                         {date.getDate()}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {chosen ? (
-                          <span className={cn("shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)]", compactBadgeTextClass)}>
-                            Selected
-                          </span>
+                          <>
+                            <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:hidden" />
+                            <span className={cn("hidden shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)] sm:inline", compactBadgeTextClass)}>
+                              Selected
+                            </span>
+                          </>
                         ) : null}
                         {!chosen && isToday ? (
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)]",
-                              compactBadgeTextClass,
-                            )}
-                          >
-                            Today
-                          </span>
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--muted)] sm:hidden" />
+                            <span
+                              className={cn(
+                                "hidden shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)] sm:inline",
+                                compactBadgeTextClass,
+                              )}
+                            >
+                              Today
+                            </span>
+                          </>
                         ) : null}
                         {!chosen && !isToday && available ? (
-                          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+                          <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:h-2.5 sm:w-2.5" />
                         ) : null}
                       </div>
                     </div>
