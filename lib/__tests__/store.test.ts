@@ -1,0 +1,209 @@
+import { describe, it, expect } from "vitest";
+import {
+  normalizeStore,
+  normalizeProvider,
+  pruneBookingHolds,
+  sortBookings,
+} from "@/lib/store";
+import type { BookingHoldRecord, BookingRecord, ModuleStore } from "@/lib/types";
+
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+
+function makeBooking(overrides: Partial<BookingRecord>): BookingRecord {
+  return {
+    id: "bk_1",
+    serviceId: "svc_1",
+    serviceName: "Test Service",
+    bookingType: "appointment",
+    dateKey: "2026-06-10",
+    startTime: "09:00",
+    endTime: "09:30",
+    clientName: "Alice",
+    clientEmail: "alice@test.com",
+    clientPhone: "555-0000",
+    notes: "",
+    cost: "",
+    status: "confirmed",
+    createdAt: "2026-05-01T00:00:00.000Z",
+    updatedAt: "2026-05-01T00:00:00.000Z",
+    manageToken: "tok_1",
+    ...overrides,
+  };
+}
+
+function makeHold(overrides: Partial<BookingHoldRecord>): BookingHoldRecord {
+  return {
+    id: "hold_1",
+    serviceId: "svc_1",
+    bookingType: "appointment",
+    dateKey: "2026-06-10",
+    startTime: "09:00",
+    endTime: "09:30",
+    createdAt: "2026-05-01T00:00:00.000Z",
+    expiresAt: Date.now() + 60_000,
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// normalizeStore
+// ---------------------------------------------------------------------------
+
+describe("normalizeStore", () => {
+  it("produces a complete store from null input", () => {
+    const store = normalizeStore(null);
+    expect(store).toHaveProperty("provider");
+    expect(store).toHaveProperty("services");
+    expect(store).toHaveProperty("availability");
+    expect(store).toHaveProperty("bookings");
+    expect(store).toHaveProperty("bookingHolds");
+    expect(store).toHaveProperty("setupComplete");
+  });
+
+  it("produces a complete store from empty object", () => {
+    const store = normalizeStore({} as ModuleStore);
+    expect(Array.isArray(store.services)).toBe(true);
+    expect(Array.isArray(store.bookings)).toBe(true);
+    expect(Array.isArray(store.bookingHolds)).toBe(true);
+    expect(typeof store.setupComplete).toBe("boolean");
+  });
+
+  it("availability has all 7 weekday keys", () => {
+    const store = normalizeStore(null);
+    const keys = Object.keys(store.availability);
+    expect(keys).toContain("sunday");
+    expect(keys).toContain("monday");
+    expect(keys).toContain("tuesday");
+    expect(keys).toContain("wednesday");
+    expect(keys).toContain("thursday");
+    expect(keys).toContain("friday");
+    expect(keys).toContain("saturday");
+    expect(keys).toHaveLength(7);
+  });
+
+  it("each day has enabled/startTime/endTime", () => {
+    const store = normalizeStore(null);
+    for (const day of Object.values(store.availability)) {
+      expect(day).toHaveProperty("enabled");
+      expect(day).toHaveProperty("startTime");
+      expect(day).toHaveProperty("endTime");
+    }
+  });
+
+  it("preserves setupComplete=true from input", () => {
+    const input = { setupComplete: true } as unknown as ModuleStore;
+    expect(normalizeStore(input).setupComplete).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// normalizeProvider
+// ---------------------------------------------------------------------------
+
+describe("normalizeProvider", () => {
+  it("derives slug from businessName", () => {
+    const provider = normalizeProvider({ businessName: "My Business" });
+    expect(provider.publicSlug).toBe("my-business");
+  });
+
+  it("falls back to fullName for slug when businessName is empty", () => {
+    const provider = normalizeProvider({ fullName: "John Doe" });
+    expect(provider.publicSlug).toBe("john-doe");
+  });
+
+  it("falls back to haab-calendar when both names are empty", () => {
+    const provider = normalizeProvider({});
+    expect(provider.publicSlug).toBe("haab-calendar");
+  });
+
+  it("preserves existing publicSlug if provided", () => {
+    const provider = normalizeProvider({
+      publicSlug: "custom-slug",
+      businessName: "Some Biz",
+    });
+    expect(provider.publicSlug).toBe("custom-slug");
+  });
+
+  it("fills missing fields with empty strings", () => {
+    const provider = normalizeProvider(null);
+    expect(provider.fullName).toBe("");
+    expect(provider.businessName).toBe("");
+    expect(provider.email).toBe("");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// pruneBookingHolds
+// ---------------------------------------------------------------------------
+
+describe("pruneBookingHolds", () => {
+  it("drops holds whose expiresAt is in the past", () => {
+    const expired = makeHold({ expiresAt: Date.now() - 1000 });
+    const now = Date.now();
+    expect(pruneBookingHolds([expired], now)).toHaveLength(0);
+  });
+
+  it("keeps holds whose expiresAt is in the future", () => {
+    const active = makeHold({ expiresAt: Date.now() + 60_000 });
+    const now = Date.now();
+    expect(pruneBookingHolds([active], now)).toHaveLength(1);
+  });
+
+  it("filters mixed list correctly", () => {
+    const now = Date.now();
+    const expired = makeHold({ id: "h1", expiresAt: now - 1 });
+    const active1 = makeHold({ id: "h2", expiresAt: now + 10_000 });
+    const active2 = makeHold({ id: "h3", expiresAt: now + 20_000 });
+    const result = pruneBookingHolds([expired, active1, active2], now);
+    expect(result).toHaveLength(2);
+    expect(result.map((h) => h.id)).not.toContain("h1");
+  });
+
+  it("returns empty array when all holds are expired", () => {
+    const now = Date.now();
+    const holds = [
+      makeHold({ id: "h1", expiresAt: now - 5000 }),
+      makeHold({ id: "h2", expiresAt: now - 1 }),
+    ];
+    expect(pruneBookingHolds(holds, now)).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// sortBookings
+// ---------------------------------------------------------------------------
+
+describe("sortBookings", () => {
+  it("sorts by dateKey ascending", () => {
+    const b1 = makeBooking({ id: "b1", dateKey: "2026-06-15" });
+    const b2 = makeBooking({ id: "b2", dateKey: "2026-06-10" });
+    const b3 = makeBooking({ id: "b3", dateKey: "2026-06-12" });
+    const sorted = sortBookings([b1, b2, b3]);
+    expect(sorted.map((b) => b.id)).toEqual(["b2", "b3", "b1"]);
+  });
+
+  it("sorts by startTime ascending when dates are equal", () => {
+    const b1 = makeBooking({ id: "b1", dateKey: "2026-06-10", startTime: "14:00" });
+    const b2 = makeBooking({ id: "b2", dateKey: "2026-06-10", startTime: "09:00" });
+    const b3 = makeBooking({ id: "b3", dateKey: "2026-06-10", startTime: "11:30" });
+    const sorted = sortBookings([b1, b2, b3]);
+    expect(sorted.map((b) => b.id)).toEqual(["b2", "b3", "b1"]);
+  });
+
+  it("treats undefined startTime as 00:00 (sorts first)", () => {
+    const b1 = makeBooking({ id: "b1", dateKey: "2026-06-10", startTime: "09:00" });
+    const b2 = makeBooking({ id: "b2", dateKey: "2026-06-10", startTime: undefined });
+    const sorted = sortBookings([b1, b2]);
+    expect(sorted[0].id).toBe("b2");
+  });
+
+  it("does not mutate the original array", () => {
+    const b1 = makeBooking({ id: "b1", dateKey: "2026-06-15" });
+    const b2 = makeBooking({ id: "b2", dateKey: "2026-06-10" });
+    const original = [b1, b2];
+    sortBookings(original);
+    expect(original[0].id).toBe("b1");
+  });
+});
