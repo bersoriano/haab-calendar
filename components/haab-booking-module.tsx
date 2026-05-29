@@ -4,6 +4,12 @@ import { parse as parseNaturalLanguage, type ParsedResult } from "chrono-node";
 import Link from "next/link";
 import QRCode from "qrcode";
 import {
+  backfillManageTokens,
+  buildManageUrl,
+  findBookingByToken,
+  generateManageToken,
+} from "@/lib/booking-tokens";
+import {
   startTransition,
   useDeferredValue,
   useEffect,
@@ -73,6 +79,7 @@ type BookingRecord = {
   status: BookingStatus;
   createdAt: string;
   updatedAt: string;
+  manageToken: string;
 };
 
 type BookingHoldRecord = {
@@ -137,7 +144,10 @@ type RescheduleState = {
   dateKey: string;
   time: string;
   monthAnchor: Date;
+  error?: string;
 };
+
+type ManageLookupState = "idle" | "pending" | "found" | "not-found";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -147,6 +157,7 @@ type HaabBookingModuleProps = {
   requestedPublicSlug?: string;
   onBookingsChange?: (bookings: BookingRecord[]) => void;
   onStoreChange?: (store: ModuleStore) => void;
+  manageBookingToken?: string;
 };
 
 const WEEKDAY_KEYS: WeekdayKey[] = [
@@ -411,6 +422,7 @@ function normalizeBookings(source?: BookingRecord[] | null): BookingRecord[] {
       status: booking.status,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
+      manageToken: booking.manageToken ?? "",
     })),
   );
 }
@@ -798,10 +810,15 @@ function escapeIcsText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
 
-function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
+function buildIcsContent(
+  booking: BookingRecord,
+  provider: ProviderInfo,
+  manageUrl: string,
+) {
   const safeSummary = escapeIcsText(booking.serviceName);
+  const baseDescription = `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || "N/A"}`;
   const safeDescription = escapeIcsText(
-    `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || "N/A"}`,
+    manageUrl ? `${baseDescription}\nManage this booking: ${manageUrl}` : baseDescription,
   );
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const eventId = `${booking.id}@haab-calendar.local`;
@@ -820,6 +837,7 @@ function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
       `SUMMARY:${safeSummary}`,
       `DESCRIPTION:${safeDescription}`,
       `ORGANIZER:MAILTO:${provider.email}`,
+      ...(manageUrl ? [`URL:${manageUrl}`] : []),
       `DTSTART;VALUE=DATE:${start}`,
       `DTEND;VALUE=DATE:${end}`,
       "END:VEVENT",
@@ -840,6 +858,7 @@ function buildIcsContent(booking: BookingRecord, provider: ProviderInfo) {
     `SUMMARY:${safeSummary}`,
     `DESCRIPTION:${safeDescription}`,
     `ORGANIZER:MAILTO:${provider.email}`,
+    ...(manageUrl ? [`URL:${manageUrl}`] : []),
     `DTSTART:${start}`,
     `DTEND:${end}`,
     "END:VEVENT",
@@ -1266,6 +1285,7 @@ export function HaabBookingModule({
   requestedPublicSlug,
   onBookingsChange,
   onStoreChange,
+  manageBookingToken,
 }: HaabBookingModuleProps) {
   const integratedMode = Boolean(
     injectedConfig?.provider &&
@@ -1321,6 +1341,10 @@ export function HaabBookingModule({
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedManageLink, setCopiedManageLink] = useState(false);
+  const [manageLookupState, setManageLookupState] = useState<ManageLookupState>(
+    manageBookingToken ? "pending" : "idle",
+  );
   const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
   const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
@@ -1345,7 +1369,12 @@ export function HaabBookingModule({
 
       if (raw) {
         try {
-          setStandaloneStore(normalizeStore(JSON.parse(raw) as ModuleStore));
+          const normalized = normalizeStore(JSON.parse(raw) as ModuleStore);
+          const { changed, store: backfilled } = backfillManageTokens(normalized);
+          if (changed) {
+            window.localStorage.setItem(storageKey, JSON.stringify(backfilled));
+          }
+          setStandaloneStore(backfilled);
         } catch {
           setStandaloneStore(createEmptyStore());
         }
@@ -1407,6 +1436,35 @@ export function HaabBookingModule({
   const bookingHolds = activeStore.bookingHolds;
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
+
+  const onManageBookingFound = useEffectEvent((booking: BookingRecord) => {
+    setBookingFlow((current) => ({
+      ...current,
+      step: 4,
+      successBookingId: booking.id,
+      serviceId: booking.serviceId,
+    }));
+    setManageLookupState("found");
+  });
+
+  const onManageBookingMissing = useEffectEvent(() => {
+    setManageLookupState("not-found");
+  });
+
+  useEffect(() => {
+    if (!manageBookingToken || !hydrated) {
+      return;
+    }
+
+    const booking = findBookingByToken({ bookings }, manageBookingToken);
+    if (booking) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: useEffectEvent escapes Effect reactivity per React 19 docs
+      onManageBookingFound(booking);
+    } else {
+      onManageBookingMissing();
+    }
+  }, [manageBookingToken, hydrated, bookings]);
+
   const businessSlug =
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
   const publicUrl = businessSlug ? `/public/${businessSlug}` : "/public";
@@ -1641,12 +1699,19 @@ export function HaabBookingModule({
     let cancelled = false;
     const bookingId = successfulBooking.id;
 
-    QRCode.toDataURL(buildIcsContent(successfulBooking, provider), {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      scale: 8,
-      width: 400,
-    })
+    QRCode.toDataURL(
+      buildIcsContent(
+        successfulBooking,
+        provider,
+        buildManageUrl(provider.publicSlug, successfulBooking.manageToken),
+      ),
+      {
+        errorCorrectionLevel: "M",
+        margin: 2,
+        scale: 8,
+        width: 400,
+      },
+    )
       .then((url) => {
         if (cancelled) {
           return;
@@ -1847,9 +1912,16 @@ export function HaabBookingModule({
       return;
     }
 
-    const blob = new Blob([buildIcsContent(booking, provider)], {
-      type: "text/calendar;charset=utf-8",
-    });
+    const blob = new Blob(
+      [
+        buildIcsContent(
+          booking,
+          provider,
+          buildManageUrl(provider.publicSlug, booking.manageToken),
+        ),
+      ],
+      { type: "text/calendar;charset=utf-8" },
+    );
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
@@ -2424,6 +2496,7 @@ export function HaabBookingModule({
       status: "confirmed",
       createdAt,
       updatedAt: createdAt,
+      manageToken: generateManageToken(),
     };
 
     const nextHolds = validationHolds.filter((hold) => hold.id !== ignoredHoldId);
@@ -2502,6 +2575,11 @@ export function HaabBookingModule({
       );
 
       if (!nextSlots.includes(rescheduleState.time)) {
+        setRescheduleState((current) =>
+          current
+            ? { ...current, error: "That slot is no longer available — please pick another time." }
+            : current,
+        );
         return;
       }
     } else if (
@@ -2514,6 +2592,11 @@ export function HaabBookingModule({
         pruneBookingHolds(validationStore.bookingHolds),
       )
     ) {
+      setRescheduleState((current) =>
+        current
+          ? { ...current, error: "That date is no longer available — please pick another day." }
+          : current,
+      );
       return;
     }
 
@@ -2573,6 +2656,21 @@ export function HaabBookingModule({
       window.setTimeout(() => setCopiedLink(false), 1600);
     } catch {
       setCopiedLink(false);
+    }
+  }
+
+  async function copyManageLink() {
+    if (!successfulBooking?.manageToken) {
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(
+        buildManageUrl(provider.publicSlug, successfulBooking.manageToken),
+      );
+      setCopiedManageLink(true);
+      window.setTimeout(() => setCopiedManageLink(false), 1600);
+    } catch {
+      setCopiedManageLink(false);
     }
   }
 
@@ -4717,17 +4815,63 @@ export function HaabBookingModule({
                   >
                     Cancel booking
                   </ActionButton>
-                  <ActionButton
-                    tone="secondary"
-                    className={cn(
-                      "min-w-[150px]",
-                      isDedicatedPublicPage && publicPillButtonClass,
-                    )}
-                    onClick={() => startFreshBooking()}
-                  >
-                    Book another
-                  </ActionButton>
+                  {manageBookingToken ? (
+                    <Link
+                      href={`/public/${businessSlug}`}
+                      className={cn(
+                        "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white",
+                        isDedicatedPublicPage && publicPillButtonClass,
+                      )}
+                    >
+                      Book another
+                    </Link>
+                  ) : (
+                    <ActionButton
+                      tone="secondary"
+                      className={cn(
+                        "min-w-[150px]",
+                        isDedicatedPublicPage && publicPillButtonClass,
+                      )}
+                      onClick={() => startFreshBooking()}
+                    >
+                      Book another
+                    </ActionButton>
+                  )}
                 </div>
+                {successfulBooking.manageToken ? (
+                  <div className="mt-5 flex flex-col gap-2">
+                    <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                      Manage this booking anytime
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={buildManageUrl(provider.publicSlug, successfulBooking.manageToken)}
+                        aria-label="Booking management URL"
+                        onFocus={(event) => event.currentTarget.select()}
+                        className="flex-1 min-w-[260px] rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)]"
+                      />
+                      <ActionButton
+                        tone="ghost"
+                        className={cn(
+                          isDedicatedPublicPage &&
+                            cn(publicPillButtonClass, publicGhostButtonClass),
+                        )}
+                        onClick={copyManageLink}
+                      >
+                        {copiedManageLink ? "Copied" : "Copy link"}
+                      </ActionButton>
+                      <span className="sr-only" aria-live="polite">
+                        {copiedManageLink ? "Manage link copied to clipboard" : ""}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-5 text-[var(--muted)]">
+                      Save this link or use the calendar attachment — anyone with the link can
+                      manage this booking.
+                    </p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -4873,6 +5017,7 @@ export function HaabBookingModule({
                               dateKey: todayKey(),
                               time: "",
                               monthAnchor: new Date(),
+                              error: undefined,
                             }
                           : current,
                       )
@@ -4931,6 +5076,7 @@ export function HaabBookingModule({
                                     dateKey,
                                     time: "",
                                     monthAnchor: date,
+                                    error: undefined,
                                   }
                                 : current,
                             )
@@ -4983,6 +5129,14 @@ export function HaabBookingModule({
                 }
                 body={service.description}
               />
+              {rescheduleState.error ? (
+                <div
+                  role="alert"
+                  className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]"
+                >
+                  {rescheduleState.error}
+                </div>
+              ) : null}
               {service.bookingType === "appointment" ? (
                 <div className="mt-6 space-y-4">
                   <div className="flex flex-wrap gap-3">
@@ -4992,7 +5146,7 @@ export function HaabBookingModule({
                         type="button"
                         onClick={() =>
                           setRescheduleState((current) =>
-                            current ? { ...current, time: slot } : current,
+                            current ? { ...current, time: slot, error: undefined } : current,
                           )
                         }
                         className={cn(
@@ -5064,6 +5218,49 @@ export function HaabBookingModule({
           <div className="h-8 w-56 rounded-full bg-[var(--surface-soft)]" />
           <div className="h-28 rounded-[28px] bg-[var(--surface-soft)]" />
           <div className="h-96 rounded-[28px] bg-[var(--surface-soft)]" />
+        </div>
+      </section>
+    );
+  }
+
+  if (manageBookingToken && manageLookupState === "pending") {
+    return (
+      <section className={cn(publicShellClass, "p-6 sm:p-8")} aria-busy="true">
+        <SectionTitle eyebrow="Manage booking" title="Loading your booking…" />
+      </section>
+    );
+  }
+
+  if (manageBookingToken && manageLookupState === "not-found") {
+    const contactEmail = provider.email?.trim();
+    return (
+      <section className={cn(publicShellClass, "p-6 sm:p-8")} role="alert">
+        <SectionTitle
+          eyebrow="Manage booking"
+          title="We can't find this booking on this device"
+          body="Bookings are stored locally in the browser they were created in. If you booked from a different browser or device, please open this link there. If you've cleared your browser data, the booking is no longer accessible from this device."
+        />
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link
+            href={`/public/${businessSlug}`}
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90",
+              isDedicatedPublicPage && publicPillButtonClass,
+            )}
+          >
+            Book a new appointment
+          </Link>
+          {contactEmail ? (
+            <a
+              href={`mailto:${contactEmail}`}
+              className={cn(
+                "inline-flex min-h-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]",
+                isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass),
+              )}
+            >
+              Contact provider
+            </a>
+          ) : null}
         </div>
       </section>
     );
