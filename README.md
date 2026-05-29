@@ -16,7 +16,7 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 ## Core Behaviors
 
 - Supports both timed appointments and full-day bookings in the same module.
-- Uses one self-contained exported component: `HaabBookingModule`.
+- Exposes one entry component, `HaabBookingModule`, backed by extracted layers: pure logic in `lib/`, primitives in `components/ui/`, persistence in `components/booking/state/useModuleStore.ts`. See `docs/ARCHITECTURE.md`.
 - Runs in standalone mode by default with internal state and local persistence.
 - Switches into integrated mode when provider, services, and availability are injected.
 - Keeps services and settings visible but read-only when configured by a parent app.
@@ -28,6 +28,8 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
   Provider workspace plus the requested screen-by-screen and flow overview.
 - `/public/[slug]`
   Public booking page for the current standalone setup.
+- `/public/[slug]/manage/[token]`
+  Self-service page to view, reschedule, or cancel an existing booking via its manage token.
 
 ## Reuse
 

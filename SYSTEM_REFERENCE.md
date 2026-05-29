@@ -2,7 +2,9 @@
 
 **Purpose:** A single, factual reference for how this booking module behaves today. Written so a human can build a mental model in one read and an LLM can use it as ground truth when designing the API, the Supabase migration, or any new feature that touches persistence.
 
-**Source of truth:** `components/haab-booking-module.tsx` (5,218 lines, single client component). When this document and the code disagree, the code wins — please open a PR to fix this document.
+**Source of truth:** the booking engine, now split across `components/haab-booking-module.tsx` (orchestrator + feature render/state, ~4,232 lines), `lib/*` (pure domain logic + types + constants), `config/*` (seed data), `components/ui/*` (presentational primitives), and `components/booking/state/useModuleStore.ts` (persistence). See `docs/ARCHITECTURE.md` for the module layout. When this document and the code disagree, the code wins — please open a PR to fix this document.
+
+**Note (2026-05-29):** the engine was decomposed out of its original single 5,218-line component. **Behavior is unchanged** — every rule, lifecycle, and invariant in this document still holds; only the file organization changed. Where this doc cites the monolith, the logic may now live in `lib/`.
 
 **Scope of this document:** the booking engine itself. Visual styling, individual screen layouts, and per-surface UI choices are out of scope and live in `UX_RECOMMENDATIONS.md` / `liquid-glass-style-guide.md`.
 
@@ -19,26 +21,28 @@ Haab Calendar is a self-contained booking engine that ships as one React client 
 
 ---
 
-## 1.5. Implementation Status (Verified 2026-05-07)
+## 1.5. Implementation Status (Verified 2026-05-29)
 
 The doc deliberately documents the **engine as it should be designed**, which sometimes runs ahead of what's shipped. Use this table to know which parts you can grep for in the codebase today vs which parts are spec'd in `docs/superpowers/specs/` and the recommendation docs.
 
 | Feature                                                          | Status today                                                                                          |
 |------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
-| Standalone localStorage persistence (read/write/multi-tab sync)  | ✅ Shipped — `components/haab-booking-module.tsx`, key `haab-calendar-dev-clean`                       |
-| Integrated mode (`injectedConfig` + callbacks)                   | ✅ Shipped                                                                                             |
+| Standalone localStorage persistence (read/write/multi-tab sync)  | ✅ Shipped — `components/booking/state/useModuleStore.ts`, key `haab-calendar-dev-clean`               |
+| Integrated mode (`injectedConfig` + callbacks)                   | ✅ Shipped (dormant — no route uses it; preserved for embedding/child reuse)                           |
 | Adaptive surface (`/`) and public-only surface (`/public/[slug]`)| ✅ Shipped                                                                                             |
 | 4-step booking flow with 10-min hold                             | ✅ Shipped                                                                                             |
 | Reschedule and cancel from admin and from in-session success screen | ✅ Shipped                                                                                          |
-| `BookingRecord.manageToken` field                                | ❌ Not in code yet — see `docs/superpowers/specs/2026-05-06-manage-booking-design.md`                  |
-| `lib/booking-tokens.ts` (token gen, lookup, URL builder, backfill) | ❌ Not in repo yet — `lib/` directory does not exist                                                 |
-| `/public/[slug]/manage/[token]` route                            | ❌ Not built yet — only `app/public/[slug]/page.tsx` exists                                            |
-| `manageBookingToken` prop on the module + lookup state machine   | ❌ Not built yet                                                                                       |
-| Inline error on reschedule slot conflict                         | ❌ Not built yet — current `confirmReschedule` (line 2467) silently early-returns                      |
-| Supabase backend, network sync, online concurrency               | ❌ Not built yet — see `BACKEND_RECOMMENDATIONS.md`                                                    |
+| `BookingRecord.manageToken` field                                | ✅ Shipped — `lib/types.ts`                                                                            |
+| `lib/booking-tokens.ts` (token gen, lookup, URL builder, backfill) | ✅ Shipped — `lib/booking-tokens.ts`                                                                 |
+| `/public/[slug]/manage/[token]` route                            | ✅ Shipped — `app/public/[slug]/manage/[token]/page.tsx`                                               |
+| `manageBookingToken` prop on the module + lookup state machine   | ✅ Shipped                                                                                             |
+| Mobile-first public booking flow                                 | ✅ Shipped (2026-05-29)                                                                                |
+| Core decomposition (`lib/`, `config/`, `components/ui/`, `useModuleStore`) | ✅ Shipped (2026-05-29) — see `docs/ARCHITECTURE.md`. Feature components/orchestrator (Phase 5/6) deferred. |
+| Test framework                                                   | ✅ Vitest — 118 characterization tests in `lib/__tests__/` (`npm run test`). React render flows untested. |
+| Inline error on reschedule slot conflict                         | ✅ Shipped — folded into the manage-booking work                                                       |
+| Supabase backend, network sync, online concurrency               | ❌ Not built yet — see `BACKEND_RECOMMENDATIONS.md`. The `useModuleStore` hook is the intended swap point. |
 | Provider auth                                                    | ❌ Not built — admin surface is unauthenticated, gated only by URL                                     |
 | Email / SMS notifications, payments                              | ❌ Out of scope                                                                                        |
-| Test framework                                                   | ❌ None — see `TESTING_RECOMMENDATIONS.md`                                                             |
 
 When the doc says **"planned"** below, it means there is a written spec or recommendation for it but no code yet. When the doc speaks in the present tense without that word, it describes shipped behaviour.
 
@@ -628,29 +632,27 @@ These are the load-bearing assumptions the rest of the engine depends on.
 
 ## 15. Where to Look in the Code
 
-Quick map for navigating `components/haab-booking-module.tsx`:
+After the 2026-05-29 decomposition, code is organized by file/module rather than by line range. See `docs/ARCHITECTURE.md` for the full layout. Quick map by concern:
 
-| Concern                              | Lines (approximate)        |
-|--------------------------------------|----------------------------|
-| Type definitions                     | 17–150                     |
-| Constants (hold duration, storage key) | 263–264                  |
-| Pure helpers (date, slots, holds)    | 418–800                    |
-| iCal generation                      | 801–848                    |
-| `HaabBookingModule` component start  | 1262                       |
-| Standalone hydration / persistence   | 1338–1391                  |
-| Active store derivation              | 1393–1402                  |
-| Hold UI state + timer                | 1310–1325, 1758–1777       |
-| Commit functions                     | 1712–1813                  |
-| `startFreshBooking`                  | 1815–1869                  |
-| Hold creation (step 2 → 3)           | ~2280–2328                 |
-| Confirm booking (step 3 → 4)         | 2330–2442                  |
-| Reschedule open + confirm            | 2444–2540                  |
-| Cancel confirm                       | 2542–2567                  |
-| iCal download click handler          | ~1850                      |
-| Public success screen                | ~4530–4734                 |
-| Cancellation modal                   | 4740–4791                  |
-| Reschedule modal                     | 4793–~5050                 |
-| Public-only render guard             | ~5072                      |
+| Concern                               | Location                                                            |
+|---------------------------------------|--------------------------------------------------------------------|
+| Type definitions                      | `lib/types.ts`                                                     |
+| Constants (hold duration, storage key, weekdays, formatters) | `lib/constants.ts`                          |
+| Generic utils (`cn`, `slugify`, `createId`, `pad`, `currentTimestamp`) | `lib/utils.ts`                    |
+| Date math + windows (`getDateKey`, `getAvailableSlots`' deps, etc.) | `lib/date.ts`                        |
+| Label/format helpers (`formatTimeLabel`, `formatDuration`, tones)  | `lib/format.ts`                       |
+| Store factories + normalizers + prune + sort | `lib/store.ts`                                              |
+| Availability + slot computation (`getAvailableSlots`, `isDateAvailable`, `overlapExists`) | `lib/availability.ts` |
+| Hold selection key                    | `lib/holds.ts`                                                    |
+| iCal generation (`buildIcsContent`)   | `lib/ics.ts`                                                      |
+| Manage-token gen / lookup / URL / backfill | `lib/booking-tokens.ts`                                       |
+| Seed templates (`QUICK_START_TEMPLATES`) | `config/templates.ts`                                          |
+| Persistence: hydrate/persist/sync, commit functions, active-store derivation | `components/booking/state/useModuleStore.ts` |
+| Presentational primitives (buttons, badges, progress, countdown bar, empty state) | `components/ui/*`     |
+| Characterization tests for the above logic | `lib/__tests__/*`                                            |
+| Orchestrator, surface routing, setup wizard, admin tabs, public flow, modals, hold timer, booking/reschedule/cancel handlers | `components/haab-booking-module.tsx` (still the monolith; Phase 5/6 will carve these into feature components) |
+
+To find a specific handler in the monolith, grep its name (e.g. `confirmBooking`, `confirmReschedule`, `confirmCancellation`, `renderPublicFlow`, `renderRescheduleModal`) — names are stable even though line numbers move.
 
 ---
 
