@@ -1120,7 +1120,7 @@ function PublicProgressIndicator({
                 </span>
                 <span
                   className={cn(
-                    "max-w-[7.5rem] text-center text-xs font-semibold uppercase tracking-[0.14em] leading-tight transition-colors",
+                    "max-w-[4.25rem] text-center text-[0.625rem] font-semibold uppercase tracking-[0.04em] leading-tight transition-colors sm:max-w-[7.5rem] sm:text-xs sm:tracking-[0.14em]",
                     status === "complete" && "text-[var(--ink)]",
                     status === "current" && "text-[var(--primary)]",
                     status === "upcoming" && "text-[var(--muted)]",
@@ -1296,6 +1296,7 @@ export function HaabBookingModule({
 
   const [hydrated, setHydrated] = useState(integratedMode);
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
+  const [isDesktopColumns, setIsDesktopColumns] = useState(false);
   const [standaloneStore, setStandaloneStore] = useState<ModuleStore>(() =>
     createEmptyStore(),
   );
@@ -1606,6 +1607,19 @@ export function HaabBookingModule({
     return () => {
       window.cancelAnimationFrame(frameId);
       mediaQuery.removeEventListener("change", syncMobileBrowser);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const syncDesktopColumns = () => setIsDesktopColumns(mediaQuery.matches);
+    const frameId = window.requestAnimationFrame(syncDesktopColumns);
+
+    mediaQuery.addEventListener("change", syncDesktopColumns);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      mediaQuery.removeEventListener("change", syncDesktopColumns);
     };
   }, []);
 
@@ -3878,14 +3892,17 @@ export function HaabBookingModule({
       <div className="space-y-5">
         <div
           className={cn(
-            "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
+            "flex flex-col gap-3 rounded-[24px] px-4 py-3 sm:flex-row-reverse sm:items-center sm:justify-between",
             publicGlassBarClass,
           )}
         >
+          <p className="text-center text-base font-semibold text-[var(--ink)] sm:text-right">
+            {formatMonthLabel(publicMonthAnchor)}
+          </p>
           <div className="flex items-center gap-2">
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               disabled={!canGoToPreviousPublicMonth}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, -1))}
             >
@@ -3893,22 +3910,19 @@ export function HaabBookingModule({
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor(new Date())}
             >
               Today
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={calendarNavPillClass}
+              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, 1))}
             >
               Next
             </ActionButton>
           </div>
-          <p className="text-base font-semibold text-[var(--ink)]">
-            {formatMonthLabel(publicMonthAnchor)}
-          </p>
         </div>
 
         <div
@@ -3925,14 +3939,14 @@ export function HaabBookingModule({
           </p>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+        <div className="grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
           {WEEKDAY_KEYS.map((day) => (
             <p key={day}>{weekdayShortFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
-        <div className="grid gap-2">
+        <div className="grid gap-1.5 sm:gap-2">
           {weeks.map((week) => (
-            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
+            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {week.map((date) => {
                 const dateKey = getDateKey(date);
                 const inMonth = date.getMonth() === publicMonthAnchor.getMonth();
@@ -3965,7 +3979,7 @@ export function HaabBookingModule({
                       }));
                     }}
                     className={cn(
-                      "min-h-[88px] rounded-[24px] p-3 text-left transition md:min-h-[104px]",
+                      "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
                       inMonth
                         ? publicQuietChoiceClass
                         : publicSoftChoiceClass,
@@ -3983,28 +3997,34 @@ export function HaabBookingModule({
                       !available && "cursor-default opacity-50",
                     )}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-semibold text-[var(--ink)]">
+                    <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                      <span className="text-base font-semibold text-[var(--ink)] sm:text-sm">
                         {date.getDate()}
                       </span>
                       <div className="flex items-center gap-1.5">
                         {chosen ? (
-                          <span className={cn("shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)]", compactBadgeTextClass)}>
-                            Selected
-                          </span>
+                          <>
+                            <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:hidden" />
+                            <span className={cn("hidden shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)] sm:inline", compactBadgeTextClass)}>
+                              Selected
+                            </span>
+                          </>
                         ) : null}
                         {!chosen && isToday ? (
-                          <span
-                            className={cn(
-                              "shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)]",
-                              compactBadgeTextClass,
-                            )}
-                          >
-                            Today
-                          </span>
+                          <>
+                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--muted)] sm:hidden" />
+                            <span
+                              className={cn(
+                                "hidden shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)] sm:inline",
+                                compactBadgeTextClass,
+                              )}
+                            >
+                              Today
+                            </span>
+                          </>
                         ) : null}
                         {!chosen && !isToday && available ? (
-                          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+                          <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:h-2.5 sm:w-2.5" />
                         ) : null}
                       </div>
                     </div>
@@ -4070,6 +4090,51 @@ export function HaabBookingModule({
           : "Continue to My Details"
       : "Book full day";
 
+    const advanceToDetailsStep = () => {
+      const fadeAndAdvance = () => {
+        setIsPublicFlowFadingOut(true);
+        window.setTimeout(() => {
+          beginClientDetailsStep();
+          window.requestAnimationFrame(() => {
+            setIsPublicFlowFadingOut(false);
+          });
+        }, 220);
+      };
+      if (typeof window === "undefined" || window.scrollY <= 0) {
+        if (typeof window === "undefined") {
+          beginClientDetailsStep();
+          return;
+        }
+        fadeAndAdvance();
+        return;
+      }
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        window.removeEventListener("scrollend", finish);
+        clearTimeout(timeoutId);
+        fadeAndAdvance();
+      };
+      const timeoutId = window.setTimeout(finish, 700);
+      if ("onscrollend" in window) {
+        window.addEventListener("scrollend", finish, { once: true });
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const goBackToSelectionStep = () => {
+      releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      setBookingHold(null);
+      setBookingHoldNow(currentTimestamp());
+      setBookingError(null);
+      setWasBookingUpdatedWithNaturalLanguage(false);
+      setIsNLBookingOpen(false);
+      setNaturalLanguageBookingInput("");
+      setNaturalLanguageBookingError(null);
+      setBookingFlow((current) => ({ ...current, step: 2 }));
+    };
+
     return (
       <div
         className={cn(
@@ -4083,7 +4148,7 @@ export function HaabBookingModule({
             <div ref={attachStickyHeaderSentinel} aria-hidden="true" className="h-px" />
             <div
               className={cn(
-                "relative px-5 pt-5 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[48px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
+                "relative px-4 pt-4 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[32px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
                 isPublicSelectionStep && "sticky top-0 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
@@ -4126,43 +4191,12 @@ export function HaabBookingModule({
                           {step2Helper}
                         </p>
                       </div>
-                      <div className="flex w-full flex-wrap items-center justify-end gap-3 lg:w-auto">
+                      <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex lg:w-auto">
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
                           disabled={!step2CanContinue}
-                          onClick={() => {
-                            const fadeAndAdvance = () => {
-                              setIsPublicFlowFadingOut(true);
-                              window.setTimeout(() => {
-                                beginClientDetailsStep();
-                                window.requestAnimationFrame(() => {
-                                  setIsPublicFlowFadingOut(false);
-                                });
-                              }, 220);
-                            };
-                            if (typeof window === "undefined" || window.scrollY <= 0) {
-                              if (typeof window === "undefined") {
-                                beginClientDetailsStep();
-                                return;
-                              }
-                              fadeAndAdvance();
-                              return;
-                            }
-                            let done = false;
-                            const finish = () => {
-                              if (done) return;
-                              done = true;
-                              window.removeEventListener("scrollend", finish);
-                              clearTimeout(timeoutId);
-                              fadeAndAdvance();
-                            };
-                            const timeoutId = window.setTimeout(finish, 700);
-                            if ("onscrollend" in window) {
-                              window.addEventListener("scrollend", finish, { once: true });
-                            }
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
+                          onClick={advanceToDetailsStep}
                         >
                           {step2ButtonLabel}
                         </ActionButton>
@@ -4174,7 +4208,7 @@ export function HaabBookingModule({
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
-                    <div className="flex w-full flex-wrap items-center justify-end gap-3">
+                    <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex">
                       <ActionButton
                         tone="ghost"
                         className={cn(
@@ -4182,19 +4216,7 @@ export function HaabBookingModule({
                           isDedicatedPublicPage &&
                             cn(publicPillButtonClass, publicGhostButtonClass),
                         )}
-                        onClick={() => {
-                          releaseBookingHold(
-                            bookingHold?.released ? undefined : bookingHold?.id,
-                          );
-                          setBookingHold(null);
-                          setBookingHoldNow(currentTimestamp());
-                          setBookingError(null);
-                          setWasBookingUpdatedWithNaturalLanguage(false);
-                          setIsNLBookingOpen(false);
-                          setNaturalLanguageBookingInput("");
-                          setNaturalLanguageBookingError(null);
-                          setBookingFlow((current) => ({ ...current, step: 2 }));
-                        }}
+                        onClick={goBackToSelectionStep}
                       >
                         Back
                       </ActionButton>
@@ -4275,7 +4297,7 @@ export function HaabBookingModule({
         {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
           <div
             className={cn(
-              "grid gap-5 p-5 sm:p-8",
+              "grid gap-4 p-4 sm:gap-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
               isPublicSelectionStep
                 ? "lg:grid-cols-1"
@@ -4285,12 +4307,15 @@ export function HaabBookingModule({
             <div
               ref={publicPrimaryPanelRef}
               className={cn(
+                "order-1 lg:order-none",
                 publicPrimaryPanelClass,
                 isPublicSelectionStep && "transition-opacity duration-200",
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
-                (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                isDesktopColumns &&
+                (isPublicDetailsStep || isPublicSuccessStep) &&
+                publicPrimaryPanelHeight
                   ? { minHeight: `${publicPrimaryPanelHeight}px` }
                   : undefined
               }
@@ -4479,11 +4504,11 @@ export function HaabBookingModule({
               <div
                 ref={publicAboutPanelRef}
                 className={cn(
-                  "self-start lg:sticky lg:top-8 flex min-h-full flex-col",
+                  "order-3 lg:order-none self-start lg:sticky lg:top-8 flex min-h-full flex-col",
                   publicSoftPanelClass,
                 )}
                 style={
-                  publicPrimaryPanelHeight
+                  isDesktopColumns && publicPrimaryPanelHeight
                     ? { minHeight: `${publicPrimaryPanelHeight}px` }
                     : undefined
                 }
@@ -4538,7 +4563,7 @@ export function HaabBookingModule({
             <div
               ref={publicSummaryPanelRef}
               className={cn(
-                "self-start lg:sticky lg:top-8",
+                "order-2 lg:order-none self-start lg:sticky lg:top-8",
                 publicElevatedPanelClass,
                 isPublicSelectionStep &&
                   selectedService.bookingType === "appointment" &&
@@ -4549,12 +4574,15 @@ export function HaabBookingModule({
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
+                isDesktopColumns &&
                 isPublicSelectionStep &&
                 selectedService.bookingType === "appointment" &&
                 bookingFlow.dateKey &&
                 publicPrimaryPanelHeight
                   ? { maxHeight: `${publicPrimaryPanelHeight}px` }
-                  : (isPublicDetailsStep || isPublicSuccessStep) && publicPrimaryPanelHeight
+                  : isDesktopColumns &&
+                      (isPublicDetailsStep || isPublicSuccessStep) &&
+                      publicPrimaryPanelHeight
                     ? { minHeight: `${publicPrimaryPanelHeight}px` }
                     : undefined
               }
@@ -4592,7 +4620,7 @@ export function HaabBookingModule({
                         </div>
                       ) : (
                         <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-                          <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
                             {publicSlots.map((slot) => {
                               const slotEnd = addMinutes(
                                 slot,
@@ -4935,6 +4963,50 @@ export function HaabBookingModule({
                 ) : null}
               </div>
             ) : null}
+          </div>
+        ) : null}
+
+        {(isPublicSelectionStep || isPublicDetailsStep) && selectedService ? (
+          <div className="sticky bottom-0 z-30 mt-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
+            <div
+              className={cn(
+                "flex gap-3 rounded-[24px] px-4 py-3",
+                publicElevatedPanelClass,
+                "!p-3",
+              )}
+            >
+              {isPublicSelectionStep ? (
+                <ActionButton
+                  tone="primary"
+                  className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                  disabled={!step2CanContinue}
+                  onClick={advanceToDetailsStep}
+                >
+                  {step2ButtonLabel}
+                </ActionButton>
+              ) : (
+                <>
+                  <ActionButton
+                    tone="ghost"
+                    className={cn(
+                      "min-h-12",
+                      isDedicatedPublicPage &&
+                        cn(publicPillButtonClass, publicGhostButtonClass),
+                    )}
+                    onClick={goBackToSelectionStep}
+                  >
+                    Back
+                  </ActionButton>
+                  <ActionButton
+                    tone="primary"
+                    className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                    onClick={confirmBooking}
+                  >
+                    {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                  </ActionButton>
+                </>
+              )}
+            </div>
           </div>
         ) : null}
 
