@@ -4,7 +4,6 @@ import { parse as parseNaturalLanguage, type ParsedResult } from "chrono-node";
 import Link from "next/link";
 import QRCode from "qrcode";
 import {
-  backfillManageTokens,
   buildManageUrl,
   findBookingByToken,
   generateManageToken,
@@ -18,6 +17,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useModuleStore } from "@/components/booking/state/useModuleStore";
 import type {
   AdminTab,
   BookingFlow,
@@ -85,12 +85,8 @@ import {
   createEmptyStore,
   createBlankServiceDraft,
   createInitialBookingFlow,
-  normalizeAvailability,
-  normalizeProvider,
   normalizeServices,
-  normalizeBookings,
   pruneBookingHolds,
-  normalizeStore,
   sortBookings,
 } from "@/lib/store";
 import {
@@ -138,22 +134,15 @@ export function HaabBookingModule({
   onStoreChange,
   manageBookingToken,
 }: HaabBookingModuleProps) {
-  const integratedMode = Boolean(
-    injectedConfig?.provider &&
-      injectedConfig?.services?.length &&
-      injectedConfig?.availability,
-  );
+  const {
+    integratedMode,
+    hydrated,
+    store: activeStore,
+    actions,
+  } = useModuleStore({ injectedConfig, storageKey, onStoreChange, onBookingsChange });
 
-  const [hydrated, setHydrated] = useState(integratedMode);
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   const [isDesktopColumns, setIsDesktopColumns] = useState(false);
-  const [standaloneStore, setStandaloneStore] = useState<ModuleStore>(() =>
-    createEmptyStore(),
-  );
-  const [shadowBookings, setShadowBookings] = useState<BookingRecord[]>(() =>
-    normalizeBookings(injectedConfig?.bookings),
-  );
-  const [shadowBookingHolds, setShadowBookingHolds] = useState<BookingHoldRecord[]>([]);
   const [surface, setSurface] = useState<Surface>(
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
@@ -232,77 +221,6 @@ export function HaabBookingModule({
     error: string;
     url: string;
   } | null>(null);
-
-  useEffect(() => {
-    if (integratedMode) {
-      return;
-    }
-
-    const hydrationHandle = window.setTimeout(() => {
-      const raw = window.localStorage.getItem(storageKey);
-
-      if (raw) {
-        try {
-          const normalized = normalizeStore(JSON.parse(raw) as ModuleStore);
-          const { changed, store: backfilled } = backfillManageTokens(normalized);
-          if (changed) {
-            window.localStorage.setItem(storageKey, JSON.stringify(backfilled));
-          }
-          setStandaloneStore(backfilled);
-        } catch {
-          setStandaloneStore(createEmptyStore());
-        }
-      }
-
-      setHydrated(true);
-    }, 0);
-
-    return () => window.clearTimeout(hydrationHandle);
-  }, [integratedMode, storageKey]);
-
-  useEffect(() => {
-    if (!integratedMode && hydrated) {
-      window.localStorage.setItem(storageKey, JSON.stringify(standaloneStore));
-    }
-  }, [hydrated, integratedMode, standaloneStore, storageKey]);
-
-  useEffect(() => {
-    if (integratedMode) {
-      return;
-    }
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.storageArea !== window.localStorage || event.key !== storageKey) {
-        return;
-      }
-
-      if (!event.newValue) {
-        return;
-      }
-
-      try {
-        setStandaloneStore(normalizeStore(JSON.parse(event.newValue) as ModuleStore));
-        setHydrated(true);
-      } catch {
-        // Ignore malformed external storage writes and keep the current in-memory store.
-      }
-    };
-
-    window.addEventListener("storage", handleStorage);
-
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [integratedMode, storageKey]);
-
-  const activeStore: ModuleStore = integratedMode
-    ? {
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
-        bookings: shadowBookings,
-        bookingHolds: shadowBookingHolds,
-        setupComplete: true,
-      }
-    : standaloneStore;
 
   const provider = activeStore.provider;
   const services = activeStore.services;
@@ -626,88 +544,8 @@ export function HaabBookingModule({
     };
   }, [provider, successfulBooking]);
 
-  function emitStoreChange(next: ModuleStore) {
-    onStoreChange?.(next);
-  }
-
-  function updateStandaloneStore(updater: (current: ModuleStore) => ModuleStore) {
-    setStandaloneStore((current) => {
-      const next = updater(current);
-      emitStoreChange(next);
-      return next;
-    });
-  }
-
-  function readStandaloneStoreSnapshot() {
-    if (integratedMode || typeof window === "undefined") {
-      return null;
-    }
-
-    const raw = window.localStorage.getItem(storageKey);
-
-    if (!raw) {
-      return null;
-    }
-
-    try {
-      return normalizeStore(JSON.parse(raw) as ModuleStore);
-    } catch {
-      return null;
-    }
-  }
-
-  function persistStandaloneStore(nextStore: ModuleStore) {
-    if (integratedMode || typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(storageKey, JSON.stringify(nextStore));
-  }
-
-  function commitBookingHolds(nextHolds: BookingHoldRecord[], standaloneBase?: ModuleStore) {
-    const normalized = pruneBookingHolds(nextHolds);
-
-    if (integratedMode) {
-      setShadowBookingHolds(normalized);
-      emitStoreChange({
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
-        bookings: shadowBookings,
-        bookingHolds: normalized,
-        setupComplete: true,
-      });
-      return;
-    }
-
-    const nextStore = {
-      ...(standaloneBase ?? standaloneStore),
-      bookingHolds: normalized,
-    };
-
-    setStandaloneStore(nextStore);
-    persistStandaloneStore(nextStore);
-    emitStoreChange(nextStore);
-  }
-
-  function releaseBookingHold(holdId?: string) {
-    if (!holdId) {
-      return;
-    }
-
-    const latestStandaloneStore = readStandaloneStoreSnapshot();
-    const baseStore = latestStandaloneStore ?? activeStore;
-    const nextHolds = baseStore.bookingHolds.filter((hold) => hold.id !== holdId);
-
-    if (!integratedMode && latestStandaloneStore) {
-      setStandaloneStore(latestStandaloneStore);
-    }
-
-    commitBookingHolds(nextHolds, baseStore);
-  }
-
   const releaseExpiredBookingHold = useEffectEvent((holdId: string) => {
-    releaseBookingHold(holdId);
+    actions.releaseBookingHold(holdId);
   });
 
   useEffect(() => {
@@ -731,42 +569,6 @@ export function HaabBookingModule({
     return () => window.clearInterval(intervalId);
   }, [bookingHoldSelectionKey, bookingHold]);
 
-  function commitBookings(
-    nextBookings: BookingRecord[],
-    standaloneBase?: ModuleStore,
-    nextBookingHolds?: BookingHoldRecord[],
-  ) {
-    const normalized = sortBookings(nextBookings);
-    const normalizedHolds = pruneBookingHolds(
-      nextBookingHolds ?? standaloneBase?.bookingHolds ?? activeStore.bookingHolds,
-    );
-
-    if (integratedMode) {
-      setShadowBookings(normalized);
-      setShadowBookingHolds(normalizedHolds);
-      onBookingsChange?.(normalized);
-      emitStoreChange({
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
-        bookings: normalized,
-        bookingHolds: normalizedHolds,
-        setupComplete: true,
-      });
-      return;
-    }
-
-    const nextStore = {
-      ...(standaloneBase ?? standaloneStore),
-      bookings: normalized,
-      bookingHolds: normalizedHolds,
-    };
-
-    setStandaloneStore(nextStore);
-    persistStandaloneStore(nextStore);
-    emitStoreChange(nextStore);
-  }
-
   function startFreshBooking(overrides?: Partial<BookingFlow>) {
     const base = createInitialBookingFlow(services);
     const nextServiceId = overrides?.serviceId ?? base.serviceId;
@@ -786,7 +588,7 @@ export function HaabBookingModule({
     setIsNaturalLanguageBookingFocused(false);
     setIsNLBookingOpen(false);
     setWasBookingUpdatedWithNaturalLanguage(false);
-    releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+    actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
     setBookingHold(null);
     setBookingHoldNow(currentTimestamp());
     setBookingFlow({
@@ -1019,7 +821,7 @@ export function HaabBookingModule({
       return;
     }
 
-    updateStandaloneStore((current) => ({
+    actions.updateStandaloneStore((current) => ({
       ...current,
       services: editingServiceId
         ? current.services.map((service) =>
@@ -1045,7 +847,7 @@ export function HaabBookingModule({
       return;
     }
 
-    updateStandaloneStore((current) => ({
+    actions.updateStandaloneStore((current) => ({
       ...current,
       services: current.services.filter((service) => service.id !== serviceId),
     }));
@@ -1061,23 +863,22 @@ export function HaabBookingModule({
     }
 
     const nextStore: ModuleStore = {
-      ...standaloneStore,
+      ...activeStore,
       provider: {
-        ...standaloneStore.provider,
+        ...activeStore.provider,
         publicSlug:
-          standaloneStore.provider.publicSlug ||
+          activeStore.provider.publicSlug ||
           slugify(
-            standaloneStore.provider.businessName ||
-              standaloneStore.provider.fullName ||
+            activeStore.provider.businessName ||
+              activeStore.provider.fullName ||
               "haab-calendar",
           ),
       },
       setupComplete: true,
     };
 
-    window.localStorage.setItem(storageKey, JSON.stringify(nextStore));
-    setStandaloneStore(nextStore);
-    emitStoreChange(nextStore);
+    actions.persistStandaloneStore(nextStore);
+    actions.updateStandaloneStore(() => nextStore);
     setSetupStep(4);
     setSurface(nextSurface);
     startFreshBooking();
@@ -1088,7 +889,7 @@ export function HaabBookingModule({
       return;
     }
 
-    updateStandaloneStore((current) => ({
+    actions.updateStandaloneStore((current) => ({
       ...current,
       provider: {
         ...current.provider,
@@ -1110,7 +911,7 @@ export function HaabBookingModule({
       return;
     }
 
-    updateStandaloneStore((current) => ({
+    actions.updateStandaloneStore((current) => ({
       ...current,
       availability: {
         ...current.availability,
@@ -1132,8 +933,7 @@ export function HaabBookingModule({
     setSetupError(null);
     resetServiceEditor();
     startFreshBooking();
-    setStandaloneStore(empty);
-    emitStoreChange(empty);
+    actions.updateStandaloneStore(() => empty);
   }
 
   function validateSetup(step: SetupStep) {
@@ -1206,7 +1006,7 @@ export function HaabBookingModule({
     }
 
     const now = currentTimestamp();
-    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const baseStore = latestStandaloneStore ?? activeStore;
     const latestService =
       baseStore.services.find((service) => service.id === selectedService.id) ?? selectedService;
@@ -1266,11 +1066,11 @@ export function HaabBookingModule({
     };
 
     if (!integratedMode && latestStandaloneStore) {
-      setStandaloneStore(latestStandaloneStore);
+      actions.setStandaloneStore(latestStandaloneStore);
     }
 
     setBookingError(null);
-    commitBookingHolds([...currentHolds, holdRecord], baseStore);
+    actions.commitBookingHolds([...currentHolds, holdRecord], baseStore);
     setBookingHold({
       id: holdRecord.id,
       selectionKey: getBookingHoldSelectionKey(latestService, dateKey, time),
@@ -1291,7 +1091,7 @@ export function HaabBookingModule({
 
   function confirmBooking() {
     const now = currentTimestamp();
-    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
     const validationService =
       validationStore.services.find(
@@ -1301,7 +1101,7 @@ export function HaabBookingModule({
     const validationHolds = pruneBookingHolds(validationStore.bookingHolds, now);
 
     if (!integratedMode && latestStandaloneStore) {
-      setStandaloneStore(latestStandaloneStore);
+      actions.setStandaloneStore(latestStandaloneStore);
     }
 
     if (!validationService) {
@@ -1393,7 +1193,7 @@ export function HaabBookingModule({
 
     console.log("Haab Calendar booking confirmed:", nextBooking);
 
-    commitBookings([...validationStore.bookings, nextBooking], validationStore, nextHolds);
+    actions.commitBookings([...validationStore.bookings, nextBooking], validationStore, nextHolds);
     setBookingError(null);
     setBookingHold(null);
     setBookingHoldNow(now);
@@ -1432,7 +1232,7 @@ export function HaabBookingModule({
       return;
     }
 
-    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
     const booking = validationStore.bookings.find(
       (candidate) => candidate.id === rescheduleState.bookingId,
@@ -1442,7 +1242,7 @@ export function HaabBookingModule({
     );
 
     if (!integratedMode && latestStandaloneStore) {
-      setStandaloneStore(latestStandaloneStore);
+      actions.setStandaloneStore(latestStandaloneStore);
     }
 
     if (!booking || !service) {
@@ -1490,7 +1290,7 @@ export function HaabBookingModule({
       return;
     }
 
-    commitBookings(
+    actions.commitBookings(
       validationStore.bookings.map((candidate) =>
         candidate.id === booking.id
           ? {
@@ -1517,14 +1317,14 @@ export function HaabBookingModule({
       return;
     }
 
-    const latestStandaloneStore = readStandaloneStoreSnapshot();
+    const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
 
     if (!integratedMode && latestStandaloneStore) {
-      setStandaloneStore(latestStandaloneStore);
+      actions.setStandaloneStore(latestStandaloneStore);
     }
 
-    commitBookings(
+    actions.commitBookings(
       validationStore.bookings.map((booking) =>
         booking.id === cancellationId
           ? {
@@ -3007,7 +2807,7 @@ export function HaabBookingModule({
     };
 
     const goBackToSelectionStep = () => {
-      releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
       setBookingHold(null);
       setBookingHoldNow(currentTimestamp());
       setBookingError(null);
