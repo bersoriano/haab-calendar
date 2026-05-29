@@ -20,135 +20,90 @@ import {
   type ButtonHTMLAttributes,
   type ReactNode,
 } from "react";
-
-type BookingType = "appointment" | "full-day";
-type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
-type Surface = "management" | "public";
-type SurfaceMode = "adaptive" | "public-only";
-type AdminTab = "dashboard" | "bookings" | "calendar" | "services" | "settings";
-type WeekdayKey =
-  | "sunday"
-  | "monday"
-  | "tuesday"
-  | "wednesday"
-  | "thursday"
-  | "friday"
-  | "saturday";
-type SetupStep = 1 | 2 | 3 | 4;
-type BookingStep = 1 | 2 | 3 | 4;
-
-type ProviderInfo = {
-  fullName: string;
-  businessName: string;
-  email: string;
-  publicSlug: string;
-};
-
-type Service = {
-  id: string;
-  name: string;
-  bookingType: BookingType;
-  durationMinutes?: number;
-  description: string;
-  capacity?: string;
-  cost?: string;
-  notes?: string;
-};
-
-type DayAvailability = {
-  enabled: boolean;
-  startTime: string;
-  endTime: string;
-};
-
-type WeeklyAvailability = Record<WeekdayKey, DayAvailability>;
-
-type BookingRecord = {
-  id: string;
-  serviceId: string;
-  serviceName: string;
-  bookingType: BookingType;
-  dateKey: string;
-  startTime?: string;
-  endTime?: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  notes: string;
-  capacitySnapshot?: string;
-  cost: string;
-  status: BookingStatus;
-  createdAt: string;
-  updatedAt: string;
-  manageToken: string;
-};
-
-type BookingHoldRecord = {
-  id: string;
-  serviceId: string;
-  bookingType: BookingType;
-  dateKey: string;
-  startTime?: string;
-  endTime?: string;
-  createdAt: string;
-  expiresAt: number;
-};
-
-type ModuleStore = {
-  provider: ProviderInfo;
-  services: Service[];
-  availability: WeeklyAvailability;
-  bookings: BookingRecord[];
-  bookingHolds: BookingHoldRecord[];
-  setupComplete: boolean;
-};
-
-type InjectedConfig = {
-  provider: ProviderInfo;
-  services: Service[];
-  availability: WeeklyAvailability;
-  bookings?: BookingRecord[];
-};
-
-type ServiceDraft = {
-  name: string;
-  bookingType: BookingType;
-  durationMinutes: number;
-  description: string;
-  capacity: string;
-  cost: string;
-  notes: string;
-};
-
-type BookingFlow = {
-  step: BookingStep;
-  serviceId: string;
-  dateKey: string;
-  time: string;
-  clientName: string;
-  clientEmail: string;
-  clientPhone: string;
-  notes: string;
-  successBookingId?: string;
-};
-
-type BookingHold = {
-  id: string;
-  selectionKey: string;
-  startedAt: number;
-  expiresAt: number;
-  released: boolean;
-};
-
-type RescheduleState = {
-  bookingId: string;
-  dateKey: string;
-  time: string;
-  monthAnchor: Date;
-  error?: string;
-};
-
-type ManageLookupState = "idle" | "pending" | "found" | "not-found";
+import type {
+  AdminTab,
+  BookingFlow,
+  BookingHold,
+  BookingHoldRecord,
+  BookingRecord,
+  BookingStatus,
+  BookingStep,
+  BookingType,
+  DayAvailability,
+  InjectedConfig,
+  ManageLookupState,
+  ModuleStore,
+  ProviderInfo,
+  RescheduleState,
+  Service,
+  ServiceDraft,
+  SetupStep,
+  Surface,
+  SurfaceMode,
+  WeekdayKey,
+} from "@/lib/types";
+import {
+  WEEKDAY_KEYS,
+  WEEKDAY_LABELS,
+  DURATION_OPTIONS,
+  compactBadgeTextClass,
+  compactMetaTextClass,
+  weekdayShortFormatter,
+  BOOKING_HOLD_DURATION_MS,
+  DEFAULT_STORAGE_KEY,
+} from "@/lib/constants";
+import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
+import {
+  toMinutes,
+  addMinutes,
+  getDateKey,
+  parseDateKey,
+  addDays,
+  shiftMonth,
+  compareDateKeys,
+  getWeekStart,
+  createWeekWindow,
+  createRollingWeekWindow,
+  createMonthMatrix,
+  clampDateKey,
+  compareMonthAnchors,
+  todayKey,
+  isPastDate,
+  getTimeKeyFromDate,
+} from "@/lib/date";
+import {
+  formatDateLabel,
+  formatCompactDate,
+  formatMonthLabel,
+  formatTimeLabel,
+  formatTimeRange,
+  formatCountdown,
+  formatDuration,
+  formatCapacityLabel,
+  getBookingTypeLabel,
+  statusTone,
+  bookingTypeTone,
+} from "@/lib/format";
+import {
+  createEmptyStore,
+  createBlankServiceDraft,
+  createInitialBookingFlow,
+  normalizeAvailability,
+  normalizeProvider,
+  normalizeServices,
+  normalizeBookings,
+  pruneBookingHolds,
+  normalizeStore,
+  sortBookings,
+} from "@/lib/store";
+import {
+  getBookingsForDate,
+  getAvailableSlots,
+  isDateAvailable,
+} from "@/lib/availability";
+import { getBookingHoldSelectionKey } from "@/lib/holds";
+import { buildIcsContent } from "@/lib/ics";
+import { QUICK_START_TEMPLATES } from "@/config/templates";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -161,710 +116,8 @@ type HaabBookingModuleProps = {
   manageBookingToken?: string;
 };
 
-const WEEKDAY_KEYS: WeekdayKey[] = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday",
-];
-
-const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
-  sunday: "Sunday",
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-};
-
-const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 240];
-
-const QUICK_START_TEMPLATES: Array<{
-  label: string;
-  service: ServiceDraft;
-}> = [
-  {
-    label: "Doctor",
-    service: {
-      name: "New Patient Consultation",
-      bookingType: "appointment",
-      durationMinutes: 30,
-      description: "A focused first consultation for history, goals, and next steps.",
-      capacity: "1 client",
-      cost: "$120 consult",
-      notes: "",
-    },
-  },
-  {
-    label: "Padel",
-    service: {
-      name: "Court Rental",
-      bookingType: "appointment",
-      durationMinutes: 60,
-      description: "Reserve a court for training, matches, or private play.",
-      capacity: "Max 4 players",
-      cost: "$40 per hour",
-      notes: "",
-    },
-  },
-  {
-    label: "Advisor",
-    service: {
-      name: "Strategy Session",
-      bookingType: "appointment",
-      durationMinutes: 60,
-      description: "Structured planning session covering goals, priorities, and action items.",
-      capacity: "1 household",
-      cost: "Premium advisory session",
-      notes: "",
-    },
-  },
-  {
-    label: "Banquet Hall",
-    service: {
-      name: "Banquet Hall Exclusive",
-      bookingType: "full-day",
-      durationMinutes: 60,
-      description: "Full-day venue reservation for events, receptions, and private functions.",
-      capacity: "Fits up to 100 guests",
-      cost: "Full-day venue package",
-      notes: "",
-    },
-  },
-  {
-    label: "Coworking",
-    service: {
-      name: "Private Office",
-      bookingType: "full-day",
-      durationMinutes: 60,
-      description: "Quiet dedicated office booking for an entire workday.",
-      capacity: "Seats up to 3 people",
-      cost: "Day pass bundle",
-      notes: "",
-    },
-  },
-];
-
-const monthFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  year: "numeric",
-});
-
-const longDateFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
-
-const compactDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
-
-const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-});
-
-const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
-const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.1em]";
-const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
-const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";
-
-function cn(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
-
-function createId(prefix: string) {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function currentTimestamp() {
-  return new Date().getTime();
-}
-
-function pad(value: number) {
-  return value.toString().padStart(2, "0");
-}
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-}
-
-function createDefaultAvailability(): WeeklyAvailability {
-  return {
-    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
-    monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
-  };
-}
-
-function createEmptyStore(): ModuleStore {
-  return {
-    provider: {
-      fullName: "",
-      businessName: "",
-      email: "",
-      publicSlug: "",
-    },
-    services: [],
-    availability: createDefaultAvailability(),
-    bookings: [],
-    bookingHolds: [],
-    setupComplete: false,
-  };
-}
-
-function createBlankServiceDraft(): ServiceDraft {
-  return {
-    name: "",
-    bookingType: "appointment",
-    durationMinutes: 30,
-    description: "",
-    capacity: "",
-    cost: "",
-    notes: "",
-  };
-}
-
-function createInitialBookingFlow(services: Service[]): BookingFlow {
-  const firstService = services.length === 1 ? services[0]?.id ?? "" : "";
-
-  return {
-    step: firstService ? 2 : 1,
-    serviceId: firstService,
-    dateKey: "",
-    time: "",
-    clientName: "",
-    clientEmail: "",
-    clientPhone: "",
-    notes: "",
-    successBookingId: undefined,
-  };
-}
-
-function normalizeAvailability(
-  source?: Partial<WeeklyAvailability> | null,
-): WeeklyAvailability {
-  const base = createDefaultAvailability();
-
-  for (const key of WEEKDAY_KEYS) {
-    const next = source?.[key];
-    if (!next) {
-      continue;
-    }
-
-    base[key] = {
-      enabled: Boolean(next.enabled),
-      startTime: next.startTime ?? base[key].startTime,
-      endTime: next.endTime ?? base[key].endTime,
-    };
-  }
-
-  return base;
-}
-
-function normalizeProvider(source?: Partial<ProviderInfo> | null): ProviderInfo {
-  return {
-    fullName: source?.fullName ?? "",
-    businessName: source?.businessName ?? "",
-    email: source?.email ?? "",
-    publicSlug:
-      source?.publicSlug ??
-      slugify(source?.businessName || source?.fullName || "haab-calendar"),
-  };
-}
-
-function normalizeServices(source?: Service[] | null): Service[] {
-  return (source ?? []).map((service) => ({
-    id: service.id,
-    name: service.name,
-    bookingType: service.bookingType,
-    durationMinutes:
-      service.bookingType === "full-day"
-        ? undefined
-        : service.durationMinutes,
-    description: service.description,
-    capacity: service.capacity,
-    cost: service.cost,
-    notes: service.notes,
-  }));
-}
-
-function normalizeBookings(source?: BookingRecord[] | null): BookingRecord[] {
-  return sortBookings(
-    (source ?? []).map((booking) => ({
-      id: booking.id,
-      serviceId: booking.serviceId,
-      serviceName: booking.serviceName,
-      bookingType: booking.bookingType,
-      dateKey: booking.dateKey,
-      startTime: booking.startTime,
-      endTime: booking.endTime,
-      clientName: booking.clientName,
-      clientEmail: booking.clientEmail,
-      clientPhone: booking.clientPhone,
-      notes: booking.notes ?? "",
-      capacitySnapshot: booking.capacitySnapshot,
-      cost: booking.cost ?? "",
-      status: booking.status,
-      createdAt: booking.createdAt,
-      updatedAt: booking.updatedAt,
-      manageToken: booking.manageToken ?? "",
-    })),
-  );
-}
-
-function pruneBookingHolds(holds: BookingHoldRecord[], now = currentTimestamp()) {
-  return holds.filter((hold) => hold.expiresAt > now);
-}
-
-function normalizeBookingHolds(source?: BookingHoldRecord[] | null): BookingHoldRecord[] {
-  return pruneBookingHolds(
-    (source ?? []).filter(
-      (hold) =>
-        Boolean(hold.id) &&
-        Boolean(hold.serviceId) &&
-        Boolean(hold.dateKey) &&
-        typeof hold.expiresAt === "number",
-    ),
-  );
-}
-
-function normalizeStore(source?: ModuleStore | null): ModuleStore {
-  const empty = createEmptyStore();
-
-  return {
-    provider: normalizeProvider(source?.provider),
-    services: normalizeServices(source?.services),
-    availability: normalizeAvailability(source?.availability),
-    bookings: normalizeBookings(source?.bookings),
-    bookingHolds: normalizeBookingHolds(source?.bookingHolds),
-    setupComplete: Boolean(source?.setupComplete ?? empty.setupComplete),
-  };
-}
-
-function toMinutes(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return hours * 60 + minutes;
-}
-
-function addMinutes(time: string, amount: number) {
-  const total = toMinutes(time) + amount;
-  const hours = Math.floor(total / 60);
-  const minutes = total % 60;
-  return `${pad(hours)}:${pad(minutes)}`;
-}
-
-function getDateKey(date: Date) {
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-}
-
-function parseDateKey(dateKey: string) {
-  const [year, month, day] = dateKey.split("-").map(Number);
-  return new Date(year, month - 1, day);
-}
-
-function addDays(date: Date, amount: number) {
-  const next = new Date(date);
-  next.setDate(next.getDate() + amount);
-  return next;
-}
-
-function shiftMonth(date: Date, amount: number) {
-  return new Date(date.getFullYear(), date.getMonth() + amount, 1);
-}
-
-function compareDateKeys(left: string, right: string) {
-  return parseDateKey(left).getTime() - parseDateKey(right).getTime();
-}
-
-function sortBookings(bookings: BookingRecord[]) {
-  return [...bookings].sort((left, right) => {
-    const dateCompare = compareDateKeys(left.dateKey, right.dateKey);
-
-    if (dateCompare !== 0) {
-      return dateCompare;
-    }
-
-    return (left.startTime ?? "00:00").localeCompare(right.startTime ?? "00:00");
-  });
-}
-
-function formatDateLabel(dateKey: string) {
-  return longDateFormatter.format(parseDateKey(dateKey));
-}
-
-function formatCompactDate(dateKey: string) {
-  return compactDateFormatter.format(parseDateKey(dateKey));
-}
-
-function formatMonthLabel(date: Date) {
-  return monthFormatter.format(date);
-}
-
-function formatTimeLabel(time?: string) {
-  if (!time) {
-    return "Full Day";
-  }
-
-  const [hours, minutes] = time.split(":").map(Number);
-  const meridiem = hours >= 12 ? "PM" : "AM";
-  const safeHours = hours % 12 || 12;
-  return `${safeHours}:${pad(minutes)} ${meridiem}`;
-}
-
-function formatTimeRange(startTime?: string, endTime?: string) {
-  if (!startTime || !endTime) {
-    return "Full Day";
-  }
-
-  return `${formatTimeLabel(startTime)} - ${formatTimeLabel(endTime)}`;
-}
-
-function formatCountdown(milliseconds: number) {
-  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-
-  return `${minutes}:${pad(seconds)}`;
-}
-
-function getTimeKeyFromDate(date: Date) {
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-}
-
 function hasExplicitTime(result: ParsedResult) {
   return result.start.isCertain("hour");
-}
-
-function getWeekdayKey(dateKey: string): WeekdayKey {
-  return WEEKDAY_KEYS[parseDateKey(dateKey).getDay()];
-}
-
-function todayKey() {
-  return getDateKey(new Date());
-}
-
-function isPastDate(dateKey: string) {
-  return compareDateKeys(dateKey, todayKey()) < 0;
-}
-
-function overlapExists(
-  leftStart: string,
-  leftEnd: string,
-  rightStart: string,
-  rightEnd: string,
-) {
-  return toMinutes(leftStart) < toMinutes(rightEnd) &&
-    toMinutes(leftEnd) > toMinutes(rightStart);
-}
-
-function createMonthMatrix(anchor: Date) {
-  const firstOfMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-  const gridStart = addDays(firstOfMonth, -firstOfMonth.getDay());
-
-  return Array.from({ length: 6 }, (_, weekIndex) =>
-    Array.from({ length: 7 }, (_, dayIndex) =>
-      addDays(gridStart, weekIndex * 7 + dayIndex),
-    ),
-  );
-}
-
-function getWeekStart(date: Date) {
-  return addDays(new Date(date.getFullYear(), date.getMonth(), date.getDate()), -date.getDay());
-}
-
-function createWeekWindow(start: Date, weeksToShow: number) {
-  return Array.from({ length: weeksToShow }, (_, weekIndex) =>
-    Array.from({ length: 7 }, (_, dayIndex) =>
-      addDays(start, weekIndex * 7 + dayIndex),
-    ),
-  );
-}
-
-function createRollingWeekWindow(reference: Date, pastDays: number, weeksToShow: number) {
-  const start = getWeekStart(addDays(reference, -pastDays));
-  const end = addDays(start, weeksToShow * 7 - 1);
-
-  return {
-    start,
-    end,
-    startKey: getDateKey(start),
-    endKey: getDateKey(end),
-    weeks: createWeekWindow(start, weeksToShow),
-  };
-}
-
-function clampDateKey(dateKey: string, minimumDateKey: string, maximumDateKey: string) {
-  if (compareDateKeys(dateKey, minimumDateKey) < 0) {
-    return minimumDateKey;
-  }
-
-  if (compareDateKeys(dateKey, maximumDateKey) > 0) {
-    return maximumDateKey;
-  }
-
-  return dateKey;
-}
-
-function compareMonthAnchors(left: Date, right: Date) {
-  if (left.getFullYear() !== right.getFullYear()) {
-    return left.getFullYear() - right.getFullYear();
-  }
-
-  return left.getMonth() - right.getMonth();
-}
-
-function isActiveBooking(booking: BookingRecord) {
-  return booking.status !== "cancelled";
-}
-
-function getBookingsForDate(
-  bookings: BookingRecord[],
-  dateKey: string,
-  ignoredBookingId?: string,
-) {
-  return bookings.filter(
-    (booking) =>
-      booking.dateKey === dateKey &&
-      booking.id !== ignoredBookingId &&
-    isActiveBooking(booking),
-  );
-}
-
-function getBookingHoldsForDate(
-  bookingHolds: BookingHoldRecord[],
-  dateKey: string,
-  ignoredHoldId?: string,
-) {
-  return bookingHolds.filter(
-    (hold) => hold.dateKey === dateKey && hold.id !== ignoredHoldId,
-  );
-}
-
-function getAvailableSlots(
-  dateKey: string,
-  service: Service,
-  availability: WeeklyAvailability,
-  bookings: BookingRecord[],
-  ignoredBookingId?: string,
-  bookingHolds: BookingHoldRecord[] = [],
-  ignoredHoldId?: string,
-) {
-  if (service.bookingType !== "appointment" || !service.durationMinutes) {
-    return [];
-  }
-
-  if (isPastDate(dateKey)) {
-    return [];
-  }
-
-  const weekday = getWeekdayKey(dateKey);
-  const daySchedule = availability[weekday];
-
-  if (!daySchedule.enabled || toMinutes(daySchedule.endTime) <= toMinutes(daySchedule.startTime)) {
-    return [];
-  }
-
-  const dateBookings = getBookingsForDate(bookings, dateKey, ignoredBookingId);
-  const dateHolds = getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId);
-
-  if (
-    dateBookings.some((booking) => booking.bookingType === "full-day") ||
-    dateHolds.some((hold) => hold.bookingType === "full-day")
-  ) {
-    return [];
-  }
-
-  const slots: string[] = [];
-  let cursor = daySchedule.startTime;
-
-  while (toMinutes(cursor) + service.durationMinutes <= toMinutes(daySchedule.endTime)) {
-    const slotEnd = addMinutes(cursor, service.durationMinutes);
-    const blockedByBooking = dateBookings.some((booking) => {
-      if (!booking.startTime || !booking.endTime) {
-        return false;
-      }
-
-      return overlapExists(cursor, slotEnd, booking.startTime, booking.endTime);
-    });
-    const blockedByHold = dateHolds.some((hold) => {
-      if (!hold.startTime || !hold.endTime) {
-        return false;
-      }
-
-      return overlapExists(cursor, slotEnd, hold.startTime, hold.endTime);
-    });
-
-    if (!blockedByBooking && !blockedByHold) {
-      slots.push(cursor);
-    }
-
-    cursor = addMinutes(cursor, service.durationMinutes);
-  }
-
-  return slots;
-}
-
-function isDateAvailable(
-  dateKey: string,
-  service: Service,
-  availability: WeeklyAvailability,
-  bookings: BookingRecord[],
-  ignoredBookingId?: string,
-  bookingHolds: BookingHoldRecord[] = [],
-  ignoredHoldId?: string,
-) {
-  if (isPastDate(dateKey)) {
-    return false;
-  }
-
-  const weekday = getWeekdayKey(dateKey);
-  const daySchedule = availability[weekday];
-
-  if (!daySchedule.enabled) {
-    return false;
-  }
-
-  if (service.bookingType === "appointment") {
-    return getAvailableSlots(
-      dateKey,
-      service,
-      availability,
-      bookings,
-      ignoredBookingId,
-      bookingHolds,
-      ignoredHoldId,
-    ).length > 0;
-  }
-
-  return (
-    getBookingsForDate(bookings, dateKey, ignoredBookingId).length === 0 &&
-    getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId).length === 0
-  );
-}
-
-function getBookingHoldSelectionKey(service: Service, dateKey: string, time: string) {
-  return [
-    service.id,
-    dateKey,
-    service.bookingType === "appointment" ? time : "full-day",
-  ].join(":");
-}
-
-function getBookingTypeLabel(type: BookingType) {
-  return type === "appointment" ? "Appointment" : "Full Day";
-}
-
-function statusTone(status: BookingStatus) {
-  if (status === "cancelled") {
-    return "danger";
-  }
-
-  if (status === "rescheduled") {
-    return "secondary";
-  }
-
-  return "primary";
-}
-
-function bookingTypeTone(type: BookingType) {
-  return type === "appointment" ? "primary" : "secondary";
-}
-
-function formatDuration(service: Service) {
-  if (service.bookingType === "full-day") {
-    return "Full Day";
-  }
-
-  if (!service.durationMinutes) {
-    return "Appointment";
-  }
-
-  if (service.durationMinutes >= 60 && service.durationMinutes % 60 === 0) {
-    const hours = service.durationMinutes / 60;
-    return `${hours} hr${hours === 1 ? "" : "s"}`;
-  }
-
-  return `${service.durationMinutes} min`;
-}
-
-function formatCapacityLabel(service: Service) {
-  return service.capacity || (service.bookingType === "appointment" ? "1 client" : "Not set");
-}
-
-function escapeIcsText(value: string) {
-  return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
-}
-
-function buildIcsContent(
-  booking: BookingRecord,
-  provider: ProviderInfo,
-  manageUrl: string,
-) {
-  const safeSummary = escapeIcsText(booking.serviceName);
-  const baseDescription = `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || "N/A"}`;
-  const safeDescription = escapeIcsText(
-    manageUrl ? `${baseDescription}\nManage this booking: ${manageUrl}` : baseDescription,
-  );
-  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-  const eventId = `${booking.id}@haab-calendar.local`;
-
-  if (booking.bookingType === "full-day") {
-    const start = booking.dateKey.replaceAll("-", "");
-    const end = getDateKey(addDays(parseDateKey(booking.dateKey), 1)).replaceAll("-", "");
-
-    return [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Haab Calendar//Booking Module//EN",
-      "BEGIN:VEVENT",
-      `UID:${eventId}`,
-      `DTSTAMP:${stamp}`,
-      `SUMMARY:${safeSummary}`,
-      `DESCRIPTION:${safeDescription}`,
-      `ORGANIZER:MAILTO:${provider.email}`,
-      ...(manageUrl ? [`URL:${manageUrl}`] : []),
-      `DTSTART;VALUE=DATE:${start}`,
-      `DTEND;VALUE=DATE:${end}`,
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\n");
-  }
-
-  const start = `${booking.dateKey.replaceAll("-", "")}T${(booking.startTime ?? "09:00").replace(":", "")}00`;
-  const end = `${booking.dateKey.replaceAll("-", "")}T${(booking.endTime ?? "10:00").replace(":", "")}00`;
-
-  return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Haab Calendar//Booking Module//EN",
-    "BEGIN:VEVENT",
-    `UID:${eventId}`,
-    `DTSTAMP:${stamp}`,
-    `SUMMARY:${safeSummary}`,
-    `DESCRIPTION:${safeDescription}`,
-    `ORGANIZER:MAILTO:${provider.email}`,
-    ...(manageUrl ? [`URL:${manageUrl}`] : []),
-    `DTSTART:${start}`,
-    `DTEND:${end}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\n");
 }
 
 function buttonClasses(
