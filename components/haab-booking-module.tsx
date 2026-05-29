@@ -1352,6 +1352,8 @@ export function HaabBookingModule({
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
   const stickyHeaderSentinelRef = useRef<HTMLDivElement | null>(null);
   const stickyHeaderObserverRef = useRef<IntersectionObserver | null>(null);
+  const stickyHeaderRef = useRef<HTMLDivElement | null>(null);
+  const hasScrolledToSlotsRef = useRef(false);
   const [isStickyHeaderStuck, setIsStickyHeaderStuck] = useState(false);
   const [isPublicFlowFadingOut, setIsPublicFlowFadingOut] = useState(false);
   const attachStickyHeaderSentinel = useCallback((node: HTMLDivElement | null) => {
@@ -1719,8 +1721,15 @@ export function HaabBookingModule({
     if (resolvedBookingFlow.step !== 2 || typeof window === "undefined") {
       return;
     }
+    hasScrolledToSlotsRef.current = false;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [resolvedBookingFlow.step]);
+
+  useEffect(() => {
+    if (!resolvedBookingFlow.dateKey) {
+      hasScrolledToSlotsRef.current = false;
+    }
+  }, [resolvedBookingFlow.dateKey]);
 
   useEffect(() => {
     if (!successfulBooking || successfulBooking.status === "cancelled") {
@@ -3972,11 +3981,35 @@ export function HaabBookingModule({
                     onClick={() => {
                       setNaturalLanguageBookingError(null);
                       setBookingError(null);
+                      const previousDateKey = bookingFlow.dateKey;
                       setBookingFlow((current) => ({
                         ...current,
                         dateKey,
                         time: "",
                       }));
+                      if (
+                        !hasScrolledToSlotsRef.current &&
+                        !previousDateKey &&
+                        typeof window !== "undefined"
+                      ) {
+                        hasScrolledToSlotsRef.current = true;
+                        window.requestAnimationFrame(() => {
+                          window.requestAnimationFrame(() => {
+                            const summaryEl = publicSummaryPanelRef.current;
+                            if (!summaryEl) return;
+                            const stickyHeight = stickyHeaderRef.current?.offsetHeight ?? 0;
+                            const targetY =
+                              summaryEl.getBoundingClientRect().top +
+                              window.scrollY -
+                              stickyHeight -
+                              12;
+                            window.scrollTo({
+                              top: Math.max(0, targetY),
+                              behavior: "smooth",
+                            });
+                          });
+                        });
+                      }
                     }}
                     className={cn(
                       "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
@@ -4147,6 +4180,7 @@ export function HaabBookingModule({
           <>
             <div ref={attachStickyHeaderSentinel} aria-hidden="true" className="h-px" />
             <div
+              ref={stickyHeaderRef}
               className={cn(
                 "relative px-4 pt-4 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[32px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
                 isPublicSelectionStep && "sticky top-0 z-30",
