@@ -18,6 +18,13 @@ type AuthIntent = "login" | "signup";
 export function AuthForm({ nextPath }: AuthFormProps) {
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
   const [pendingIntent, setPendingIntent] = useState<AuthIntent>("login");
+  const showSignupPendingMessage = isPending && pendingIntent === "signup";
+  const formMessage = showSignupPendingMessage
+    ? {
+        message: "Creating your account and sending your confirmation email...",
+        status: "success" as const,
+      }
+    : state;
 
   return (
     <form className="mt-8 grid gap-5" action={formAction}>
@@ -50,15 +57,16 @@ export function AuthForm({ nextPath }: AuthFormProps) {
           type="password"
         />
       </label>
-      {state.message ? (
+      {formMessage.message ? (
         <p
+          aria-live="polite"
           className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
-            state.status === "success"
+            formMessage.status === "success"
               ? "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]"
               : "bg-[rgba(219,68,55,0.1)] text-[#8f1d15]"
           }`}
         >
-          {state.message}
+          {formMessage.message}
         </p>
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2">

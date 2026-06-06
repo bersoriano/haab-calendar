@@ -78,6 +78,14 @@ async function getOrigin() {
   return `${protocol}://${host}`;
 }
 
+function buildLoginMessageUrl(origin: string, message: string, next: string) {
+  const url = new URL("/login", origin);
+  url.searchParams.set("status", "success");
+  url.searchParams.set("message", message);
+  url.searchParams.set("next", next);
+  return url.toString();
+}
+
 export async function login(
   _previousState: AuthFormState = initialState,
   formData: FormData,
@@ -118,12 +126,15 @@ export async function signup(
 
   const supabase = await createClient();
   const origin = await getOrigin();
+  const confirmedRedirectTo = buildLoginMessageUrl(
+    origin,
+    "Email confirmed. Sign in to continue.",
+    credentials.next,
+  );
   const { data, error } = await supabase.auth.signUp({
     ...credentials.data,
     options: {
-      emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(
-        credentials.next,
-      )}`,
+      emailRedirectTo: confirmedRedirectTo,
     },
   });
 
@@ -140,7 +151,8 @@ export async function signup(
   }
 
   return {
-    message: "Check your email to confirm your account, then sign in.",
+    message:
+      "Account created. We sent a confirmation link to your email. Confirm it, then sign in here.",
     status: "success",
   };
 }

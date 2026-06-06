@@ -4,6 +4,7 @@ type LoginPageProps = {
   searchParams: Promise<{
     message?: string;
     next?: string;
+    status?: string;
   }>;
 };
 
@@ -23,6 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const nextPath = getSafeNextPath(params.next);
   const message = params.message;
+  const messageStatus = params.status === "success" ? "success" : "error";
 
   return (
     <main className="mx-auto grid min-h-screen w-full max-w-[1120px] items-center px-4 py-8 sm:px-6 lg:px-8">
@@ -45,7 +47,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             Email and password authentication is handled by Supabase Auth.
           </p>
           {message ? (
-            <p className="mt-5 rounded-2xl bg-[rgba(219,68,55,0.1)] px-4 py-3 text-sm leading-6 text-[#8f1d15]">
+            <p
+              className={`mt-5 rounded-2xl px-4 py-3 text-sm leading-6 ${
+                messageStatus === "success"
+                  ? "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]"
+                  : "bg-[rgba(219,68,55,0.1)] text-[#8f1d15]"
+              }`}
+            >
               {message}
             </p>
           ) : null}
