@@ -10,7 +10,7 @@ export function PublicProgressIndicator({
   const steps = [
     { key: 2 as const, label: "Date & Time" },
     { key: 3 as const, label: "My Details" },
-    { key: 4 as const, label: "Confirmation" },
+    { key: 4 as const, label: "Confirm" },
   ];
 
   return (
