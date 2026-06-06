@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { authenticate, type AuthFormState } from "@/app/login/actions";
 
@@ -12,8 +13,11 @@ type AuthFormProps = {
   nextPath: string;
 };
 
+type AuthIntent = "login" | "signup";
+
 export function AuthForm({ nextPath }: AuthFormProps) {
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
+  const [pendingIntent, setPendingIntent] = useState<AuthIntent>("login");
 
   return (
     <form className="mt-8 grid gap-5" action={formAction}>
@@ -62,19 +66,21 @@ export function AuthForm({ nextPath }: AuthFormProps) {
           className="rounded-2xl bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(0,91,191,0.22)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
           disabled={isPending}
           name="intent"
+          onClick={() => setPendingIntent("login")}
           type="submit"
           value="login"
         >
-          {isPending ? "Working..." : "Sign in"}
+          {isPending && pendingIntent === "login" ? "Signing in..." : "Sign in"}
         </button>
         <button
           className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-55"
           disabled={isPending}
           name="intent"
+          onClick={() => setPendingIntent("signup")}
           type="submit"
           value="signup"
         >
-          Create account
+          {isPending && pendingIntent === "signup" ? "Creating account..." : "Create account"}
         </button>
       </div>
     </form>
