@@ -515,6 +515,44 @@ export function HaabBookingModule({
     }
   }, [resolvedBookingFlow.dateKey]);
 
+  // Desktop-only: pre-select the first available date when the date/time step opens
+  // with no date chosen, so the right-hand time column is populated immediately.
+  const preselectFirstAvailableDate = useEffectEvent(() => {
+    if (!selectedService || bookingFlow.dateKey) {
+      return;
+    }
+
+    const ignoredHoldId = bookingHold?.released ? undefined : bookingHold?.id;
+    for (let offset = 0; offset < 365; offset += 1) {
+      const dateKey = getDateKey(addDays(new Date(), offset));
+      if (
+        isDateAvailable(
+          dateKey,
+          selectedService,
+          availability,
+          bookings,
+          undefined,
+          activeBookingHolds,
+          ignoredHoldId,
+        )
+      ) {
+        setBookingFlow((current) =>
+          current.dateKey ? current : { ...current, dateKey, time: "" },
+        );
+        setPublicMonthAnchor(parseDateKey(dateKey));
+        return;
+      }
+    }
+  });
+
+  useEffect(() => {
+    if (!isDesktopColumns || resolvedBookingFlow.step !== 2) {
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: useEffectEvent escapes Effect reactivity per React 19 docs
+    preselectFirstAvailableDate();
+  }, [isDesktopColumns, resolvedBookingFlow.step, selectedService?.id]);
+
   useEffect(() => {
     if (!successfulBooking || successfulBooking.status === "cancelled") {
       return;
@@ -2741,6 +2779,11 @@ export function HaabBookingModule({
     const isPublicSelectionStep = resolvedBookingFlow.step === 2;
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
     const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
+    // Confirmation step: compress the three columns to 60% of the measured height.
+    const successColumnHeight =
+      isDesktopColumns && isPublicSuccessStep && publicPrimaryPanelHeight
+        ? Math.round(publicPrimaryPanelHeight * 0.6)
+        : null;
 
     const step2IsAppointment = selectedService?.bookingType === "appointment";
     const step2DateChosen = Boolean(bookingFlow.dateKey);
@@ -2870,6 +2913,7 @@ export function HaabBookingModule({
                     isExpired={isBookingHoldExpired}
                     remainingMs={bookingHoldRemainingMs}
                     remainingRatio={bookingHoldRemainingRatio}
+                    helperDesktopHidden={isPublicDetailsStep}
                   />
                 </div>
               ) : null}
@@ -2880,21 +2924,21 @@ export function HaabBookingModule({
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-3">
-                          <p className={cn(compactMetaTextClass, "text-[var(--muted)]")}>
+                          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                             Appointment Date:
                           </p>
-                          <p className="text-sm font-semibold text-[var(--ink)]">
+                          <p className="text-[0.9375rem] font-semibold text-[var(--ink)]">
                             {step2Summary}
                           </p>
                         </div>
-                        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                        <p className="mt-1 text-[0.9375rem] leading-6 text-[var(--muted)]">
                           {step2Helper}
                         </p>
                       </div>
                       <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex lg:w-auto">
                         <ActionButton
                           tone="primary"
-                          className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
+                          className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
                           disabled={!step2CanContinue}
                           onClick={advanceToDetailsStep}
                         >
@@ -2908,25 +2952,32 @@ export function HaabBookingModule({
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
-                    <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex">
-                      <ActionButton
-                        tone="ghost"
-                        className={cn(
-                          "min-w-[150px] px-6",
-                          isDedicatedPublicPage &&
-                            cn(publicPillButtonClass, publicGhostButtonClass),
-                        )}
-                        onClick={goBackToSelectionStep}
-                      >
-                        Back
-                      </ActionButton>
-                      <ActionButton
-                        tone="primary"
-                        className={cn("min-w-[150px] px-6", publicPrimaryActionClass)}
-                        onClick={confirmBooking}
-                      >
-                        {isBookingHoldExpired ? "Try booking" : "Confirm"}
-                      </ActionButton>
+                    <div className="hidden w-full flex-wrap items-center justify-between gap-4 lg:flex">
+                      <p className="min-w-0 flex-1 text-[0.9375rem] leading-6 text-[var(--muted)]">
+                        {isBookingHoldExpired
+                          ? "This slot may be released, but you can still try booking it."
+                          : "Finish your details before the temporary hold expires."}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-end gap-3">
+                        <ActionButton
+                          tone="ghost"
+                          className={cn(
+                            "min-w-[150px] px-6 !text-[0.9375rem]",
+                            isDedicatedPublicPage &&
+                              cn(publicPillButtonClass, publicGhostButtonClass),
+                          )}
+                          onClick={goBackToSelectionStep}
+                        >
+                          Back
+                        </ActionButton>
+                        <ActionButton
+                          tone="primary"
+                          className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
+                          onClick={confirmBooking}
+                        >
+                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                        </ActionButton>
+                      </div>
                     </div>
                     {bookingError ? (
                       <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
@@ -3000,7 +3051,7 @@ export function HaabBookingModule({
               "grid gap-4 p-4 sm:gap-5 sm:p-8",
               isDedicatedPublicPage && "xl:px-10 xl:py-10",
               isPublicSelectionStep
-                ? "lg:grid-cols-1"
+                ? "lg:grid-cols-[7fr_3fr]"
                 : "lg:grid-cols-3",
             )}
           >
@@ -3011,13 +3062,14 @@ export function HaabBookingModule({
                 publicPrimaryPanelClass,
                 isPublicSelectionStep && "transition-opacity duration-200",
                 isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
+                isPublicSuccessStep && successColumnHeight !== null && "flex flex-col overflow-hidden",
               )}
               style={
-                isDesktopColumns &&
-                (isPublicDetailsStep || isPublicSuccessStep) &&
-                publicPrimaryPanelHeight
-                  ? { minHeight: `${publicPrimaryPanelHeight}px` }
-                  : undefined
+                isDesktopColumns && isPublicSuccessStep && successColumnHeight
+                  ? { height: `${successColumnHeight}px` }
+                  : isDesktopColumns && isPublicDetailsStep && publicPrimaryPanelHeight
+                    ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                    : undefined
               }
             >
               {isPublicSelectionStep ? (
@@ -3120,7 +3172,12 @@ export function HaabBookingModule({
                   <SectionTitle
                     title="My Details"
                   />
-                  <div className="relative mt-6">
+                  <div
+                    className={cn(
+                      "relative mt-6",
+                      isPublicSuccessStep && successColumnHeight !== null && "min-h-0 flex-1 overflow-hidden",
+                    )}
+                  >
                     <div
                       className={cn(
                         "grid gap-4 transition-[filter,opacity] duration-300",
@@ -3208,9 +3265,11 @@ export function HaabBookingModule({
                   publicSoftPanelClass,
                 )}
                 style={
-                  isDesktopColumns && publicPrimaryPanelHeight
-                    ? { minHeight: `${publicPrimaryPanelHeight}px` }
-                    : undefined
+                  isDesktopColumns && isPublicSuccessStep && successColumnHeight
+                    ? { height: `${successColumnHeight}px` }
+                    : isDesktopColumns && publicPrimaryPanelHeight
+                      ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                      : undefined
                 }
               >
                 <SectionTitle
@@ -3220,13 +3279,19 @@ export function HaabBookingModule({
                       : "About the Appointment"
                   }
                 />
-                <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
+                <div
+                  className={cn(
+                    "mt-6 min-h-0 flex-1",
+                    isPublicSuccessStep && successColumnHeight !== null && "overflow-y-auto",
+                    publicInsetCardClass,
+                  )}
+                >
                   {isPublicSuccessStep && successfulBooking && !isSuccessfulBookingCancelled ? (
                     <div className="flex h-full flex-col items-center justify-center">
                       {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
                         <div
                           aria-label="QR code to add this booking to a calendar"
-                          className="w-full aspect-square bg-contain bg-center bg-no-repeat"
+                          className="min-h-0 w-full flex-1 bg-contain bg-center bg-no-repeat"
                           role="img"
                           style={{ backgroundImage: `url(${calendarQrCode.url})` }}
                         />
@@ -3279,12 +3344,17 @@ export function HaabBookingModule({
                 selectedService.bookingType === "appointment" &&
                 bookingFlow.dateKey &&
                 publicPrimaryPanelHeight
-                  ? { maxHeight: `${publicPrimaryPanelHeight}px` }
-                  : isDesktopColumns &&
-                      (isPublicDetailsStep || isPublicSuccessStep) &&
-                      publicPrimaryPanelHeight
-                    ? { minHeight: `${publicPrimaryPanelHeight}px` }
-                    : undefined
+                  ? {
+                      height: `${publicPrimaryPanelHeight}px`,
+                      maxHeight: `${publicPrimaryPanelHeight}px`,
+                    }
+                  : isDesktopColumns && isPublicSuccessStep && successColumnHeight
+                    ? { height: `${successColumnHeight}px` }
+                    : isDesktopColumns &&
+                        isPublicDetailsStep &&
+                        publicPrimaryPanelHeight
+                      ? { minHeight: `${publicPrimaryPanelHeight}px` }
+                      : undefined
               }
             >
               {isPublicSelectionStep ? (
@@ -3427,7 +3497,13 @@ export function HaabBookingModule({
                         : "Review the live booking details here before confirming."
                     }
                   />
-                  <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
+                  <div
+                    className={cn(
+                      "mt-6 flex-1",
+                      isPublicSuccessStep && successColumnHeight !== null && "min-h-0 overflow-y-auto",
+                      publicInsetCardClass,
+                    )}
+                  >
                     <dl className="grid gap-4">
                       <SummaryField
                         label="When"

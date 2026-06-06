@@ -7,12 +7,14 @@ export function BookingHoldCountdownBar({
   isExpired,
   remainingMs,
   remainingRatio,
+  helperDesktopHidden,
 }: {
   isCancelled?: boolean;
   isConfirmed?: boolean;
   isExpired: boolean;
   remainingMs: number;
   remainingRatio: number;
+  helperDesktopHidden?: boolean;
 }) {
   const isUrgent = remainingMs <= 2 * 60 * 1000 || isExpired;
   const isWarning = !isUrgent && remainingMs <= 5 * 60 * 1000;
@@ -54,11 +56,11 @@ export function BookingHoldCountdownBar({
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
+          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
             Booking hold
           </p>
           {statusLabel ? (
-            <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
+            <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
               {statusLabel}
             </p>
           ) : null}
@@ -68,7 +70,7 @@ export function BookingHoldCountdownBar({
             className={cn(
               "font-semibold tabular-nums",
               isExpired
-                ? "text-sm uppercase tracking-[0.14em]"
+                ? "text-[0.8125rem] uppercase tracking-[0.12em]"
                 : "text-2xl tracking-[-0.04em]",
             )}
           >
@@ -87,7 +89,7 @@ export function BookingHoldCountdownBar({
                 ? "bg-[var(--accent)]"
                 : isWarning
                   ? "bg-[#f59e0b]"
-                  : "bg-[#9ca3af]",
+                  : "bg-[var(--action-teal)]",
           )}
           style={{
             width:
@@ -95,7 +97,14 @@ export function BookingHoldCountdownBar({
           }}
         />
       </div>
-      <p className="mt-2 text-sm leading-5 opacity-85">{helperText}</p>
+      <p
+        className={cn(
+          "mt-2 text-[0.9375rem] leading-6 opacity-85",
+          helperDesktopHidden && "lg:hidden",
+        )}
+      >
+        {helperText}
+      </p>
     </div>
   );
 }

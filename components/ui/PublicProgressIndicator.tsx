@@ -10,7 +10,7 @@ export function PublicProgressIndicator({
   const steps = [
     { key: 2 as const, label: "Date & Time" },
     { key: 3 as const, label: "My Details" },
-    { key: 4 as const, label: "Confirmed" },
+    { key: 4 as const, label: "Confirmation" },
   ];
 
   return (
@@ -73,7 +73,7 @@ export function PublicProgressIndicator({
                 </span>
                 <span
                   className={cn(
-                    "max-w-[4.25rem] text-center text-[0.625rem] font-semibold uppercase tracking-[0.04em] leading-tight transition-colors sm:max-w-[7.5rem] sm:text-xs sm:tracking-[0.14em]",
+                    "max-w-[4.25rem] text-center text-[0.6875rem] font-semibold uppercase tracking-[0.12em] leading-tight transition-colors sm:max-w-[7.5rem] sm:text-[0.8125rem]",
                     status === "complete" && "text-[var(--ink)]",
                     status === "current" && "text-[var(--primary)]",
                     status === "upcoming" && "text-[var(--muted)]",
