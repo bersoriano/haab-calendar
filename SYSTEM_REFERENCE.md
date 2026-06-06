@@ -216,13 +216,15 @@ Recommended minimum endpoint shape (sketch — fully specified during the Supaba
 
 **Public product (no auth required for reads; manage token required for writes against an existing booking)**
 
+Public write endpoints are server-authoritative. They may be implemented as Next Route Handlers, Server Actions, or Postgres RPCs, but the browser must not directly insert public bookings or holds into exposed tables. The endpoint/RPC owns validation, token hashing, snapshot creation, and transaction boundaries.
+
 | Engine call                       | Endpoint                                                                       |
 |-----------------------------------|--------------------------------------------------------------------------------|
 | Hydrate public page               | `GET /public/providers/:slug` → `{ provider, services, availability }` only    |
 | Compute slots                     | `GET /public/providers/:slug/availability?service=…&date=…` → slot list (no bookings/holds returned) |
 | Create a hold                     | `POST /public/providers/:slug/holds` → `{ id, expires_at }`                    |
 | Release a hold                    | `DELETE /public/holds/:id`                                                     |
-| Confirm booking from hold         | `POST /public/providers/:slug/bookings` (body includes `hold_id`, idempotent on local `id`) → returns booking + `manage_token` |
+| Confirm booking from hold         | `POST /public/providers/:slug/bookings` (body includes `hold_id`, idempotent on local `id`) → stores `manage_token_hash`, returns booking + raw `manage_token` once |
 | Load own booking by manage token  | `GET /public/bookings/by-token/:token`                                         |
 | Reschedule own booking            | `PATCH /public/bookings/by-token/:token` with new date/time                    |
 | Cancel own booking                | `PATCH /public/bookings/by-token/:token` with `{ status: "cancelled" }`        |
@@ -247,7 +249,7 @@ This is the rule the API must encode and the engine has historically enforced vi
 - **Public read of `provider`:** `fullName`, `businessName`, `publicSlug`. Not `email` (or, if exposed, only as a contact link the provider opted into).
 - **Public read of `services`:** all fields except internal-only ones if any are added later.
 - **Public read of `availability`:** the weekly schedule.
-- **Public read of `bookings`:** the API should never return another user's booking to the public surface. Slot computation happens server-side from the bookings + holds the server holds, and only the resulting slot list is returned. The exception is the user's own booking, fetched by manage token.
+- **Public read of `bookings`:** the API should never return another user's booking to the public surface. Slot computation happens server-side from the bookings + holds the server holds, and only the resulting slot list is returned. The exception is the user's own booking, fetched by hashing the presented manage token and matching `manage_token_hash`.
 - **Public read of `bookingHolds`:** never. Holds are an internal concurrency primitive; the public product receives at most "this slot is unavailable."
 - **Admin reads:** everything for that provider.
 
@@ -441,14 +443,15 @@ Plan as documented in `BACKEND_RECOMMENDATIONS.md`. Not yet implemented. This se
 ### Hard requirements driven by the offline-first principle
 
 - **The local store remains the read path.** Even with Supabase live, the UI reads from the in-memory store hydrated from local cache. A network call must never block a render.
-- **Writes succeed locally first.** A `commitBookings` call updates local state and schedules a sync. If sync fails (offline, network error, server reject), the local change persists and the sync layer retries. The user sees their booking immediately.
-- **Server is eventually-consistent.** Conflicts that the server detects (slot taken, capacity exceeded, hold expired) come back asynchronously and the client must reconcile.
+- **Local-first does not mean confirmed-first.** Drafts, pending UI, and non-critical admin edits can update locally before sync, but a customer booking is not confirmed until the server transaction succeeds.
+- **Writes use explicit pending/synced/rejected states.** A `commitBookings`-style local mutation can render immediately as pending and schedule a sync. If sync fails (offline, network error, server reject), the UI keeps enough local context to retry or recover, but it must not promise a confirmed slot the server rejected.
+- **Server is the authority for conflicts.** Slot taken, hold expired, and ownership failures are resolved by the server and reconciled into the local store.
 
 ### Recommended sync architecture
 
 ```
 local mutation
-  → write to local store (instant render)
+  → write pending state to local store (instant render)
   → enqueue sync operation (insert/update/delete with idempotency key)
   → background worker drains the queue when online
      → on success: mark op as synced
@@ -461,14 +464,18 @@ The idempotency key is critical: a sync op for "create booking X" must be safe t
 ### Schema (from BACKEND_RECOMMENDATIONS, slightly updated for the manage-booking feature)
 
 ```sql
-providers     (id, full_name, business_name, email, slug UNIQUE, availability JSONB, created_at)
-services      (id, provider_id FK, name, type, duration, description, capacity, cost, notes, sort_order, created_at)
+providers     (id, owner_user_id FK auth.users, full_name, business_name, email, slug UNIQUE,
+               timezone, booking_window_days, availability JSONB, created_at, updated_at)
+services      (id, provider_id FK, name, type, duration, description, capacity, cost, notes,
+               sort_order, created_at, updated_at)
 bookings      (id, provider_id FK, service_id FK, client_name, client_email, client_phone,
-               date, start_time, end_time, status, notes, manage_token UNIQUE, created_at, updated_at)
+               service_name, cost_snapshot, capacity_snapshot, date, start_time, end_time,
+               status, notes, manage_token_hash UNIQUE, created_at, updated_at)
 booking_holds (id, provider_id FK, service_id FK, date, start_time, end_time, expires_at, created_at)
+booking_events(id, booking_id FK, provider_id FK, actor_type, event_type, metadata JSONB, created_at)
 ```
 
-Indexes: `bookings(provider_id, date, status)`, `booking_holds(provider_id, date, expires_at)`, unique on `bookings.manage_token` and `providers.slug`.
+Indexes: `bookings(provider_id, date, status)`, `booking_holds(provider_id, date, expires_at)`, unique on `bookings.manage_token_hash` and `providers.slug`. RLS for admin data is scoped through `providers.owner_user_id = auth.uid()`.
 
 ### API endpoints (sketch — for the API designer)
 
@@ -478,7 +485,7 @@ The minimum viable surface, mapped to the engine's existing read/write needs. Al
 |-----------------------------------|--------------------------------------------------------------------------------|
 | Hydrate store (`/public/[slug]`)  | `GET /providers/:slug` → returns `{ provider, services, availability }`        |
 | Hydrate bookings (admin only)     | `GET /providers/:slug/bookings?from=…&to=…` → returns `BookingRecord[]`        |
-| Find booking by manage token       | `GET /bookings/by-token/:token` → returns single `BookingRecord` or 404         |
+| Find booking by manage token       | `GET /bookings/by-token/:token` → hashes token, returns single `BookingRecord` or 404 |
 | Create hold                        | `POST /providers/:slug/holds` → returns hold with server-assigned `expires_at` |
 | Release hold                       | `DELETE /holds/:id`                                                            |
 | Confirm booking                    | `POST /providers/:slug/bookings` (body includes `hold_id` to atomically convert hold → booking; idempotent on `id`) |
@@ -491,6 +498,7 @@ Server-side validations to implement (do **not** trust the client):
 - On hold create: re-run the same availability rules from § 6 against the database.
 - On booking confirm: same, plus require the hold to exist and be unexpired and belong to the same `(service, date, start_time, end_time)`.
 - On reschedule: same availability rules ignoring the booking being rescheduled.
+- On all public writes: do not trust client-provided provider ownership, status transitions, snapshot fields, `expires_at`, or manage tokens.
 
 ---
 
@@ -508,7 +516,7 @@ The only concurrency is between browser tabs in the same browser, sharing one `l
 
 Concurrency widens dramatically — multiple devices, no shared lock, network latency between read and write.
 
-- **Holds become the lock.** A hold exclusively reserves a slot during the user's data-entry phase. Server-enforced uniqueness on `(service_id, date, start_time)` for non-expired holds prevents overlapping holds.
+- **Holds become the lock.** A hold exclusively reserves a slot during the user's data-entry phase. Active-hold uniqueness cannot rely on a normal partial unique index with `now()` because that predicate is volatile; use a transaction-scoped slot lock (for example, advisory locks keyed by provider/service/date/time) or another active-hold representation that can be uniquely constrained.
 - **Confirm becomes a server transaction.** "Convert this hold into a booking" is one DB transaction that validates the hold is unexpired and the slot is still free, then upserts the booking and deletes the hold.
 - **Reschedule needs the same treatment.** It is "create a new hold at the new slot, convert it, release the old slot" as a server transaction. The reschedule conflict fix in the manage-booking spec catches the *client-side* race; the server must catch it too.
 - **Cancellation is idempotent.** Setting `status = cancelled` twice is fine; the second one is a no-op.
@@ -624,6 +632,7 @@ These are the load-bearing assumptions the rest of the engine depends on.
 5. **Identifiers are opaque strings.** Today they're locally-generated (`createId("booking")`). The Supabase migration will move to UUIDs but the engine must keep treating them as opaque strings.
 6. **Snapshots are frozen.** Never derive `serviceName`, `cost`, or `capacitySnapshot` from a current join — always read the snapshot stored on the booking.
 7. **`pruneBookingHolds` runs on every read.** Expired holds in the store are valid persisted state; they're filtered at consumption time, not at write time.
+8. **Manage tokens are secrets.** Store only `manage_token_hash` server-side. The raw token is returned once to the customer and then only presented back to public manage-link endpoints.
 8. **Validation uses the latest store snapshot, not React state.** This is non-negotiable for correctness. Any new write path must re-read the store before committing.
 9. **Cancellation is terminal.** Once `status === "cancelled"`, no transitions out.
 10. **Full-day excludes everything else on that day.** This is enforced in both directions in `isDateAvailable` and `getAvailableSlots`.

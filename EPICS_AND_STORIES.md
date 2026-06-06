@@ -19,11 +19,11 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 **As a** developer **I want** Supabase configured with the database schema **so that** the app has a persistent, relational backend.
 
 **Acceptance Criteria:**
-- [ ] Supabase project is created and environment variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`) are configured in `.env.local`
-- [ ] `@supabase/supabase-js` is installed and a shared client instance is exported
-- [ ] Tables `providers`, `services`, `bookings`, and `booking_holds` are created matching the schema in `BACKEND_RECOMMENDATIONS.md`
-- [ ] Foreign key constraints and indexes exist on `provider_id`, `service_id`, `slug`, `date`, and `status`
-- [ ] Row Level Security is enabled on all tables (policies can be permissive for now — no auth epic yet)
+- [ ] Supabase project is created and environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`) are configured in `.env.local`
+- [ ] `@supabase/supabase-js` and `@supabase/ssr` are installed and shared browser/server client utilities are exported
+- [ ] Tables `providers`, `services`, `bookings`, `booking_holds`, and `booking_events` are created matching the hardened schema in `BACKEND_RECOMMENDATIONS.md`
+- [ ] Foreign key constraints and indexes exist on `owner_user_id`, `provider_id`, `service_id`, `slug`, `date`, `status`, and `manage_token_hash`
+- [ ] Row Level Security is enabled on all tables and provider-owned admin data is scoped through `providers.owner_user_id = auth.uid()`
 - [ ] A seed script or SQL file exists to populate a test provider with services and availability
 
 ### 1.2 — Provider and service data reads from Supabase (P0)
@@ -42,24 +42,27 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 **As a** client confirming a booking **I want** my booking saved to the database **so that** it persists and the provider can see it.
 
 **Acceptance Criteria:**
-- [ ] Booking confirmation inserts a row into the `bookings` table
-- [ ] Booking includes `provider_id`, `service_id`, `client_name`, `client_email`, `client_phone`, `date`, `start_time`, `end_time`, `status`, and `notes`
+- [ ] Booking confirmation calls a server-side Route Handler, Server Action, or Postgres RPC rather than directly inserting into `bookings` from the public client
+- [ ] Booking includes `provider_id`, `service_id`, `service_name`, `cost_snapshot`, `capacity_snapshot`, `client_name`, `client_email`, `client_phone`, `date`, `start_time`, `end_time`, `status`, `notes`, and `manage_token_hash`
 - [ ] A unique booking ID (UUID) is generated server-side and returned to the client
 - [ ] The confirmation screen displays the booking ID as a confirmation number
 - [ ] Cancellation and rescheduling update the booking row's `status` field
-- [ ] Optimistic UI updates the local state immediately; on failure, the UI rolls back and shows an error toast
+- [ ] The customer only sees a booking as confirmed after the server transaction succeeds
+- [ ] Failed server confirmations leave the UI in a recoverable state and show a clear "slot was taken" or validation error
+- [ ] The server records a `booking_events` row for create, reschedule, and cancellation changes
 
 ### 1.4 — Server-side booking holds (P0)
 
 **As a** client selecting a time slot **I want** the slot held in the database **so that** another client cannot book it while I fill in my details.
 
 **Acceptance Criteria:**
-- [ ] Selecting a time slot inserts a row into `booking_holds` with `expires_at` set to now + 10 minutes
+- [ ] Selecting a time slot calls a server-side hold endpoint/RPC that re-runs availability validation and creates a `booking_holds` row with `expires_at` set to now + 10 minutes
 - [ ] Availability queries exclude slots that have an active (non-expired) hold
 - [ ] On booking confirmation, the corresponding hold is deleted
 - [ ] On hold expiry (client-side timer runs out), the hold row is deleted
 - [ ] A Supabase cron job or edge function deletes expired holds every minute
 - [ ] If hold creation fails (slot already held), the UI shows "This slot was just taken" and refreshes available slots
+- [ ] The server uses a transaction-scoped slot lock or another non-volatile unique active-hold strategy; it does not rely on a partial unique index with `now()`
 
 ### 1.5 — Realtime availability sync (P1)
 
@@ -71,6 +74,7 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 - [ ] When a hold expires, the slot reappears as available
 - [ ] The subscription is cleaned up on component unmount
 - [ ] If the realtime connection drops, the UI falls back to polling on user interaction (e.g., re-fetch on date click)
+- [ ] Public Realtime payloads expose only slot availability state, never raw bookings, client details, or hold rows
 
 ---
 
@@ -165,8 +169,8 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 **As a** client **I want** to view, reschedule, or cancel my booking via a link **so that** I don't need to contact the provider.
 
 **Acceptance Criteria:**
-- [ ] Each booking generates a unique management token (UUID stored in `bookings.manage_token`)
-- [ ] The confirmation screen includes a "Manage my booking" link: `/booking/[manage_token]`
+- [ ] Each booking generates a unique raw management token that is shown to the client once; only `bookings.manage_token_hash` is stored
+- [ ] The confirmation screen includes a "Manage my booking" link: `/public/[slug]/manage/[token]`
 - [ ] The .ics file description includes the management link
 - [ ] The management page shows booking details, status, and provider info
 - [ ] The client can cancel their booking from the management page (with confirmation prompt)

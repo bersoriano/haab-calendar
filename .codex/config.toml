@@ -1,0 +1,2 @@
+[mcp_servers.sg]
+url = "https://sourcegraph.example.com/.api/mcp"

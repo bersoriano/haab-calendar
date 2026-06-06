@@ -106,6 +106,7 @@ Two persistence modes both flow through the hook:
 
 - `SYSTEM_REFERENCE.md` — engine behavior, data model, rules, invariants (the ground truth for *what it does*).
 - `docs/superpowers/plans/2026-05-29-monolith-decomposition-plan.md` — full phased roadmap.
+- `docs/superpowers/plans/2026-06-06-backend-implementation-plan.md` — phased Supabase backend implementation plan.
 - `BACKEND_RECOMMENDATIONS.md` — Supabase migration target (slots into the `useModuleStore` seam).
 - `TESTING_RECOMMENDATIONS.md` — testing strategy background.
 - `liquid-glass-style-guide.md` / `UX_RECOMMENDATIONS.md` — visual/UX guidance.

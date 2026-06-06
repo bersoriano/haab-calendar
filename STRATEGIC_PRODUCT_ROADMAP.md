@@ -47,7 +47,7 @@ The app currently behaves like a strong local prototype. The biggest strategic g
 - Provider account authentication.
 - Business/workspace ownership model.
 - Supabase-backed providers, services, availability rules, bookings, holds, customers, and audit events.
-- Server-side booking creation and hold expiration.
+- Server-authoritative booking creation, hold creation, hold expiration, token hashing, and conflict checks.
 - Public slug lookup from backend data.
 - Row-level security policies for provider-owned data.
 - Data migration path from existing localStorage demo state.
@@ -56,7 +56,7 @@ The app currently behaves like a strong local prototype. The biggest strategic g
 
 - A provider can sign up, create a business profile, and return later from a different browser.
 - A public booking page must load from a real backend slug, not local demo state.
-- Bookings must be created on the server with conflict protection.
+- Bookings must be created on the server with conflict protection and should not appear confirmed until the server transaction succeeds.
 - Two customers cannot successfully book the same slot at the same time.
 - Provider dashboard and public pages must reflect the same source of truth.
 
@@ -502,7 +502,7 @@ Focus: make Haab smarter and more scalable.
 If the team can only choose a few strategic bets, prioritize these:
 
 1. Supabase backend with provider auth and server-side booking creation.
-2. Server-enforced booking holds and conflict protection.
+2. Server-enforced booking holds, hashed manage tokens, audit events, and conflict protection.
 3. Email confirmation for customers and provider alerts.
 4. Timezone-aware public booking flow.
 5. Dashboard and bookings list improvements for real daily operations.
