@@ -19,7 +19,7 @@ The project is already on Next.js + Vercel. Supabase is the natural backend comp
 
 ### Key implementation principle
 
-Supabase should be the source of truth, but public booking writes should not be plain client-side table inserts. Reads can use the Supabase client where the returned data is public-safe, but booking-critical writes should go through Next.js Route Handlers, Server Actions, or Postgres RPCs that run server-side validation in one transaction. The backend is the authority for holds, confirmations, conflicts, and ownership checks.
+Supabase should be the source of truth, but public booking writes should not be plain client-side table inserts. Public reads should go through an explicit public DTO boundary: a Next.js Route Handler, RPC, or public-safe view that exposes only fields intended for unauthenticated clients. Booking-critical writes should go through Next.js Route Handlers, Server Actions, or Postgres RPCs that run server-side validation in one transaction. The backend is the authority for holds, confirmations, conflicts, and ownership checks.
 
 ### Why not alternatives
 
@@ -42,7 +42,7 @@ providers (
   full_name           text not null,
   business_name       text not null,
   email               text not null,
-  slug                text unique not null,
+  slug                text unique not null, -- generated/backfilled when the existing publicSlug fallback is empty
   timezone            text not null default 'UTC',
   booking_window_days int not null default 60,
   availability        jsonb not null,  -- weekly schedule (fixed structure, not queried against)
@@ -58,8 +58,8 @@ services (
   type        text not null,  -- 'appointment' | 'full-day'
   duration    int,            -- minutes, null for full-day
   description text,
-  capacity    int default 1,
-  cost        numeric(10,2),
+  capacity    text,
+  cost        text,
   notes       text,
   sort_order  int default 0,
   created_at  timestamptz default now(),
@@ -72,6 +72,8 @@ bookings (
   provider_id        uuid not null references providers(id) on delete cascade,
   service_id         uuid references services(id) on delete set null,
   service_name       text not null, -- snapshot, do not derive historical display from current service row
+  booking_type       text not null, -- snapshot: 'appointment' | 'full-day'
+  duration_minutes_snapshot int,
   cost_snapshot      text,
   capacity_snapshot  text,
   client_name        text not null,
@@ -83,6 +85,8 @@ bookings (
   status             text not null, -- 'confirmed' | 'rescheduled' | 'cancelled'
   notes              text,
   manage_token_hash  text unique not null,
+  confirmation_number text unique not null,
+  idempotency_key    text not null,
   created_at         timestamptz default now(),
   updated_at         timestamptz default now()
 )
@@ -115,11 +119,14 @@ booking_events (
 
 - **Availability as JSONB** — it's a fixed 7-day weekly structure, not something queried with SQL filters. Keeping it as a JSON column on the provider row avoids unnecessary normalization.
 - **Everything else is relational** — bookings, services, and holds benefit from foreign keys, indexes, and SQL queries (e.g., "all bookings for provider X on date Y where status = confirmed").
+- **Service cost/capacity as text** — the current product treats these as human-readable labels, not enforced billing or inventory fields. Keep them textual until payments or capacity enforcement is deliberately designed.
 - **`sort_order` on services** — enables drag-to-reorder in the admin UI.
 - **`booking_holds.expires_at`** — replaces the client-side timer with a server-authoritative expiration.
 - **`owner_user_id` on providers** — anchors RLS and authenticated admin ownership to `auth.users`.
-- **Booking snapshot fields** — `service_name`, `cost_snapshot`, and `capacity_snapshot` preserve historical display even if a service is renamed, repriced, or deleted.
+- **Generated provider slug** — preserves the current `publicSlug || slugify(businessName || fullName || "haab-calendar")` behavior. Do not require a manually-entered slug before a provider gets a working public link.
+- **Booking snapshot fields** — `service_name`, `booking_type`, `duration_minutes_snapshot`, `cost_snapshot`, and `capacity_snapshot` preserve historical display and manage-link behavior even if a service is renamed, repriced, changes type, or is deleted.
 - **`manage_token_hash` instead of plaintext token** — the client receives the raw manage token once; the database stores only a hash.
+- **`idempotency_key` on bookings** — prevents duplicate confirmed bookings when the customer double-submits or retries the same confirmation request. The server should return the original committed booking for an exact replay and reject key reuse with different booking input.
 - **`timezone` and `booking_window_days`** — these are needed early for production-safe availability and public booking windows.
 - **`booking_events`** — keeps reschedule/cancellation history and gives support/debugging a durable audit trail.
 
@@ -129,25 +136,34 @@ booking_events (
 - `bookings(provider_id, date, status)` for admin schedule queries.
 - `booking_holds(provider_id, date, expires_at)` for availability checks and cleanup.
 - `bookings.manage_token_hash` unique.
+- `bookings.confirmation_number` unique.
+- `bookings(provider_id, idempotency_key)` unique.
 - A partial unique index on confirmed, non-cancelled booking slots is useful for final double-booking protection.
 - Active-hold uniqueness needs careful implementation: Postgres cannot use `now()` in an ordinary partial unique index. Use a server transaction and either a deterministic slot lock (for example, transaction-scoped advisory locks keyed by provider/service/date/time) or a separate active-hold model that can be uniquely constrained without a volatile predicate.
+
+## Public Read Boundary
+
+Do not treat RLS alone as the public privacy boundary. RLS decides which rows are visible, but the public booking page also needs column and payload minimization. Use one of these patterns:
+
+- Preferred: a Next.js Route Handler or RPC returns a public DTO with only provider display fields, services, weekly availability, timezone, booking window, and computed availability.
+- Acceptable: a public-safe view that selects only public columns. If a view is exposed through the API, create it with `security_invoker = true` on Postgres 15+ so it respects RLS, and do not expose views that reference `auth.users`.
+- Avoid: granting anonymous clients direct access to raw `providers`, `bookings`, `booking_holds`, `booking_events`, or any table containing client contact details, manage token hashes, or maintainer-only fields.
+
+If privileged RPCs are used for transactions, keep `security definer` functions in a private or otherwise unexposed schema, set an explicit `search_path`, and grant execute only to the roles that need them.
 
 ## Integration Path
 
 The module already has the right hooks. Migration from localStorage to Supabase follows four steps, with booking-critical writes routed through server-authoritative code rather than direct public table inserts:
 
-### 1. Replace localStorage reads with Supabase queries
+### 1. Replace localStorage reads with a public DTO
 
 ```typescript
 // Before
 const store = JSON.parse(localStorage.getItem(storageKey));
 
 // After
-const { data: provider } = await supabase
-  .from('providers')
-  .select('*, services(*)')
-  .eq('slug', slug)
-  .single();
+const response = await fetch(`/api/public/providers/${slug}`);
+const publicProvider = await response.json();
 ```
 
 ### 2. Replace localStorage writes with Supabase inserts/updates
@@ -181,19 +197,16 @@ const hold = await response.json();
 // DELETE FROM booking_holds WHERE expires_at < now();
 ```
 
-### 4. Use Supabase Realtime for live availability
+### 4. Use sanitized Realtime or polling for live availability
 
 ```typescript
-// Subscribe to booking changes for a provider
+// Subscribe to availability-change signals, not raw booking/hold payloads.
 const channel = supabase
-  .channel('bookings')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'bookings',
-    filter: `provider_id=eq.${providerId}`,
+  .channel(`availability:${providerId}`)
+  .on('broadcast', {
+    event: 'availability_changed',
   }, (payload) => {
-    // Update local state — keeps multiple clients' calendars in sync
+    // Refetch public availability through the public DTO endpoint.
     refreshAvailability();
   })
   .subscribe();
@@ -214,6 +227,7 @@ Do not show a customer a booking as confirmed until step 5 succeeds. Optimistic 
 ### Security and RLS notes
 
 - Public reads must return only provider, services, availability, and computed slot lists. Never return raw bookings or holds to the public booking page.
+- Public realtime must not subscribe unauthenticated clients directly to raw `bookings` or `booking_holds` changes. Send sanitized invalidation events, or poll the public availability endpoint.
 - Public manage-link routes should look up bookings by hashing the presented token and comparing it to `manage_token_hash`.
 - Admin reads/writes must require Supabase Auth and RLS scoped through `providers.owner_user_id = auth.uid()`.
 - Avoid storing authorization roles in user-editable metadata. Use provider ownership rows or app metadata for authorization decisions.
