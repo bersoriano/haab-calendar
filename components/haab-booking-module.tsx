@@ -1702,12 +1702,9 @@ export function HaabBookingModule({
 
   function renderBookingsList() {
     return (
-      <div className="space-y-6">
-        <SectionTitle
-          title="All bookings"
-          body="Search clients, scan booking types, and filter by status without leaving the provider workspace."
-        />
-        <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px]">
+      <div className={cn(adminPanelClass, "p-6")}>
+        <SectionTitle title="All bookings" />
+        <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
@@ -1734,20 +1731,24 @@ export function HaabBookingModule({
             <option value="full-day">Full Day</option>
           </select>
         </div>
-        <div className="space-y-3">
+        <div className="mt-4 space-y-3">
           {filteredBookings.length === 0 ? (
             <EmptyState
               title="No bookings match the current filters"
-              body="Try a broader search or create the first booking from the public flow."
+              body="Try a broader search or clear the filters."
             />
           ) : (
             filteredBookings.map((booking) => (
               <div
                 key={booking.id}
-                className={cn(adminInsetClass, "p-5")}
+                className={cn(
+                  adminInsetClass,
+                  "p-5",
+                  booking.status === "cancelled" && "opacity-60",
+                )}
               >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-base font-semibold text-[var(--ink)]">
                         {booking.clientName}
@@ -1762,23 +1763,21 @@ export function HaabBookingModule({
                     <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                       {booking.serviceName}
                     </p>
-                    <div className="mt-2 grid gap-1 text-sm text-[var(--muted)]">
-                      <p>
-                        {formatDateLabel(booking.dateKey)} ·{" "}
-                        {formatTimeRange(booking.startTime, booking.endTime)}
-                      </p>
-                      <p>
+                    <p className="mt-1 text-sm text-[var(--muted)]">
+                      {formatDateLabel(booking.dateKey)} ·{" "}
+                      {formatTimeRange(booking.startTime, booking.endTime)}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
+                      <span>
                         {booking.clientEmail} · {booking.clientPhone}
-                      </p>
-                      <p>
-                        {booking.capacitySnapshot
-                          ? `Capacity: ${booking.capacitySnapshot}`
-                          : "Capacity not set"}
-                      </p>
-                      <p>{booking.cost ? `Total: ${booking.cost}` : "Total not set"}</p>
+                      </span>
+                      {booking.capacitySnapshot ? (
+                        <span>Capacity: {booking.capacitySnapshot}</span>
+                      ) : null}
+                      {booking.cost ? <span>Total: {booking.cost}</span> : null}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex shrink-0 flex-wrap gap-2">
                     <ActionButton
                       tone="ghost"
                       disabled={booking.status === "cancelled"}
@@ -1807,10 +1806,10 @@ export function HaabBookingModule({
     const weeks = createMonthMatrix(calendarMonthAnchor);
 
     return (
-      <div className="space-y-6">
+      <div className={cn(adminPanelClass, "space-y-6 p-6")}>
         <SectionTitle
           title="Monthly calendar"
-          body="Timed bookings appear inside the day cell, while full-day reservations are emphasized as solid bars. Clicking a free day launches the booking flow for testing."
+          body="Click an available day to add a booking."
           action={
             services.length > 0 ? (
               <select
@@ -1820,7 +1819,7 @@ export function HaabBookingModule({
               >
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>
-                    Test with {service.name}
+                    New booking: {service.name}
                   </option>
                 ))}
               </select>
@@ -1906,7 +1905,7 @@ export function HaabBookingModule({
                         : undefined
                     }
                     className={cn(
-                      "min-h-[148px] rounded-[26px] p-3 text-left transition",
+                      "min-h-[124px] rounded-[26px] p-3 text-left transition",
                       inMonth
                         ? adminChoiceQuietClass
                         : cn(adminChoiceQuietClass, "text-[var(--muted)] opacity-75"),
@@ -1919,7 +1918,7 @@ export function HaabBookingModule({
                         {date.getDate()}
                       </span>
                       {canTest ? (
-                        <ToneBadge tone="primary">Free to test</ToneBadge>
+                        <ToneBadge tone="primary">Open</ToneBadge>
                       ) : null}
                     </div>
                     <div className="mt-3 space-y-2">
