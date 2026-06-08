@@ -118,6 +118,8 @@ type HaabBookingModuleProps = {
   onBookingsChange?: (bookings: BookingRecord[]) => void;
   onStoreChange?: (store: ModuleStore) => void;
   manageBookingToken?: string;
+  userEmail?: string;
+  onSignOut?: () => void | Promise<void>;
 };
 
 function hasExplicitTime(result: ParsedResult) {
@@ -133,6 +135,8 @@ export function HaabBookingModule({
   onBookingsChange,
   onStoreChange,
   manageBookingToken,
+  userEmail,
+  onSignOut,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -305,7 +309,6 @@ export function HaabBookingModule({
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
-  const isPublicView = surfaceMode === "public-only" || surface === "public";
   const isDedicatedPublicPage = surfaceMode === "public-only";
   const hasMultipleServices = services.length > 1;
   const calendarServiceId =
@@ -370,8 +373,6 @@ export function HaabBookingModule({
   // Admin glass tokens — surface-only (no padding baked in); used exclusively in non-public admin render paths
   const adminPanelClass =
     "rounded-[28px] bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)]";
-  const adminElevatedClass =
-    "rounded-[28px] bg-[rgba(255,255,255,0.92)] ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)]";
   const adminSoftClass =
     "rounded-[28px] bg-[rgba(243,244,245,0.94)] ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)]";
   const adminInsetClass =
@@ -1870,9 +1871,9 @@ export function HaabBookingModule({
               detail: "Currently active bookings",
             },
             {
-              label: "Public URL",
-              value: businessSlug ? `/${businessSlug}` : "/public",
-              detail: "Shareable booking path",
+              label: "Total bookings",
+              value: String(bookings.length),
+              detail: "All time, every status",
             },
           ].map((stat) => (
             <div
@@ -1890,13 +1891,9 @@ export function HaabBookingModule({
           ))}
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-          <div className={cn(adminPanelClass, "p-6")}>
-            <SectionTitle
-              title="Upcoming bookings"
-              body="Provider-side actions let you cancel or reschedule any booking without leaving the dashboard."
-            />
-            <div className="mt-6 space-y-3">
+        <div className={cn(adminPanelClass, "p-6")}>
+          <SectionTitle title="Upcoming bookings" />
+          <div className="mt-6 space-y-3">
               {upcomingBookings.length === 0 ? (
                 <EmptyState
                   title="No bookings in the next 7 days"
@@ -1955,32 +1952,6 @@ export function HaabBookingModule({
                 ))
               )}
             </div>
-          </div>
-
-          <div className={cn(adminElevatedClass, "p-6")}>
-            <SectionTitle
-              eyebrow="Share"
-              title="Public booking page"
-              body="Give clients a direct link to the step-by-step booking wizard. The same public page is used by the standalone demo and any future host application."
-            />
-            <div className={cn("mt-6", adminInsetClass, "p-4")}>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                Booking link
-              </p>
-              <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
-            </div>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <ActionButton tone="primary" onClick={copyPublicLink}>
-                {copiedLink ? "Copied" : "Copy link"}
-              </ActionButton>
-            </div>
-            <div className={cn("mt-8", adminInsetClass, "p-4")}>
-              <p className="text-sm font-semibold text-[var(--ink)]">Quick testing</p>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                Use the monthly calendar tab to click a free day and jump straight into the booking flow with a service preselected.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -4170,60 +4141,48 @@ export function HaabBookingModule({
       <section className={publicShellClass}>
         {!isDedicatedPublicPage ? (
           <div className="border-b border-[var(--line)] p-5 sm:p-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-3xl">
-                {!isPublicView ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    <ToneBadge tone="primary">Haab Calendar</ToneBadge>
-                    <ToneBadge tone="secondary">Reusable module</ToneBadge>
-                    {integratedMode ? (
-                      <ToneBadge tone="neutral">Configured by parent app</ToneBadge>
-                    ) : (
-                      <ToneBadge tone="secondary">Standalone mode</ToneBadge>
-                    )}
-                  </div>
-                ) : null}
-                <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <h2 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
                   {provider.businessName || provider.fullName || "Booking workspace"}
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                  One module for timed appointments and full-day bookings, with a provider workspace and a premium client-facing booking wizard powered by the same data.
-                </p>
-              </div>
-
-              <div className="flex w-full max-w-xl flex-col gap-3 xl:items-end">
-                {surfaceMode === "adaptive" && !isPublicView ? (
-                  <div className={cn("flex w-full rounded-2xl p-1", adminBarClass)}>
-                    {(["management", "public"] as Surface[]).map((item) => (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() => setSurface(item)}
-                        className={cn(
-                          "min-h-11 flex-1 rounded-2xl px-4 text-sm font-semibold transition",
-                          surface === item
-                            ? "bg-white text-[var(--ink)] shadow-[0_14px_32px_rgba(15,23,42,0.08)]"
-                            : "text-[var(--muted)]",
-                        )}
-                      >
-                        {item === "management" ? "Provider workspace" : "Public booking flow"}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-
-                <div className={cn("flex w-full flex-col gap-3 rounded-[24px] p-4", adminElevatedClass)}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                    Public booking URL
-                  </p>
-                  <p className="break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <ActionButton tone="primary" onClick={copyPublicLink}>
-                      {copiedLink ? "Copied" : "Copy link"}
-                    </ActionButton>
-                  </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="break-all text-sm text-[var(--muted)]">{publicUrl}</span>
+                  <button
+                    type="button"
+                    onClick={copyPublicLink}
+                    className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
+                  >
+                    {copiedLink ? "Copied" : "Copy link"}
+                  </button>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
+                  >
+                    View public page
+                  </a>
                 </div>
               </div>
+
+              {userEmail || onSignOut ? (
+                <div className="flex shrink-0 items-center gap-3">
+                  {userEmail ? (
+                    <span className="hidden text-sm text-[var(--muted)] sm:inline">{userEmail}</span>
+                  ) : null}
+                  {onSignOut ? (
+                    <form action={onSignOut}>
+                      <button
+                        type="submit"
+                        className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+                      >
+                        Sign out
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
 
             {surface === "management" && surfaceMode === "adaptive" ? (
@@ -4252,6 +4211,16 @@ export function HaabBookingModule({
                   </button>
                 ))}
               </nav>
+            ) : surfaceMode === "adaptive" ? (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => setSurface("management")}
+                  className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+                >
+                  ← Back to workspace
+                </button>
+              </div>
             ) : null}
           </div>
         ) : null}
