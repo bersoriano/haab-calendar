@@ -42,8 +42,6 @@ import type {
 } from "@/lib/types";
 import {
   WEEKDAY_KEYS,
-  WEEKDAY_LABELS,
-  DURATION_OPTIONS,
   compactBadgeTextClass,
   compactMetaTextClass,
   weekdayShortFormatter,
@@ -96,7 +94,17 @@ import {
 } from "@/lib/availability";
 import { getBookingHoldSelectionKey } from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
-import { QUICK_START_TEMPLATES } from "@/config/templates";
+import {
+  adminBarClass,
+  adminChoiceQuietClass,
+  adminFieldClass,
+  adminInsetClass,
+  adminPanelClass,
+  adminSoftClass,
+} from "@/components/provider/adminGlass";
+import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
+import { ServiceEditor } from "@/components/provider/ServiceEditor";
+import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import {
   ActionButton,
   ActionLink,
@@ -369,20 +377,6 @@ export function HaabBookingModule({
   const publicTextareaClass = isDedicatedPublicPage
     ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
-
-  // Admin glass tokens — surface-only (no padding baked in); used exclusively in non-public admin render paths
-  const adminPanelClass =
-    "rounded-[28px] bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)]";
-  const adminSoftClass =
-    "rounded-[28px] bg-[rgba(243,244,245,0.94)] ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)]";
-  const adminInsetClass =
-    "rounded-[24px] bg-[rgba(255,255,255,0.88)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]";
-  const adminBarClass =
-    "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.5)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_22px_48px_rgba(25,28,29,0.08)] backdrop-blur-[20px]";
-  const adminFieldClass =
-    "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]";
-  const adminChoiceQuietClass =
-    "bg-[rgba(248,249,250,0.92)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[0_12px_30px_rgba(25,28,29,0.04)]";
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(pointer: coarse)");
@@ -1508,226 +1502,26 @@ export function HaabBookingModule({
                 title="Tell us about the provider"
                 body="These details feed confirmations, branding, and the public booking URL."
               />
-              <div className="mt-6 grid gap-4">
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Full name
-                  <input
-                    value={provider.fullName}
-                    onChange={(event) => updateProvider("fullName", event.target.value)}
-                    placeholder="Dr. Maya Alvarez"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Business or brand name
-                  <input
-                    value={provider.businessName}
-                    onChange={(event) => updateProvider("businessName", event.target.value)}
-                    placeholder="Haab Health Studio"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Confirmation email
-                  <input
-                    value={provider.email}
-                    onChange={(event) => updateProvider("email", event.target.value)}
-                    placeholder="bookings@haabcalendar.com"
-                    type="email"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
+              <div className="mt-6">
+                <ProviderInfoForm provider={provider} onChange={updateProvider} />
               </div>
             </div>
           </div>
         ) : null}
 
         {setupStep === 2 ? (
-          <div className="mt-8 grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className={cn(adminPanelClass, "p-6")}>
-              <SectionTitle
-                title="Define what clients can book"
-                body="Each service can be a timed appointment or a full-day reservation. Capacity and notes stay visible throughout the booking flow."
-              />
-              <div className="mt-4 flex flex-wrap gap-2">
-                {QUICK_START_TEMPLATES.map((template) => (
-                  <ActionButton
-                    key={template.label}
-                    tone="ghost"
-                    onClick={() => appendQuickTemplate(template.service)}
-                  >
-                    Add {template.label}
-                  </ActionButton>
-                ))}
-              </div>
-              <div className="mt-6 space-y-3">
-                {services.length === 0 ? (
-                  <EmptyState
-                    title="No services added yet"
-                    body="Use the template shortcuts or fill in the service form to add your first offering."
-                  />
-                ) : (
-                  services.map((service) => (
-                    <div
-                      key={service.id}
-                      className={cn(adminInsetClass, "p-5")}
-                    >
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h4 className="text-base font-semibold text-[var(--ink)]">
-                              {service.name}
-                            </h4>
-                            <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                              {getBookingTypeLabel(service.bookingType)}
-                            </ToneBadge>
-                            <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                            {service.description}
-                          </p>
-                          <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-                            {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
-                            {service.cost ? <span>Total: {service.cost}</span> : null}
-                            {service.notes ? <span>Notes: {service.notes}</span> : null}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <ActionButton tone="ghost" onClick={() => beginEditingService(service)}>
-                            Edit
-                          </ActionButton>
-                          <ActionButton tone="danger" onClick={() => removeService(service.id)}>
-                            Delete
-                          </ActionButton>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className={cn(adminPanelClass, "p-6")}>
-              <SectionTitle
-                eyebrow={editingServiceId ? "Editing Service" : "New Service"}
-                title={editingServiceId ? "Update service details" : "Add a new service"}
-                body="Keep the description concise and use capacity or pricing notes only when they help clients choose."
-              />
-              <div className="mt-6 grid gap-4">
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Service name
-                  <input
-                    value={serviceDraft.name}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({ ...current, name: event.target.value }))
-                    }
-                    placeholder="Court Rental"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Booking type
-                  <select
-                    value={serviceDraft.bookingType}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        bookingType: event.target.value as BookingType,
-                      }))
-                    }
-                    className={cn("min-h-12", adminFieldClass)}
-                  >
-                    <option value="appointment">Appointment</option>
-                    <option value="full-day">Full Day</option>
-                  </select>
-                </label>
-                {serviceDraft.bookingType === "appointment" ? (
-                  <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                    Duration
-                    <select
-                      value={serviceDraft.durationMinutes}
-                      onChange={(event) =>
-                        setServiceDraft((current) => ({
-                          ...current,
-                          durationMinutes: Number(event.target.value),
-                        }))
-                      }
-                      className={cn("min-h-12", adminFieldClass)}
-                    >
-                      {DURATION_OPTIONS.map((duration) => (
-                        <option key={duration} value={duration}>
-                          {duration >= 60 && duration % 60 === 0
-                            ? `${duration / 60} hour${duration === 60 ? "" : "s"}`
-                            : `${duration} minutes`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Description
-                  <textarea
-                    value={serviceDraft.description}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        description: event.target.value,
-                      }))
-                    }
-                    placeholder="Explain what the booking covers in one or two lines."
-                    rows={4}
-                    className={adminFieldClass}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Capacity
-                  <input
-                    value={serviceDraft.capacity}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({ ...current, capacity: event.target.value }))
-                    }
-                    placeholder="Max 12 people"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Total
-                  <input
-                    value={serviceDraft.cost}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        cost: event.target.value,
-                      }))
-                    }
-                    placeholder="$80 / session"
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Notes
-                  <input
-                    value={serviceDraft.notes}
-                    onChange={(event) =>
-                      setServiceDraft((current) => ({
-                        ...current,
-                        notes: event.target.value,
-                      }))
-                    }
-                    placeholder="Bring prior records or arrive 10 minutes early."
-                    className={cn("min-h-12", adminFieldClass)}
-                  />
-                </label>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <ActionButton tone="primary" onClick={upsertService}>
-                  {editingServiceId ? "Save service" : "Add service"}
-                </ActionButton>
-                <ActionButton tone="ghost" onClick={resetServiceEditor}>
-                  Clear form
-                </ActionButton>
-              </div>
-            </div>
+          <div className="mt-8">
+            <ServiceEditor
+              services={services}
+              serviceDraft={serviceDraft}
+              onDraftChange={setServiceDraft}
+              editingServiceId={editingServiceId}
+              onUpsert={upsertService}
+              onReset={resetServiceEditor}
+              onEdit={beginEditingService}
+              onRemove={removeService}
+              onAppendTemplate={appendQuickTemplate}
+            />
           </div>
         ) : null}
 
@@ -1737,49 +1531,11 @@ export function HaabBookingModule({
               title="Set the weekly availability schedule"
               body="Appointment services generate real slots from these windows. Full-day services simply need the weekday enabled and free of conflicts."
             />
-            <div className="mt-6 grid gap-3">
-              {WEEKDAY_KEYS.map((day) => (
-                <div
-                  key={day}
-                  className={cn(adminInsetClass, "grid gap-3 p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]")}
-                >
-                  <label className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
-                    <input
-                      checked={availability[day].enabled}
-                      onChange={(event) =>
-                        updateAvailabilityDay(day, { enabled: event.target.checked })
-                      }
-                      type="checkbox"
-                      className="h-5 w-5 rounded border-[var(--line)] text-[var(--accent)]"
-                    />
-                    {WEEKDAY_LABELS[day]}
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                    Start
-                    <input
-                      disabled={!availability[day].enabled}
-                      value={availability[day].startTime}
-                      onChange={(event) =>
-                        updateAvailabilityDay(day, { startTime: event.target.value })
-                      }
-                      type="time"
-                      className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                    />
-                  </label>
-                  <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                    End
-                    <input
-                      disabled={!availability[day].enabled}
-                      value={availability[day].endTime}
-                      onChange={(event) =>
-                        updateAvailabilityDay(day, { endTime: event.target.value })
-                      }
-                      type="time"
-                      className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                    />
-                  </label>
-                </div>
-              ))}
+            <div className="mt-6">
+              <AvailabilityEditor
+                availability={availability}
+                onChange={updateAvailabilityDay}
+              />
             </div>
           </div>
         ) : null}
@@ -2211,253 +1967,42 @@ export function HaabBookingModule({
 
   function renderServices() {
     return (
-      <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <SectionTitle
-            title="Services"
-            body="Create, edit, and review every offering from one place. Integrated mode keeps this list visible while preventing internal edits."
-          />
-          {integratedMode ? (
-            <div className={cn(adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
-              Configured by parent app. Service editing is intentionally read-only in this mode.
-            </div>
-          ) : null}
-          <div className="space-y-3">
-            {services.length === 0 ? (
-              <EmptyState
-                title="No services available"
-                body="Add at least one service so the public booking flow can open."
-              />
-            ) : (
-              services.map((service) => (
-                <div
-                  key={service.id}
-                  className={cn(adminInsetClass, "p-5")}
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="text-base font-semibold text-[var(--ink)]">
-                          {service.name}
-                        </h4>
-                        <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                          {getBookingTypeLabel(service.bookingType)}
-                        </ToneBadge>
-                        <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
-                      </div>
-                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        {service.description}
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                        {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
-                        {service.cost ? <span>Total: {service.cost}</span> : null}
-                        {service.notes ? <span>Notes: {service.notes}</span> : null}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <ActionButton
-                        tone="ghost"
-                        disabled={integratedMode}
-                        onClick={() => beginEditingService(service)}
-                      >
-                        Edit
-                      </ActionButton>
-                      <ActionButton
-                        tone="danger"
-                        disabled={integratedMode}
-                        onClick={() => removeService(service.id)}
-                      >
-                        Delete
-                      </ActionButton>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle
-            eyebrow={editingServiceId ? "Edit Service" : "Add New Service"}
-            title={editingServiceId ? "Update this service" : "Create another service"}
-            body="Keep the module reusable by describing what is booked rather than the current business only."
-          />
-          <div className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Service name
-              <input
-                disabled={integratedMode}
-                value={serviceDraft.name}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({ ...current, name: event.target.value }))
-                }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Booking type
-              <select
-                disabled={integratedMode}
-                value={serviceDraft.bookingType}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({
-                    ...current,
-                    bookingType: event.target.value as BookingType,
-                  }))
-                }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              >
-                <option value="appointment">Appointment</option>
-                <option value="full-day">Full Day</option>
-              </select>
-            </label>
-            {serviceDraft.bookingType === "appointment" ? (
-              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                Duration
-                <select
-                  disabled={integratedMode}
-                  value={serviceDraft.durationMinutes}
-                  onChange={(event) =>
-                    setServiceDraft((current) => ({
-                      ...current,
-                      durationMinutes: Number(event.target.value),
-                    }))
-                  }
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                >
-                  {DURATION_OPTIONS.map((duration) => (
-                    <option key={duration} value={duration}>
-                      {duration} min
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Description
-              <textarea
-                disabled={integratedMode}
-                value={serviceDraft.description}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({ ...current, description: event.target.value }))
-                }
-                rows={4}
-                className={cn(adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Capacity
-              <input
-                disabled={integratedMode}
-                value={serviceDraft.capacity}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({ ...current, capacity: event.target.value }))
-                }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Total
-              <input
-                disabled={integratedMode}
-                value={serviceDraft.cost}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({
-                    ...current,
-                    cost: event.target.value,
-                  }))
-                }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Notes
-              <input
-                disabled={integratedMode}
-                value={serviceDraft.notes}
-                onChange={(event) =>
-                  setServiceDraft((current) => ({
-                    ...current,
-                    notes: event.target.value,
-                  }))
-                }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <ActionButton tone="primary" disabled={integratedMode} onClick={upsertService}>
-              {editingServiceId ? "Save changes" : "Add new service"}
-            </ActionButton>
-            <ActionButton tone="ghost" onClick={resetServiceEditor}>
-              Clear
-            </ActionButton>
-          </div>
-        </div>
-      </div>
+      <ServiceEditor
+        services={services}
+        serviceDraft={serviceDraft}
+        onDraftChange={setServiceDraft}
+        editingServiceId={editingServiceId}
+        onUpsert={upsertService}
+        onReset={resetServiceEditor}
+        onEdit={beginEditingService}
+        onRemove={removeService}
+        onAppendTemplate={appendQuickTemplate}
+        disabled={integratedMode}
+      />
     );
   }
 
   function renderSettings() {
     return (
-      <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle
-            title="Provider information"
-            body="These fields drive the management shell, public page branding, and confirmation details."
-          />
+          <SectionTitle title="Provider information" />
           {integratedMode ? (
             <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm text-[var(--muted)]")}>
-              Configured by parent app. These settings are visible but not editable.
+              Configured by the parent app. These settings are visible but not editable.
             </div>
-          ) : (
-            <p className="mt-4 text-sm text-[var(--muted)]">
-              Changes save instantly in standalone mode.
-            </p>
-          )}
-          <div className="mt-6 grid gap-4">
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Full name
-              <input
-                disabled={integratedMode}
-                value={provider.fullName}
-                onChange={(event) => updateProvider("fullName", event.target.value)}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Business name
-              <input
-                disabled={integratedMode}
-                value={provider.businessName}
-                onChange={(event) => updateProvider("businessName", event.target.value)}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Confirmation email
-              <input
-                disabled={integratedMode}
-                value={provider.email}
-                onChange={(event) => updateProvider("email", event.target.value)}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-              />
-            </label>
+          ) : null}
+          <div className="mt-6">
+            <ProviderInfoForm
+              provider={provider}
+              onChange={updateProvider}
+              disabled={integratedMode}
+            />
           </div>
-
-          <div className={cn("mt-6", adminInsetClass, "p-4")}>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-              Public booking URL
-            </p>
-            <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <ActionButton tone="primary" onClick={copyPublicLink}>
-                {copiedLink ? "Copied" : "Copy link"}
-              </ActionButton>
-            </div>
-          </div>
-
+          <p className="mt-4 text-sm text-[var(--muted)]">
+            Public booking link:{" "}
+            <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
+          </p>
           {!integratedMode ? (
             <div className="mt-6">
               <ActionButton tone="danger" onClick={resetStandaloneSetup}>
@@ -2468,54 +2013,13 @@ export function HaabBookingModule({
         </div>
 
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle
-            title="Weekly availability"
-            body="Availability changes are reflected immediately in both the public booking flow and the provider calendar."
-          />
-          <div className="mt-6 grid gap-3">
-            {WEEKDAY_KEYS.map((day) => (
-              <div
-                key={day}
-                className={cn(adminInsetClass, "grid gap-3 p-4 sm:grid-cols-[1.1fr_0.8fr_0.8fr]")}
-              >
-                <label className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
-                  <input
-                    disabled={integratedMode}
-                    checked={availability[day].enabled}
-                    onChange={(event) =>
-                      updateAvailabilityDay(day, { enabled: event.target.checked })
-                    }
-                    type="checkbox"
-                    className="h-5 w-5 rounded border-[var(--line)] text-[var(--accent)] disabled:opacity-45"
-                  />
-                  {WEEKDAY_LABELS[day]}
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                  Start
-                  <input
-                    disabled={integratedMode || !availability[day].enabled}
-                    value={availability[day].startTime}
-                    onChange={(event) =>
-                      updateAvailabilityDay(day, { startTime: event.target.value })
-                    }
-                    type="time"
-                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                  />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                  End
-                  <input
-                    disabled={integratedMode || !availability[day].enabled}
-                    value={availability[day].endTime}
-                    onChange={(event) =>
-                      updateAvailabilityDay(day, { endTime: event.target.value })
-                    }
-                    type="time"
-                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                  />
-                </label>
-              </div>
-            ))}
+          <SectionTitle title="Weekly availability" />
+          <div className="mt-6">
+            <AvailabilityEditor
+              availability={availability}
+              onChange={updateAvailabilityDay}
+              disabled={integratedMode}
+            />
           </div>
         </div>
       </div>

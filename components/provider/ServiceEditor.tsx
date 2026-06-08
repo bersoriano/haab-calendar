@@ -1,0 +1,233 @@
+"use client";
+
+import type { Dispatch, SetStateAction } from "react";
+import type { BookingType, Service, ServiceDraft } from "@/lib/types";
+import { DURATION_OPTIONS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
+import { QUICK_START_TEMPLATES } from "@/config/templates";
+import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
+import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
+
+function formatDurationOption(minutes: number) {
+  if (minutes >= 60 && minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return `${hours} hour${hours === 1 ? "" : "s"}`;
+  }
+  return `${minutes} minutes`;
+}
+
+export function ServiceEditor({
+  services,
+  serviceDraft,
+  onDraftChange,
+  editingServiceId,
+  onUpsert,
+  onReset,
+  onEdit,
+  onRemove,
+  onAppendTemplate,
+  disabled = false,
+  showQuickTemplates = true,
+}: {
+  services: Service[];
+  serviceDraft: ServiceDraft;
+  onDraftChange: Dispatch<SetStateAction<ServiceDraft>>;
+  editingServiceId: string | null;
+  onUpsert: () => void;
+  onReset: () => void;
+  onEdit: (service: Service) => void;
+  onRemove: (id: string) => void;
+  onAppendTemplate: (service: ServiceDraft) => void;
+  disabled?: boolean;
+  showQuickTemplates?: boolean;
+}) {
+  return (
+    <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className={cn(adminPanelClass, "p-6")}>
+        <SectionTitle
+          title="Services"
+          body="Each service is a timed appointment or a full-day reservation. Capacity and notes stay visible during booking."
+        />
+
+        {disabled ? (
+          <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
+            Configured by the parent app. Service editing is read-only in this mode.
+          </div>
+        ) : showQuickTemplates ? (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {QUICK_START_TEMPLATES.map((template) => (
+              <ActionButton
+                key={template.label}
+                tone="ghost"
+                onClick={() => onAppendTemplate(template.service)}
+              >
+                Add {template.label}
+              </ActionButton>
+            ))}
+          </div>
+        ) : null}
+
+        <div className="mt-6 space-y-3">
+          {services.length === 0 ? (
+            <EmptyState
+              title="No services yet"
+              body="Add a service or use a template so the public booking flow can open."
+            />
+          ) : (
+            services.map((service) => (
+              <div key={service.id} className={cn(adminInsetClass, "p-5")}>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-base font-semibold text-[var(--ink)]">{service.name}</h4>
+                      <ToneBadge tone={bookingTypeTone(service.bookingType)}>
+                        {getBookingTypeLabel(service.bookingType)}
+                      </ToneBadge>
+                      <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
+                    </div>
+                    {service.description ? (
+                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {service.description}
+                      </p>
+                    ) : null}
+                    <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
+                      {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
+                      {service.cost ? <span>Total: {service.cost}</span> : null}
+                      {service.notes ? <span>Notes: {service.notes}</span> : null}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <ActionButton tone="ghost" disabled={disabled} onClick={() => onEdit(service)}>
+                      Edit
+                    </ActionButton>
+                    <ActionButton tone="danger" disabled={disabled} onClick={() => onRemove(service.id)}>
+                      Delete
+                    </ActionButton>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className={cn(adminPanelClass, "p-6")}>
+        <SectionTitle
+          eyebrow={editingServiceId ? "Edit service" : "New service"}
+          title={editingServiceId ? "Update this service" : "Add a service"}
+        />
+        <div className="mt-6 grid gap-4">
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Service name
+            <input
+              disabled={disabled}
+              value={serviceDraft.name}
+              onChange={(event) =>
+                onDraftChange((current) => ({ ...current, name: event.target.value }))
+              }
+              placeholder="Court Rental"
+              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Booking type
+            <select
+              disabled={disabled}
+              value={serviceDraft.bookingType}
+              onChange={(event) =>
+                onDraftChange((current) => ({
+                  ...current,
+                  bookingType: event.target.value as BookingType,
+                }))
+              }
+              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+            >
+              <option value="appointment">Appointment</option>
+              <option value="full-day">Full Day</option>
+            </select>
+          </label>
+          {serviceDraft.bookingType === "appointment" ? (
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Duration
+              <select
+                disabled={disabled}
+                value={serviceDraft.durationMinutes}
+                onChange={(event) =>
+                  onDraftChange((current) => ({
+                    ...current,
+                    durationMinutes: Number(event.target.value),
+                  }))
+                }
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+              >
+                {DURATION_OPTIONS.map((duration) => (
+                  <option key={duration} value={duration}>
+                    {formatDurationOption(duration)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Description
+            <textarea
+              disabled={disabled}
+              value={serviceDraft.description}
+              onChange={(event) =>
+                onDraftChange((current) => ({ ...current, description: event.target.value }))
+              }
+              placeholder="Explain what the booking covers in one or two lines."
+              rows={4}
+              className={cn(adminFieldClass, "disabled:opacity-45")}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Capacity
+            <input
+              disabled={disabled}
+              value={serviceDraft.capacity}
+              onChange={(event) =>
+                onDraftChange((current) => ({ ...current, capacity: event.target.value }))
+              }
+              placeholder="Max 12 people"
+              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Total
+            <input
+              disabled={disabled}
+              value={serviceDraft.cost}
+              onChange={(event) =>
+                onDraftChange((current) => ({ ...current, cost: event.target.value }))
+              }
+              placeholder="$80 / session"
+              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+            />
+          </label>
+          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            Notes
+            <input
+              disabled={disabled}
+              value={serviceDraft.notes}
+              onChange={(event) =>
+                onDraftChange((current) => ({ ...current, notes: event.target.value }))
+              }
+              placeholder="Bring prior records or arrive 10 minutes early."
+              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+            />
+          </label>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <ActionButton tone="primary" disabled={disabled} onClick={onUpsert}>
+            {editingServiceId ? "Save service" : "Add service"}
+          </ActionButton>
+          <ActionButton tone="ghost" onClick={onReset}>
+            Clear
+          </ActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
