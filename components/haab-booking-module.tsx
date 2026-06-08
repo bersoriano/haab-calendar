@@ -1501,7 +1501,7 @@ export function HaabBookingModule({
         </div>
 
         {setupStep === 1 ? (
-          <div className="mt-8 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 title="Tell us about the provider"
@@ -1538,57 +1538,27 @@ export function HaabBookingModule({
                 </label>
               </div>
             </div>
-
-            <div className={cn(adminSoftClass, "p-6")}>
-              <SectionTitle
-                eyebrow="Examples"
-                title="Designed for multiple booking models"
-                body="Timed appointments and full-day bookings sit in the same module so doctors, advisors, courts, venues, and shared offices can share one interface."
-              />
-              <div className="mt-5 space-y-3">
-                {QUICK_START_TEMPLATES.map((template) => (
-                  <div
-                    key={template.label}
-                    className={cn(adminInsetClass, "px-4 py-4")}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-[var(--ink)]">
-                        {template.service.name}
-                      </p>
-                      <ToneBadge tone={bookingTypeTone(template.service.bookingType)}>
-                        {getBookingTypeLabel(template.service.bookingType)}
-                      </ToneBadge>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                      {template.service.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         ) : null}
 
         {setupStep === 2 ? (
-          <div className="mt-8 grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="mt-8 grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 title="Define what clients can book"
                 body="Each service can be a timed appointment or a full-day reservation. Capacity and notes stay visible throughout the booking flow."
-                action={
-                  <div className="flex flex-wrap gap-2">
-                    {QUICK_START_TEMPLATES.map((template) => (
-                      <ActionButton
-                        key={template.label}
-                        tone="ghost"
-                        onClick={() => appendQuickTemplate(template.service)}
-                      >
-                        Add {template.label}
-                      </ActionButton>
-                    ))}
-                  </div>
-                }
               />
+              <div className="mt-4 flex flex-wrap gap-2">
+                {QUICK_START_TEMPLATES.map((template) => (
+                  <ActionButton
+                    key={template.label}
+                    tone="ghost"
+                    onClick={() => appendQuickTemplate(template.service)}
+                  >
+                    Add {template.label}
+                  </ActionButton>
+                ))}
+              </div>
               <div className="mt-6 space-y-3">
                 {services.length === 0 ? (
                   <EmptyState

@@ -13,7 +13,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-      <div className="">
+      <div className="min-w-0 flex-1">
         {eyebrow ? (
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)]">
             {eyebrow}
