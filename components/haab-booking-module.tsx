@@ -100,7 +100,6 @@ import {
   adminFieldClass,
   adminInsetClass,
   adminPanelClass,
-  adminSoftClass,
 } from "@/components/provider/adminGlass";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -1458,9 +1457,9 @@ export function HaabBookingModule({
       <>
         <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
           <SectionTitle
-            eyebrow="Standalone Setup"
-            title="Configure the module in four focused steps"
-            body="Collect provider details, create services for appointments and full-day bookings, set weekly availability, then publish a clean public booking page."
+            eyebrow="Setup"
+            title="Set up your booking page"
+            body="Add your details, services, and weekly hours, then publish."
           />
           <div className="mt-6 grid gap-3 md:grid-cols-4">
             {[
@@ -1541,12 +1540,12 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 4 ? (
-          <div className="mt-8 grid gap-5 lg:grid-cols-[1fr_0.9fr]">
+          <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
-                eyebrow="Ready To Launch"
-                title="Your booking page is prepared"
-                body="Publish the standalone setup now, then manage bookings from the provider workspace or test the client journey immediately."
+                eyebrow="Ready"
+                title="Your booking page is ready"
+                body="Publish now, then manage everything from your workspace."
               />
               <div className={cn("mt-6", adminInsetClass, "p-4")}>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
@@ -1565,18 +1564,6 @@ export function HaabBookingModule({
                 >
                   Open public booking page
                 </ActionLink>
-              </div>
-            </div>
-
-            <div className={cn(adminSoftClass, "p-6")}>
-              <SectionTitle
-                title="What is ready right away"
-                body="Management dashboard, searchable booking list, calendar, editable services, settings, public booking wizard, rescheduling, cancellation, and iCal export are all wired to the same store."
-              />
-              <div className="mt-5 space-y-3 text-sm leading-6 text-[var(--muted)]">
-                <p>Timed appointments generate slots from your weekly schedule.</p>
-                <p>Full-day reservations book the entire day with no time selection.</p>
-                <p>Integrated mode can later inject provider, services, availability, and existing bookings to skip setup entirely.</p>
               </div>
             </div>
           </div>
@@ -1653,7 +1640,7 @@ export function HaabBookingModule({
               {upcomingBookings.length === 0 ? (
                 <EmptyState
                   title="No bookings in the next 7 days"
-                  body="The standalone dashboard will update instantly once you create a booking from the public flow or the calendar testing shortcut."
+                  body="New bookings appear here automatically."
                   action={
                     <ActionButton tone="primary" onClick={() => launchPublicFlow()}>
                       Open booking flow
