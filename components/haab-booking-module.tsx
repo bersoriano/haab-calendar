@@ -43,6 +43,8 @@ import type {
 } from "@/lib/types";
 import {
   WEEKDAY_KEYS,
+  DEFAULT_APPOINTMENT_DURATION_MINUTES,
+  DURATION_OPTIONS,
   compactBadgeTextClass,
   compactMetaTextClass,
   weekdayShortFormatter,
@@ -88,6 +90,7 @@ import {
   pruneBookingHolds,
   sortBookings,
   applyVerticalToStore,
+  setServiceBookingLength,
 } from "@/lib/store";
 import {
   getBookingsForDate,
@@ -135,6 +138,26 @@ type HaabBookingModuleProps = {
 
 function hasExplicitTime(result: ParsedResult) {
   return result.start.isCertain("hour");
+}
+
+function formatSlotSizeOption(minutes: number) {
+  if (minutes >= 60 && minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return `${hours} hr`;
+  }
+
+  return `${minutes} min`;
+}
+
+function getSetupBookingLengthValue(services: Service[]) {
+  if (services.length > 0 && services.every((service) => service.bookingType === "full-day")) {
+    return "full-day";
+  }
+
+  return String(
+    services.find((service) => service.bookingType === "appointment")?.durationMinutes ??
+      DEFAULT_APPOINTMENT_DURATION_MINUTES,
+  );
 }
 
 export function HaabBookingModule({
@@ -1010,7 +1033,25 @@ export function HaabBookingModule({
 
     setSetupError(null);
     setSetupStep(1);
-    actions.updateStandaloneStore((current) => applyVerticalToStore(current, preset));
+    actions.updateStandaloneStore((current) =>
+      setServiceBookingLength(
+        applyVerticalToStore(current, preset),
+        DEFAULT_APPOINTMENT_DURATION_MINUTES,
+      ),
+    );
+  }
+
+  function updateSetupBookingLength(value: string) {
+    if (integratedMode) {
+      return;
+    }
+
+    const bookingLength = value === "full-day" ? "full-day" : Number(value);
+
+    setSetupError(null);
+    actions.updateStandaloneStore((current) =>
+      setServiceBookingLength(current, bookingLength),
+    );
   }
 
   function validateSetup(step: SetupStep) {
@@ -1620,6 +1661,9 @@ export function HaabBookingModule({
   }
 
   function renderSetupWizard() {
+    const hasServices = services.length > 0;
+    const setupBookingLength = getSetupBookingLengthValue(services);
+
     return (
       <>
         <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
@@ -1680,6 +1724,31 @@ export function HaabBookingModule({
               title="Set the weekly availability schedule"
               body="Appointment services generate real slots from these windows. Full-day services simply need the weekday enabled and free of conflicts."
             />
+            <div className={cn("mt-6", adminInsetClass, "grid gap-4 p-4 sm:grid-cols-[1fr_220px] sm:items-end")}>
+              <div>
+                <p className="text-sm font-semibold text-[var(--ink)]">Booking length</p>
+                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
+                  Choose how long each booking should last. You can refine individual services
+                  later from the Services tab.
+                </p>
+              </div>
+              <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
+                Length
+                <select
+                  disabled={!hasServices}
+                  value={setupBookingLength}
+                  onChange={(event) => updateSetupBookingLength(event.target.value)}
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                >
+                  {DURATION_OPTIONS.map((duration) => (
+                    <option key={duration} value={duration}>
+                      {formatSlotSizeOption(duration)}
+                    </option>
+                  ))}
+                  <option value="full-day">Full day</option>
+                </select>
+              </label>
+            </div>
             <div className="mt-6">
               <AvailabilityEditor
                 availability={availability}

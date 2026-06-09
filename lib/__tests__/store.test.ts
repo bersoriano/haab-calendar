@@ -7,6 +7,8 @@ import {
   createEmptyStore,
   materializeVerticalServices,
   applyVerticalToStore,
+  setAppointmentServiceDurations,
+  setServiceBookingLength,
   normalizeVertical,
 } from "@/lib/store";
 import { VERTICALS } from "@/config/verticals";
@@ -271,6 +273,31 @@ describe("vertical helpers", () => {
     expect(next.provider.fullName).toBe("Keep Me");
     expect(next.setupComplete).toBe(false);
     expect(next.bookings).toEqual([]);
+  });
+
+  it("setAppointmentServiceDurations updates appointment services and preserves full-day services", () => {
+    const spaces = VERTICALS.find((v) => v.id === "spaces")!;
+    const base = applyVerticalToStore(createEmptyStore(), spaces);
+
+    const next = setAppointmentServiceDurations(base, 180);
+    const appointment = next.services.find((s) => s.bookingType === "appointment")!;
+    const fullDay = next.services.find((s) => s.bookingType === "full-day")!;
+
+    expect(appointment.durationMinutes).toBe(180);
+    expect(fullDay.durationMinutes).toBeUndefined();
+  });
+
+  it("setServiceBookingLength can switch seeded services between timed and full-day bookings", () => {
+    const spaces = VERTICALS.find((v) => v.id === "spaces")!;
+    const base = applyVerticalToStore(createEmptyStore(), spaces);
+
+    const fullDay = setServiceBookingLength(base, "full-day");
+    expect(fullDay.services.every((s) => s.bookingType === "full-day")).toBe(true);
+    expect(fullDay.services.every((s) => s.durationMinutes === undefined)).toBe(true);
+
+    const timed = setServiceBookingLength(fullDay, 240);
+    expect(timed.services.every((s) => s.bookingType === "appointment")).toBe(true);
+    expect(timed.services.every((s) => s.durationMinutes === 240)).toBe(true);
   });
 
   it("normalizeStore round-trips vertical and rejects unknown ids", () => {

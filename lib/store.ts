@@ -1,6 +1,6 @@
 import { slugify, currentTimestamp, createId } from "./utils";
 import { compareDateKeys } from "./date";
-import { WEEKDAY_KEYS } from "./constants";
+import { DEFAULT_APPOINTMENT_DURATION_MINUTES, WEEKDAY_KEYS } from "./constants";
 import { VERTICAL_IDS } from "./types";
 import type {
   AvailabilityBlock,
@@ -73,11 +73,47 @@ export function applyVerticalToStore(store: ModuleStore, vertical: Vertical): Mo
   };
 }
 
+export function setAppointmentServiceDurations(
+  store: ModuleStore,
+  durationMinutes: number,
+): ModuleStore {
+  return {
+    ...store,
+    services: store.services.map((service) =>
+      service.bookingType === "appointment"
+        ? { ...service, durationMinutes }
+        : service,
+    ),
+  };
+}
+
+export function setServiceBookingLength(
+  store: ModuleStore,
+  bookingLength: number | "full-day",
+): ModuleStore {
+  return {
+    ...store,
+    services: store.services.map((service) =>
+      bookingLength === "full-day"
+        ? {
+            ...service,
+            bookingType: "full-day",
+            durationMinutes: undefined,
+          }
+        : {
+            ...service,
+            bookingType: "appointment",
+            durationMinutes: bookingLength,
+          },
+    ),
+  };
+}
+
 export function createBlankServiceDraft(): ServiceDraft {
   return {
     name: "",
     bookingType: "appointment",
-    durationMinutes: 30,
+    durationMinutes: DEFAULT_APPOINTMENT_DURATION_MINUTES,
     description: "",
     capacity: "",
     cost: "",

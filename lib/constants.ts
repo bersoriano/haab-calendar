@@ -20,7 +20,8 @@ export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   saturday: "Saturday",
 };
 
-export const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 240];
+export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
+export const DURATION_OPTIONS = [15, 30, 60, 120, 180, 240];
 
 export const monthFormatter = new Intl.DateTimeFormat("en-US", {
   month: "long",
