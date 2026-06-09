@@ -164,6 +164,7 @@ export function HaabBookingModule({
   const [adminTab, setAdminTab] = useState<AdminTab>("dashboard");
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
+  const [setupPublished, setSetupPublished] = useState(false);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraft>(() =>
     createBlankServiceDraft(),
   );
@@ -905,7 +906,10 @@ export function HaabBookingModule({
     }
   }
 
-  function completeSetup(nextSurface: Surface) {
+  // Mark the standalone booking page live and persist it. Called when the
+  // provider reaches the Done step, so the public URL works however it is
+  // opened (new tab, copied link, etc.) — not only via the link's onClick.
+  function publishStandaloneSetup() {
     if (integratedMode) {
       return;
     }
@@ -927,7 +931,12 @@ export function HaabBookingModule({
 
     actions.persistStandaloneStore(nextStore);
     actions.updateStandaloneStore(() => nextStore);
-    setSetupStep(3);
+  }
+
+  // Leave the Done step for the chosen surface. Setup is already published by
+  // the time this runs, so these handlers only steer navigation.
+  function leaveSetupToSurface(nextSurface: Surface) {
+    setSetupPublished(false);
     setSurface(nextSurface);
     startFreshBooking();
   }
@@ -1036,6 +1045,14 @@ export function HaabBookingModule({
     }
 
     setSetupError(null);
+
+    // Advancing from Availability (step 2) into Done (step 3) publishes the
+    // page, so it is live regardless of how the public link is later opened.
+    if (setupStep === 2) {
+      publishStandaloneSetup();
+      setSetupPublished(true);
+    }
+
     setSetupStep((current) => (current < 3 ? ((current + 1) as SetupStep) : current));
   }
 
@@ -1583,13 +1600,13 @@ export function HaabBookingModule({
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                <ActionButton tone="primary" onClick={() => completeSetup("management")}>
+                <ActionButton tone="primary" onClick={() => leaveSetupToSurface("management")}>
                   Go to dashboard
                 </ActionButton>
                 <ActionLink
                   href={`/public/${businessSlug}`}
                   tone="secondary"
-                  onClick={() => completeSetup("public")}
+                  onClick={() => leaveSetupToSurface("public")}
                 >
                   Open public booking page
                 </ActionLink>
@@ -3647,7 +3664,9 @@ export function HaabBookingModule({
     );
   }
 
-  if (isSetupOpen) {
+  // `setupPublished` keeps the Done step visible after publishing flips
+  // `setupComplete` true (which would otherwise close the wizard).
+  if (isSetupOpen || (setupPublished && !integratedMode)) {
     return (
       <section className={cn(publicShellClass, "p-5 sm:p-8")}>
         {vertical ? renderSetupWizard() : renderWelcome()}
