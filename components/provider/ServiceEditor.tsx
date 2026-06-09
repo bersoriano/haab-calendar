@@ -58,7 +58,7 @@ export function ServiceEditor({
           {services.length === 0 ? (
             <EmptyState
               title="No services yet"
-              body="Add a service or use a template so the public booking flow can open."
+              body="Add a service so the public booking flow can open."
             />
           ) : (
             services.map((service) => (
@@ -87,7 +87,11 @@ export function ServiceEditor({
                     <ActionButton tone="ghost" disabled={disabled} onClick={() => onEdit(service)}>
                       Edit
                     </ActionButton>
-                    <ActionButton tone="danger" disabled={disabled} onClick={() => onRemove(service.id)}>
+                    <ActionButton
+                      tone="danger"
+                      disabled={disabled || services.length <= 1}
+                      onClick={() => onRemove(service.id)}
+                    >
                       Delete
                     </ActionButton>
                   </div>
@@ -95,6 +99,11 @@ export function ServiceEditor({
               </div>
             ))
           )}
+          {!disabled && services.length === 1 ? (
+            <p className="text-sm text-[var(--muted)]">
+              Keep at least one service. Add another before you can remove this one.
+            </p>
+          ) : null}
         </div>
       </div>
 

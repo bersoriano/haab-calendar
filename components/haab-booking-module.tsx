@@ -887,6 +887,11 @@ export function HaabBookingModule({
       return;
     }
 
+    if (services.length <= 1) {
+      setSetupError("Keep at least one service. Add another before removing this one.");
+      return;
+    }
+
     const activeBookingsForService = bookings.some(
       (booking) => booking.serviceId === serviceId && booking.status !== "cancelled",
     );
@@ -1044,15 +1049,20 @@ export function HaabBookingModule({
       return;
     }
 
-    setSetupError(null);
-
     // Advancing from Availability (step 2) into Done (step 3) publishes the
     // page, so it is live regardless of how the public link is later opened.
+    // A published page must have at least one service to be usable.
     if (setupStep === 2) {
+      if (services.length === 0) {
+        setSetupError("Add at least one service before publishing your booking page.");
+        return;
+      }
+
       publishStandaloneSetup();
       setSetupPublished(true);
     }
 
+    setSetupError(null);
     setSetupStep((current) => (current < 3 ? ((current + 1) as SetupStep) : current));
   }
 
@@ -3652,14 +3662,32 @@ export function HaabBookingModule({
     );
   }
 
-  if (surfaceMode === "public-only" && (!activeStore.setupComplete || !publicRouteReady)) {
+  // Any public URL that does not resolve to a live, non-empty booking page
+  // shows a friendly not-found screen pointing back to setup.
+  if (
+    surfaceMode === "public-only" &&
+    (!activeStore.setupComplete || !publicRouteReady || services.length === 0)
+  ) {
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")}>
-        <SectionTitle
-          eyebrow="Public booking page"
-          title="This booking page is not available yet"
-          body="This booking page is not live yet. Please use the shared booking link from the provider once setup is complete."
-        />
+        <div className="flex flex-col items-center gap-4 py-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+            404 · Page not found
+          </p>
+          <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
+            This booking page doesn&apos;t exist
+          </h3>
+          <p className="max-w-md text-sm leading-6 text-[var(--muted)]">
+            The link may be wrong, or this provider hasn&apos;t finished setting up their
+            booking page yet. Head back home to start the setup wizard.
+          </p>
+          <Link
+            href="/"
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+          >
+            Go home
+          </Link>
+        </div>
       </section>
     );
   }
