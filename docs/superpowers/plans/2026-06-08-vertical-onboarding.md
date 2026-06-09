@@ -16,7 +16,7 @@
 - `config/verticals.ts` (new) — `Vertical` / `VerticalHints` interfaces + `VERTICALS` data (the seam).
 - `lib/store.ts` — `normalizeVertical`, `materializeVerticalServices`, `applyVerticalToStore`; wire `vertical` into `createEmptyStore` + `normalizeStore`.
 - `lib/__tests__/store.test.ts` — characterization tests for the new helpers.
-- `components/provider/VerticalPicker.tsx` (new) — presentational 3-card picker.
+- `components/provider/VerticalPicker.tsx` (new) — presentational 4-card picker.
 - `components/provider/ServiceEditor.tsx` — add optional `hints` prop for placeholders.
 - `components/haab-booking-module.tsx` — `applyVertical` handler, `renderWelcome`, render gate, 3-step wizard renumber, Done services review, Services-tab hints.
 
@@ -286,7 +286,7 @@ Expected: PASS.
 
 ```bash
 git add config/verticals.ts
-git commit -m "feat: add verticals config seam with 3 industry presets"
+git commit -m "feat: add verticals config seam with 4 industry presets"
 ```
 
 ---
