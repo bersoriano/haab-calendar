@@ -11,8 +11,11 @@ export type WeekdayKey =
   | "thursday"
   | "friday"
   | "saturday";
-export type SetupStep = 1 | 2 | 3 | 4;
+export type SetupStep = 1 | 2 | 3;
 export type BookingStep = 1 | 2 | 3 | 4;
+
+export const VERTICAL_IDS = ["healthcare", "spaces", "professional", "events"] as const;
+export type VerticalId = (typeof VERTICAL_IDS)[number];
 
 export type ProviderInfo = {
   fullName: string;
@@ -78,6 +81,7 @@ export type ModuleStore = {
   bookings: BookingRecord[];
   bookingHolds: BookingHoldRecord[];
   setupComplete: boolean;
+  vertical?: VerticalId;
 };
 
 export type InjectedConfig = {

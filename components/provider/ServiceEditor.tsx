@@ -8,6 +8,7 @@ import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/form
 import { QUICK_START_TEMPLATES } from "@/config/templates";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
+import type { VerticalHints } from "@/config/verticals";
 
 function formatDurationOption(minutes: number) {
   if (minutes >= 60 && minutes % 60 === 0) {
@@ -29,6 +30,7 @@ export function ServiceEditor({
   onAppendTemplate,
   disabled = false,
   showQuickTemplates = true,
+  hints,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -41,6 +43,7 @@ export function ServiceEditor({
   onAppendTemplate: (service: ServiceDraft) => void;
   disabled?: boolean;
   showQuickTemplates?: boolean;
+  hints?: VerticalHints;
 }) {
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -126,7 +129,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder="Court Rental"
+              placeholder={hints?.serviceName ?? "Court Rental"}
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
@@ -177,7 +180,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder="Explain what the booking covers in one or two lines."
+              placeholder={hints?.description ?? "Explain what the booking covers in one or two lines."}
               rows={4}
               className={cn(adminFieldClass, "disabled:opacity-45")}
             />
@@ -190,7 +193,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, capacity: event.target.value }))
               }
-              placeholder="Max 12 people"
+              placeholder={hints?.capacity ?? "Max 12 people"}
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
@@ -202,7 +205,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, cost: event.target.value }))
               }
-              placeholder="$80 / session"
+              placeholder={hints?.cost ?? "$80 / session"}
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>

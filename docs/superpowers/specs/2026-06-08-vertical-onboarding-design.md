@@ -6,14 +6,14 @@
 
 ## Goal
 
-When a provider logs in for the first time, present a welcome screen offering three industry verticals — **Healthcare**, **Spaces**, and **Professional services**. Selecting one loads a predefined configuration (services + weekly availability + form hint text) optimized for that industry, so the provider starts from a working setup instead of building services by hand.
+When a provider logs in for the first time, present a welcome screen offering four industry verticals — **Healthcare**, **Spaces**, **Professional services**, and **Events**. Selecting one loads a predefined configuration (services + weekly availability + form hint text) optimized for that industry, so the provider starts from a working setup instead of building services by hand.
 
 ## Decisions (from brainstorming)
 
 - **Phase 1 = vertical picker + seeded services + seeded availability + form hint text.** Terminology swapping ("client"→"patient"→"guest") is **Phase 2**, its own spec.
 - The vertical preset **seeds services and availability**; the manual Services step is **removed** from the wizard.
 - The picker is a **distinct full-screen welcome**, shown before the wizard.
-- **First-run only. Exactly 3 verticals.** No "start from scratch" option, no later re-pick from Settings.
+- **First-run only. Exactly 4 verticals.** No "start from scratch" option, no later re-pick from Settings.
 - Seeded services appear as a **read-only review on the Done step**.
 - Seed content uses the **default content defined below** (editable later in the Services tab / `config/verticals.ts`).
 
@@ -24,7 +24,7 @@ When a provider logs in for the first time, present a welcome screen offering th
 New file `config/verticals.ts` — pure data, the customization seam (consistent with the parent/template-repo direction; child projects swap this file):
 
 ```ts
-export type VerticalId = "healthcare" | "spaces" | "professional";
+export type VerticalId = "healthcare" | "spaces" | "professional" | "events";
 
 export interface VerticalHints {
   serviceName: string;
@@ -43,7 +43,7 @@ export interface Vertical {
   hints: VerticalHints;              // ServiceEditor placeholder text
 }
 
-export const VERTICALS: Vertical[]; // exactly 3
+export const VERTICALS: Vertical[]; // exactly 4
 ```
 
 `lib/types.ts`: `ModuleStore` gains an optional `vertical?: VerticalId`. Persisted in localStorage; round-tripped by `normalizeStore`. (Also the anchor for Phase 2 terminology.)
@@ -58,7 +58,7 @@ export const VERTICALS: Vertical[]; // exactly 3
 
 Gate (unchanged): the onboarding surface renders only when `!integratedMode && !setupComplete` (`isSetupOpen`).
 
-1. **Welcome screen** — rendered while `isSetupOpen && !store.vertical`. A distinct full-width layout (not the wizard chrome): short heading + three large selectable cards (label, tagline, description). No skip, no blank option.
+1. **Welcome screen** — rendered while `isSetupOpen && !store.vertical`. A distinct full-width layout (not the wizard chrome): short heading + four large selectable cards (label, tagline, description). No skip, no blank option.
 2. On card click → `applyVertical(id)`: updates the standalone store via `applyVerticalToStore`, persists, and (because `store.vertical` is now set) the wizard renders next.
 3. **Wizard** — now **3 steps**: `Provider` → `Availability` → `Done`. The manual Services step is removed.
 4. **Done** — read-only summary of the seeded services (name, type, duration, capacity/cost) + the existing publish actions (`completeSetup("management" | "public")`).
@@ -98,6 +98,11 @@ Gate (unchanged): the onboarding surface renders only when `!integratedMode && !
 - Quick consult — appointment, 30 min, capacity "1 client", cost "$90".
 - Hints: serviceName "Strategy session", description "What this session covers.", capacity "1 client", cost "$200 / session".
 
+**Events** — tagline "For workshops, classes, and gatherings". Availability Wed–Sun 10:00–20:00 (events skew later and toward weekends).
+- General admission — appointment, 120 min, capacity "Up to 50 attendees", cost "$25 / ticket".
+- Full-day pass — full-day, capacity "Up to 200 attendees", cost "Full-day pass".
+- Hints: serviceName "Workshop session", description "What attendees can expect.", capacity "Up to 50 attendees", cost "$25 / ticket".
+
 ## Back-compat & edges
 
 - Existing stores with `setupComplete=true` (e.g. seeded "Demo Clinic") never enter onboarding — unaffected; `vertical` stays `undefined` and the Services tab uses generic hints.
@@ -120,7 +125,7 @@ Gate (unchanged): the onboarding surface renders only when `!integratedMode && !
 
 ## Success criteria
 
-- First login with no vertical shows the 3-card welcome; selecting one seeds services + availability and enters a 3-step wizard.
+- First login with no vertical shows the 4-card welcome; selecting one seeds services + availability and enters a 3-step wizard.
 - The manual Services step no longer exists in the wizard; Done shows seeded services read-only.
 - Services-tab form placeholders reflect the chosen vertical.
 - `npm test` green, `tsc --noEmit` + `eslint` clean.

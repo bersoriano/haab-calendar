@@ -38,6 +38,7 @@ import type {
   SetupStep,
   Surface,
   SurfaceMode,
+  VerticalId,
   WeekdayKey,
 } from "@/lib/types";
 import {
@@ -86,6 +87,7 @@ import {
   normalizeServices,
   pruneBookingHolds,
   sortBookings,
+  applyVerticalToStore,
 } from "@/lib/store";
 import {
   getBookingsForDate,
@@ -104,6 +106,8 @@ import {
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { VerticalPicker } from "@/components/provider/VerticalPicker";
+import { VERTICALS } from "@/config/verticals";
 import {
   ActionButton,
   ActionLink,
@@ -239,6 +243,7 @@ export function HaabBookingModule({
   const bookingHolds = activeStore.bookingHolds;
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
+  const vertical = activeStore.vertical;
 
   const onManageBookingFound = useEffectEvent((booking: BookingRecord) => {
     setBookingFlow((current) => ({
@@ -927,7 +932,7 @@ export function HaabBookingModule({
 
     actions.persistStandaloneStore(nextStore);
     actions.updateStandaloneStore(() => nextStore);
-    setSetupStep(4);
+    setSetupStep(3);
     setSurface(nextSurface);
     startFreshBooking();
   }
@@ -984,6 +989,21 @@ export function HaabBookingModule({
     actions.updateStandaloneStore(() => empty);
   }
 
+  function applyVertical(id: VerticalId) {
+    if (integratedMode) {
+      return;
+    }
+
+    const preset = VERTICALS.find((item) => item.id === id);
+    if (!preset) {
+      return;
+    }
+
+    setSetupError(null);
+    setSetupStep(1);
+    actions.updateStandaloneStore((current) => applyVerticalToStore(current, preset));
+  }
+
   function validateSetup(step: SetupStep) {
     if (step === 1) {
       if (!provider.fullName.trim() || !provider.businessName.trim() || !provider.email.trim()) {
@@ -991,11 +1011,7 @@ export function HaabBookingModule({
       }
     }
 
-    if (step === 2 && services.length === 0) {
-      return "Add at least one service before moving on.";
-    }
-
-    if (step === 3) {
+    if (step === 2) {
       const hasEnabledDay = WEEKDAY_KEYS.some((day) => availability[day].enabled);
 
       if (!hasEnabledDay) {
@@ -1025,7 +1041,7 @@ export function HaabBookingModule({
     }
 
     setSetupError(null);
-    setSetupStep((current) => (current < 4 ? ((current + 1) as SetupStep) : current));
+    setSetupStep((current) => (current < 3 ? ((current + 1) as SetupStep) : current));
   }
 
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
@@ -1452,6 +1468,21 @@ export function HaabBookingModule({
         )
       : [];
 
+  function renderWelcome() {
+    return (
+      <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
+        <SectionTitle
+          eyebrow="Welcome"
+          title="What kind of business is this?"
+          body="Pick your industry and we'll set up your services and weekly hours. You can edit everything afterward."
+        />
+        <div className="mt-6">
+          <VerticalPicker verticals={VERTICALS} onSelect={applyVertical} />
+        </div>
+      </div>
+    );
+  }
+
   function renderSetupWizard() {
     return (
       <>
@@ -1459,14 +1490,13 @@ export function HaabBookingModule({
           <SectionTitle
             eyebrow="Setup"
             title="Set up your booking page"
-            body="Add your details, services, and weekly hours, then publish."
+            body="Add your details and weekly hours, then publish."
           />
-          <div className="mt-6 grid gap-3 md:grid-cols-4">
+          <div className="mt-6 grid gap-3 md:grid-cols-3">
             {[
               ["1", "Provider"],
-              ["2", "Services"],
-              ["3", "Availability"],
-              ["4", "Done"],
+              ["2", "Availability"],
+              ["3", "Done"],
             ].map(([index, label]) => {
               const stepNumber = Number(index) as SetupStep;
               const isCurrent = setupStep === stepNumber;
@@ -1509,22 +1539,6 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 2 ? (
-          <div className="mt-8">
-            <ServiceEditor
-              services={services}
-              serviceDraft={serviceDraft}
-              onDraftChange={setServiceDraft}
-              editingServiceId={editingServiceId}
-              onUpsert={upsertService}
-              onReset={resetServiceEditor}
-              onEdit={beginEditingService}
-              onRemove={removeService}
-              onAppendTemplate={appendQuickTemplate}
-            />
-          </div>
-        ) : null}
-
-        {setupStep === 3 ? (
           <div className={cn("mt-8", adminPanelClass, "p-6")}>
             <SectionTitle
               title="Set the weekly availability schedule"
@@ -1539,7 +1553,7 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {setupStep === 4 ? (
+        {setupStep === 3 ? (
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
@@ -1552,6 +1566,26 @@ export function HaabBookingModule({
                   Public booking URL
                 </p>
                 <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
+              </div>
+              <div className="mt-6 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                  Your services
+                </p>
+                {services.map((service) => (
+                  <div
+                    key={service.id}
+                    className={cn(adminInsetClass, "flex flex-wrap items-center gap-2 px-4 py-3")}
+                  >
+                    <span className="text-sm font-semibold text-[var(--ink)]">{service.name}</span>
+                    <ToneBadge tone={bookingTypeTone(service.bookingType)}>
+                      {getBookingTypeLabel(service.bookingType)}
+                    </ToneBadge>
+                    <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
+                  </div>
+                ))}
+                <p className="text-sm text-[var(--muted)]">
+                  Edit these anytime from the Services tab.
+                </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <ActionButton tone="primary" onClick={() => completeSetup("management")}>
@@ -1583,7 +1617,7 @@ export function HaabBookingModule({
           >
             Back
           </ActionButton>
-          {setupStep < 4 ? (
+          {setupStep < 3 ? (
             <ActionButton tone="primary" onClick={goToNextSetupStep}>
               Continue
             </ActionButton>
@@ -1964,6 +1998,7 @@ export function HaabBookingModule({
         onRemove={removeService}
         onAppendTemplate={appendQuickTemplate}
         disabled={integratedMode}
+        hints={VERTICALS.find((item) => item.id === vertical)?.hints}
       />
     );
   }
@@ -3621,7 +3656,7 @@ export function HaabBookingModule({
   if (isSetupOpen) {
     return (
       <section className={cn(publicShellClass, "p-5 sm:p-8")}>
-        {renderSetupWizard()}
+        {vertical ? renderSetupWizard() : renderWelcome()}
       </section>
     );
   }

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add a first-run welcome screen where a provider picks one of three industry verticals (Healthcare / Spaces / Professional services); selecting one seeds optimized services + weekly availability and removes the manual Services step from the setup wizard.
+**Goal:** Add a first-run welcome screen where a provider picks one of four industry verticals (Healthcare / Spaces / Professional services / Events); selecting one seeds optimized services + weekly availability and removes the manual Services step from the setup wizard.
 
-**Architecture:** A new pure-data seam `config/verticals.ts` defines the 3 verticals. Store helpers in `lib/store.ts` materialize a vertical into the offline-first `ModuleStore` (which gains a persisted `vertical` field). The monolith `components/haab-booking-module.tsx` renders a `VerticalPicker` welcome before the wizard, applies the chosen preset, runs a 3-step wizard (Provider → Availability → Done), and shows seeded services read-only on Done. `ServiceEditor` accepts vertical-specific placeholder hints.
+**Architecture:** A new pure-data seam `config/verticals.ts` defines the 4 verticals. Store helpers in `lib/store.ts` materialize a vertical into the offline-first `ModuleStore` (which gains a persisted `vertical` field). The monolith `components/haab-booking-module.tsx` renders a `VerticalPicker` welcome before the wizard, applies the chosen preset, runs a 3-step wizard (Provider → Availability → Done), and shows seeded services read-only on Done. `ServiceEditor` accepts vertical-specific placeholder hints.
 
 **Tech Stack:** Next.js 16, React 19, TypeScript, Tailwind, Vitest. Spec: `docs/superpowers/specs/2026-06-08-vertical-onboarding-design.md`.
 
@@ -30,7 +30,7 @@
 - [ ] **Step 1: Add the id union near the top of the types (after the `SetupStep` line, ~line 14)**
 
 ```ts
-export const VERTICAL_IDS = ["healthcare", "spaces", "professional"] as const;
+export const VERTICAL_IDS = ["healthcare", "spaces", "professional", "events"] as const;
 export type VerticalId = (typeof VERTICAL_IDS)[number];
 ```
 
@@ -131,6 +131,16 @@ const WEEKDAYS_9_18: WeeklyAvailability = {
   saturday: { enabled: false, startTime: "09:00", endTime: "18:00" },
 };
 
+const WED_TO_SUN_10_20: WeeklyAvailability = {
+  sunday: { enabled: true, startTime: "10:00", endTime: "20:00" },
+  monday: { enabled: false, startTime: "10:00", endTime: "20:00" },
+  tuesday: { enabled: false, startTime: "10:00", endTime: "20:00" },
+  wednesday: { enabled: true, startTime: "10:00", endTime: "20:00" },
+  thursday: { enabled: true, startTime: "10:00", endTime: "20:00" },
+  friday: { enabled: true, startTime: "10:00", endTime: "20:00" },
+  saturday: { enabled: true, startTime: "10:00", endTime: "20:00" },
+};
+
 export const VERTICALS: Vertical[] = [
   {
     id: "healthcare",
@@ -229,6 +239,39 @@ export const VERTICALS: Vertical[] = [
       description: "What this session covers.",
       capacity: "1 client",
       cost: "$200 / session",
+    },
+  },
+  {
+    id: "events",
+    label: "Events",
+    tagline: "For workshops, classes, and gatherings",
+    description: "Ticketed admissions and full-day passes, open later and on weekends.",
+    availability: WED_TO_SUN_10_20,
+    services: [
+      {
+        name: "General admission",
+        bookingType: "appointment",
+        durationMinutes: 120,
+        description: "A single attendee ticket for the session.",
+        capacity: "Up to 50 attendees",
+        cost: "$25 / ticket",
+        notes: "",
+      },
+      {
+        name: "Full-day pass",
+        bookingType: "full-day",
+        durationMinutes: 120,
+        description: "All-day access covering every session and activity.",
+        capacity: "Up to 200 attendees",
+        cost: "Full-day pass",
+        notes: "",
+      },
+    ],
+    hints: {
+      serviceName: "Workshop session",
+      description: "What attendees can expect.",
+      capacity: "Up to 50 attendees",
+      cost: "$25 / ticket",
     },
   },
 ];
@@ -436,7 +479,7 @@ export function VerticalPicker({
   onSelect: (id: VerticalId) => void;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {verticals.map((vertical) => (
         <button
           key={vertical.id}
@@ -844,7 +887,7 @@ Expected: all pass; build succeeds.
 - [ ] **Step 2: Live smoke — fresh first run**
 
 Start dev server (`npm run dev`) if not running. In a logged-in provider session whose store has no vertical and `setupComplete=false` (use a fresh account, or in DevTools console set the store key `haab-calendar-dev-clean` to a value with `setupComplete:false` and remove `vertical`, then reload). Confirm:
-- Welcome screen shows 3 cards (Healthcare / Spaces / Professional services).
+- Welcome screen shows 4 cards (Healthcare / Spaces / Professional services / Events).
 - Clicking a card enters the wizard at step Provider; the 3-step indicator reads Provider / Availability / Done.
 - Step Availability is pre-seeded with the vertical's hours (Spaces shows weekends enabled, 08:00–22:00).
 - Done step lists the seeded services read-only.

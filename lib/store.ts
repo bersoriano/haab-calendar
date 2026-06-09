@@ -1,6 +1,7 @@
-import { slugify, currentTimestamp } from "./utils";
+import { slugify, currentTimestamp, createId } from "./utils";
 import { compareDateKeys } from "./date";
 import { WEEKDAY_KEYS } from "./constants";
+import { VERTICAL_IDS } from "./types";
 import type {
   BookingHoldRecord,
   BookingRecord,
@@ -8,9 +9,11 @@ import type {
   ProviderInfo,
   Service,
   ServiceDraft,
+  VerticalId,
   WeeklyAvailability,
   BookingFlow,
 } from "./types";
+import type { Vertical } from "../config/verticals";
 
 export function createDefaultAvailability(): WeeklyAvailability {
   return {
@@ -37,6 +40,35 @@ export function createEmptyStore(): ModuleStore {
     bookings: [],
     bookingHolds: [],
     setupComplete: false,
+    vertical: undefined,
+  };
+}
+
+export function normalizeVertical(value?: string | null): VerticalId | undefined {
+  return (VERTICAL_IDS as readonly string[]).includes(value ?? "")
+    ? (value as VerticalId)
+    : undefined;
+}
+
+export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
+  return drafts.map((draft) => ({
+    id: createId("svc"),
+    name: draft.name,
+    bookingType: draft.bookingType,
+    durationMinutes: draft.bookingType === "full-day" ? undefined : draft.durationMinutes,
+    description: draft.description,
+    capacity: draft.capacity,
+    cost: draft.cost,
+    notes: draft.notes,
+  }));
+}
+
+export function applyVerticalToStore(store: ModuleStore, vertical: Vertical): ModuleStore {
+  return {
+    ...store,
+    vertical: vertical.id,
+    services: materializeVerticalServices(vertical.services),
+    availability: normalizeAvailability(vertical.availability),
   };
 }
 
@@ -178,5 +210,6 @@ export function normalizeStore(source?: ModuleStore | null): ModuleStore {
     bookings: normalizeBookings(source?.bookings),
     bookingHolds: normalizeBookingHolds(source?.bookingHolds),
     setupComplete: Boolean(source?.setupComplete ?? empty.setupComplete),
+    vertical: normalizeVertical(source?.vertical),
   };
 }

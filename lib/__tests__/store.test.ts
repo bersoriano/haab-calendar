@@ -4,7 +4,12 @@ import {
   normalizeProvider,
   pruneBookingHolds,
   sortBookings,
+  createEmptyStore,
+  materializeVerticalServices,
+  applyVerticalToStore,
+  normalizeVertical,
 } from "@/lib/store";
+import { VERTICALS } from "@/config/verticals";
 import type { BookingHoldRecord, BookingRecord, ModuleStore } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -205,5 +210,55 @@ describe("sortBookings", () => {
     const original = [b1, b2];
     sortBookings(original);
     expect(original[0].id).toBe("b1");
+  });
+});
+
+describe("vertical helpers", () => {
+  it("normalizeVertical accepts known ids and rejects unknown", () => {
+    expect(normalizeVertical("healthcare")).toBe("healthcare");
+    expect(normalizeVertical("spaces")).toBe("spaces");
+    expect(normalizeVertical("events")).toBe("events");
+    expect(normalizeVertical("nope")).toBeUndefined();
+    expect(normalizeVertical(undefined)).toBeUndefined();
+    expect(normalizeVertical(null)).toBeUndefined();
+  });
+
+  it("materializeVerticalServices assigns ids and drops duration for full-day", () => {
+    const spaces = VERTICALS.find((v) => v.id === "spaces")!;
+    const result = materializeVerticalServices(spaces.services);
+
+    expect(result).toHaveLength(2);
+    expect(result.every((s) => typeof s.id === "string" && s.id.length > 0)).toBe(true);
+
+    const appointment = result.find((s) => s.bookingType === "appointment")!;
+    const fullDay = result.find((s) => s.bookingType === "full-day")!;
+    expect(appointment.durationMinutes).toBe(60);
+    expect(fullDay.durationMinutes).toBeUndefined();
+  });
+
+  it("applyVerticalToStore seeds services + availability + vertical, preserves the rest", () => {
+    const base = createEmptyStore();
+    base.provider.fullName = "Keep Me";
+    base.setupComplete = false;
+    const healthcare = VERTICALS.find((v) => v.id === "healthcare")!;
+
+    const next = applyVerticalToStore(base, healthcare);
+
+    expect(next.vertical).toBe("healthcare");
+    expect(next.services).toHaveLength(2);
+    expect(next.availability.saturday.enabled).toBe(false);
+    expect(next.provider.fullName).toBe("Keep Me");
+    expect(next.setupComplete).toBe(false);
+    expect(next.bookings).toEqual([]);
+  });
+
+  it("normalizeStore round-trips vertical and rejects unknown ids", () => {
+    const withVertical = normalizeStore({ ...createEmptyStore(), vertical: "professional" });
+    expect(withVertical.vertical).toBe("professional");
+
+    const bad = normalizeStore({ ...createEmptyStore(), vertical: "garbage" } as never);
+    expect(bad.vertical).toBeUndefined();
+
+    expect(createEmptyStore().vertical).toBeUndefined();
   });
 });
