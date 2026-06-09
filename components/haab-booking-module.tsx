@@ -1555,14 +1555,65 @@ export function HaabBookingModule({
 
   function renderWelcome() {
     return (
-      <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
-        <SectionTitle
-          eyebrow="Welcome"
-          title="What kind of business is this?"
-          body="Pick your industry and we'll set up your services and weekly hours. You can edit everything afterward."
-        />
-        <div className="mt-6">
-          <VerticalPicker verticals={VERTICALS} onSelect={applyVertical} />
+      <div className="relative isolate -mx-4 -my-6 flex min-h-[calc(100vh-1px)] flex-col overflow-hidden sm:-mx-6 lg:-mx-8">
+        <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_15%_0%,rgba(26,115,232,0.18),transparent_55%),radial-gradient(90%_70%_at_100%_20%,rgba(0,191,165,0.18),transparent_60%),radial-gradient(120%_90%_at_50%_100%,rgba(31,101,143,0.14),transparent_55%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.55)_0%,rgba(248,249,250,0.85)_100%)]" />
+          <div
+            className="absolute -left-32 top-24 h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(104,250,221,0.35),transparent_65%)] blur-3xl"
+          />
+          <div
+            className="absolute -right-24 bottom-0 h-[32rem] w-[32rem] rounded-full bg-[radial-gradient(circle_at_center,rgba(26,115,232,0.28),transparent_65%)] blur-3xl"
+          />
+        </div>
+
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-6 py-16 sm:px-10 sm:py-20">
+          <div className="flex flex-col items-start gap-5">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)] shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-[14px]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--action-teal)]" />
+              Welcome to Haab
+            </span>
+            <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--ink)] sm:text-5xl lg:text-6xl">
+              What kind of business
+              <br className="hidden sm:block" /> are we setting up today?
+            </h1>
+            <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
+              Pick your industry and we&apos;ll prefill your services, weekly hours,
+              and a polished booking page. You can edit everything afterward in
+              under a minute.
+            </p>
+          </div>
+
+          <div className="mt-12 sm:mt-16">
+            <VerticalPicker verticals={VERTICALS} onSelect={applyVertical} />
+          </div>
+
+          <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-[var(--muted)]">
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              </span>
+              Fully customizable later
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              </span>
+              No credit card required
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                </svg>
+              </span>
+              Ready to share in minutes
+            </span>
+          </div>
         </div>
       </div>
     );
@@ -3757,9 +3808,12 @@ export function HaabBookingModule({
   // `setupPublished` keeps the Done step visible after publishing flips
   // `setupComplete` true (which would otherwise close the wizard).
   if (isSetupOpen || (setupPublished && !integratedMode)) {
+    if (!vertical) {
+      return renderWelcome();
+    }
     return (
       <section className={cn(publicShellClass, "p-5 sm:p-8")}>
-        {vertical ? renderSetupWizard() : renderWelcome()}
+        {renderSetupWizard()}
       </section>
     );
   }
