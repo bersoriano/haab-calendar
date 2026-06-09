@@ -88,13 +88,34 @@ describe("normalizeStore", () => {
     expect(keys).toHaveLength(7);
   });
 
-  it("each day has enabled/startTime/endTime", () => {
+  it("each day has enabled/startTime/endTime/blockedWindows", () => {
     const store = normalizeStore(null);
     for (const day of Object.values(store.availability)) {
       expect(day).toHaveProperty("enabled");
       expect(day).toHaveProperty("startTime");
       expect(day).toHaveProperty("endTime");
+      expect(day).toHaveProperty("blockedWindows");
+      expect(Array.isArray(day.blockedWindows)).toBe(true);
     }
+  });
+
+  it("normalizes blocked time windows for existing availability", () => {
+    const store = normalizeStore({
+      ...createEmptyStore(),
+      availability: {
+        ...createEmptyStore().availability,
+        monday: {
+          enabled: true,
+          startTime: "09:00",
+          endTime: "17:00",
+          blockedWindows: [{ startTime: "14:00", endTime: "16:00" }],
+        },
+      },
+    });
+
+    expect(store.availability.monday.blockedWindows).toEqual([
+      { startTime: "14:00", endTime: "16:00" },
+    ]);
   });
 
   it("preserves setupComplete=true from input", () => {

@@ -191,6 +191,41 @@ describe("getAvailableSlots — blocked by booking", () => {
   });
 });
 
+describe("getAvailableSlots — blocked by provider availability", () => {
+  it("removes appointment slots that overlap a blocked time window", () => {
+    useToday();
+    const availability: WeeklyAvailability = {
+      ...baseAvailability,
+      monday: {
+        ...baseAvailability.monday,
+        blockedWindows: [{ startTime: "14:00", endTime: "16:00" }],
+      },
+    };
+
+    const slots = getAvailableSlots(MONDAY_KEY, svc30, availability, []);
+
+    expect(slots).toContain("13:30");
+    expect(slots).not.toContain("14:00");
+    expect(slots).not.toContain("14:30");
+    expect(slots).not.toContain("15:00");
+    expect(slots).not.toContain("15:30");
+    expect(slots).toContain("16:00");
+  });
+
+  it("returns false for full-day availability when part of the day is blocked", () => {
+    useToday();
+    const availability: WeeklyAvailability = {
+      ...baseAvailability,
+      monday: {
+        ...baseAvailability.monday,
+        blockedWindows: [{ startTime: "14:00", endTime: "16:00" }],
+      },
+    };
+
+    expect(isDateAvailable(MONDAY_KEY, svcFullDay, availability, [])).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // isDateAvailable
 // ---------------------------------------------------------------------------

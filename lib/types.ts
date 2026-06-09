@@ -39,6 +39,12 @@ export type DayAvailability = {
   enabled: boolean;
   startTime: string;
   endTime: string;
+  blockedWindows?: AvailabilityBlock[];
+};
+
+export type AvailabilityBlock = {
+  startTime: string;
+  endTime: string;
 };
 
 export type WeeklyAvailability = Record<WeekdayKey, DayAvailability>;

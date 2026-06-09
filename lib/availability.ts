@@ -69,6 +69,7 @@ export function getAvailableSlots(
 
   const dateBookings = getBookingsForDate(bookings, dateKey, ignoredBookingId);
   const dateHolds = getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId);
+  const blockedWindows = daySchedule.blockedWindows ?? [];
 
   if (
     dateBookings.some((booking) => booking.bookingType === "full-day") ||
@@ -96,8 +97,15 @@ export function getAvailableSlots(
 
       return overlapExists(cursor, slotEnd, hold.startTime, hold.endTime);
     });
+    const blockedByAvailability = blockedWindows.some((block) => {
+      if (toMinutes(block.endTime) <= toMinutes(block.startTime)) {
+        return false;
+      }
 
-    if (!blockedByBooking && !blockedByHold) {
+      return overlapExists(cursor, slotEnd, block.startTime, block.endTime);
+    });
+
+    if (!blockedByBooking && !blockedByHold && !blockedByAvailability) {
       slots.push(cursor);
     }
 
@@ -137,6 +145,14 @@ export function isDateAvailable(
       bookingHolds,
       ignoredHoldId,
     ).length > 0;
+  }
+
+  if (
+    (daySchedule.blockedWindows ?? []).some(
+      (block) => toMinutes(block.endTime) > toMinutes(block.startTime),
+    )
+  ) {
+    return false;
   }
 
   return (

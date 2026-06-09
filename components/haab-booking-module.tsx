@@ -1036,6 +1036,55 @@ export function HaabBookingModule({
       if (invalidWindow) {
         return "Each enabled day needs an end time later than its start time.";
       }
+
+      const invalidBlockedWindow = WEEKDAY_KEYS.some((day) =>
+        availability[day].enabled &&
+        (availability[day].blockedWindows ?? []).some(
+          (block) => toMinutes(block.endTime) <= toMinutes(block.startTime),
+        ),
+      );
+
+      if (invalidBlockedWindow) {
+        return "Each blocked time needs an end time later than its start time.";
+      }
+
+      const blockedWindowOutsideHours = WEEKDAY_KEYS.some((day) => {
+        if (!availability[day].enabled) {
+          return false;
+        }
+
+        const dayStart = toMinutes(availability[day].startTime);
+        const dayEnd = toMinutes(availability[day].endTime);
+
+        return (availability[day].blockedWindows ?? []).some(
+          (block) =>
+            toMinutes(block.startTime) < dayStart ||
+            toMinutes(block.endTime) > dayEnd,
+        );
+      });
+
+      if (blockedWindowOutsideHours) {
+        return "Blocked times must sit inside the day's available hours.";
+      }
+
+      const overlappingBlockedWindows = WEEKDAY_KEYS.some((day) => {
+        if (!availability[day].enabled) {
+          return false;
+        }
+
+        const blocks = [...(availability[day].blockedWindows ?? [])].sort(
+          (left, right) => toMinutes(left.startTime) - toMinutes(right.startTime),
+        );
+
+        return blocks.some((block, index) => {
+          const nextBlock = blocks[index + 1];
+          return Boolean(nextBlock) && toMinutes(block.endTime) > toMinutes(nextBlock.startTime);
+        });
+      });
+
+      if (overlappingBlockedWindows) {
+        return "Blocked times on the same day cannot overlap.";
+      }
     }
 
     return null;
@@ -1064,6 +1113,20 @@ export function HaabBookingModule({
 
     setSetupError(null);
     setSetupStep((current) => (current < 3 ? ((current + 1) as SetupStep) : current));
+  }
+
+  function goToPreviousSetupStep() {
+    setSetupError(null);
+
+    if (setupStep > 1) {
+      setSetupStep((current) => (current > 1 ? ((current - 1) as SetupStep) : current));
+      return;
+    }
+
+    actions.updateStandaloneStore((current) => ({
+      ...current,
+      vertical: undefined,
+    }));
   }
 
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
@@ -1634,8 +1697,7 @@ export function HaabBookingModule({
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
           <ActionButton
             tone="ghost"
-            disabled={setupStep === 1}
-            onClick={() => setSetupStep((current) => (current > 1 ? ((current - 1) as SetupStep) : current))}
+            onClick={goToPreviousSetupStep}
           >
             Back
           </ActionButton>

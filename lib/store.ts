@@ -3,6 +3,7 @@ import { compareDateKeys } from "./date";
 import { WEEKDAY_KEYS } from "./constants";
 import { VERTICAL_IDS } from "./types";
 import type {
+  AvailabilityBlock,
   BookingHoldRecord,
   BookingRecord,
   ModuleStore,
@@ -17,13 +18,13 @@ import type { Vertical } from "../config/verticals";
 
 export function createDefaultAvailability(): WeeklyAvailability {
   return {
-    sunday: { enabled: false, startTime: "09:00", endTime: "17:00" },
-    monday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    thursday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
-    saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
+    sunday: { enabled: false, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    monday: { enabled: true, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    tuesday: { enabled: true, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    wednesday: { enabled: true, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    thursday: { enabled: true, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    friday: { enabled: true, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
+    saturday: { enabled: false, startTime: "09:00", endTime: "17:00", blockedWindows: [] },
   };
 }
 
@@ -100,6 +101,21 @@ export function createInitialBookingFlow(services: Service[]): BookingFlow {
   };
 }
 
+function normalizeAvailabilityBlocks(
+  source?: AvailabilityBlock[] | null,
+): AvailabilityBlock[] {
+  return (source ?? [])
+    .filter(
+      (block) =>
+        typeof block?.startTime === "string" &&
+        typeof block?.endTime === "string",
+    )
+    .map((block) => ({
+      startTime: block.startTime,
+      endTime: block.endTime,
+    }));
+}
+
 export function normalizeAvailability(
   source?: Partial<WeeklyAvailability> | null,
 ): WeeklyAvailability {
@@ -115,6 +131,7 @@ export function normalizeAvailability(
       enabled: Boolean(next.enabled),
       startTime: next.startTime ?? base[key].startTime,
       endTime: next.endTime ?? base[key].endTime,
+      blockedWindows: normalizeAvailabilityBlocks(next.blockedWindows),
     };
   }
 
