@@ -1810,11 +1810,6 @@ export function HaabBookingModule({
                 <EmptyState
                   title="No bookings in the next 7 days"
                   body="New bookings appear here automatically."
-                  action={
-                    <ActionButton tone="primary" onClick={() => launchPublicFlow()}>
-                      Open booking flow
-                    </ActionButton>
-                  }
                 />
               ) : (
                 upcomingBookings.map((booking) => (
