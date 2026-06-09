@@ -5,7 +5,6 @@ import type { BookingType, Service, ServiceDraft } from "@/lib/types";
 import { DURATION_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
-import { QUICK_START_TEMPLATES } from "@/config/templates";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
@@ -27,9 +26,7 @@ export function ServiceEditor({
   onReset,
   onEdit,
   onRemove,
-  onAppendTemplate,
   disabled = false,
-  showQuickTemplates = true,
   hints,
 }: {
   services: Service[];
@@ -40,9 +37,7 @@ export function ServiceEditor({
   onReset: () => void;
   onEdit: (service: Service) => void;
   onRemove: (id: string) => void;
-  onAppendTemplate: (service: ServiceDraft) => void;
   disabled?: boolean;
-  showQuickTemplates?: boolean;
   hints?: VerticalHints;
 }) {
   return (
@@ -56,18 +51,6 @@ export function ServiceEditor({
         {disabled ? (
           <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
             Configured by the parent app. Service editing is read-only in this mode.
-          </div>
-        ) : showQuickTemplates ? (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {QUICK_START_TEMPLATES.map((template) => (
-              <ActionButton
-                key={template.label}
-                tone="ghost"
-                onClick={() => onAppendTemplate(template.service)}
-              >
-                Add {template.label}
-              </ActionButton>
-            ))}
           </div>
         ) : null}
 

@@ -845,11 +845,6 @@ export function HaabBookingModule({
     });
   }
 
-  function appendQuickTemplate(template: ServiceDraft) {
-    setEditingServiceId(null);
-    setServiceDraft(template);
-  }
-
   function upsertService() {
     if (!serviceDraft.name.trim() || !serviceDraft.description.trim()) {
       setSetupError("Add a service name and short description before saving it.");
@@ -1996,7 +1991,6 @@ export function HaabBookingModule({
         onReset={resetServiceEditor}
         onEdit={beginEditingService}
         onRemove={removeService}
-        onAppendTemplate={appendQuickTemplate}
         disabled={integratedMode}
         hints={VERTICALS.find((item) => item.id === vertical)?.hints}
       />
