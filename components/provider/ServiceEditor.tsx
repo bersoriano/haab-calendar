@@ -8,6 +8,7 @@ import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/form
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
+import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 
 function formatDurationOption(minutes: number) {
   if (minutes >= 60 && minutes % 60 === 0) {
@@ -28,6 +29,7 @@ export function ServiceEditor({
   onRemove,
   disabled = false,
   hints,
+  copy = defaultCopy,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -39,13 +41,14 @@ export function ServiceEditor({
   onRemove: (id: string) => void;
   disabled?: boolean;
   hints?: VerticalHints;
+  copy?: VerticalCopy;
 }) {
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <div className={cn(adminPanelClass, "p-6")}>
         <SectionTitle
-          title="Services"
-          body="Each service is a timed appointment or a full-day reservation. Capacity and notes stay visible during booking."
+          title={copy.Services}
+          body={copy.phrases.serviceEditorBody}
         />
 
         {disabled ? (
@@ -57,8 +60,8 @@ export function ServiceEditor({
         <div className="mt-6 space-y-3">
           {services.length === 0 ? (
             <EmptyState
-              title="No services yet"
-              body="Add a service so the public booking flow can open."
+              title={copy.phrases.noServicesTitle}
+              body={copy.phrases.noServicesBody}
             />
           ) : (
             services.map((service) => (
@@ -101,7 +104,7 @@ export function ServiceEditor({
           )}
           {!disabled && services.length === 1 ? (
             <p className="text-sm text-[var(--muted)]">
-              Keep at least one service. Add another before you can remove this one.
+              {`Keep at least one ${copy.service}. Add another before you can remove this one.`}
             </p>
           ) : null}
         </div>
@@ -109,12 +112,12 @@ export function ServiceEditor({
 
       <div className={cn(adminPanelClass, "p-6")}>
         <SectionTitle
-          eyebrow={editingServiceId ? "Edit service" : "New service"}
-          title={editingServiceId ? "Update this service" : "Add a service"}
+          eyebrow={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
+          title={editingServiceId ? copy.phrases.editServiceTitle : copy.phrases.newServiceTitle}
         />
         <div className="mt-6 grid gap-4">
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Service name
+            {`${copy.Service} name`}
             <input
               disabled={disabled}
               value={serviceDraft.name}
@@ -172,7 +175,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder={hints?.description ?? "Explain what the booking covers in one or two lines."}
+              placeholder={hints?.description ?? copy.phrases.serviceDescPlaceholder}
               rows={4}
               className={cn(adminFieldClass, "disabled:opacity-45")}
             />
@@ -216,7 +219,7 @@ export function ServiceEditor({
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <ActionButton tone="primary" disabled={disabled} onClick={onUpsert}>
-            {editingServiceId ? "Save service" : "Add service"}
+            {editingServiceId ? copy.phrases.saveServiceButton : copy.phrases.addServiceButton}
           </ActionButton>
           <ActionButton tone="ghost" onClick={onReset}>
             Clear

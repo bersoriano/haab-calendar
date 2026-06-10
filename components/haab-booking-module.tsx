@@ -111,6 +111,7 @@ import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { VERTICALS } from "@/config/verticals";
+import { getVerticalCopy } from "@/lib/vertical-copy";
 import {
   ActionButton,
   ActionLink,
@@ -268,6 +269,7 @@ export function HaabBookingModule({
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
   const vertical = activeStore.vertical;
+  const copy = getVerticalCopy(vertical);
 
   const onManageBookingFound = useEffectEvent((booking: BookingRecord) => {
     setBookingFlow((current) => ({
@@ -871,7 +873,7 @@ export function HaabBookingModule({
 
   function upsertService() {
     if (!serviceDraft.name.trim() || !serviceDraft.description.trim()) {
-      setSetupError("Add a service name and short description before saving it.");
+      setSetupError(copy.phrases.serviceNameRequiredError);
       return;
     }
 
@@ -911,7 +913,7 @@ export function HaabBookingModule({
     }
 
     if (services.length <= 1) {
-      setSetupError("Keep at least one service. Add another before removing this one.");
+      setSetupError(copy.phrases.keepOneServiceError);
       return;
     }
 
@@ -920,7 +922,7 @@ export function HaabBookingModule({
     );
 
     if (activeBookingsForService) {
-      setSetupError("Cancel active bookings for this service before removing it.");
+      setSetupError(copy.phrases.cancelActiveFirstError);
       return;
     }
 
@@ -1065,7 +1067,7 @@ export function HaabBookingModule({
       const hasEnabledDay = WEEKDAY_KEYS.some((day) => availability[day].enabled);
 
       if (!hasEnabledDay) {
-        return "Enable at least one weekday so clients can book.";
+        return copy.phrases.enableWeekdayError;
       }
 
       const invalidWindow = WEEKDAY_KEYS.some(
@@ -1144,7 +1146,7 @@ export function HaabBookingModule({
     // A published page must have at least one service to be usable.
     if (setupStep === 2) {
       if (services.length === 0) {
-        setSetupError("Add at least one service before publishing your booking page.");
+        setSetupError(copy.phrases.addServiceFirstError);
         return;
       }
 
@@ -1174,7 +1176,7 @@ export function HaabBookingModule({
     setBookingFlow((current) => {
       const next = { ...current, [key]: value };
       if (
-        bookingError === "Client name, email, and phone number are required." &&
+        bookingError === copy.phrases.clientFieldsRequiredError &&
         (key === "clientName" || key === "clientEmail" || key === "clientPhone") &&
         String(next.clientName).trim() &&
         String(next.clientEmail).trim() &&
@@ -1295,12 +1297,12 @@ export function HaabBookingModule({
     }
 
     if (!validationService) {
-      setBookingError("Choose a service before confirming the booking.");
+      setBookingError(copy.phrases.chooseServiceFirstError);
       return;
     }
 
     if (!bookingFlow.dateKey) {
-      setBookingError("Pick a date before confirming the booking.");
+      setBookingError(copy.phrases.pickDateFirstError);
       return;
     }
 
@@ -1314,7 +1316,7 @@ export function HaabBookingModule({
       !bookingFlow.clientEmail.trim() ||
       !bookingFlow.clientPhone.trim()
     ) {
-      setBookingError("Client name, email, and phone number are required.");
+      setBookingError(copy.phrases.clientFieldsRequiredError);
       return;
     }
 
@@ -1669,7 +1671,7 @@ export function HaabBookingModule({
         <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
           <SectionTitle
             eyebrow="Setup"
-            title="Set up your booking page"
+            title={copy.phrases.setupTitle}
             body="Add your details and weekly hours, then publish."
           />
           <div className="mt-6 grid gap-3 md:grid-cols-3">
@@ -1709,7 +1711,7 @@ export function HaabBookingModule({
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 title="Tell us about the provider"
-                body="These details feed confirmations, branding, and the public booking URL."
+                body={copy.phrases.providerInfoBody}
               />
               <div className="mt-6">
                 <ProviderInfoForm provider={provider} onChange={updateProvider} />
@@ -1722,7 +1724,7 @@ export function HaabBookingModule({
           <div className={cn("mt-8", adminPanelClass, "p-6")}>
             <SectionTitle
               title="Set the weekly availability schedule"
-              body="Appointment services generate real slots from these windows. Full-day services simply need the weekday enabled and free of conflicts."
+              body={copy.phrases.availabilityBody}
             />
             <div className={cn("mt-6", adminInsetClass, "grid gap-4 p-4 sm:grid-cols-[1fr_220px] sm:items-end")}>
               <div>
@@ -1763,18 +1765,18 @@ export function HaabBookingModule({
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
                 eyebrow="Ready"
-                title="Your booking page is ready"
+                title={copy.phrases.setupDoneTitle}
                 body="Publish now, then manage everything from your workspace."
               />
               <div className={cn("mt-6", adminInsetClass, "p-4")}>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  Public booking URL
+                  {`Public ${copy.bookingPage}`}
                 </p>
                 <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
               </div>
               <div className="mt-6 space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  Your services
+                  {`Your ${copy.services}`}
                 </p>
                 {services.map((service) => (
                   <div
@@ -1839,20 +1841,20 @@ export function HaabBookingModule({
             {
               label: "Upcoming (7 days)",
               value: String(upcomingBookings.length),
-              detail: "Bookings scheduled soon",
+              detail: copy.phrases.bookingsSoonDetail,
             },
             {
-              label: "Services",
+              label: copy.Services,
               value: String(services.length),
-              detail: "Appointment and full-day offerings",
+              detail: copy.phrases.servicesStatDetail,
             },
             {
               label: "Confirmed",
               value: String(bookings.filter((booking) => booking.status === "confirmed").length),
-              detail: "Currently active bookings",
+              detail: copy.phrases.activeBookingsDetail,
             },
             {
-              label: "Total bookings",
+              label: copy.phrases.totalBookingsLabel,
               value: String(bookings.length),
               detail: "All time, every status",
             },
@@ -1873,12 +1875,12 @@ export function HaabBookingModule({
         </div>
 
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title="Upcoming bookings" />
+          <SectionTitle title={copy.phrases.upcomingTitle} />
           <div className="mt-6 space-y-3">
               {upcomingBookings.length === 0 ? (
                 <EmptyState
-                  title="No bookings in the next 7 days"
-                  body="New bookings appear here automatically."
+                  title={copy.phrases.upcomingEmptyTitle}
+                  body={copy.phrases.upcomingEmptyBody}
                 />
               ) : (
                 upcomingBookings.map((booking) => (
@@ -1936,12 +1938,12 @@ export function HaabBookingModule({
   function renderBookingsList() {
     return (
       <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title="All bookings" />
+        <SectionTitle title={copy.phrases.allBookingsTitle} />
         <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
           <input
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder="Search client, service, email, or phone"
+            placeholder={copy.phrases.searchPlaceholder}
             className={cn("min-h-12", adminFieldClass)}
           />
           <select
@@ -1967,7 +1969,7 @@ export function HaabBookingModule({
         <div className="mt-4 space-y-3">
           {filteredBookings.length === 0 ? (
             <EmptyState
-              title="No bookings match the current filters"
+              title={copy.phrases.noBookingsMatchTitle}
               body="Try a broader search or clear the filters."
             />
           ) : (
@@ -2042,7 +2044,7 @@ export function HaabBookingModule({
       <div className={cn(adminPanelClass, "space-y-6 p-6")}>
         <SectionTitle
           title="Monthly calendar"
-          body="Click an available day to add a booking."
+          body={copy.phrases.addBookingHint}
           action={
             services.length > 0 ? (
               <select
@@ -2197,6 +2199,7 @@ export function HaabBookingModule({
         onRemove={removeService}
         disabled={integratedMode}
         hints={VERTICALS.find((item) => item.id === vertical)?.hints}
+        copy={copy}
       />
     );
   }
@@ -2219,7 +2222,7 @@ export function HaabBookingModule({
             />
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
-            Public booking link:{" "}
+            {`Public ${copy.booking} link:`}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
           </p>
           {!integratedMode ? (
@@ -2494,7 +2497,7 @@ export function HaabBookingModule({
         : !step2TimeChosen
           ? "Select a Time"
           : "Continue to My Details"
-      : "Book full day";
+      : copy.bookFullDay;
 
     const advanceToDetailsStep = () => {
       const fadeAndAdvance = () => {
@@ -2578,6 +2581,7 @@ export function HaabBookingModule({
                     remainingMs={bookingHoldRemainingMs}
                     remainingRatio={bookingHoldRemainingRatio}
                     helperDesktopHidden={isPublicDetailsStep}
+                    copy={copy}
                   />
                 </div>
               ) : null}
@@ -2619,7 +2623,7 @@ export function HaabBookingModule({
                     <div className="hidden w-full flex-wrap items-center justify-between gap-4 lg:flex">
                       <p className="min-w-0 flex-1 text-[0.9375rem] leading-6 text-[var(--muted)]">
                         {isBookingHoldExpired
-                          ? "This slot may be released, but you can still try booking it."
+                          ? copy.phrases.serviceUnavailableBody
                           : "Finish your details before the temporary hold expires."}
                       </p>
                       <div className="flex flex-wrap items-center justify-end gap-3">
@@ -2639,7 +2643,7 @@ export function HaabBookingModule({
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
                           onClick={confirmBooking}
                         >
-                          {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                          {isBookingHoldExpired ? copy.phrases.tryBookingButton : "Confirm"}
                         </ActionButton>
                       </div>
                     </div>
@@ -2658,11 +2662,11 @@ export function HaabBookingModule({
         {resolvedBookingFlow.step === 1 ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             <SectionTitle
-              title="Choose a service"
+              title={copy.phrases.chooseServiceTitle}
               body={
                 services.length === 1
-                  ? "Only one service is available, so the module skips this step automatically."
-                  : "Every card clearly shows whether it books a timed appointment or an entire day."
+                  ? copy.phrases.onlyOneServiceBody
+                  : copy.phrases.chooseServiceBody
               }
             />
             <div className="grid gap-4 xl:grid-cols-2">
@@ -2889,7 +2893,7 @@ export function HaabBookingModule({
                         <textarea
                           value={bookingFlow.notes}
                           onChange={(event) => updateBookingFlow("notes", event.target.value)}
-                          placeholder="Anything we should know before your booking?"
+                          placeholder={copy.phrases.notesPlaceholder}
                           rows={4}
                           className={publicTextareaClass}
                         />
@@ -2954,7 +2958,7 @@ export function HaabBookingModule({
                     <div className="flex h-full flex-col items-center justify-center">
                       {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
                         <div
-                          aria-label="QR code to add this booking to a calendar"
+                          aria-label={`QR code to add this ${copy.booking} to a calendar`}
                           className="min-h-0 w-full flex-1 bg-contain bg-center bg-no-repeat"
                           role="img"
                           style={{ backgroundImage: `url(${calendarQrCode.url})` }}
@@ -2972,7 +2976,7 @@ export function HaabBookingModule({
                     </div>
                   ) : (
                     <dl className="grid gap-4">
-                      <SummaryField label="Type of service" value={selectedService.name} />
+                      <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
                       <SummaryField
                         label="Type"
                         value={getBookingTypeLabel(selectedService.bookingType)}
@@ -3152,13 +3156,13 @@ export function HaabBookingModule({
                       ) : isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
                         <SummaryStatusTitle status="updated" />
                       ) : (
-                        "Booking summary"
+                        copy.bookingSummary
                       )
                     }
                     body={
                       isPublicSuccessStep
-                        ? "The confirmed booking details remain visible here."
-                        : "Review the live booking details here before confirming."
+                        ? copy.phrases.bookingSummaryBodySuccess
+                        : copy.phrases.bookingSummaryBodyReview
                     }
                   />
                   <div
@@ -3187,7 +3191,7 @@ export function HaabBookingModule({
                         }
                       />
                       <SummaryField
-                        label="Client"
+                        label={copy.phrases.clientLabel}
                         value={
                           isPublicSuccessStep && successfulBooking
                             ? successfulBooking.clientName
@@ -3339,7 +3343,7 @@ export function HaabBookingModule({
                     disabled={isSuccessfulBookingCancelled}
                     onClick={() => setCancellationId(successfulBooking.id)}
                   >
-                    Cancel booking
+                    {copy.phrases.cancelBookingButton}
                   </ActionButton>
                   {manageBookingToken ? (
                     <Link
@@ -3377,7 +3381,7 @@ export function HaabBookingModule({
                         type="text"
                         readOnly
                         value={buildManageUrl(provider.publicSlug, successfulBooking.manageToken)}
-                        aria-label="Booking management URL"
+                        aria-label={`${copy.Booking} management URL`}
                         onFocus={(event) => event.currentTarget.select()}
                         className="flex-1 min-w-[260px] rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)]"
                       />
@@ -3442,7 +3446,7 @@ export function HaabBookingModule({
                     className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
                     onClick={confirmBooking}
                   >
-                    {isBookingHoldExpired ? "Try booking" : "Confirm"}
+                    {isBookingHoldExpired ? copy.phrases.tryBookingButton : "Confirm"}
                   </ActionButton>
                 </>
               )}
@@ -3476,7 +3480,7 @@ export function HaabBookingModule({
           )}
         >
           <SectionTitle
-            eyebrow="Cancel Booking"
+            eyebrow={copy.cancelBooking}
             title={booking.serviceName}
             body={`${booking.clientName} · ${formatDateLabel(booking.dateKey)} · ${formatTimeRange(
               booking.startTime,
@@ -3484,7 +3488,7 @@ export function HaabBookingModule({
             )}`}
           />
           <p className="mt-6 text-sm leading-6 text-[var(--muted)]">
-            Cancelling frees the slot immediately.
+            {copy.phrases.cancelExplain}
           </p>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <ActionButton
@@ -3492,7 +3496,7 @@ export function HaabBookingModule({
               className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
               onClick={() => setCancellationId(null)}
             >
-              Keep booking
+              {copy.phrases.keepBookingButton}
             </ActionButton>
             <ActionButton
               tone="danger"
@@ -3547,7 +3551,7 @@ export function HaabBookingModule({
           )}
         >
           <SectionTitle
-            eyebrow="Reschedule Booking"
+            eyebrow={copy.rescheduleBooking}
             title={booking.serviceName}
             body={`${booking.clientName} · ${
               service.bookingType === "appointment" ? "Choose a new slot" : "Choose a new day"
@@ -3799,7 +3803,7 @@ export function HaabBookingModule({
   if (manageBookingToken && manageLookupState === "pending") {
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")} aria-busy="true">
-        <SectionTitle eyebrow="Manage booking" title="Loading your booking…" />
+        <SectionTitle eyebrow={copy.manageBooking} title={copy.phrases.loadingBookingTitle} />
       </section>
     );
   }
@@ -3809,9 +3813,9 @@ export function HaabBookingModule({
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")} role="alert">
         <SectionTitle
-          eyebrow="Manage booking"
-          title="We can't find this booking on this device"
-          body="Bookings are stored locally in the browser they were created in. If you booked from a different browser or device, please open this link there. If you've cleared your browser data, the booking is no longer accessible from this device."
+          eyebrow={copy.manageBooking}
+          title={copy.phrases.bookingNotFoundTitle}
+          body={copy.phrases.bookingNotFoundBody}
         />
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
@@ -3821,7 +3825,7 @@ export function HaabBookingModule({
               isDedicatedPublicPage && publicPillButtonClass,
             )}
           >
-            Book a new appointment
+            {copy.phrases.bookNewButton}
           </Link>
           {contactEmail ? (
             <a
@@ -3890,7 +3894,7 @@ export function HaabBookingModule({
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <h2 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-                  {provider.businessName || provider.fullName || "Booking workspace"}
+                  {provider.businessName || provider.fullName || copy.bookingWorkspace}
                 </h2>
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="break-all text-sm text-[var(--muted)]">{publicUrl}</span>
@@ -3936,9 +3940,9 @@ export function HaabBookingModule({
                 {(
                   [
                     ["dashboard", "Dashboard"],
-                    ["bookings", "Bookings"],
+                    ["bookings", copy.Bookings],
                     ["calendar", "Calendar"],
-                    ["services", "Services"],
+                    ["services", copy.Services],
                     ["settings", "Settings"],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (

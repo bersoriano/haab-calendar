@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { formatCountdown } from "@/lib/format";
+import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 
 export function BookingHoldCountdownBar({
   isCancelled,
@@ -8,6 +9,7 @@ export function BookingHoldCountdownBar({
   remainingMs,
   remainingRatio,
   helperDesktopHidden,
+  copy = defaultCopy,
 }: {
   isCancelled?: boolean;
   isConfirmed?: boolean;
@@ -15,6 +17,7 @@ export function BookingHoldCountdownBar({
   remainingMs: number;
   remainingRatio: number;
   helperDesktopHidden?: boolean;
+  copy?: VerticalCopy;
 }) {
   const isUrgent = remainingMs <= 2 * 60 * 1000 || isExpired;
   const isWarning = !isUrgent && remainingMs <= 5 * 60 * 1000;
@@ -23,9 +26,9 @@ export function BookingHoldCountdownBar({
     ? 100
     : Math.max(isUrgent && remainingPercent > 0 ? 8 : 0, remainingPercent);
   const statusLabel = isCancelled
-    ? "Booking cancelled"
+    ? `${copy.Booking} cancelled`
     : isConfirmed
-      ? "Booking secured"
+      ? `${copy.Booking} secured`
       : isExpired
         ? "Hold expired"
         : isUrgent
@@ -36,9 +39,9 @@ export function BookingHoldCountdownBar({
   const helperText = isCancelled
     ? "This reservation is no longer active."
     : isConfirmed
-      ? "Your appointment is confirmed and the temporary hold is complete."
+      ? `Your ${copy.booking} is confirmed and the temporary hold is complete.`
       : isExpired
-        ? "This slot may be released, but you can still try booking it."
+        ? copy.phrases.serviceUnavailableBody
         : "Finish your details before the temporary hold expires.";
 
   return (
@@ -57,7 +60,7 @@ export function BookingHoldCountdownBar({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
-            Booking hold
+            {`${copy.Booking} hold`}
           </p>
           {statusLabel ? (
             <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
