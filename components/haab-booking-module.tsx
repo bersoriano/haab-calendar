@@ -3031,23 +3031,56 @@ export function HaabBookingModule({
                   </div>
                   <div className="mt-6">{renderPublicCalendar()}</div>
                 </>
-              ) : isPublicDetailsStep || isPublicSuccessStep ? (
+              ) : isPublicSuccessStep ? (
+                <div className="flex min-h-0 flex-1 flex-col items-center justify-center py-6 text-center">
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "flex h-16 w-16 items-center justify-center rounded-full",
+                      isSuccessfulBookingCancelled
+                        ? "bg-[#fff1f2] text-[#be123c]"
+                        : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",
+                    )}
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      className="h-8 w-8"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      {isSuccessfulBookingCancelled ? (
+                        <>
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </>
+                      ) : (
+                        <path d="M20 7 9 18l-5-5" />
+                      )}
+                    </svg>
+                  </span>
+                  <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
+                    {isSuccessfulBookingCancelled ? "Booking Cancelled" : "Booking Confirmed"}
+                  </h3>
+                  <p className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+                    {selectedService.name}
+                  </p>
+                  {successfulBooking ? (
+                    <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
+                      {formatDateLabel(successfulBooking.dateKey)} ·{" "}
+                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
+                    </p>
+                  ) : null}
+                </div>
+              ) : isPublicDetailsStep ? (
                 <>
                   <SectionTitle
                     title="My Details"
                   />
-                  <div
-                    className={cn(
-                      "relative mt-6",
-                      isPublicSuccessStep && successColumnHeight !== null && "min-h-0 flex-1 overflow-hidden",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "grid gap-4 transition-[filter,opacity] duration-300",
-                        isPublicSuccessStep && "pointer-events-none blur-[6px] opacity-45",
-                      )}
-                    >
+                  <div className="mt-6">
+                    <div className="grid gap-4">
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                           Full name
@@ -3095,27 +3128,6 @@ export function HaabBookingModule({
                         />
                       </label>
                     </div>
-                    {isPublicSuccessStep ? (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[28px] bg-[rgba(248,249,250,0.52)] backdrop-blur-[10px]">
-                        <div className="px-6 text-center">
-                          <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl">
-                            {isSuccessfulBookingCancelled ? (
-                              <>
-                                Booking
-                                <br />
-                                Cancelled
-                              </>
-                            ) : (
-                              <>
-                                Success
-                                <br />
-                                Booking Confirmed
-                              </>
-                            )}
-                          </h3>
-                        </div>
-                      </div>
-                    ) : null}
                   </div>
                 </>
               ) : null}
@@ -3125,7 +3137,7 @@ export function HaabBookingModule({
               <div
                 ref={publicAboutPanelRef}
                 className={cn(
-                  "order-3 lg:order-none self-start lg:sticky lg:top-8 flex min-h-full flex-col",
+                  "order-3 lg:order-none self-start flex min-h-full flex-col",
                   publicSoftPanelClass,
                 )}
                 style={
@@ -3254,7 +3266,7 @@ export function HaabBookingModule({
             <div
               ref={publicSummaryPanelRef}
               className={cn(
-                "order-2 lg:order-none self-start lg:sticky lg:top-8",
+                "order-2 lg:order-none self-start",
                 publicElevatedPanelClass,
                 isPublicSelectionStep &&
                   selectedService.bookingType === "appointment" &&
@@ -3407,11 +3419,7 @@ export function HaabBookingModule({
                 <>
                   <SectionTitle
                     title={
-                      isPublicSuccessStep && successfulBooking ? (
-                        <SummaryStatusTitle
-                          status={isSuccessfulBookingCancelled ? "cancelled" : "confirmed"}
-                        />
-                      ) : isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
+                      isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
                         <SummaryStatusTitle status="updated" />
                       ) : (
                         copy.bookingSummary
@@ -3630,7 +3638,7 @@ export function HaabBookingModule({
                   )}
                 </div>
                 {successfulBooking.manageToken ? (
-                  <div className="mt-5 flex flex-col gap-2">
+                  <div className="mt-4 flex flex-col gap-2 border-t border-[var(--line)] pt-4">
                     <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
                       Manage this booking anytime
                     </label>
