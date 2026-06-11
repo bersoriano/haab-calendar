@@ -2561,7 +2561,7 @@ export function HaabBookingModule({
         ? "Pick a date from the calendar and time slot below to continue."
         : !step2TimeChosen
           ? "Pick a time slot to continue."
-          : "Ready to continue. Click the button to enter your details."
+          : "Click the button to enter your details."
       : !step2DateChosen
         ? "Pick a date to reserve the full day."
         : step2DateAvailableForFullDay
@@ -2652,7 +2652,7 @@ export function HaabBookingModule({
             <div
               ref={stickyHeaderRef}
               className={cn(
-                "relative px-4 pt-4 sm:px-8 sm:pt-8 transition-[padding-bottom] duration-500 ease-out before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[32px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-500 before:ease-out",
+                "relative px-4 pt-4 sm:px-8 sm:pt-8 before:pointer-events-none before:absolute before:inset-0 before:z-0 before:rounded-[32px] sm:before:rounded-[56px] xl:before:rounded-[60px] before:bg-[linear-gradient(135deg,rgba(255,255,255,0.22),rgba(255,255,255,0.08))] before:opacity-0 before:[backdrop-filter:blur(24px)_saturate(160%)] before:[-webkit-backdrop-filter:blur(24px)_saturate(160%)] before:ring-1 before:ring-inset before:ring-white/40 before:shadow-[inset_0_1px_0_rgba(255,255,255,0.55),inset_0_-1px_0_rgba(15,23,42,0.08),0_14px_34px_rgba(15,23,42,0.12)] before:transition-opacity before:duration-300 before:ease-out",
                 isPublicSelectionStep && "sticky top-0 z-30",
                 isDedicatedPublicPage && "xl:px-10 xl:pt-10",
                 isStickyHeaderActive &&
@@ -2660,11 +2660,22 @@ export function HaabBookingModule({
               )}
             >
             <div className={cn("relative z-10", stickyBarPanelClass)}>
-              <div className="px-5 py-5 sm:px-7 sm:py-6">
-                <PublicProgressIndicator
-                  currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
-                  isDedicatedPublicPage={isDedicatedPublicPage}
-                />
+              <div
+                aria-hidden={isStickyHeaderActive ? true : undefined}
+                style={{ willChange: "grid-template-rows, opacity" }}
+                className={cn(
+                  "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
+                  isStickyHeaderActive ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
+                )}
+              >
+                <div className="overflow-hidden">
+                  <div className="px-5 py-5 sm:px-7 sm:py-6">
+                    <PublicProgressIndicator
+                      currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
+                      isDedicatedPublicPage={isDedicatedPublicPage}
+                    />
+                  </div>
+                </div>
               </div>
               {isPublicDetailsStep || isPublicSuccessStep ? (
                 <div className="px-5 pb-5 sm:px-7 sm:pb-6">
@@ -2683,9 +2694,16 @@ export function HaabBookingModule({
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div
+                      className={cn(
+                        "flex flex-col gap-4",
+                        hasMultipleServices
+                          ? "lg:flex-row lg:items-center lg:gap-4"
+                          : "lg:flex-row lg:items-center lg:justify-between",
+                      )}
+                    >
                       {hasMultipleServices ? (
-                        <div className="lg:w-auto">
+                        <div className="lg:flex lg:flex-1 lg:justify-start">
                           <button
                             type="button"
                             onClick={goBackToServiceChoice}
@@ -2708,17 +2726,12 @@ export function HaabBookingModule({
                       <div
                         className={cn(
                           "min-w-0",
-                          hasMultipleServices && "lg:flex-1 lg:text-center",
+                          hasMultipleServices && "text-center lg:flex-1",
                         )}
                       >
-                        <div
-                          className={cn(
-                            "flex flex-wrap items-center gap-3",
-                            hasMultipleServices && "lg:justify-center",
-                          )}
-                        >
+                        <div className="flex flex-col gap-0.5">
                           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                            Appointment Date:
+                            Selected Date
                           </p>
                           <p className="text-[0.9375rem] font-semibold text-[var(--ink)]">
                             {step2Summary}
@@ -2728,7 +2741,12 @@ export function HaabBookingModule({
                           {step2Helper}
                         </p>
                       </div>
-                      <div className="hidden w-full flex-wrap items-center justify-end gap-3 lg:flex lg:w-auto">
+                      <div
+                        className={cn(
+                          "hidden w-full flex-wrap items-center gap-3 lg:flex lg:w-auto",
+                          hasMultipleServices ? "lg:flex-1 lg:justify-end" : "justify-end",
+                        )}
+                      >
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
