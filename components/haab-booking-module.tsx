@@ -868,6 +868,12 @@ export function HaabBookingModule({
       capacity: service.capacity ?? "",
       cost: service.cost ?? "",
       notes: service.notes ?? "",
+      linkedAddress1: service.linkedAddress1 ?? false,
+      linkedAddress2: service.linkedAddress2 ?? false,
+      linkedPhone1: service.linkedPhone1 ?? false,
+      linkedPhone2: service.linkedPhone2 ?? false,
+      customAddress: service.customAddress ?? "",
+      customPhone: service.customPhone ?? "",
     });
   }
 
@@ -877,32 +883,80 @@ export function HaabBookingModule({
       return;
     }
 
-    const nextService: Service = {
-      id: editingServiceId ?? createId("service"),
-      name: serviceDraft.name.trim(),
-      bookingType: serviceDraft.bookingType,
-      durationMinutes:
-        serviceDraft.bookingType === "appointment"
-          ? serviceDraft.durationMinutes
-          : undefined,
-      description: serviceDraft.description.trim(),
-      capacity: serviceDraft.capacity.trim() || undefined,
-      cost: serviceDraft.cost.trim() || undefined,
-      notes: serviceDraft.notes.trim() || undefined,
-    };
-
     if (integratedMode) {
       return;
     }
 
-    actions.updateStandaloneStore((current) => ({
-      ...current,
-      services: editingServiceId
-        ? current.services.map((service) =>
-            service.id === editingServiceId ? nextService : service,
-          )
-        : [...current.services, nextService],
-    }));
+    // Promote the typed value to the first empty provider slot; if both slots
+    // are already taken, keep the value as a service-local override. The
+    // service link flag is set whenever we promote. Provider + service writes
+    // happen inside a single updater so they stay consistent.
+    const typedAddress = serviceDraft.customAddress.trim();
+    const typedPhone = serviceDraft.customPhone.trim();
+
+    actions.updateStandaloneStore((current) => {
+      let nextProvider = current.provider;
+      let linkedAddress1 = serviceDraft.linkedAddress1;
+      let linkedAddress2 = serviceDraft.linkedAddress2;
+      let linkedPhone1 = serviceDraft.linkedPhone1;
+      let linkedPhone2 = serviceDraft.linkedPhone2;
+      let customAddress: string | undefined = typedAddress || undefined;
+      let customPhone: string | undefined = typedPhone || undefined;
+
+      if (typedAddress) {
+        if (!nextProvider.address1.trim()) {
+          nextProvider = { ...nextProvider, address1: typedAddress };
+          linkedAddress1 = true;
+          customAddress = undefined;
+        } else if (!nextProvider.address2.trim()) {
+          nextProvider = { ...nextProvider, address2: typedAddress };
+          linkedAddress2 = true;
+          customAddress = undefined;
+        }
+      }
+
+      if (typedPhone) {
+        if (!nextProvider.phoneNumber1.trim()) {
+          nextProvider = { ...nextProvider, phoneNumber1: typedPhone };
+          linkedPhone1 = true;
+          customPhone = undefined;
+        } else if (!nextProvider.phoneNumber2.trim()) {
+          nextProvider = { ...nextProvider, phoneNumber2: typedPhone };
+          linkedPhone2 = true;
+          customPhone = undefined;
+        }
+      }
+
+      const nextService: Service = {
+        id: editingServiceId ?? createId("service"),
+        name: serviceDraft.name.trim(),
+        bookingType: serviceDraft.bookingType,
+        durationMinutes:
+          serviceDraft.bookingType === "appointment"
+            ? serviceDraft.durationMinutes
+            : undefined,
+        description: serviceDraft.description.trim(),
+        capacity: serviceDraft.capacity.trim() || undefined,
+        cost: serviceDraft.cost.trim() || undefined,
+        notes: serviceDraft.notes.trim() || undefined,
+        linkedAddress1: linkedAddress1 || undefined,
+        linkedAddress2: linkedAddress2 || undefined,
+        linkedPhone1: linkedPhone1 || undefined,
+        linkedPhone2: linkedPhone2 || undefined,
+        customAddress,
+        customPhone,
+      };
+
+      return {
+        ...current,
+        provider: nextProvider,
+        services: editingServiceId
+          ? current.services.map((service) =>
+              service.id === editingServiceId ? nextService : service,
+            )
+          : [...current.services, nextService],
+      };
+    });
     setSetupError(null);
     resetServiceEditor();
   }
@@ -1710,7 +1764,7 @@ export function HaabBookingModule({
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
-                title="Tell us about the provider"
+                title="My data"
                 body={copy.phrases.providerInfoBody}
               />
               <div className="mt-6">
@@ -1774,24 +1828,45 @@ export function HaabBookingModule({
                 </p>
                 <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
               </div>
-              <div className="mt-6 space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {`Your ${copy.services}`}
-                </p>
-                {services.map((service) => (
-                  <div
-                    key={service.id}
-                    className={cn(adminInsetClass, "flex flex-wrap items-center gap-2 px-4 py-3")}
-                  >
-                    <span className="text-sm font-semibold text-[var(--ink)]">{service.name}</span>
-                    <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                      {getBookingTypeLabel(service.bookingType)}
-                    </ToneBadge>
-                    <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
-                  </div>
-                ))}
-                <p className="text-sm text-[var(--muted)]">
-                  Edit these anytime from the Services tab.
+              <div className="mt-6">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                    {`Your ${copy.services}`}
+                  </p>
+                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] px-2 text-xs font-semibold text-[var(--accent-strong)]">
+                    {services.length}
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {services.map((service, index) => (
+                    <div
+                      key={service.id}
+                      className={cn(
+                        adminInsetClass,
+                        "flex items-center gap-2.5 px-3 py-2",
+                      )}
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[0.6875rem] font-semibold leading-none text-white tabular-nums">
+                        {index + 1}
+                      </span>
+                      <span className="text-sm font-semibold text-[var(--ink)]">
+                        {service.name}
+                      </span>
+                      <span
+                        aria-hidden
+                        className="h-3 w-px bg-[rgba(193,198,214,0.45)]"
+                      />
+                      <ToneBadge tone={bookingTypeTone(service.bookingType)}>
+                        {getBookingTypeLabel(service.bookingType)}
+                      </ToneBadge>
+                      <span className="text-xs font-medium text-[var(--muted)] tabular-nums">
+                        {formatDuration(service)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-3 text-sm text-[var(--muted)]">
+                  {`Edit these anytime from the ${copy.Services} tab.`}
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
@@ -2200,6 +2275,7 @@ export function HaabBookingModule({
         disabled={integratedMode}
         hints={VERTICALS.find((item) => item.id === vertical)?.hints}
         copy={copy}
+        provider={provider}
       />
     );
   }
@@ -2544,6 +2620,24 @@ export function HaabBookingModule({
       setBookingFlow((current) => ({ ...current, step: 2 }));
     };
 
+    const goBackToServiceChoice = () => {
+      actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      setBookingHold(null);
+      setBookingHoldNow(currentTimestamp());
+      setBookingError(null);
+      setWasBookingUpdatedWithNaturalLanguage(false);
+      setIsNLBookingOpen(false);
+      setNaturalLanguageBookingInput("");
+      setNaturalLanguageBookingError(null);
+      setBookingFlow((current) => ({
+        ...current,
+        step: 1,
+        serviceId: "",
+        dateKey: "",
+        time: "",
+      }));
+    };
+
     return (
       <div
         className={cn(
@@ -2590,8 +2684,39 @@ export function HaabBookingModule({
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-3">
+                      {hasMultipleServices ? (
+                        <div className="lg:w-auto">
+                          <button
+                            type="button"
+                            onClick={goBackToServiceChoice}
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[rgba(248,249,250,0.78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-white hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                              <path
+                                d="M15 6l-6 6 6 6"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                              />
+                            </svg>
+                            Choose another {copy.service}
+                          </button>
+                        </div>
+                      ) : null}
+                      <div
+                        className={cn(
+                          "min-w-0",
+                          hasMultipleServices && "lg:flex-1 lg:text-center",
+                        )}
+                      >
+                        <div
+                          className={cn(
+                            "flex flex-wrap items-center gap-3",
+                            hasMultipleServices && "lg:justify-center",
+                          )}
+                        >
                           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
                             Appointment Date:
                           </p>
@@ -2661,14 +2786,26 @@ export function HaabBookingModule({
         ) : null}
         {resolvedBookingFlow.step === 1 ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
-            <SectionTitle
-              title={copy.phrases.chooseServiceTitle}
-              body={
-                services.length === 1
-                  ? copy.phrases.onlyOneServiceBody
-                  : copy.phrases.chooseServiceBody
-              }
-            />
+            <div className="relative isolate overflow-hidden rounded-[28px] bg-[rgba(255,255,255,0.62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,rgba(26,115,232,0.28),transparent_65%)] blur-2xl"
+              />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -left-20 bottom-[-3rem] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(104,250,221,0.32),transparent_65%)] blur-2xl"
+              />
+              <div className="relative min-w-0">
+                <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)] sm:text-[1.75rem]">
+                  {copy.phrases.chooseServiceTitle}
+                </h3>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)] sm:text-[0.9375rem]">
+                  {services.length === 1
+                    ? copy.phrases.onlyOneServiceBody
+                    : copy.phrases.chooseServiceBody}
+                </p>
+              </div>
+            </div>
             <div className="grid gap-4 xl:grid-cols-2">
               {services.map((service) => (
                 <button
@@ -2707,6 +2844,47 @@ export function HaabBookingModule({
                     {service.cost ? <span>Total: {service.cost}</span> : null}
                     {service.notes ? <span>Notes: {service.notes}</span> : null}
                   </div>
+                  {(() => {
+                    const cardAddresses = [
+                      service.linkedAddress1 ? provider.address1 : "",
+                      service.linkedAddress2 ? provider.address2 : "",
+                      service.customAddress ?? "",
+                    ].filter((entry) => entry && entry.trim().length > 0);
+                    const cardPhones = [
+                      service.linkedPhone1 ? provider.phoneNumber1 : "",
+                      service.linkedPhone2 ? provider.phoneNumber2 : "",
+                      service.customPhone ?? "",
+                    ].filter((entry) => entry && entry.trim().length > 0);
+                    if (cardAddresses.length === 0 && cardPhones.length === 0) {
+                      return null;
+                    }
+                    return (
+                      <div className="mt-4 flex flex-col gap-1.5 border-t border-[rgba(193,198,214,0.32)] pt-3 text-sm text-[var(--muted)]">
+                        {cardAddresses.map((entry) => (
+                          <span key={`addr-${entry}`} className="inline-flex items-start gap-2">
+                            <svg viewBox="0 0 24 24" className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]" aria-hidden>
+                              <path
+                                d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                            <span>{entry}</span>
+                          </span>
+                        ))}
+                        {cardPhones.map((entry) => (
+                          <span key={`phone-${entry}`} className="inline-flex items-center gap-2 font-medium text-[var(--ink)]">
+                            <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[var(--accent-strong)]" aria-hidden>
+                              <path
+                                d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                            <span>{entry}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </button>
               ))}
             </div>
@@ -2975,19 +3153,81 @@ export function HaabBookingModule({
                       </p>
                     </div>
                   ) : (
-                    <dl className="grid gap-4">
-                      <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
-                      <SummaryField
-                        label="Type"
-                        value={getBookingTypeLabel(selectedService.bookingType)}
-                      />
-                      <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
-                      <SummaryField label="Length" value={formatDuration(selectedService)} />
-                      <SummaryField label="Total" value={selectedService.cost || "Not set"} />
-                      {selectedService.notes ? (
-                        <SummaryField label="Notes" value={selectedService.notes} />
-                      ) : null}
-                    </dl>
+                    (() => {
+                      const aboutAddresses = [
+                        selectedService.linkedAddress1 ? provider.address1 : "",
+                        selectedService.linkedAddress2 ? provider.address2 : "",
+                        selectedService.customAddress ?? "",
+                      ].filter((entry) => entry && entry.trim().length > 0);
+                      const aboutPhones = [
+                        selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
+                        selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
+                        selectedService.customPhone ?? "",
+                      ].filter((entry) => entry && entry.trim().length > 0);
+                      return (
+                        <dl className="grid gap-4">
+                          <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
+                          <SummaryField
+                            label="Type"
+                            value={getBookingTypeLabel(selectedService.bookingType)}
+                          />
+                          <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                          <SummaryField label="Length" value={formatDuration(selectedService)} />
+                          <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                          {selectedService.notes ? (
+                            <SummaryField label="Notes" value={selectedService.notes} />
+                          ) : null}
+                          {aboutAddresses.length > 0 ? (
+                            <SummaryField
+                              label={aboutAddresses.length > 1 ? "Locations" : "Location"}
+                              value={
+                                <div className="flex flex-col gap-1.5">
+                                  {aboutAddresses.map((entry) => (
+                                    <span key={`about-addr-${entry}`} className="inline-flex items-start gap-2">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                        aria-hidden
+                                      >
+                                        <path
+                                          d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+                                          fill="currentColor"
+                                        />
+                                      </svg>
+                                      <span className="min-w-0 break-words">{entry}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              }
+                            />
+                          ) : null}
+                          {aboutPhones.length > 0 ? (
+                            <SummaryField
+                              label={aboutPhones.length > 1 ? "Phones" : "Phone"}
+                              value={
+                                <div className="flex flex-col gap-1.5">
+                                  {aboutPhones.map((entry) => (
+                                    <span key={`about-phone-${entry}`} className="inline-flex items-center gap-2">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                        aria-hidden
+                                      >
+                                        <path
+                                          d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
+                                          fill="currentColor"
+                                        />
+                                      </svg>
+                                      <span className="min-w-0 break-words">{entry}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              }
+                            />
+                          ) : null}
+                        </dl>
+                      );
+                    })()
                   )}
                 </div>
               </div>

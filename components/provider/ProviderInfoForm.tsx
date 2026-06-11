@@ -46,6 +46,58 @@ export function ProviderInfoForm({
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
       </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+          Phone Number 1
+          <input
+            disabled={disabled}
+            value={provider.phoneNumber1}
+            onChange={(event) => onChange("phoneNumber1", event.target.value)}
+            placeholder="+1 (555) 123-4567"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+          Phone Number 2
+          <input
+            disabled={disabled}
+            value={provider.phoneNumber2}
+            onChange={(event) => onChange("phoneNumber2", event.target.value)}
+            placeholder="Optional secondary number"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+          />
+        </label>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+          Address 1
+          <input
+            disabled={disabled}
+            value={provider.address1}
+            onChange={(event) => onChange("address1", event.target.value)}
+            placeholder="123 Main St, Suite 4, Springfield"
+            autoComplete="street-address"
+            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+          />
+        </label>
+        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+          Address 2
+          <input
+            disabled={disabled}
+            value={provider.address2}
+            onChange={(event) => onChange("address2", event.target.value)}
+            placeholder="Optional secondary location"
+            autoComplete="street-address"
+            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+          />
+        </label>
+      </div>
     </div>
   );
 }

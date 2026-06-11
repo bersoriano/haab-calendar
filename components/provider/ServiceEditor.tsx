@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { BookingType, Service, ServiceDraft } from "@/lib/types";
+import type { BookingType, ProviderInfo, Service, ServiceDraft } from "@/lib/types";
 import { DURATION_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
@@ -30,6 +30,7 @@ export function ServiceEditor({
   disabled = false,
   hints,
   copy = defaultCopy,
+  provider,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -42,7 +43,20 @@ export function ServiceEditor({
   disabled?: boolean;
   hints?: VerticalHints;
   copy?: VerticalCopy;
+  provider: ProviderInfo;
 }) {
+  const hasAddress1 = provider.address1.trim().length > 0;
+  const hasAddress2 = provider.address2.trim().length > 0;
+  const hasPhone1 = provider.phoneNumber1.trim().length > 0;
+  const hasPhone2 = provider.phoneNumber2.trim().length > 0;
+  const nextAddressSlot = !hasAddress1 ? "1" : !hasAddress2 ? "2" : null;
+  const nextPhoneSlot = !hasPhone1 ? "1" : !hasPhone2 ? "2" : null;
+  const addressHint = nextAddressSlot
+    ? `We'll save this as Address ${nextAddressSlot} in your provider profile so other services can reuse it.`
+    : "Both provider address slots are already taken — this address will stay with this service only.";
+  const phoneHint = nextPhoneSlot
+    ? `We'll save this as Phone ${nextPhoneSlot} in your provider profile so other services can reuse it.`
+    : "Both provider phone slots are already taken — this phone will stay with this service only.";
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <div className={cn(adminPanelClass, "p-6")}>
@@ -84,6 +98,24 @@ export function ServiceEditor({
                       {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
                       {service.cost ? <span>Total: {service.cost}</span> : null}
                       {service.notes ? <span>Notes: {service.notes}</span> : null}
+                      {service.linkedAddress1 && hasAddress1 ? (
+                        <span>Address 1: {provider.address1}</span>
+                      ) : null}
+                      {service.linkedAddress2 && hasAddress2 ? (
+                        <span>Address 2: {provider.address2}</span>
+                      ) : null}
+                      {service.linkedPhone1 && hasPhone1 ? (
+                        <span>Phone 1: {provider.phoneNumber1}</span>
+                      ) : null}
+                      {service.linkedPhone2 && hasPhone2 ? (
+                        <span>Phone 2: {provider.phoneNumber2}</span>
+                      ) : null}
+                      {service.customAddress ? (
+                        <span>Address: {service.customAddress}</span>
+                      ) : null}
+                      {service.customPhone ? (
+                        <span>Phone: {service.customPhone}</span>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -216,6 +248,126 @@ export function ServiceEditor({
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
+          <section className="grid gap-3">
+            <header className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                  <path
+                    d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <span className="text-sm font-semibold text-[var(--ink)]">Location</span>
+            </header>
+            {hasAddress1 || hasAddress2 ? (
+              <div className="grid gap-2">
+                {hasAddress1 ? (
+                  <LinkToggleCard
+                    eyebrow="Address 1"
+                    value={provider.address1}
+                    checked={serviceDraft.linkedAddress1}
+                    disabled={disabled}
+                    onToggle={(next) =>
+                      onDraftChange((current) => ({ ...current, linkedAddress1: next }))
+                    }
+                  />
+                ) : null}
+                {hasAddress2 ? (
+                  <LinkToggleCard
+                    eyebrow="Address 2"
+                    value={provider.address2}
+                    checked={serviceDraft.linkedAddress2}
+                    disabled={disabled}
+                    onToggle={(next) =>
+                      onDraftChange((current) => ({ ...current, linkedAddress2: next }))
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
+              <label className="grid gap-2">
+                <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                  {hasAddress1 || hasAddress2 ? "Add another address" : "Add an address"}
+                </span>
+                <input
+                  disabled={disabled}
+                  value={serviceDraft.customAddress}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({ ...current, customAddress: event.target.value }))
+                  }
+                  placeholder="123 Main St, Suite 4, Springfield"
+                  autoComplete="street-address"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                />
+              </label>
+              {serviceDraft.customAddress.trim() ? (
+                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{addressHint}</p>
+              ) : null}
+            </div>
+          </section>
+          <section className="grid gap-3">
+            <header className="flex items-center gap-2.5">
+              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                  <path
+                    d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </span>
+              <span className="text-sm font-semibold text-[var(--ink)]">Phone</span>
+            </header>
+            {hasPhone1 || hasPhone2 ? (
+              <div className="grid gap-2">
+                {hasPhone1 ? (
+                  <LinkToggleCard
+                    eyebrow="Phone 1"
+                    value={provider.phoneNumber1}
+                    checked={serviceDraft.linkedPhone1}
+                    disabled={disabled}
+                    onToggle={(next) =>
+                      onDraftChange((current) => ({ ...current, linkedPhone1: next }))
+                    }
+                  />
+                ) : null}
+                {hasPhone2 ? (
+                  <LinkToggleCard
+                    eyebrow="Phone 2"
+                    value={provider.phoneNumber2}
+                    checked={serviceDraft.linkedPhone2}
+                    disabled={disabled}
+                    onToggle={(next) =>
+                      onDraftChange((current) => ({ ...current, linkedPhone2: next }))
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
+            <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
+              <label className="grid gap-2">
+                <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                  {hasPhone1 || hasPhone2 ? "Add another phone" : "Add a phone"}
+                </span>
+                <input
+                  disabled={disabled}
+                  value={serviceDraft.customPhone}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({ ...current, customPhone: event.target.value }))
+                  }
+                  placeholder="+1 (555) 123-4567"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                />
+              </label>
+              {serviceDraft.customPhone.trim() ? (
+                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{phoneHint}</p>
+              ) : null}
+            </div>
+          </section>
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <ActionButton tone="primary" disabled={disabled} onClick={onUpsert}>
@@ -227,5 +379,64 @@ export function ServiceEditor({
         </div>
       </div>
     </div>
+  );
+}
+
+function LinkToggleCard({
+  eyebrow,
+  value,
+  checked,
+  disabled,
+  onToggle,
+}: {
+  eyebrow: string;
+  value: string;
+  checked: boolean;
+  disabled?: boolean;
+  onToggle: (next: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      disabled={disabled}
+      onClick={() => onToggle(!checked)}
+      className={cn(
+        "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(248,249,250,0.94)] disabled:cursor-not-allowed disabled:opacity-60",
+        checked
+          ? "bg-[var(--accent-soft)] ring-2 ring-[var(--accent)] shadow-[0_10px_28px_rgba(26,115,232,0.14)]"
+          : "bg-white ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[rgba(26,115,232,0.45)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition",
+          checked
+            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
+            : "border-[var(--line)] bg-white text-transparent group-hover:border-[var(--accent)]/60",
+        )}
+      >
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5">
+          <path
+            d="M5 12l4 4L19 6"
+            stroke="currentColor"
+            strokeWidth="2.6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+        </svg>
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+          {eyebrow}
+        </span>
+        <span className="mt-0.5 block truncate text-sm font-medium text-[var(--ink)]">
+          {value}
+        </span>
+      </span>
+    </button>
   );
 }

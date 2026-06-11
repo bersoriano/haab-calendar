@@ -21,6 +21,10 @@ export type ProviderInfo = {
   fullName: string;
   businessName: string;
   email: string;
+  phoneNumber1: string;
+  phoneNumber2: string;
+  address1: string;
+  address2: string;
   publicSlug: string;
 };
 
@@ -33,6 +37,12 @@ export type Service = {
   capacity?: string;
   cost?: string;
   notes?: string;
+  linkedAddress1?: boolean;
+  linkedAddress2?: boolean;
+  linkedPhone1?: boolean;
+  linkedPhone2?: boolean;
+  customAddress?: string;
+  customPhone?: string;
 };
 
 export type DayAvailability = {
@@ -105,6 +115,12 @@ export type ServiceDraft = {
   capacity: string;
   cost: string;
   notes: string;
+  linkedAddress1: boolean;
+  linkedAddress2: boolean;
+  linkedPhone1: boolean;
+  linkedPhone2: boolean;
+  customAddress: string;
+  customPhone: string;
 };
 
 export type BookingFlow = {

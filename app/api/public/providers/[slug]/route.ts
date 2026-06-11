@@ -37,6 +37,12 @@ function toPublicService(row: PublicServiceRow): Service {
     capacity: row.capacity ?? "",
     cost: row.cost ?? "",
     notes: row.notes ?? "",
+    linkedAddress1: false,
+    linkedAddress2: false,
+    linkedPhone1: false,
+    linkedPhone2: false,
+    customAddress: undefined,
+    customPhone: undefined,
   };
 }
 
@@ -109,6 +115,10 @@ export async function GET(
       fullName: provider.full_name,
       businessName: provider.business_name,
       email: "",
+      phoneNumber1: "",
+      phoneNumber2: "",
+      address1: "",
+      address2: "",
       publicSlug: provider.slug,
     },
     services: (services ?? []).map(toPublicService),

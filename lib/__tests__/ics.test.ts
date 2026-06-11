@@ -10,6 +10,10 @@ const provider: ProviderInfo = {
   fullName: "Dr. Alice",
   businessName: "Alice Wellness",
   email: "alice@wellness.example",
+  phoneNumber1: "",
+  phoneNumber2: "",
+  address1: "",
+  address2: "",
   publicSlug: "alice-wellness",
 };
 

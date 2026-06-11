@@ -34,6 +34,10 @@ export function createEmptyStore(): ModuleStore {
       fullName: "",
       businessName: "",
       email: "",
+      phoneNumber1: "",
+      phoneNumber2: "",
+      address1: "",
+      address2: "",
       publicSlug: "",
     },
     services: [],
@@ -61,6 +65,12 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     capacity: draft.capacity,
     cost: draft.cost,
     notes: draft.notes,
+    linkedAddress1: draft.linkedAddress1,
+    linkedAddress2: draft.linkedAddress2,
+    linkedPhone1: draft.linkedPhone1,
+    linkedPhone2: draft.linkedPhone2,
+    customAddress: draft.customAddress || undefined,
+    customPhone: draft.customPhone || undefined,
   }));
 }
 
@@ -118,6 +128,12 @@ export function createBlankServiceDraft(): ServiceDraft {
     capacity: "",
     cost: "",
     notes: "",
+    linkedAddress1: false,
+    linkedAddress2: false,
+    linkedPhone1: false,
+    linkedPhone2: false,
+    customAddress: "",
+    customPhone: "",
   };
 }
 
@@ -179,6 +195,10 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     fullName: source?.fullName ?? "",
     businessName: source?.businessName ?? "",
     email: source?.email ?? "",
+    phoneNumber1: source?.phoneNumber1 ?? "",
+    phoneNumber2: source?.phoneNumber2 ?? "",
+    address1: source?.address1 ?? "",
+    address2: source?.address2 ?? "",
     publicSlug:
       source?.publicSlug ??
       slugify(source?.businessName || source?.fullName || "haab-calendar"),
@@ -198,6 +218,12 @@ export function normalizeServices(source?: Service[] | null): Service[] {
     capacity: service.capacity,
     cost: service.cost,
     notes: service.notes,
+    linkedAddress1: service.linkedAddress1 ?? false,
+    linkedAddress2: service.linkedAddress2 ?? false,
+    linkedPhone1: service.linkedPhone1 ?? false,
+    linkedPhone2: service.linkedPhone2 ?? false,
+    customAddress: service.customAddress,
+    customPhone: service.customPhone,
   }));
 }
 
