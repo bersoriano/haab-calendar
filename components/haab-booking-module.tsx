@@ -3552,94 +3552,114 @@ export function HaabBookingModule({
               >
                 <SectionTitle title={copy.bookingSummary} />
                 <div className={cn("mt-6", publicInsetCardClass)}>
-                  <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                    <div className="min-w-0">
-                      <p className="text-lg font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-xl">
-                        {formatDateLabel(successfulBooking.dateKey)}
-                      </p>
-                      <p className="mt-1 text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
-                        {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-[0.9375rem] font-medium text-[var(--muted)]">
-                        {formatDuration(selectedService)}
-                      </p>
-                      {selectedService.cost ? (
-                        <p className="mt-0.5 text-lg font-semibold text-[var(--ink)]">
-                          {selectedService.cost}
-                        </p>
-                      ) : null}
-                    </div>
+                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
+                      {formatDateLabel(successfulBooking.dateKey)}
+                    </p>
+                    <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
+                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
+                    </p>
                   </div>
 
                   <div className="mt-5 h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
 
-                  <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                    <div className="flex items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(0,191,165,0.10)] text-[var(--action-teal-deep)]"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          className="h-4 w-4"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      </span>
-                      <span className="min-w-0 text-[0.9375rem] text-[var(--ink)]">
-                        <span className="text-[var(--muted)]">{copy.phrases.clientLabel}:</span>{" "}
-                        <span className="font-semibold">{successfulBooking.clientName}</span>
-                      </span>
-                    </div>
-                    {successfulBooking.clientEmail.trim() ||
-                    successfulBooking.clientPhone.trim() ? (
-                      <div className="flex items-start gap-3">
-                        <span
-                          aria-hidden="true"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(0,191,165,0.10)] text-[var(--action-teal-deep)]"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            className="h-4 w-4"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <rect x="3" y="5" width="18" height="14" rx="3" />
-                            <path d="m4 7.5 8 5.5 8-5.5" />
-                          </svg>
-                        </span>
-                        <div className="min-w-0 text-[0.9375rem]">
-                          {successfulBooking.clientEmail.trim() ? (
-                            <p className="break-words font-medium text-[var(--ink)]">
-                              {successfulBooking.clientEmail}
-                            </p>
+                  {(() => {
+                    const successAddresses = [
+                      selectedService.linkedAddress1 ? provider.address1 : "",
+                      selectedService.linkedAddress2 ? provider.address2 : "",
+                      selectedService.customAddress ?? "",
+                    ].filter((entry) => entry && entry.trim().length > 0);
+                    const successPhones = [
+                      selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
+                      selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
+                      selectedService.customPhone ?? "",
+                    ].filter((entry) => entry && entry.trim().length > 0);
+                    return (
+                      <>
+                        <p className="mt-5 text-base font-semibold tracking-[-0.01em] text-[var(--ink)] sm:text-lg">
+                          {selectedService.name}
+                        </p>
+                        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
+                          <SummaryField
+                            label="Type"
+                            value={getBookingTypeLabel(selectedService.bookingType)}
+                          />
+                          <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                          <SummaryField label="Length" value={formatDuration(selectedService)} />
+                          <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                          {selectedService.notes ? (
+                            <SummaryField label="Notes" value={selectedService.notes} />
                           ) : null}
-                          {successfulBooking.clientPhone.trim() ? (
-                            <p className="mt-0.5 break-words text-[var(--muted)]">
-                              {successfulBooking.clientPhone}
-                            </p>
+                          {successAddresses.length > 0 ? (
+                            <SummaryField
+                              label={successAddresses.length > 1 ? "Locations" : "Location"}
+                              value={
+                                <div className="flex flex-col gap-1.5">
+                                  {successAddresses.map((entry) => (
+                                    <span key={`success-addr-${entry}`} className="inline-flex items-start gap-2">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                        aria-hidden
+                                      >
+                                        <path
+                                          d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+                                          fill="currentColor"
+                                        />
+                                      </svg>
+                                      <span className="min-w-0 break-words">{entry}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              }
+                            />
                           ) : null}
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
+                          {successPhones.length > 0 ? (
+                            <SummaryField
+                              label={successPhones.length > 1 ? "Phones" : "Phone"}
+                              value={
+                                <div className="flex flex-col gap-1.5">
+                                  {successPhones.map((entry) => (
+                                    <span key={`success-phone-${entry}`} className="inline-flex items-center gap-2">
+                                      <svg
+                                        viewBox="0 0 24 24"
+                                        className="h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                        aria-hidden
+                                      >
+                                        <path
+                                          d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
+                                          fill="currentColor"
+                                        />
+                                      </svg>
+                                      <span className="min-w-0 break-words">{entry}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              }
+                            />
+                          ) : null}
+                        </dl>
+                      </>
+                    );
+                  })()}
 
-                  {successfulBooking.notes.trim() ? (
-                    <p className="mt-5 border-t border-[rgba(15,23,42,0.06)] pt-4 text-sm leading-6 text-[var(--muted)]">
-                      Notes: {successfulBooking.notes}
-                    </p>
-                  ) : null}
+                  <div className="mt-5 h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
+
+                  <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
+                    <SummaryField
+                      label={copy.phrases.clientLabel}
+                      value={successfulBooking.clientName || "—"}
+                    />
+                    {successfulBooking.clientEmail.trim() ? (
+                      <SummaryField label="Email" value={successfulBooking.clientEmail} />
+                    ) : null}
+                    {successfulBooking.clientPhone.trim() ? (
+                      <SummaryField label="Phone" value={successfulBooking.clientPhone} />
+                    ) : null}
+                    {successfulBooking.notes.trim() ? (
+                      <SummaryField label="Notes" value={successfulBooking.notes} />
+                    ) : null}
+                  </dl>
                 </div>
 
                 <div className="mt-6">
