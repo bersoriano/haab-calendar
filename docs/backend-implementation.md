@@ -12,6 +12,7 @@ The backend work currently consists of these files:
 | --- | --- |
 | `supabase/config.toml` | Local Supabase project configuration created by `npx supabase init`. |
 | `supabase/migrations/20260607113603_schema_security_foundation.sql` | First database migration: schema, constraints, indexes, RLS, grants, private helpers, and public-safe views. |
+| `supabase/migrations/20260611150930_url_management_hierarchy.sql` | URL hierarchy migration: vertical-aware provider slugs, service slugs, premium custom slugs, and redirect history tables/views. |
 | `supabase/seed.sql` | Development seed for a demo provider and services once a matching Supabase Auth user exists. |
 | `app/api/public/providers/[slug]/route.ts` | Public DTO Route Handler for loading a provider booking page by slug without exposing private data. |
 | `BACKEND_RECOMMENDATIONS.md` | Updated source-of-truth backend design notes, including DTO boundaries and text service cost/capacity fields. |
@@ -44,7 +45,7 @@ The route reads from public-safe database views and returns:
 }
 ```
 
-The public booking UI is not fully switched over yet. The endpoint is ready for the next step, where `/public/[slug]` can fetch this DTO and pass it into `HaabBookingModule` through `injectedConfig`.
+The canonical hierarchical public routes now use the public resolver and pass the DTO into `HaabBookingModule` through `injectedConfig`. `/public/[slug]` remains only as a standalone local demo path because there are no production URLs to preserve yet.
 
 ## Database Schema
 
@@ -58,7 +59,10 @@ Important fields:
 
 - `owner_user_id` references `auth.users(id)` and is the root of admin ownership.
 - `full_name`, `business_name`, and `email` store provider profile data.
-- `slug` is unique and used by public booking URLs.
+- `vertical` scopes the provider into the public URL taxonomy.
+- `slug` is unique per vertical and used by public booking URLs.
+- `custom_slug` is a premium-only vanity slug input; the database normalizes it into `slug`.
+- `plan_tier` currently marks whether custom slugs are allowed.
 - `timezone` and `booking_window_days` support production-safe availability.
 - `availability` is JSONB because the app uses a fixed weekly schedule structure.
 - `setup_complete` controls whether a provider is visible through public-safe reads.
@@ -67,6 +71,7 @@ Slug behavior:
 
 - If a provider has no explicit slug, the database generates one from `business_name`, then `full_name`, then `haab-calendar`.
 - Collisions get numeric suffixes such as `haab-demo-studio-2`.
+- Previous slugs are stored in `provider_slug_redirects` so old profile URLs can redirect permanently.
 - This preserves the current frontend fallback behavior where an empty `publicSlug` still produces a working public URL.
 
 ### `services`
@@ -76,10 +81,12 @@ Stores services offered by a provider.
 Important fields:
 
 - `provider_id` links each service to a provider.
+- `slug` is generated from `name` and unique per provider.
 - `booking_type` is either `appointment` or `full-day`.
 - `duration_minutes` is required for appointments and must be null for full-day services.
 - `capacity` and `cost` are text fields, not numeric fields. The current app treats these as labels like `Max 4 players` and `Premium advisory session`, not enforced inventory or payment values.
 - `sort_order` supports future admin service ordering.
+- Previous service slugs are stored in `service_slug_redirects` so old service URLs can redirect permanently.
 
 ### `bookings`
 
@@ -307,13 +314,13 @@ npm run build
 git diff --check
 ```
 
-`npm run test` passed 118 Vitest tests.
+`npm run test` passed 136 Vitest tests.
 
 ## What This Does Not Do Yet
 
 This checkpoint does not yet implement:
 
-- Public backend hydration in `/public/[slug]`.
+- Server-authoritative public booking writes.
 - Server-side hold creation.
 - Hold release.
 - Expired hold cleanup.
@@ -329,11 +336,11 @@ Those are the next phases in `docs/superpowers/plans/2026-06-06-backend-implemen
 
 ## Next Practical Step
 
-The next small backend step should be public read integration:
+The next small backend step should be server-authoritative booking writes:
 
-1. Fetch `GET /api/public/providers/[slug]` from the public page.
-2. Pass `response.store` into `HaabBookingModule` as `injectedConfig`.
-3. Add public loading, not-found, and fetch-failed states.
-4. Keep the existing localStorage mode available for local demo mode.
+1. Create server-side hold endpoints for canonical public routes.
+2. Confirm bookings through a transaction that validates the hold and slot.
+3. Store hashed manage tokens and return the raw token once.
+4. Keep the existing localStorage mode available for standalone demo mode.
 
-After that, move to server-authoritative holds and booking confirmation.
+After that, move cancellation and reschedule to server-authoritative manage-token endpoints.

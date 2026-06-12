@@ -1,4 +1,5 @@
 import { slugify, currentTimestamp, createId } from "./utils";
+import { getServiceSlug } from "./public-url";
 import { compareDateKeys } from "./date";
 import { DEFAULT_APPOINTMENT_DURATION_MINUTES, WEEKDAY_KEYS } from "./constants";
 import { VERTICAL_IDS } from "./types";
@@ -59,6 +60,7 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
   return drafts.map((draft) => ({
     id: createId("svc"),
     name: draft.name,
+    slug: slugify(draft.name || "service"),
     bookingType: draft.bookingType,
     durationMinutes: draft.bookingType === "full-day" ? undefined : draft.durationMinutes,
     description: draft.description,
@@ -137,8 +139,16 @@ export function createBlankServiceDraft(): ServiceDraft {
   };
 }
 
-export function createInitialBookingFlow(services: Service[]): BookingFlow {
-  const firstService = services.length === 1 ? services[0]?.id ?? "" : "";
+export function createInitialBookingFlow(
+  services: Service[],
+  preferredServiceId?: string,
+): BookingFlow {
+  const hasPreferredService = services.some((service) => service.id === preferredServiceId);
+  const firstService = hasPreferredService && preferredServiceId
+    ? preferredServiceId
+    : services.length === 1
+      ? services[0]?.id ?? ""
+      : "";
 
   return {
     step: firstService ? 2 : 1,
@@ -209,6 +219,7 @@ export function normalizeServices(source?: Service[] | null): Service[] {
   return (source ?? []).map((service) => ({
     id: service.id,
     name: service.name,
+    slug: getServiceSlug(service),
     bookingType: service.bookingType,
     durationMinutes:
       service.bookingType === "full-day"

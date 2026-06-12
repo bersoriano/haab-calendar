@@ -11,7 +11,8 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 3. Public Booking Flow
    Step-by-step client wizard for service selection, date and time, My Details, review, success, and iCal export.
 4. Public Route
-   Dedicated `/public/[slug]` page for the generated booking URL.
+   Dedicated hierarchical booking URLs such as `/doctors/dr-maya-alvarez`
+   and `/spaces/klcc-meeting-room/hourly-rental`.
 
 ## Core Behaviors
 
@@ -26,10 +27,16 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 
 - `/`
   Provider workspace plus the requested screen-by-screen and flow overview.
-- `/public/[slug]`
-  Public booking page for the current standalone setup.
-- `/public/[slug]/manage/[token]`
+- `/[vertical]/[providerSlug]`
+  Public provider profile booking page. Supported vertical segments are
+  `doctors`, `professionals`, `spaces`, and `events`.
+- `/[vertical]/[providerSlug]/[serviceSlug]`
+  Public service-specific booking page.
+- `/[vertical]/[providerSlug]/manage/[token]`
   Self-service page to view, reschedule, or cancel an existing booking via its manage token.
+- `/public/[slug]`
+  Standalone local demo booking URL. Production-style public URLs should use
+  the hierarchical routes above.
 
 ## Reuse
 

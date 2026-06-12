@@ -1,11 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { parsePublicVerticalSegment } from "@/lib/public-url";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
-const publicRoutePrefixes = ["/login", "/auth", "/public"];
+const publicRoutePrefixes = ["/login", "/auth", "/public", "/api/public"];
 
 function isPublicRoute(pathname: string) {
-  return publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
+  const [verticalSegment] = pathname.split("/").filter(Boolean);
+
+  return (
+    publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix)) ||
+    Boolean(verticalSegment && parsePublicVerticalSegment(verticalSegment))
+  );
 }
 
 export async function updateSession(request: NextRequest) {

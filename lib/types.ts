@@ -31,6 +31,7 @@ export type ProviderInfo = {
 export type Service = {
   id: string;
   name: string;
+  slug?: string;
   bookingType: BookingType;
   durationMinutes?: number;
   description: string;

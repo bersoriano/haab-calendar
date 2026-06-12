@@ -9,7 +9,7 @@
 - **Primary audience (assumption — retarget if wrong):** service providers and small businesses who need to take bookings — clinics, coaches/advisors, padel & sports courts, salons, venues/banquet halls, coworking spaces. They are the buyer and the setup user. Their clients are the *end bookers* (a secondary audience addressed only through the provider's eyes).
 - **One job of this page:** get a provider to start creating their booking page.
 - **Primary CTA (used everywhere):** `Create your booking page` → links to the setup wizard (`/` setup flow).
-- **Secondary CTA:** `See a live booking page` → opens a demo public flow (`/public/<demo-slug>`).
+- **Secondary CTA:** `See a live booking page` → opens a demo public flow on the canonical route, for example `/doctors/<demo-slug>`.
 - **Tone:** confident, concrete, calm. Sell outcomes (filled calendar, fewer no-shows, zero back-and-forth), not features.
 - **Proof posture:** the product has real, specific differentiators (offline-first, natural-language booking, slot holds, no-login self-service). Lead with those instead of inventing metrics.
 

@@ -15,6 +15,7 @@ upsert_provider as (
     full_name,
     business_name,
     email,
+    vertical,
     slug,
     timezone,
     booking_window_days,
@@ -26,6 +27,7 @@ upsert_provider as (
     'Dev Provider',
     'Haab Demo Studio',
     email,
+    'professional',
     'haab-demo-studio',
     'Asia/Kuala_Lumpur',
     60,
@@ -40,7 +42,7 @@ upsert_provider as (
     }'::jsonb,
     true
   from dev_user
-  on conflict (slug) do update
+  on conflict (vertical, slug) do update
     set
       owner_user_id = excluded.owner_user_id,
       full_name = excluded.full_name,

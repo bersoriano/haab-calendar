@@ -14,7 +14,7 @@ The current backend work was built as a parallel foundation:
 - The existing app still uses `components/booking/state/useModuleStore.ts`.
 - Standalone mode still reads from and writes to `localStorage`.
 - The new Supabase files do not replace the local store yet.
-- The new public API route exists as a future read boundary, but `/public/[slug]` has not been rewired to depend on it.
+- The public resolver can now hydrate canonical hierarchical URLs from the backend DTO, while `/public/[slug]` remains a standalone local demo route when no backend is configured.
 
 The intent is to migrate gradually, not to switch the app from offline to online in one risky step.
 
@@ -67,7 +67,7 @@ app/public/[slug]/page.tsx
 app/public/[slug]/manage/[token]/page.tsx
 ```
 
-The public route still passes `requestedPublicSlug` into the module. It does not yet fetch the Supabase DTO.
+The canonical hierarchical public routes resolve provider/service slugs first and pass the Supabase DTO into the module. `/public/[slug]` still passes `requestedPublicSlug` into the module when the backend is unavailable, preserving the standalone local demo path without resolving old production URLs.
 
 ## Existing Integrated Mode
 
@@ -125,11 +125,11 @@ It deliberately does not expose:
 
 This keeps public reads useful without making private operational data public.
 
-## Why The Public Route Is Not Rewired Yet
+## Public Route Migration Note
 
-The public route was not changed to consume the new API in the first checkpoint because that would be a behavior migration.
+Canonical hierarchical public routes now consume the public resolver and backend DTO when the backend is available. The standalone `/public/[slug]` route intentionally remains local/demo-only.
 
-Changing `/public/[slug]` from localStorage to Supabase affects:
+Moving the remaining public booking-write flows from local state to Supabase affects:
 
 - loading states
 - not-found states
@@ -149,7 +149,7 @@ The intended coexistence model is:
 | Scenario | Data Source | Notes |
 | --- | --- | --- |
 | Local demo / offline prototype | `localStorage` through `useModuleStore` standalone mode | Current behavior remains available. |
-| Public production booking page | Supabase public DTO passed into `HaabBookingModule` integrated mode | Next planned step. |
+| Public production booking page | Supabase public DTO passed into `HaabBookingModule` integrated mode | Implemented for canonical hierarchical provider/service URLs. |
 | Provider admin production app | Supabase authenticated reads/writes protected by RLS | Later phase. |
 | Public booking writes | Server-authoritative endpoints or private RPCs | Later phase; never direct public table inserts. |
 
@@ -271,7 +271,7 @@ npm run build
 git diff --check
 ```
 
-The existing Vitest suite still passed 118 tests, which is a useful signal that the pure offline booking logic was not disturbed.
+The existing Vitest suite still passes 136 tests, which is a useful signal that the pure offline booking logic was not disturbed.
 
 ## Current Blockers
 
@@ -288,7 +288,7 @@ The schema is written and ready, but it still needs to be applied and tested aga
 The next step should be small and reversible:
 
 1. Keep localStorage standalone mode as-is.
-2. Add a backend-enabled public page path that fetches `/api/public/providers/[slug]`.
+2. Continue replacing booking-critical public writes with server-authoritative endpoints.
 3. Pass the returned `store` into `HaabBookingModule` with `injectedConfig`.
 4. Add clear loading, not-found, and fetch-failed states.
 5. Keep local demo/offline mode behind a deliberate switch.

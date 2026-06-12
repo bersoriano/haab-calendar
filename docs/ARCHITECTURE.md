@@ -82,7 +82,7 @@ This is the **single intended swap point for the Supabase migration** (`BACKEND_
 
 Two persistence modes both flow through the hook:
 - **standalone** (default; all three live routes) — store in `localStorage[storageKey]`, multi-tab sync via the `storage` event.
-- **integrated** (`injectedConfig` present) — store comes from config + `shadowBookings`/`shadowBookingHolds`; changes emit via callbacks; no localStorage writes. Currently dormant (no route triggers it) but preserved for embedding/child reuse — **keep it intact**.
+- **integrated** (`injectedConfig` present) — store comes from config + `shadowBookings`/`shadowBookingHolds`; changes emit via callbacks; no localStorage writes. Canonical hierarchical public routes use this mode, and it remains the embedding/child reuse path — **keep it intact**.
 
 ---
 
@@ -90,7 +90,7 @@ Two persistence modes both flow through the hook:
 
 `npm run test` (Vitest). 118 characterization tests under `lib/__tests__/` lock the behavior of the pure logic (`date`, `store`, `availability`, `ics`, `format`). They assert *current* behavior, not idealized correctness — treat a failure as "you changed behavior," then decide if that was intended.
 
-**Coverage gap:** React state/render flows (booking wizard, admin surfaces, modals) are **not** unit-tested. Verify those with a build + a live functional smoke on `/public/<slug>` (book → confirm → reschedule → cancel → hold expiry) and the admin route. `npm run build` + `npm run lint` are the other gates.
+**Coverage gap:** React state/render flows (booking wizard, admin surfaces, modals) are **not** unit-tested. Verify those with a build + a live functional smoke on a canonical public route such as `/doctors/<slug>` (book → confirm → reschedule → cancel → hold expiry) and the admin route. `npm run build` + `npm run lint` are the other gates.
 
 ---
 

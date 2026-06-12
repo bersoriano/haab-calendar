@@ -1,3 +1,5 @@
+import { generateSlug } from "@/lib/public-url";
+
 export function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
@@ -15,10 +17,5 @@ export function pad(value: number) {
 }
 
 export function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
+  return generateSlug(value);
 }

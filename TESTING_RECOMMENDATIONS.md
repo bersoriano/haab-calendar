@@ -57,7 +57,7 @@ Manual regression testing across this surface area is already costly. As Supabas
 2. **Manage flow** — make a booking, copy the manage URL, open it in a fresh context, verify the manage page renders the booking, reschedule, verify the change persists across reload.
 3. **Conflict on reschedule** — two contexts, both open the reschedule modal for the same booking pointing at the same slot, both confirm; one should succeed, one should show the inline error.
 4. **Hold expiration** — start a booking, wait past the 10-minute hold, verify the slot is released.
-5. **Token-not-found** — open `/public/<slug>/manage/<bogus-token>` and verify the not-found view renders.
+5. **Token-not-found** — open `/<vertical>/<slug>/manage/<bogus-token>` and verify the not-found view renders.
 
 **What not to bother e2e-testing:**
 - Visual styling (use a separate visual-regression tool like Percy if needed, or skip until UX stabilizes).
@@ -76,7 +76,7 @@ Until automated coverage exists, this is the verification checklist for the mana
 - [ ] Open two tabs of the same manage URL → reschedule from tab A to a specific slot → in tab B (still on the original modal), pick the same slot and confirm → tab B shows the inline conflict error.
 - [ ] Open the .ics file from the success screen in a calendar app → verify the manage URL appears as a clickable URL field and as text in the description.
 - [ ] In a browser with an existing booking that has no `manageToken` (simulate by editing localStorage), reload → backfill runs, token is now present, success screen and manage URL work normally.
-- [ ] Click "Book another" from the manage page → navigates to `/public/<slug>` (not the manage URL) and starts a fresh booking flow.
+- [ ] Click "Book another" from the manage page → navigates to the canonical provider URL, such as `/doctors/<slug>` (not the manage URL), and starts a fresh booking flow.
 - [ ] Cancelled booking: open its manage URL → page renders cancelled state, Reschedule and Cancel buttons are disabled.
 - [ ] Reschedule a booking that has been rescheduled before → status remains "rescheduled", new date/time replace the previous values.
 

@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import type { ModuleStore, Service, WeeklyAvailability } from "@/lib/types";
+import {
+  isPublicUrlBackendUnavailable,
+  PUBLIC_PROVIDER_SELECT,
+  PUBLIC_SERVICE_SELECT,
+} from "@/lib/public-booking-resolver";
+import { buildProviderPath, normalizeUrlSlugSegment, validateProviderSlug } from "@/lib/public-url";
+import type { ModuleStore, Service, VerticalId, WeeklyAvailability } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +14,7 @@ type PublicProviderRow = {
   full_name: string;
   business_name: string;
   slug: string;
+  vertical: VerticalId;
   timezone: string;
   booking_window_days: number;
   availability: WeeklyAvailability;
@@ -17,6 +24,7 @@ type PublicServiceRow = {
   id: string;
   provider_id: string;
   name: string;
+  slug: string;
   booking_type: "appointment" | "full-day";
   duration_minutes: number | null;
   description: string;
@@ -30,6 +38,7 @@ function toPublicService(row: PublicServiceRow): Service {
   return {
     id: row.id,
     name: row.name,
+    slug: row.slug,
     bookingType: row.booking_type,
     durationMinutes:
       row.booking_type === "appointment" ? row.duration_minutes ?? undefined : undefined,
@@ -46,71 +55,8 @@ function toPublicService(row: PublicServiceRow): Service {
   };
 }
 
-export async function GET(
-  _request: Request,
-  context: { params: Promise<{ slug: string }> },
-) {
-  const { slug } = await context.params;
-  const normalizedSlug = decodeURIComponent(slug).trim().toLowerCase();
-
-  if (!normalizedSlug) {
-    return Response.json(
-      { userMessage: "This booking link is invalid." },
-      { status: 400 },
-    );
-  }
-
-  const supabase = await createClient();
-  const { data: provider, error: providerError } = await supabase
-    .from("public_providers")
-    .select("id, full_name, business_name, slug, timezone, booking_window_days, availability")
-    .eq("slug", normalizedSlug)
-    .maybeSingle<PublicProviderRow>();
-
-  if (providerError) {
-    console.error("public_provider_lookup_failed", {
-      debugId: crypto.randomUUID(),
-      slug: normalizedSlug,
-      error: providerError.message,
-    });
-
-    return Response.json(
-      { userMessage: "We could not load this booking page. Please try again." },
-      { status: 500 },
-    );
-  }
-
-  if (!provider) {
-    return Response.json(
-      { userMessage: "This booking link was not found." },
-      { status: 404 },
-    );
-  }
-
-  const { data: services, error: servicesError } = await supabase
-    .from("public_services")
-    .select(
-      "id, provider_id, name, booking_type, duration_minutes, description, capacity, cost, notes, sort_order",
-    )
-    .eq("provider_id", provider.id)
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true })
-    .returns<PublicServiceRow[]>();
-
-  if (servicesError) {
-    console.error("public_services_lookup_failed", {
-      debugId: crypto.randomUUID(),
-      providerId: provider.id,
-      error: servicesError.message,
-    });
-
-    return Response.json(
-      { userMessage: "We could not load the available services. Please try again." },
-      { status: 500 },
-    );
-  }
-
-  const store: ModuleStore = {
+function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]): ModuleStore {
+  return {
     provider: {
       fullName: provider.full_name,
       businessName: provider.business_name,
@@ -121,18 +67,98 @@ export async function GET(
       address2: "",
       publicSlug: provider.slug,
     },
-    services: (services ?? []).map(toPublicService),
+    services: services.map(toPublicService),
     availability: provider.availability,
     bookings: [],
     bookingHolds: [],
     setupComplete: true,
+    vertical: provider.vertical,
   };
+}
 
-  return Response.json({
-    store,
-    meta: {
-      timezone: provider.timezone,
-      bookingWindowDays: provider.booking_window_days,
-    },
-  });
+export async function GET(
+  _request: Request,
+  context: { params: Promise<{ slug: string }> },
+) {
+  const { slug } = await context.params;
+  const normalizedSlug = normalizeUrlSlugSegment(slug);
+
+  if (!validateProviderSlug(normalizedSlug).ok) {
+    return Response.json(
+      { userMessage: "This booking link is invalid." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const supabase = await createClient();
+    const { data: providers, error: providerError } = await supabase
+      .from("public_providers")
+      .select(PUBLIC_PROVIDER_SELECT)
+      .eq("slug", normalizedSlug)
+      .limit(2)
+      .returns<PublicProviderRow[]>();
+
+    if (providerError) {
+      throw providerError;
+    }
+
+    if ((providers ?? []).length > 1) {
+      return Response.json(
+        {
+          userMessage:
+            "This booking link is shared by multiple verticals. Use the full provider URL.",
+        },
+        { status: 409 },
+      );
+    }
+
+    const provider = providers?.[0];
+
+    if (!provider) {
+      return Response.json(
+        { userMessage: "This booking link was not found." },
+        { status: 404 },
+      );
+    }
+
+    const { data: services, error: servicesError } = await supabase
+      .from("public_services")
+      .select(PUBLIC_SERVICE_SELECT)
+      .eq("provider_id", provider.id)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+      .returns<PublicServiceRow[]>();
+
+    if (servicesError) {
+      throw servicesError;
+    }
+
+    return Response.json({
+      store: toPublicStore(provider, services ?? []),
+      meta: {
+        timezone: provider.timezone,
+        bookingWindowDays: provider.booking_window_days,
+        canonicalPath: buildProviderPath(provider.vertical, provider.slug),
+      },
+    });
+  } catch (error) {
+    if (isPublicUrlBackendUnavailable(error)) {
+      return Response.json(
+        { userMessage: "The booking backend is not configured." },
+        { status: 503 },
+      );
+    }
+
+    console.error("public_provider_lookup_failed", {
+      debugId: crypto.randomUUID(),
+      slug: normalizedSlug,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return Response.json(
+      { userMessage: "We could not load this booking page. Please try again." },
+      { status: 500 },
+    );
+  }
 }

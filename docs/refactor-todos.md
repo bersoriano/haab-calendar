@@ -2,7 +2,7 @@
 
 Backlog for the `haab-booking-module` decomposition. Written so a future session/LLM can pick up cold.
 
-**Where we are (2026-05-29):** Phases 0/1/3/4 done and merged to `main`. Pure logic + types + constants in `lib/`, seed data in `config/`, presentational primitives in `components/ui/`, persistence in `components/booking/state/useModuleStore.ts`, 118 Vitest characterization tests in `lib/__tests__/`. Monolith `components/haab-booking-module.tsx` is down to ~4,232 lines but still holds the orchestrator + all feature render/state.
+**Where we are (2026-06-12):** Phases 0/1/3/4 done and merged to `main`. Pure logic + types + constants in `lib/`, seed data in `config/`, presentational primitives in `components/ui/`, persistence in `components/booking/state/useModuleStore.ts`, 136 Vitest characterization tests in `lib/__tests__/`. Monolith `components/haab-booking-module.tsx` is down to roughly 4,200 lines but still holds the orchestrator + all feature render/state.
 
 **Read first:**
 - `docs/ARCHITECTURE.md` — current module layout + the customization seams.
@@ -12,13 +12,13 @@ Backlog for the `haab-booking-module` decomposition. Written so a future session
 **Global rules for everything below:**
 - **Behavior-preserving.** No UX/prop-contract change rides with a move. Refactor and feature-change never share a commit.
 - **Dependency direction stays acyclic:** `lib` → `lib` only; `components/ui` → `lib`; `components/booking` → `lib`; monolith → all; routes → monolith. Never `lib` → `components`.
-- **Gates per step:** `npm run build` + `npm run lint` + `npm run test` (118 passing) + a **functional smoke** on the touched surface (build-green does NOT cover React flows).
-- **Keep `HaabBookingModule` props identical** for the 3 route importers (`app/page.tsx`, `app/public/[slug]/page.tsx`, `app/public/[slug]/manage/[token]/page.tsx`) until Phase 6.
-- **Preserve `integratedMode`** (dormant, no route uses it) exactly — it's the embedding/child seam.
+- **Gates per step:** `npm run build` + `npm run lint` + `npm run test` (136 passing) + a **functional smoke** on the touched surface (build-green does NOT cover React flows).
+- **Keep `HaabBookingModule` props stable** for the route importers unless the change explicitly includes a route contract update.
+- **Preserve `integratedMode`** exactly — it is now used by canonical hierarchical public routes and remains the embedding/child seam.
 - One concern per commit; each step reversible by one `git revert`.
 
-**Functional smoke checklist** (run on `/public/<slug>` with a setup-complete store; seed `localStorage["haab-calendar-dev-clean"]`):
-book → pick date → pick slot → continue → fill details → confirm → success/QR → reschedule → cancel; plus hold countdown + expiry; plus admin route (`/`) setup wizard + service create/edit/delete + settings. All routes run standalone mode.
+**Functional smoke checklist** (run on a canonical public route such as `/doctors/<slug>`; use `/public/<slug>` only for the standalone local demo):
+book → pick date → pick slot → continue → fill details → confirm → success/QR → reschedule → cancel; plus hold countdown + expiry; plus admin route (`/`) setup wizard + service create/edit/delete + settings.
 
 ---
 
@@ -85,7 +85,7 @@ This is what actually unblocks child projects. The foundation makes reuse *possi
 - [ ] **`lib/index.ts` barrel** — children currently import deep paths (`@/lib/availability`); a barrel gives a cleaner public contract.
 - [ ] **`lib/nl.ts`** — move the `chrono-node` natural-language straggler (`hasExplicitTime` + parse usage) out of the monolith into a pure module (pairs with 5a).
 - [ ] **Type dedup** — `lib/booking-tokens.ts` defines its own `BookingLike`/`StoreLike`; align with `lib/types` now that types are centralized.
-- [ ] **`integratedMode` integration smoke** — it's dormant and never exercised live; add a smoke/test before any child relies on it.
+- [ ] **`integratedMode` integration smoke** — canonical public routes now exercise it; add a dedicated smoke/test so child extraction cannot regress it.
 - [ ] **Component/integration tests** — RTL/Playwright for the booking wizard + admin flows to close the render-flow coverage gap that unit tests don't cover.
 
 ---

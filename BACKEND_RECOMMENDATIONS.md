@@ -42,7 +42,10 @@ providers (
   full_name           text not null,
   business_name       text not null,
   email               text not null,
-  slug                text unique not null, -- generated/backfilled when the existing publicSlug fallback is empty
+  vertical            text not null, -- 'healthcare' | 'spaces' | 'professional' | 'events'
+  slug                text not null, -- unique with vertical; generated/backfilled when the existing publicSlug fallback is empty
+  custom_slug         text,          -- premium vanity slug, normalized into slug
+  plan_tier           text not null default 'free',
   timezone            text not null default 'UTC',
   booking_window_days int not null default 60,
   availability        jsonb not null,  -- weekly schedule (fixed structure, not queried against)
@@ -55,6 +58,7 @@ services (
   id          uuid primary key,
   provider_id uuid not null references providers(id) on delete cascade,
   name        text not null,
+  slug        text not null,
   type        text not null,  -- 'appointment' | 'full-day'
   duration    int,            -- minutes, null for full-day
   description text,
@@ -124,6 +128,8 @@ booking_events (
 - **`booking_holds.expires_at`** — replaces the client-side timer with a server-authoritative expiration.
 - **`owner_user_id` on providers** — anchors RLS and authenticated admin ownership to `auth.users`.
 - **Generated provider slug** — preserves the current `publicSlug || slugify(businessName || fullName || "haab-calendar")` behavior. Do not require a manually-entered slug before a provider gets a working public link.
+- **Provider slug uniqueness per vertical** — the canonical public URL includes the vertical segment, so `(vertical, slug)` is the natural uniqueness boundary and keeps slugs shorter than global uniqueness would.
+- **Service slug uniqueness per provider** — service URLs are scoped by provider path, so `services(provider_id, slug)` is sufficient.
 - **Booking snapshot fields** — `service_name`, `booking_type`, `duration_minutes_snapshot`, `cost_snapshot`, and `capacity_snapshot` preserve historical display and manage-link behavior even if a service is renamed, repriced, changes type, or is deleted.
 - **`manage_token_hash` instead of plaintext token** — the client receives the raw manage token once; the database stores only a hash.
 - **`idempotency_key` on bookings** — prevents duplicate confirmed bookings when the customer double-submits or retries the same confirmation request. The server should return the original committed booking for an exact replay and reject key reuse with different booking input.
@@ -132,7 +138,8 @@ booking_events (
 
 ### Recommended constraints and indexes
 
-- `providers.slug` unique.
+- `providers(vertical, slug)` unique.
+- `services(provider_id, slug)` unique.
 - `bookings(provider_id, date, status)` for admin schedule queries.
 - `booking_holds(provider_id, date, expires_at)` for availability checks and cleanup.
 - `bookings.manage_token_hash` unique.

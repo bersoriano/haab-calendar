@@ -28,17 +28,17 @@ The doc deliberately documents the **engine as it should be designed**, which so
 | Feature                                                          | Status today                                                                                          |
 |------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | Standalone localStorage persistence (read/write/multi-tab sync)  | ✅ Shipped — `components/booking/state/useModuleStore.ts`, key `haab-calendar-dev-clean`               |
-| Integrated mode (`injectedConfig` + callbacks)                   | ✅ Shipped (dormant — no route uses it; preserved for embedding/child reuse)                           |
-| Adaptive surface (`/`) and public-only surface (`/public/[slug]`)| ✅ Shipped                                                                                             |
+| Integrated mode (`injectedConfig` + callbacks)                   | ✅ Shipped — used by canonical hierarchical public routes and preserved for embedding/child reuse       |
+| Adaptive surface (`/`) and public-only surfaces                  | ✅ Shipped — canonical `/{vertical}/{providerSlug}` plus standalone demo `/public/[slug]`               |
 | 4-step booking flow with 10-min hold                             | ✅ Shipped                                                                                             |
 | Reschedule and cancel from admin and from in-session success screen | ✅ Shipped                                                                                          |
 | `BookingRecord.manageToken` field                                | ✅ Shipped — `lib/types.ts`                                                                            |
 | `lib/booking-tokens.ts` (token gen, lookup, URL builder, backfill) | ✅ Shipped — `lib/booking-tokens.ts`                                                                 |
-| `/public/[slug]/manage/[token]` route                            | ✅ Shipped — `app/public/[slug]/manage/[token]/page.tsx`                                               |
+| Canonical manage-token route                                     | ✅ Shipped — `app/[verticalSegment]/[providerSlug]/manage/[token]/page.tsx`                            |
 | `manageBookingToken` prop on the module + lookup state machine   | ✅ Shipped                                                                                             |
 | Mobile-first public booking flow                                 | ✅ Shipped (2026-05-29)                                                                                |
 | Core decomposition (`lib/`, `config/`, `components/ui/`, `useModuleStore`) | ✅ Shipped (2026-05-29) — see `docs/ARCHITECTURE.md`. Feature components/orchestrator (Phase 5/6) deferred. |
-| Test framework                                                   | ✅ Vitest — 118 characterization tests in `lib/__tests__/` (`npm run test`). React render flows untested. |
+| Test framework                                                   | ✅ Vitest — 136 characterization tests in `lib/__tests__/` (`npm run test`). React render flows untested. |
 | Inline error on reschedule slot conflict                         | ✅ Shipped — folded into the manage-booking work                                                       |
 | Supabase backend, network sync, online concurrency               | ❌ Not built yet — see `BACKEND_RECOMMENDATIONS.md`. The `useModuleStore` hook is the intended swap point. |
 | Provider auth                                                    | ❌ Not built — admin surface is unauthenticated, gated only by URL                                     |
@@ -72,7 +72,7 @@ type ProviderInfo = {
   fullName: string;
   businessName: string;
   email: string;
-  publicSlug: string;     // unique per deployment, used in /public/[slug]
+  publicSlug: string;     // provider slug used in /{vertical}/{providerSlug}
 };
 
 type Service = {
@@ -157,7 +157,7 @@ In integrated mode, the parent application is the source of truth for provider/s
 | Surface mode    | What renders                                                                   | Used by                            |
 |-----------------|--------------------------------------------------------------------------------|------------------------------------|
 | **`adaptive`**  | Toggles between admin (dashboard/bookings/calendar/services/settings) and public booking flow within the same module instance | The root `/` page (developer view) |
-| **`public-only`** | Only the public booking flow + success/manage screen                         | `/public/[slug]`, and `/public/[slug]/manage/[token]` once built |
+| **`public-only`** | Only the public booking flow + success/manage screen                         | `/{vertical}/{providerSlug}`, service URLs, manage URLs, and standalone demo `/public/[slug]` |
 
 The surface mode never changes after mount.
 
@@ -175,7 +175,7 @@ The same React component renders two products with different audiences, differen
 |------------------------------|------------------------------------------------------------|---------------------------------------------------------------|
 | Audience                     | Clients booking with the provider                          | The provider running the business                             |
 | Surface mode (§ 3b)          | `public-only`, or the `public` half of `adaptive`          | The `management` half of `adaptive`                           |
-| Routes (today)               | `/public/[slug]`, `/public/[slug]/manage/[token]` (planned) | `/` (adaptive — admin tabs)                                  |
+| Routes (today)               | `/{vertical}/{providerSlug}`, `/{vertical}/{providerSlug}/{serviceSlug}`, `/{vertical}/{providerSlug}/manage/{token}` | `/` (adaptive — admin tabs) |
 | Tabs / screens               | Booking flow (steps 1–4) + success/manage screen           | Setup wizard, Dashboard, Bookings, Calendar, Services, Settings |
 | Auth (today)                 | None — anyone with the URL                                 | None — anyone with the URL (intentional gap until Supabase)   |
 | Auth (planned)               | None for browsing; manage token for editing own booking    | Provider login required                                       |
@@ -483,7 +483,7 @@ The minimum viable surface, mapped to the engine's existing read/write needs. Al
 
 | Engine call                       | API equivalent                                                                 |
 |-----------------------------------|--------------------------------------------------------------------------------|
-| Hydrate store (`/public/[slug]`)  | `GET /providers/:slug` → returns `{ provider, services, availability }`        |
+| Hydrate store (`/{vertical}/{providerSlug}`) | Resolve by vertical + provider slug → returns `{ provider, services, availability }` |
 | Hydrate bookings (admin only)     | `GET /providers/:slug/bookings?from=…&to=…` → returns `BookingRecord[]`        |
 | Find booking by manage token       | `GET /bookings/by-token/:token` → hashes token, returns single `BookingRecord` or 404 |
 | Create hold                        | `POST /providers/:slug/holds` → returns hold with server-assigned `expires_at` |
@@ -532,12 +532,15 @@ When the local store and the server disagree (likely scenarios: client made a ch
 | Route                                  | Surface mode    | Persistence mode | Notes                                                                 |
 |----------------------------------------|-----------------|------------------|------------------------------------------------------------------------|
 | `/`                                    | `adaptive`      | standalone       | Developer overview + full module. Toggles between admin and public.   |
-| `/public/[slug]`                       | `public-only`   | standalone       | Customer-facing booking flow. `slug` is matched against `provider.publicSlug`. |
-| `/public/[slug]/manage/[token]` (planned) | `public-only`  | standalone       | Manage existing booking. Loads booking by `manageToken` and renders the success/manage screen. See `docs/superpowers/specs/2026-05-06-manage-booking-design.md`. |
+| `/{vertical}/{providerSlug}`            | `public-only`   | integrated/backend DTO with local fallback | Canonical customer-facing provider booking page. |
+| `/{vertical}/{providerSlug}/{serviceSlug}` | `public-only` | integrated/backend DTO with local fallback | Canonical service-specific booking page. |
+| `/{vertical}/{providerSlug}/manage/[token]` | `public-only` | integrated/backend DTO with local fallback | Canonical manage-token page. |
+| `/public/[slug]`                       | `public-only`   | standalone       | Local demo booking flow only. `slug` is matched against `provider.publicSlug`. |
+| `/public/[slug]/manage/[token]`        | `public-only`   | standalone       | Local demo manage-token page only. |
 
-If `/public/[slug]` is hit with a slug that doesn't match the local store's `provider.publicSlug` (or before setup is complete), the module shows a "this booking page isn't ready yet" screen. The slug is matched, not used as a database key, because the persistence layer is per-browser today.
+If `/public/[slug]` is hit with a slug that doesn't match the local store's `provider.publicSlug` (or before setup is complete), the module shows a "this booking page isn't ready yet" screen. The standalone demo slug is matched, not used as a database key, because that route's persistence layer is per-browser today.
 
-**`publicSlug` resolution and fallback (line 1411):** the live business slug is `provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar")`. So an empty `publicSlug` does not break the public route — it falls back to a slugified business name. The API must preserve this fallback if it ever generates URLs server-side, otherwise providers who never explicitly set `publicSlug` will lose their public link.
+**`publicSlug` resolution and fallback:** the live business slug is `provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar")`. So an empty `publicSlug` does not break public URL generation — it falls back to a slugified business name. The backend should generate/persist canonical slugs server-side so providers who never explicitly set `publicSlug` still get a stable hierarchical public link.
 
 ---
 
@@ -613,7 +616,7 @@ The ones that have actually been thought through. Listed so the API does not reg
 
 ### Empty or unset `publicSlug`
 
-- The live slug used by `/public/[slug]` is `publicSlug || slugify(businessName || fullName || "haab-calendar")`. A provider who has never customised the slug still gets a working public link. The API must preserve this fallback or generate the slug server-side when the field is empty. Otherwise, switching backends silently breaks the public URL for providers who relied on the fallback.
+- The live provider slug is `publicSlug || slugify(businessName || fullName || "haab-calendar")`. A provider who has never customised the slug still gets a working canonical public link. The backend should preserve this fallback or generate the slug server-side when the field is empty.
 
 ### Reschedule modal silent-fail on stale slot (today)
 
