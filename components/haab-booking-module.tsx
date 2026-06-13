@@ -878,6 +878,7 @@ export function HaabBookingModule({
       bookingType: service.bookingType,
       durationMinutes: service.durationMinutes ?? 30,
       description: service.description,
+      medicalSpecialty: service.medicalSpecialty ?? "",
       capacity: service.capacity ?? "",
       cost: service.cost ?? "",
       notes: service.notes ?? "",
@@ -949,6 +950,10 @@ export function HaabBookingModule({
             ? serviceDraft.durationMinutes
             : undefined,
         description: serviceDraft.description.trim(),
+        medicalSpecialty:
+          serviceDraft.bookingType === "appointment"
+            ? serviceDraft.medicalSpecialty?.trim() || undefined
+            : undefined,
         capacity: serviceDraft.capacity.trim() || undefined,
         cost: serviceDraft.cost.trim() || undefined,
         notes: serviceDraft.notes.trim() || undefined,
@@ -1876,6 +1881,11 @@ export function HaabBookingModule({
                       <span className="text-xs font-medium text-[var(--muted)] tabular-nums">
                         {formatDuration(service)}
                       </span>
+                      {service.medicalSpecialty ? (
+                        <span className="text-xs font-medium text-[var(--muted)]">
+                          {service.medicalSpecialty}
+                        </span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -2290,6 +2300,7 @@ export function HaabBookingModule({
         hints={VERTICALS.find((item) => item.id === vertical)?.hints}
         copy={copy}
         provider={provider}
+        vertical={vertical}
       />
     );
   }
@@ -2942,6 +2953,9 @@ export function HaabBookingModule({
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                     {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
+                    {service.medicalSpecialty ? (
+                      <span>Specialty: {service.medicalSpecialty}</span>
+                    ) : null}
                     {service.cost ? <span>Total: {service.cost}</span> : null}
                     {service.notes ? <span>Notes: {service.notes}</span> : null}
                   </div>
@@ -3207,6 +3221,12 @@ export function HaabBookingModule({
                             label="Type"
                             value={getBookingTypeLabel(selectedService.bookingType)}
                           />
+                          {selectedService.medicalSpecialty ? (
+                            <SummaryField
+                              label="Specialty"
+                              value={selectedService.medicalSpecialty}
+                            />
+                          ) : null}
                           <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
                           <SummaryField label="Length" value={formatDuration(selectedService)} />
                           <SummaryField label="Total" value={selectedService.cost || "Not set"} />
@@ -3445,6 +3465,12 @@ export function HaabBookingModule({
                             : "Not selected"
                         }
                       />
+                      {selectedService.medicalSpecialty ? (
+                        <SummaryField
+                          label="Specialty"
+                          value={selectedService.medicalSpecialty}
+                        />
+                      ) : null}
                       <SummaryField
                         label={copy.phrases.clientLabel}
                         value={bookingFlow.clientName.trim() || "Not entered yet"}
@@ -3579,93 +3605,108 @@ export function HaabBookingModule({
                         <p className="mt-5 text-base font-semibold tracking-[-0.01em] text-[var(--ink)] sm:text-lg">
                           {selectedService.name}
                         </p>
-                        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                          <SummaryField
-                            label="Type"
-                            value={getBookingTypeLabel(selectedService.bookingType)}
-                          />
-                          <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
-                          <SummaryField label="Length" value={formatDuration(selectedService)} />
-                          <SummaryField label="Total" value={selectedService.cost || "Not set"} />
-                          {selectedService.notes ? (
-                            <SummaryField label="Notes" value={selectedService.notes} />
-                          ) : null}
-                          {successAddresses.length > 0 ? (
-                            <SummaryField
-                              label={successAddresses.length > 1 ? "Locations" : "Location"}
-                              value={
-                                <div className="flex flex-col gap-1.5">
-                                  {successAddresses.map((entry) => (
-                                    <span key={`success-addr-${entry}`} className="inline-flex items-start gap-2">
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]"
-                                        aria-hidden
-                                      >
-                                        <path
-                                          d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
-                                          fill="currentColor"
-                                        />
-                                      </svg>
-                                      <span className="min-w-0 break-words">{entry}</span>
-                                    </span>
-                                  ))}
-                                </div>
-                              }
-                            />
-                          ) : null}
-                          {successPhones.length > 0 ? (
-                            <SummaryField
-                              label={successPhones.length > 1 ? "Phones" : "Phone"}
-                              value={
-                                <div className="flex flex-col gap-1.5">
-                                  {successPhones.map((entry) => (
-                                    <span key={`success-phone-${entry}`} className="inline-flex items-center gap-2">
-                                      <svg
-                                        viewBox="0 0 24 24"
-                                        className="h-4 w-4 shrink-0 text-[var(--accent-strong)]"
-                                        aria-hidden
-                                      >
-                                        <path
-                                          d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
-                                          fill="currentColor"
-                                        />
-                                      </svg>
-                                      <span className="min-w-0 break-words">{entry}</span>
-                                    </span>
-                                  ))}
-                                </div>
-                              }
-                            />
-                          ) : null}
-                        </dl>
+                        <div className="mt-4 grid gap-5 lg:grid-cols-2 lg:gap-8">
+                          <div>
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                              Appointment Details
+                            </p>
+                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
+                              <SummaryField
+                                label="Type"
+                                value={getBookingTypeLabel(selectedService.bookingType)}
+                              />
+                              {selectedService.medicalSpecialty ? (
+                                <SummaryField
+                                  label="Specialty"
+                                  value={selectedService.medicalSpecialty}
+                                />
+                              ) : null}
+                              <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                              <SummaryField label="Length" value={formatDuration(selectedService)} />
+                              <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                              {selectedService.notes ? (
+                                <SummaryField label="Notes" value={selectedService.notes} />
+                              ) : null}
+                              {successAddresses.length > 0 ? (
+                                <SummaryField
+                                  label={successAddresses.length > 1 ? "Locations" : "Location"}
+                                  value={
+                                    <div className="flex flex-col gap-1.5">
+                                      {successAddresses.map((entry) => (
+                                        <span key={`success-addr-${entry}`} className="inline-flex items-start gap-2">
+                                          <svg
+                                            viewBox="0 0 24 24"
+                                            className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                            aria-hidden
+                                          >
+                                            <path
+                                              d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
+                                              fill="currentColor"
+                                            />
+                                          </svg>
+                                          <span className="min-w-0 break-words">{entry}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  }
+                                />
+                              ) : null}
+                              {successPhones.length > 0 ? (
+                                <SummaryField
+                                  label={successPhones.length > 1 ? "Phones" : "Phone"}
+                                  value={
+                                    <div className="flex flex-col gap-1.5">
+                                      {successPhones.map((entry) => (
+                                        <span key={`success-phone-${entry}`} className="inline-flex items-center gap-2">
+                                          <svg
+                                            viewBox="0 0 24 24"
+                                            className="h-4 w-4 shrink-0 text-[var(--accent-strong)]"
+                                            aria-hidden
+                                          >
+                                            <path
+                                              d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
+                                              fill="currentColor"
+                                            />
+                                          </svg>
+                                          <span className="min-w-0 break-words">{entry}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  }
+                                />
+                              ) : null}
+                            </dl>
+                          </div>
+                          <div className="border-t border-[rgba(15,23,42,0.06)] pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
+                              Customer Details
+                            </p>
+                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
+                              <SummaryField
+                                label={copy.phrases.clientLabel}
+                                value={successfulBooking.clientName || "—"}
+                              />
+                              {successfulBooking.clientEmail.trim() ? (
+                                <SummaryField label="Email" value={successfulBooking.clientEmail} />
+                              ) : null}
+                              {successfulBooking.clientPhone.trim() ? (
+                                <SummaryField label="Phone" value={successfulBooking.clientPhone} />
+                              ) : null}
+                              {successfulBooking.notes.trim() ? (
+                                <SummaryField label="Notes" value={successfulBooking.notes} />
+                              ) : null}
+                            </dl>
+                          </div>
+                        </div>
                       </>
                     );
                   })()}
-
-                  <div className="mt-5 h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
-
-                  <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                    <SummaryField
-                      label={copy.phrases.clientLabel}
-                      value={successfulBooking.clientName || "—"}
-                    />
-                    {successfulBooking.clientEmail.trim() ? (
-                      <SummaryField label="Email" value={successfulBooking.clientEmail} />
-                    ) : null}
-                    {successfulBooking.clientPhone.trim() ? (
-                      <SummaryField label="Phone" value={successfulBooking.clientPhone} />
-                    ) : null}
-                    {successfulBooking.notes.trim() ? (
-                      <SummaryField label="Notes" value={successfulBooking.notes} />
-                    ) : null}
-                  </dl>
                 </div>
 
-                <div className="mt-6">
+                <div className="mt-6 lg:flex lg:justify-center">
                   <ActionButton
                     tone="primary"
-                    className={cn("w-full px-6", publicPrimaryActionClass)}
+                    className={cn("w-full px-6 lg:w-auto lg:min-w-[180px]", publicPrimaryActionClass)}
                     disabled={isSuccessfulBookingCancelled}
                     onClick={() => downloadBookingCalendarFile(successfulBooking)}
                   >

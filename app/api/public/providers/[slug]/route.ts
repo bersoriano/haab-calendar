@@ -28,6 +28,7 @@ type PublicServiceRow = {
   booking_type: "appointment" | "full-day";
   duration_minutes: number | null;
   description: string;
+  medical_specialty: string | null;
   capacity: string | null;
   cost: string | null;
   notes: string | null;
@@ -43,6 +44,8 @@ function toPublicService(row: PublicServiceRow): Service {
     durationMinutes:
       row.booking_type === "appointment" ? row.duration_minutes ?? undefined : undefined,
     description: row.description,
+    medicalSpecialty:
+      row.booking_type === "appointment" ? row.medical_specialty ?? undefined : undefined,
     capacity: row.capacity ?? "",
     cost: row.cost ?? "",
     notes: row.notes ?? "",

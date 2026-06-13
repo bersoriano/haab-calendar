@@ -1,7 +1,7 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { BookingType, ProviderInfo, Service, ServiceDraft } from "@/lib/types";
+import type { BookingType, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
 import { DURATION_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
@@ -31,6 +31,7 @@ export function ServiceEditor({
   hints,
   copy = defaultCopy,
   provider,
+  vertical,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -44,7 +45,10 @@ export function ServiceEditor({
   hints?: VerticalHints;
   copy?: VerticalCopy;
   provider: ProviderInfo;
+  vertical?: VerticalId;
 }) {
+  const showMedicalSpecialty =
+    vertical === "healthcare" && serviceDraft.bookingType === "appointment";
   const hasAddress1 = provider.address1.trim().length > 0;
   const hasAddress2 = provider.address2.trim().length > 0;
   const hasPhone1 = provider.phoneNumber1.trim().length > 0;
@@ -96,6 +100,9 @@ export function ServiceEditor({
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                       {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
+                      {service.medicalSpecialty ? (
+                        <span>Specialty: {service.medicalSpecialty}</span>
+                      ) : null}
                       {service.cost ? <span>Total: {service.cost}</span> : null}
                       {service.notes ? <span>Notes: {service.notes}</span> : null}
                       {service.linkedAddress1 && hasAddress1 ? (
@@ -169,6 +176,8 @@ export function ServiceEditor({
                 onDraftChange((current) => ({
                   ...current,
                   bookingType: event.target.value as BookingType,
+                  medicalSpecialty:
+                    event.target.value === "appointment" ? current.medicalSpecialty : "",
                 }))
               }
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
@@ -197,6 +206,23 @@ export function ServiceEditor({
                   </option>
                 ))}
               </select>
+            </label>
+          ) : null}
+          {showMedicalSpecialty ? (
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Medical specialty
+              <input
+                disabled={disabled}
+                value={serviceDraft.medicalSpecialty ?? ""}
+                onChange={(event) =>
+                  onDraftChange((current) => ({
+                    ...current,
+                    medicalSpecialty: event.target.value,
+                  }))
+                }
+                placeholder={hints?.medicalSpecialty ?? "Family medicine"}
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+              />
             </label>
           ) : null}
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">

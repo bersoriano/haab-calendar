@@ -64,6 +64,8 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     bookingType: draft.bookingType,
     durationMinutes: draft.bookingType === "full-day" ? undefined : draft.durationMinutes,
     description: draft.description,
+    medicalSpecialty:
+      draft.bookingType === "appointment" ? draft.medicalSpecialty?.trim() || undefined : undefined,
     capacity: draft.capacity,
     cost: draft.cost,
     notes: draft.notes,
@@ -111,6 +113,7 @@ export function setServiceBookingLength(
             ...service,
             bookingType: "full-day",
             durationMinutes: undefined,
+            medicalSpecialty: undefined,
           }
         : {
             ...service,
@@ -127,6 +130,7 @@ export function createBlankServiceDraft(): ServiceDraft {
     bookingType: "appointment",
     durationMinutes: DEFAULT_APPOINTMENT_DURATION_MINUTES,
     description: "",
+    medicalSpecialty: "",
     capacity: "",
     cost: "",
     notes: "",
@@ -226,6 +230,10 @@ export function normalizeServices(source?: Service[] | null): Service[] {
         ? undefined
         : service.durationMinutes,
     description: service.description,
+    medicalSpecialty:
+      service.bookingType === "appointment"
+        ? service.medicalSpecialty?.trim() || undefined
+        : undefined,
     capacity: service.capacity,
     cost: service.cost,
     notes: service.notes,

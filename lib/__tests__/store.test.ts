@@ -9,6 +9,7 @@ import {
   applyVerticalToStore,
   setAppointmentServiceDurations,
   setServiceBookingLength,
+  normalizeServices,
   normalizeVertical,
 } from "@/lib/store";
 import { VERTICALS } from "@/config/verticals";
@@ -259,6 +260,35 @@ describe("vertical helpers", () => {
     expect(fullDay.durationMinutes).toBeUndefined();
   });
 
+  it("healthcare services start with an empty medical specialty", () => {
+    const healthcare = VERTICALS.find((v) => v.id === "healthcare")!;
+
+    expect(healthcare.services.every((service) => service.medicalSpecialty === "")).toBe(true);
+  });
+
+  it("normalizes medical specialty for appointment services only", () => {
+    const result = normalizeServices([
+      {
+        id: "svc_1",
+        name: "Cardiology consult",
+        bookingType: "appointment",
+        durationMinutes: 30,
+        description: "Specialist visit",
+        medicalSpecialty: " Cardiology ",
+      },
+      {
+        id: "svc_2",
+        name: "Clinic day",
+        bookingType: "full-day",
+        description: "Full-day clinic reservation",
+        medicalSpecialty: "Pediatrics",
+      },
+    ]);
+
+    expect(result[0].medicalSpecialty).toBe("Cardiology");
+    expect(result[1].medicalSpecialty).toBeUndefined();
+  });
+
   it("applyVerticalToStore seeds services + availability + vertical, preserves the rest", () => {
     const base = createEmptyStore();
     base.provider.fullName = "Keep Me";
@@ -294,6 +324,7 @@ describe("vertical helpers", () => {
     const fullDay = setServiceBookingLength(base, "full-day");
     expect(fullDay.services.every((s) => s.bookingType === "full-day")).toBe(true);
     expect(fullDay.services.every((s) => s.durationMinutes === undefined)).toBe(true);
+    expect(fullDay.services.every((s) => s.medicalSpecialty === undefined)).toBe(true);
 
     const timed = setServiceBookingLength(fullDay, 240);
     expect(timed.services.every((s) => s.bookingType === "appointment")).toBe(true);

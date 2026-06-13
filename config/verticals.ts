@@ -3,6 +3,7 @@ import type { ServiceDraft, VerticalId, WeeklyAvailability } from "../lib/types"
 export interface VerticalHints {
   serviceName: string;
   description: string;
+  medicalSpecialty?: string;
   capacity: string;
   cost: string;
 }
@@ -70,6 +71,7 @@ export const VERTICALS: Vertical[] = [
         bookingType: "appointment",
         durationMinutes: 30,
         description: "A focused first consultation for history, goals, and next steps.",
+        medicalSpecialty: "",
         capacity: "1 patient",
         cost: "$120",
         notes: "",
@@ -85,6 +87,7 @@ export const VERTICALS: Vertical[] = [
         bookingType: "appointment",
         durationMinutes: 15,
         description: "A short check-in to review progress and adjust care.",
+        medicalSpecialty: "",
         capacity: "1 patient",
         cost: "$60",
         notes: "",
@@ -99,6 +102,7 @@ export const VERTICALS: Vertical[] = [
     hints: {
       serviceName: "Annual check-up",
       description: "What this visit covers.",
+      medicalSpecialty: "Family medicine",
       capacity: "1 patient",
       cost: "$120 / visit",
     },

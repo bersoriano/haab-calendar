@@ -15,7 +15,7 @@ import type { ModuleStore, Service, VerticalId, WeeklyAvailability } from "@/lib
 export const PUBLIC_PROVIDER_SELECT =
   "id, full_name, business_name, slug, vertical, timezone, booking_window_days, availability";
 export const PUBLIC_SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, capacity, cost, notes, sort_order";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order";
 
 type PublicProviderRow = {
   id: string;
@@ -36,6 +36,7 @@ type PublicServiceRow = {
   booking_type: "appointment" | "full-day";
   duration_minutes: number | null;
   description: string;
+  medical_specialty: string | null;
   capacity: string | null;
   cost: string | null;
   notes: string | null;
@@ -102,6 +103,8 @@ function toPublicService(row: PublicServiceRow): Service {
     durationMinutes:
       row.booking_type === "appointment" ? row.duration_minutes ?? undefined : undefined,
     description: row.description,
+    medicalSpecialty:
+      row.booking_type === "appointment" ? row.medical_specialty ?? undefined : undefined,
     capacity: row.capacity ?? "",
     cost: row.cost ?? "",
     notes: row.notes ?? "",

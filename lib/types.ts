@@ -35,6 +35,7 @@ export type Service = {
   bookingType: BookingType;
   durationMinutes?: number;
   description: string;
+  medicalSpecialty?: string;
   capacity?: string;
   cost?: string;
   notes?: string;
@@ -113,6 +114,7 @@ export type ServiceDraft = {
   bookingType: BookingType;
   durationMinutes: number;
   description: string;
+  medicalSpecialty?: string;
   capacity: string;
   cost: string;
   notes: string;
