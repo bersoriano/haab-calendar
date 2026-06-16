@@ -105,7 +105,7 @@ setNative(document.querySelector('textarea'), 'Event description…');
 | 2 | — | endTime fix verified: single confirmation shows `7:00 PM - 9:00 PM` (full window), not duration-derived. | **Pass** (commit 8d94aee) |
 | 3 | — | Detail/confirmation labels: "About the Event" / "Event details", no Type/Length rows, window under "When". | **Pass** (commit 8d94aee) |
 | 4 | — | Spots-left decrements on registration (30 → 29); capacity + linked location surface on public + confirmation. | **Pass** |
-| 5 | Low (cosmetic) | On the **details step**, the right "Registration summary" → **When** shows the start time only (`7:00 PM`) for single events, while the left "About the Event" panel shows the full window. Confirmation screen is correct. | Open — minor; align the summary "When" to the window. |
+| 5 | Low (cosmetic) | On the **details step**, the right "Registration summary" → **When** showed the start time only (`7:00 PM`) for single events, while the left panel showed the full window. | **Fixed** — the summary "When" now shows the full window (start–end) for single + weekly events. |
 
 ### Test-harness notes (not app bugs)
 

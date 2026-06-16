@@ -2652,6 +2652,13 @@ export function HaabBookingModule({
     const selectionIsSingle = Boolean(
       selectedService && isSingleOccurrence(selectedService),
     );
+    const selectionIsEvent = vertical === "events";
+    // Single + weekly events have a fixed start/end window to show under "When".
+    const selectionWindowLabel =
+      selectedService?.startTime && selectedService?.endTime &&
+      (isSingleOccurrence(selectedService) || isWeeklyOccurrence(selectedService))
+        ? `${formatTimeLabel(selectedService.startTime)}–${formatTimeLabel(selectedService.endTime)}`
+        : "";
     const singleSpotsLeft =
       selectionIsSingle && selectedService
         ? getSpotsLeft(selectedService, selectedService.occurrenceDate ?? "", bookings)
@@ -3377,7 +3384,7 @@ export function HaabBookingModule({
                     : undefined
                 }
               >
-                <SectionTitle title={selectionIsSingle ? `About the ${copy.Service}` : "About the Appointment"} />
+                <SectionTitle title={selectionIsEvent ? `About the ${copy.Service}` : "About the Appointment"} />
                 <div className={cn("mt-6 min-h-0 flex-1", publicInsetCardClass)}>
                   {(() => {
                       const aboutAddresses = [
@@ -3395,7 +3402,7 @@ export function HaabBookingModule({
                           <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
                           {selectionIsSingle ? (
                             <SummaryField label="When" value={singleDateLabel} />
-                          ) : (
+                          ) : selectionIsEvent ? null : (
                             <SummaryField
                               label="Type"
                               value={getBookingTypeLabel(selectedService.bookingType)}
@@ -3661,9 +3668,11 @@ export function HaabBookingModule({
                         value={
                           bookingFlow.dateKey
                             ? `${formatDateLabel(bookingFlow.dateKey)} · ${
-                                selectedService.bookingType === "appointment"
-                                  ? formatTimeLabel(bookingFlow.time)
-                                  : "Full Day"
+                                selectionWindowLabel
+                                  ? selectionWindowLabel
+                                  : selectedService.bookingType === "appointment"
+                                    ? formatTimeLabel(bookingFlow.time)
+                                    : "Full Day"
                               }`
                             : "Not selected"
                         }
@@ -3811,10 +3820,10 @@ export function HaabBookingModule({
                         <div className="mt-4 grid gap-5 lg:grid-cols-2 lg:gap-8">
                           <div>
                             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              {selectionIsSingle ? `${copy.Service} details` : "Appointment Details"}
+                              {selectionIsEvent ? `${copy.Service} details` : "Appointment Details"}
                             </p>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                              {!selectionIsSingle ? (
+                              {!selectionIsEvent ? (
                                 <SummaryField
                                   label="Type"
                                   value={getBookingTypeLabel(selectedService.bookingType)}

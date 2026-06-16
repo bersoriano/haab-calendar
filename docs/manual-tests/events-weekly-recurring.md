@@ -93,7 +93,7 @@ setNative(s, '18:30'); setNative(e, '19:30');
 | 1 | — | Weekly mode added (`occurrenceMode: "weekly"` + `weekdays`); provider toggle, weekday picker, validation, and edit-reload all work. | **Pass** |
 | 2 | — | Public calendar limits bookable days to the chosen weekday(s); one fixed slot per matching day; confirmation shows the full window. | **Pass** |
 | 3 | — | Per-date capacity enforced for weekly (unit-tested: matching weekday, past date, non-matching weekday, full date). | **Pass** |
-| 4 | Low (cosmetic) | On the details + confirmation panels, weekly (and periodic) events still show appointment-flavoured labels ("About the Appointment", "APPOINTMENT DETAILS", "Type: Appointment", "Length"). Single events were already reworded; weekly/periodic were not. | Open — reword to event language for all events-vertical modes. |
+| 4 | Low (cosmetic) | On the details + confirmation panels, weekly (and periodic) events showed appointment-flavoured labels ("About the Appointment", "APPOINTMENT DETAILS", "Type: Appointment"). | **Fixed** — all events-vertical modes now read "About the Event" / "Event details" and drop the "Type" row; verified on weekly. |
 
 ### Notes
 
