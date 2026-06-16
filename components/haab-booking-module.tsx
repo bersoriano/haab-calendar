@@ -155,6 +155,25 @@ function formatSlotSizeOption(minutes: number) {
   return `${minutes} min`;
 }
 
+// Start/end times for a booking record. Single-occurrence events use the
+// event's own fixed window; everything else derives end from the duration.
+function resolveBookingStartTime(service: Service, time: string): string | undefined {
+  if (isSingleOccurrence(service)) {
+    return service.startTime || time || undefined;
+  }
+  return service.bookingType === "appointment" ? time : undefined;
+}
+
+function resolveBookingEndTime(service: Service, time: string): string | undefined {
+  if (isSingleOccurrence(service)) {
+    if (service.endTime) return service.endTime;
+    return service.durationMinutes ? addMinutes(time, service.durationMinutes) : undefined;
+  }
+  return service.bookingType === "appointment" && service.durationMinutes
+    ? addMinutes(time, service.durationMinutes)
+    : undefined;
+}
+
 function getSetupBookingLengthValue(services: Service[]) {
   if (services.length > 0 && services.every((service) => service.bookingType === "full-day")) {
     return "full-day";
@@ -1383,11 +1402,8 @@ export function HaabBookingModule({
       serviceId: latestService.id,
       bookingType: latestService.bookingType,
       dateKey,
-      startTime: latestService.bookingType === "appointment" ? time : undefined,
-      endTime:
-        latestService.bookingType === "appointment" && latestService.durationMinutes
-          ? addMinutes(time, latestService.durationMinutes)
-          : undefined,
+      startTime: resolveBookingStartTime(latestService, time),
+      endTime: resolveBookingEndTime(latestService, time),
       createdAt: new Date(startedAt).toISOString(),
       expiresAt,
     };
@@ -1499,12 +1515,8 @@ export function HaabBookingModule({
       serviceName: validationService.name,
       bookingType: validationService.bookingType,
       dateKey: bookingFlow.dateKey,
-      startTime:
-        validationService.bookingType === "appointment" ? bookingFlow.time : undefined,
-      endTime:
-        validationService.bookingType === "appointment" && validationService.durationMinutes
-          ? addMinutes(bookingFlow.time, validationService.durationMinutes)
-          : undefined,
+      startTime: resolveBookingStartTime(validationService, bookingFlow.time),
+      endTime: resolveBookingEndTime(validationService, bookingFlow.time),
       clientName: bookingFlow.clientName.trim(),
       clientEmail: bookingFlow.clientEmail.trim(),
       clientPhone: bookingFlow.clientPhone.trim(),
@@ -1624,12 +1636,8 @@ export function HaabBookingModule({
           ? {
               ...candidate,
               dateKey: rescheduleState.dateKey,
-              startTime:
-                service.bookingType === "appointment" ? rescheduleState.time : undefined,
-              endTime:
-                service.bookingType === "appointment" && service.durationMinutes
-                  ? addMinutes(rescheduleState.time, service.durationMinutes)
-                  : undefined,
+              startTime: resolveBookingStartTime(service, rescheduleState.time),
+              endTime: resolveBookingEndTime(service, rescheduleState.time),
               status: "rescheduled",
               updatedAt: new Date().toISOString(),
             }
@@ -3330,7 +3338,7 @@ export function HaabBookingModule({
                     : undefined
                 }
               >
-                <SectionTitle title="About the Appointment" />
+                <SectionTitle title={selectionIsSingle ? `About the ${copy.Service}` : "About the Appointment"} />
                 <div className={cn("mt-6 min-h-0 flex-1", publicInsetCardClass)}>
                   {(() => {
                       const aboutAddresses = [
@@ -3346,10 +3354,14 @@ export function HaabBookingModule({
                       return (
                         <dl className="grid gap-4">
                           <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
-                          <SummaryField
-                            label="Type"
-                            value={getBookingTypeLabel(selectedService.bookingType)}
-                          />
+                          {selectionIsSingle ? (
+                            <SummaryField label="When" value={singleDateLabel} />
+                          ) : (
+                            <SummaryField
+                              label="Type"
+                              value={getBookingTypeLabel(selectedService.bookingType)}
+                            />
+                          )}
                           {selectedService.medicalSpecialty ? (
                             <SummaryField
                               label="Specialty"
@@ -3357,7 +3369,9 @@ export function HaabBookingModule({
                             />
                           ) : null}
                           <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
-                          <SummaryField label="Length" value={formatDuration(selectedService)} />
+                          {!selectionIsSingle ? (
+                            <SummaryField label="Length" value={formatDuration(selectedService)} />
+                          ) : null}
                           <SummaryField label="Total" value={selectedService.cost || "Not set"} />
                           {selectedService.notes ? (
                             <SummaryField label="Notes" value={selectedService.notes} />
@@ -3756,13 +3770,15 @@ export function HaabBookingModule({
                         <div className="mt-4 grid gap-5 lg:grid-cols-2 lg:gap-8">
                           <div>
                             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              Appointment Details
+                              {selectionIsSingle ? `${copy.Service} details` : "Appointment Details"}
                             </p>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                              <SummaryField
-                                label="Type"
-                                value={getBookingTypeLabel(selectedService.bookingType)}
-                              />
+                              {!selectionIsSingle ? (
+                                <SummaryField
+                                  label="Type"
+                                  value={getBookingTypeLabel(selectedService.bookingType)}
+                                />
+                              ) : null}
                               {selectedService.medicalSpecialty ? (
                                 <SummaryField
                                   label="Specialty"
@@ -3770,7 +3786,9 @@ export function HaabBookingModule({
                                 />
                               ) : null}
                               <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
-                              <SummaryField label="Length" value={formatDuration(selectedService)} />
+                              {!selectionIsSingle ? (
+                                <SummaryField label="Length" value={formatDuration(selectedService)} />
+                              ) : null}
                               <SummaryField label="Total" value={selectedService.cost || "Not set"} />
                               {selectedService.notes ? (
                                 <SummaryField label="Notes" value={selectedService.notes} />
