@@ -3,6 +3,7 @@ import type {
   BookingHoldRecord,
   BookingRecord,
   Service,
+  WeekdayKey,
   WeeklyAvailability,
 } from "./types";
 
@@ -35,6 +36,16 @@ export function getBookingsForDate(
 
 export function isSingleOccurrence(service: Service) {
   return service.occurrenceMode === "single";
+}
+
+export function isWeeklyOccurrence(service: Service) {
+  return service.occurrenceMode === "weekly";
+}
+
+// Whether a weekly-recurring event runs on the given date's weekday.
+export function weeklyMatchesDate(service: Service, dateKey: string) {
+  const weekday = getWeekdayKey(dateKey) as WeekdayKey;
+  return (service.weekdays ?? []).includes(weekday);
 }
 
 // Remaining capacity for a service on a given date. Returns Infinity when the
@@ -86,6 +97,20 @@ export function getAvailableSlots(
       !service.occurrenceDate ||
       service.occurrenceDate !== dateKey ||
       !service.startTime ||
+      isPastDate(dateKey) ||
+      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0
+    ) {
+      return [];
+    }
+    return [service.startTime];
+  }
+
+  // Weekly-recurring events: one fixed slot on each matching weekday, capped by
+  // per-date spots. Weekly availability windows do not apply.
+  if (isWeeklyOccurrence(service)) {
+    if (
+      !service.startTime ||
+      !weeklyMatchesDate(service, dateKey) ||
       isPastDate(dateKey) ||
       getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0
     ) {
@@ -176,6 +201,16 @@ export function isDateAvailable(
     return (
       Boolean(service.occurrenceDate) &&
       service.occurrenceDate === dateKey &&
+      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) > 0
+    );
+  }
+
+  // Weekly-recurring events: only the configured weekdays are bookable, capped
+  // by per-date spots. Weekly availability does not apply.
+  if (isWeeklyOccurrence(service)) {
+    return (
+      Boolean(service.startTime) &&
+      weeklyMatchesDate(service, dateKey) &&
       getSpotsLeft(service, dateKey, bookings, ignoredBookingId) > 0
     );
   }

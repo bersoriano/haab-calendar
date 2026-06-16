@@ -1,5 +1,5 @@
 export type BookingType = "appointment" | "full-day";
-export type OccurrenceMode = "single" | "periodic";
+export type OccurrenceMode = "single" | "periodic" | "weekly";
 export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
@@ -42,8 +42,9 @@ export type Service = {
   // periodic (weekly availability) behavior used by every other vertical.
   occurrenceMode?: OccurrenceMode;
   occurrenceDate?: string; // "YYYY-MM-DD", single mode only
-  startTime?: string; // "HH:MM", single-occurrence window start
-  endTime?: string; // "HH:MM", single-occurrence window end
+  weekdays?: WeekdayKey[]; // weekly mode: days the event recurs on
+  startTime?: string; // "HH:MM", single/weekly window start
+  endTime?: string; // "HH:MM", single/weekly window end
   maxSpots?: number; // events: maximum capacity in spots
   cost?: string;
   notes?: string;
@@ -126,6 +127,7 @@ export type ServiceDraft = {
   capacity: string;
   occurrenceMode: OccurrenceMode;
   occurrenceDate: string;
+  weekdays: WeekdayKey[];
   startTime: string;
   endTime: string;
   maxSpots: string;

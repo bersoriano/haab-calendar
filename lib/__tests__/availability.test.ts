@@ -360,3 +360,60 @@ describe("getAvailableSlots (single occurrence)", () => {
     expect(getAvailableSlots(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toEqual([]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Weekly-recurring events (e.g. hot yoga every Tuesday 6:30 PM)
+// ---------------------------------------------------------------------------
+
+const svcWeeklyTue: Service = {
+  id: "svc_weekly",
+  name: "Hot Yoga",
+  bookingType: "appointment",
+  durationMinutes: 60,
+  description: "",
+  occurrenceMode: "weekly",
+  weekdays: ["tuesday"],
+  startTime: "18:30",
+  endTime: "19:30",
+  maxSpots: 12,
+};
+
+describe("isDateAvailable (weekly occurrence)", () => {
+  it("is available on a matching weekday", () => {
+    useToday();
+    // 2026-06-02 is a Tuesday
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, [])).toBe(true);
+  });
+
+  it("is unavailable on a non-matching weekday", () => {
+    useToday();
+    // 2026-06-01 is a Monday
+    expect(isDateAvailable(MONDAY_KEY, svcWeeklyTue, baseAvailability, [])).toBe(false);
+  });
+
+  it("is unavailable in the past even on a matching weekday", () => {
+    useToday();
+    // 2026-04-28 is a Tuesday, before the mocked today
+    expect(isDateAvailable("2026-04-28", svcWeeklyTue, baseAvailability, [])).toBe(false);
+  });
+
+  it("is unavailable once that date's spots are full", () => {
+    useToday();
+    const bookings = Array.from({ length: 12 }, (_, i) =>
+      makeBooking({ id: `w${i}`, serviceId: "svc_weekly", dateKey: TUESDAY_KEY }),
+    );
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(false);
+  });
+});
+
+describe("getAvailableSlots (weekly occurrence)", () => {
+  it("returns the fixed start time on a matching weekday", () => {
+    useToday();
+    expect(getAvailableSlots(TUESDAY_KEY, svcWeeklyTue, baseAvailability, [])).toEqual(["18:30"]);
+  });
+
+  it("returns nothing on a non-matching weekday", () => {
+    useToday();
+    expect(getAvailableSlots(MONDAY_KEY, svcWeeklyTue, baseAvailability, [])).toEqual([]);
+  });
+});

@@ -102,6 +102,7 @@ export interface VerticalCopy {
     spotsLeftSuffix: string; // rendered as "{n} {suffix}", e.g. "spots left"
     fullyBookedLabel: string;
     pickEventDateError: string;
+    pickWeekdaysError: string;
     maxSpotsRequiredError: string;
   };
 }
@@ -210,6 +211,7 @@ export const defaultCopy: VerticalCopy = {
     spotsLeftSuffix: "spots left",
     fullyBookedLabel: "Fully booked",
     pickEventDateError: "Pick a date before publishing this booking.",
+    pickWeekdaysError: "Pick at least one weekday and a start time.",
     maxSpotsRequiredError: "Set the maximum number of spots.",
   },
 };
@@ -321,6 +323,7 @@ export const healthcareCopy: VerticalCopy = {
     spotsLeftSuffix: "spots left",
     fullyBookedLabel: "Fully booked",
     pickEventDateError: "Pick a date before publishing this appointment.",
+    pickWeekdaysError: "Pick at least one weekday and a start time.",
     maxSpotsRequiredError: "Set the maximum number of spots.",
   },
 };
@@ -431,6 +434,8 @@ export const eventsCopy: VerticalCopy = {
     spotsLeftSuffix: "spots left",
     fullyBookedLabel: "Fully booked",
     pickEventDateError: "Pick the event date before publishing this event.",
+    pickWeekdaysError:
+      "Pick at least one weekday and a start time for this recurring event.",
     maxSpotsRequiredError: "Set the maximum number of spots for this event.",
   },
 };

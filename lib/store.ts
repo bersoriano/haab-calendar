@@ -8,10 +8,12 @@ import type {
   BookingHoldRecord,
   BookingRecord,
   ModuleStore,
+  OccurrenceMode,
   ProviderInfo,
   Service,
   ServiceDraft,
   VerticalId,
+  WeekdayKey,
   WeeklyAvailability,
   BookingFlow,
 } from "./types";
@@ -56,6 +58,17 @@ export function normalizeVertical(value?: string | null): VerticalId | undefined
     : undefined;
 }
 
+// Single and weekly events both pin a fixed start/end time window.
+function hasFixedWindow(mode: OccurrenceMode | undefined): boolean {
+  return mode === "single" || mode === "weekly";
+}
+
+// Keep only valid weekday keys, de-duplicated, in canonical week order.
+function normalizeWeekdays(source?: WeekdayKey[] | null): WeekdayKey[] {
+  const set = new Set(source ?? []);
+  return WEEKDAY_KEYS.filter((day) => set.has(day));
+}
+
 export function parseMaxSpots(value: string | number | undefined): number | undefined {
   if (typeof value === "number") {
     return Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
@@ -78,8 +91,9 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     occurrenceMode: draft.occurrenceMode,
     occurrenceDate:
       draft.occurrenceMode === "single" ? draft.occurrenceDate || undefined : undefined,
-    startTime: draft.occurrenceMode === "single" ? draft.startTime || undefined : undefined,
-    endTime: draft.occurrenceMode === "single" ? draft.endTime || undefined : undefined,
+    weekdays: draft.occurrenceMode === "weekly" ? [...draft.weekdays] : undefined,
+    startTime: hasFixedWindow(draft.occurrenceMode) ? draft.startTime || undefined : undefined,
+    endTime: hasFixedWindow(draft.occurrenceMode) ? draft.endTime || undefined : undefined,
     maxSpots: parseMaxSpots(draft.maxSpots),
     cost: draft.cost,
     notes: draft.notes,
@@ -149,6 +163,7 @@ export function createBlankServiceDraft(vertical?: VerticalId): ServiceDraft {
     // Events default to single-occurrence; every other vertical stays periodic.
     occurrenceMode: vertical === "events" ? "single" : "periodic",
     occurrenceDate: "",
+    weekdays: [],
     startTime: "",
     endTime: "",
     maxSpots: "",
@@ -258,8 +273,12 @@ export function normalizeServices(source?: Service[] | null): Service[] {
     occurrenceMode: service.occurrenceMode,
     occurrenceDate:
       service.occurrenceMode === "single" ? service.occurrenceDate || undefined : undefined,
-    startTime: service.occurrenceMode === "single" ? service.startTime || undefined : undefined,
-    endTime: service.occurrenceMode === "single" ? service.endTime || undefined : undefined,
+    weekdays:
+      service.occurrenceMode === "weekly"
+        ? normalizeWeekdays(service.weekdays)
+        : undefined,
+    startTime: hasFixedWindow(service.occurrenceMode) ? service.startTime || undefined : undefined,
+    endTime: hasFixedWindow(service.occurrenceMode) ? service.endTime || undefined : undefined,
     maxSpots: parseMaxSpots(service.maxSpots),
     cost: service.cost,
     notes: service.notes,

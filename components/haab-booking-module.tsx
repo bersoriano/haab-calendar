@@ -99,6 +99,7 @@ import {
   getAvailableSlots,
   isDateAvailable,
   isSingleOccurrence,
+  isWeeklyOccurrence,
   getSpotsLeft,
 } from "@/lib/availability";
 import { getBookingHoldSelectionKey } from "@/lib/holds";
@@ -158,14 +159,14 @@ function formatSlotSizeOption(minutes: number) {
 // Start/end times for a booking record. Single-occurrence events use the
 // event's own fixed window; everything else derives end from the duration.
 function resolveBookingStartTime(service: Service, time: string): string | undefined {
-  if (isSingleOccurrence(service)) {
+  if (isSingleOccurrence(service) || isWeeklyOccurrence(service)) {
     return service.startTime || time || undefined;
   }
   return service.bookingType === "appointment" ? time : undefined;
 }
 
 function resolveBookingEndTime(service: Service, time: string): string | undefined {
-  if (isSingleOccurrence(service)) {
+  if (isSingleOccurrence(service) || isWeeklyOccurrence(service)) {
     if (service.endTime) return service.endTime;
     return service.durationMinutes ? addMinutes(time, service.durationMinutes) : undefined;
   }
@@ -934,6 +935,7 @@ export function HaabBookingModule({
       occurrenceMode:
         service.occurrenceMode ?? (vertical === "events" ? "single" : "periodic"),
       occurrenceDate: service.occurrenceDate ?? "",
+      weekdays: service.weekdays ?? [],
       startTime: service.startTime ?? "",
       endTime: service.endTime ?? "",
       maxSpots:
@@ -962,6 +964,14 @@ export function HaabBookingModule({
 
     if (serviceDraft.occurrenceMode === "single" && !serviceDraft.occurrenceDate) {
       setSetupError(copy.phrases.pickEventDateError);
+      return;
+    }
+
+    if (
+      serviceDraft.occurrenceMode === "weekly" &&
+      (serviceDraft.weekdays.length === 0 || !serviceDraft.startTime)
+    ) {
+      setSetupError(copy.phrases.pickWeekdaysError);
       return;
     }
 
@@ -1009,14 +1019,26 @@ export function HaabBookingModule({
         }
       }
 
+      const isFixedWindow =
+        serviceDraft.occurrenceMode === "single" ||
+        serviceDraft.occurrenceMode === "weekly";
+      const windowMinutes =
+        serviceDraft.startTime && serviceDraft.endTime
+          ? toMinutes(serviceDraft.endTime) - toMinutes(serviceDraft.startTime)
+          : 0;
+
       const nextService: Service = {
         id: editingServiceId ?? createId("service"),
         name: serviceDraft.name.trim(),
         bookingType: serviceDraft.bookingType,
         durationMinutes:
-          serviceDraft.bookingType === "appointment"
-            ? serviceDraft.durationMinutes
-            : undefined,
+          serviceDraft.occurrenceMode === "weekly"
+            ? windowMinutes > 0
+              ? windowMinutes
+              : 60
+            : serviceDraft.bookingType === "appointment"
+              ? serviceDraft.durationMinutes
+              : undefined,
         description: serviceDraft.description.trim(),
         medicalSpecialty:
           serviceDraft.bookingType === "appointment"
@@ -1028,14 +1050,12 @@ export function HaabBookingModule({
           serviceDraft.occurrenceMode === "single"
             ? serviceDraft.occurrenceDate || undefined
             : undefined,
-        startTime:
-          serviceDraft.occurrenceMode === "single"
-            ? serviceDraft.startTime || undefined
+        weekdays:
+          serviceDraft.occurrenceMode === "weekly"
+            ? [...serviceDraft.weekdays]
             : undefined,
-        endTime:
-          serviceDraft.occurrenceMode === "single"
-            ? serviceDraft.endTime || undefined
-            : undefined,
+        startTime: isFixedWindow ? serviceDraft.startTime || undefined : undefined,
+        endTime: isFixedWindow ? serviceDraft.endTime || undefined : undefined,
         maxSpots: parseMaxSpots(serviceDraft.maxSpots),
         cost: serviceDraft.cost.trim() || undefined,
         notes: serviceDraft.notes.trim() || undefined,

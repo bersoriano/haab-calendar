@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import type { BookingType, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
-import { DURATION_OPTIONS } from "@/lib/constants";
+import { DURATION_OPTIONS, WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
@@ -51,7 +51,12 @@ export function ServiceEditor({
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
   const isEvents = vertical === "events";
   const isSingleOccurrence = serviceDraft.occurrenceMode === "single";
+  const isWeeklyOccurrence = serviceDraft.occurrenceMode === "weekly";
   const isEventsSingle = isEvents && isSingleOccurrence;
+  const isEventsWeekly = isEvents && isWeeklyOccurrence;
+  // Single + weekly events pin their own fixed time window, so the generic
+  // appointment/full-day + duration controls don't apply.
+  const isEventsFixedWindow = isEventsSingle || isEventsWeekly;
   const hasAddress1 = provider.address1.trim().length > 0;
   const hasAddress2 = provider.address2.trim().length > 0;
   const hasPhone1 = provider.phoneNumber1.trim().length > 0;
@@ -173,9 +178,11 @@ export function ServiceEditor({
           {isEvents ? (
             <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               Occurrence
-              <div className="grid grid-cols-2 gap-2">
-                {(["single", "periodic"] as const).map((mode) => {
+              <div className="grid grid-cols-3 gap-2">
+                {(["single", "weekly", "periodic"] as const).map((mode) => {
                   const active = serviceDraft.occurrenceMode === mode;
+                  const label =
+                    mode === "single" ? "Single" : mode === "weekly" ? "Weekly" : "Periodic";
                   return (
                     <button
                       key={mode}
@@ -186,13 +193,13 @@ export function ServiceEditor({
                         onDraftChange((current) => ({ ...current, occurrenceMode: mode }))
                       }
                       className={cn(
-                        "min-h-12 rounded-2xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
+                        "min-h-12 rounded-2xl px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
                         active
                           ? "bg-[var(--accent-soft)] text-[var(--accent-strong)] ring-2 ring-[var(--accent)]"
                           : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
                       )}
                     >
-                      {mode === "single" ? "Single occurrence" : "Periodic"}
+                      {label}
                     </button>
                   );
                 })}
@@ -200,11 +207,13 @@ export function ServiceEditor({
               <p className="text-xs leading-5 text-[var(--muted)]">
                 {isSingleOccurrence
                   ? "This event happens once, on a fixed date and time."
-                  : "This event repeats on your weekly availability."}
+                  : isWeeklyOccurrence
+                    ? "This event recurs on the weekdays you pick, at a fixed time."
+                    : "This event repeats on your weekly availability."}
               </p>
             </div>
           ) : null}
-          {!isEventsSingle ? (
+          {!isEventsFixedWindow ? (
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
             Booking type
             <select
@@ -268,7 +277,69 @@ export function ServiceEditor({
               </label>
             </div>
           ) : null}
-          {!isEventsSingle && serviceDraft.bookingType === "appointment" ? (
+          {isEventsWeekly ? (
+            <div className="grid gap-3">
+              <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                Repeats on
+                <div className="flex flex-wrap gap-2">
+                  {WEEKDAY_KEYS.map((day) => {
+                    const active = serviceDraft.weekdays.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        disabled={disabled}
+                        aria-pressed={active}
+                        onClick={() =>
+                          onDraftChange((current) => ({
+                            ...current,
+                            weekdays: current.weekdays.includes(day)
+                              ? current.weekdays.filter((d) => d !== day)
+                              : [...current.weekdays, day],
+                          }))
+                        }
+                        className={cn(
+                          "min-h-10 rounded-xl px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
+                          active
+                            ? "bg-[var(--accent-soft)] text-[var(--accent-strong)] ring-2 ring-[var(--accent)]"
+                            : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
+                        )}
+                      >
+                        {WEEKDAY_LABELS[day].slice(0, 3)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                  Start
+                  <input
+                    disabled={disabled}
+                    value={serviceDraft.startTime}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({ ...current, startTime: event.target.value }))
+                    }
+                    type="time"
+                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                  />
+                </label>
+                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                  End
+                  <input
+                    disabled={disabled}
+                    value={serviceDraft.endTime}
+                    onChange={(event) =>
+                      onDraftChange((current) => ({ ...current, endTime: event.target.value }))
+                    }
+                    type="time"
+                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                  />
+                </label>
+              </div>
+            </div>
+          ) : null}
+          {!isEventsFixedWindow && serviceDraft.bookingType === "appointment" ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               Duration
               <select

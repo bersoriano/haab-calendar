@@ -31,3 +31,13 @@ availability/spots math; these cover the end-to-end provider + public flow.
   studio: recurring class + one-off community class.
 - [events-hotel.md](events-hotel.md) — hotel: wine tasting (one-off) + Petronas
   sightseeing (recurring tours).
+- [events-weekly-recurring.md](events-weekly-recurring.md) — yoga: hot yoga every
+  Tuesday 6:30 PM (per-event weekday + time recurrence).
+
+## Occurrence modes
+
+Events support three occurrence modes:
+
+- **Single** — one fixed calendar date + time.
+- **Weekly** — recurs on chosen weekday(s) at a fixed time (self-contained).
+- **Periodic** — follows the page's global weekly availability.
