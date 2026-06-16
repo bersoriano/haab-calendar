@@ -29,6 +29,15 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
 - 🔴 **Waitlist when full.** When a date hits 0 spots, let attendees join a
   waitlist and auto-promote on cancellation.
 
+### Cross-vertical (surfaced by the healthcare urologist test)
+
+- 🔴 **Per-location pricing.** A service has one `cost` string, but a provider
+  with multiple addresses may charge differently per location (e.g. a urologist
+  whose State-of-Mexico clinic is 75% of the Mexico-City price). Today this is
+  only expressible as free-text in `cost`. Wanted: structured per-address price
+  (and a location pick in the public flow so the patient sees the right price).
+  See `manual-tests/healthcare-urologist.md`.
+
 ### Medium
 
 - 🔴 **Recurrence end-date + exceptions.** Weekly events recur forever. Add an

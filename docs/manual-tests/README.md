@@ -35,6 +35,8 @@ availability/spots math; these cover the end-to-end provider + public flow.
   Tuesday 6:30 PM (per-event weekday + time recurrence).
 - [events-capacity-spots.md](events-capacity-spots.md) — spots as the single
   capacity source; spots-left shown across single/weekly/periodic.
+- [healthcare-urologist.md](healthcare-urologist.md) — healthcare: urologist with
+  two visit types and two clinic locations (CDMX + Chalco).
 
 ## Occurrence modes
 
