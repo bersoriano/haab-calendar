@@ -3427,6 +3427,9 @@ export function HaabBookingModule({
                       return (
                         <dl className="grid gap-4">
                           <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
+                          {selectedService.description ? (
+                            <SummaryField label="Description" value={selectedService.description} />
+                          ) : null}
                           {selectionIsSingle ? (
                             <SummaryField label="When" value={singleDateLabel} />
                           ) : selectionIsEvent ? null : (
@@ -3556,6 +3559,11 @@ export function HaabBookingModule({
                           : "Select a highlighted date from the calendar first."
                     }
                   />
+                  {selectedService.description ? (
+                    <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                      {selectedService.description}
+                    </p>
+                  ) : null}
                   {selectionIsSingle ? (
                     <div className="mt-6 space-y-4">
                       <div className={publicInsetCardClass}>
