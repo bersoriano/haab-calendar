@@ -3114,7 +3114,11 @@ export function HaabBookingModule({
                     }));
                   }}
                   className={cn(
-                    "rounded-[30px] p-6 text-left transition",
+                    // flex-col + h-full keeps content top-aligned and fills the
+                    // stretched grid cell, so titles line up across cards
+                    // regardless of how much info each one has (buttons
+                    // vertically center their content by default).
+                    "flex h-full flex-col rounded-[30px] p-6 text-left transition",
                     isDedicatedPublicPage
                       ? "bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_18px_42px_rgba(25,28,29,0.06)] hover:translate-y-[-2px] hover:bg-[rgba(255,255,255,0.9)]"
                       : "border border-[var(--line)] bg-white hover:border-[var(--accent)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.08)]",
