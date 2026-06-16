@@ -251,6 +251,10 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     publicSlug:
       source?.publicSlug ??
       slugify(source?.businessName || source?.fullName || "haab-calendar"),
+    headerImageUrl: source?.headerImageUrl?.trim() || undefined,
+    galleryImageUrls: Array.isArray(source?.galleryImageUrls)
+      ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
+      : undefined,
   };
 }
 

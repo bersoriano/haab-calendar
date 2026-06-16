@@ -27,6 +27,9 @@ export type ProviderInfo = {
   address1: string;
   address2: string;
   publicSlug: string;
+  // Public-page branding (all verticals). Vercel Blob URLs.
+  headerImageUrl?: string; // banner shown at the public root, above services
+  galleryImageUrls?: string[]; // reserved: future manual carousel below header
 };
 
 export type Service = {

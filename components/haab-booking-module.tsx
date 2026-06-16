@@ -2655,6 +2655,18 @@ export function HaabBookingModule({
     const isPublicSelectionStep = resolvedBookingFlow.step === 2;
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
     const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
+
+    // Provider header banner, shown at the public root above the selection.
+    const headerBanner = provider.headerImageUrl ? (
+      <div className="overflow-hidden rounded-[28px] ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_22px_56px_rgba(15,23,42,0.10)]">
+        {/* eslint-disable-next-line @next/next/no-img-element -- remote Blob URL */}
+        <img
+          src={provider.headerImageUrl}
+          alt={provider.businessName ? `${provider.businessName} banner` : "Banner"}
+          className="aspect-[3/1] w-full object-cover"
+        />
+      </div>
+    ) : null;
     // Collapse the progress indicator either when the selection step is stuck
     // (scroll-driven) or whenever we enter the confirmation screen — the
     // steps are no longer actionable there, so they just take up space.
@@ -3061,6 +3073,7 @@ export function HaabBookingModule({
         ) : null}
         {resolvedBookingFlow.step === 1 ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
+            {headerBanner}
             <div className="relative isolate overflow-hidden rounded-[28px] bg-[rgba(255,255,255,0.62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
               <span
                 aria-hidden
@@ -3185,6 +3198,9 @@ export function HaabBookingModule({
                   : undefined,
             )}
           >
+            {isPublicSelectionStep && !hasMultipleServices && headerBanner ? (
+              <div className="lg:col-span-2">{headerBanner}</div>
+            ) : null}
             {!isPublicSuccessStep ? (
             <div
               ref={publicPrimaryPanelRef}

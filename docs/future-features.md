@@ -81,6 +81,20 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
   - **Out of scope for v1:** user-generated content (service names, notes) stays
     as the provider typed it.
 
+## Public-page branding
+
+- 🔴 **Manual image carousel (3 images below the header).** The header banner
+  ships now; the `ProviderInfo.galleryImageUrls` field is already reserved (max
+  3). Build the uploader (reuse `HeaderImageUploader` + `/api/blob/upload` +
+  `validateImageFile`) and a manual (arrow/dot) carousel rendered below the
+  header at the public root. All verticals.
+- 🔴 **Header image cross-device.** The header URL lives on the provider record
+  and shows wherever that store loads (own-browser today). To show it on other
+  devices via Supabase: add `public_providers.header_image_url`, include it in
+  `PUBLIC_PROVIDER_SELECT` + `PublicProviderRow`, map it in `toPublicStore` —
+  and it still needs the (unbuilt) provider write-sync to populate. See
+  `docs/superpowers/specs/2026-06-16-provider-header-image-design.md`.
+
 ## Cross-vertical / platform
 
 - 🔴 **Real backend sync.** Offline-first is in place; the Supabase sync target
@@ -101,3 +115,5 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
   healthcare + events already done).
 - ✅ Hide Reschedule for single-occurrence events (one fixed date — cancel
   instead).
+- ✅ Provider header image — upload to Vercel Blob, shown as a banner at the
+  public root above the selection (all verticals). Carousel field reserved.

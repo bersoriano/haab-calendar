@@ -3,6 +3,7 @@
 import type { ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { adminFieldClass } from "@/components/provider/adminGlass";
+import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
 
 export function ProviderInfoForm({
   provider,
@@ -98,6 +99,11 @@ export function ProviderInfoForm({
           />
         </label>
       </div>
+      <HeaderImageUploader
+        value={provider.headerImageUrl}
+        onChange={(url) => onChange("headerImageUrl", url)}
+        disabled={disabled}
+      />
     </div>
   );
 }
