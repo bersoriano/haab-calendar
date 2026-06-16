@@ -95,6 +95,14 @@ export interface VerticalCopy {
 
     // Misc
     clientLabel: string;
+
+    // Single-occurrence events (events vertical)
+    eventDateLabel: string;
+    singleOccurrenceHelper: string;
+    spotsLeftSuffix: string; // rendered as "{n} {suffix}", e.g. "spots left"
+    fullyBookedLabel: string;
+    pickEventDateError: string;
+    maxSpotsRequiredError: string;
   };
 }
 
@@ -196,6 +204,13 @@ export const defaultCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of service",
 
     clientLabel: "Client",
+
+    eventDateLabel: "Date and time",
+    singleOccurrenceHelper: "This booking happens on a single fixed date.",
+    spotsLeftSuffix: "spots left",
+    fullyBookedLabel: "Fully booked",
+    pickEventDateError: "Pick a date before publishing this booking.",
+    maxSpotsRequiredError: "Set the maximum number of spots.",
   },
 };
 
@@ -300,6 +315,13 @@ export const healthcareCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of appointment",
 
     clientLabel: "Patient",
+
+    eventDateLabel: "Date and time",
+    singleOccurrenceHelper: "This appointment happens on a single fixed date.",
+    spotsLeftSuffix: "spots left",
+    fullyBookedLabel: "Fully booked",
+    pickEventDateError: "Pick a date before publishing this appointment.",
+    maxSpotsRequiredError: "Set the maximum number of spots.",
   },
 };
 
@@ -402,6 +424,14 @@ export const eventsCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of event",
 
     clientLabel: "Attendee",
+
+    eventDateLabel: "Event date and time",
+    singleOccurrenceHelper:
+      "This event happens once, on the date and time below. Reserve your spot to register.",
+    spotsLeftSuffix: "spots left",
+    fullyBookedLabel: "Fully booked",
+    pickEventDateError: "Pick the event date before publishing this event.",
+    maxSpotsRequiredError: "Set the maximum number of spots for this event.",
   },
 };
 

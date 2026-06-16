@@ -92,11 +92,14 @@ import {
   sortBookings,
   applyVerticalToStore,
   setServiceBookingLength,
+  parseMaxSpots,
 } from "@/lib/store";
 import {
   getBookingsForDate,
   getAvailableSlots,
   isDateAvailable,
+  isSingleOccurrence,
+  getSpotsLeft,
 } from "@/lib/availability";
 import { getBookingHoldSelectionKey } from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
@@ -279,6 +282,19 @@ export function HaabBookingModule({
   const vertical = activeStore.vertical;
   const copy = getVerticalCopy(vertical);
 
+  // Default a fresh (untouched) service draft to the vertical's occurrence mode:
+  // events start single-occurrence, every other vertical stays periodic.
+  useEffect(() => {
+    const desired = vertical === "events" ? "single" : "periodic";
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync draft default to vertical; guarded to a no-op once set
+    setServiceDraft((current) =>
+      !editingServiceId && !current.name.trim() && current.occurrenceMode !== desired
+        ? { ...current, occurrenceMode: desired }
+        : current,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- key off vertical only; draft edits must not retrigger
+  }, [vertical]);
+
   const onManageBookingFound = useEffectEvent((booking: BookingRecord) => {
     setBookingFlow((current) => ({
       ...current,
@@ -323,6 +339,22 @@ export function HaabBookingModule({
   const selectedService = services.find(
     (service) => service.id === resolvedBookingFlow.serviceId,
   );
+  // Single-occurrence events have one fixed date + time: auto-select it so the
+  // public flow can skip the calendar entirely.
+  useEffect(() => {
+    if (!selectedService || !isSingleOccurrence(selectedService)) return;
+    if (bookingFlow.step !== 2) return;
+    const date = selectedService.occurrenceDate ?? "";
+    if (!date) return;
+    const time = selectedService.startTime ?? "";
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- auto-select the single event's fixed slot; guarded to a no-op once set
+    setBookingFlow((current) =>
+      current.dateKey === date && current.time === time
+        ? current
+        : { ...current, dateKey: date, time },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- key off the event identity + step
+  }, [selectedService?.id, selectedService?.occurrenceDate, selectedService?.startTime, bookingFlow.step]);
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
   const bookingHoldSelectionKey =
@@ -868,7 +900,7 @@ export function HaabBookingModule({
 
   function resetServiceEditor() {
     setEditingServiceId(null);
-    setServiceDraft(createBlankServiceDraft());
+    setServiceDraft(createBlankServiceDraft(vertical));
   }
 
   function beginEditingService(service: Service) {
@@ -880,6 +912,13 @@ export function HaabBookingModule({
       description: service.description,
       medicalSpecialty: service.medicalSpecialty ?? "",
       capacity: service.capacity ?? "",
+      occurrenceMode:
+        service.occurrenceMode ?? (vertical === "events" ? "single" : "periodic"),
+      occurrenceDate: service.occurrenceDate ?? "",
+      startTime: service.startTime ?? "",
+      endTime: service.endTime ?? "",
+      maxSpots:
+        typeof service.maxSpots === "number" ? String(service.maxSpots) : "",
       cost: service.cost ?? "",
       notes: service.notes ?? "",
       linkedAddress1: service.linkedAddress1 ?? false,
@@ -894,6 +933,16 @@ export function HaabBookingModule({
   function upsertService() {
     if (!serviceDraft.name.trim() || !serviceDraft.description.trim()) {
       setSetupError(copy.phrases.serviceNameRequiredError);
+      return;
+    }
+
+    if (vertical === "events" && !parseMaxSpots(serviceDraft.maxSpots)) {
+      setSetupError(copy.phrases.maxSpotsRequiredError);
+      return;
+    }
+
+    if (serviceDraft.occurrenceMode === "single" && !serviceDraft.occurrenceDate) {
+      setSetupError(copy.phrases.pickEventDateError);
       return;
     }
 
@@ -955,6 +1004,20 @@ export function HaabBookingModule({
             ? serviceDraft.medicalSpecialty?.trim() || undefined
             : undefined,
         capacity: serviceDraft.capacity.trim() || undefined,
+        occurrenceMode: serviceDraft.occurrenceMode,
+        occurrenceDate:
+          serviceDraft.occurrenceMode === "single"
+            ? serviceDraft.occurrenceDate || undefined
+            : undefined,
+        startTime:
+          serviceDraft.occurrenceMode === "single"
+            ? serviceDraft.startTime || undefined
+            : undefined,
+        endTime:
+          serviceDraft.occurrenceMode === "single"
+            ? serviceDraft.endTime || undefined
+            : undefined,
+        maxSpots: parseMaxSpots(serviceDraft.maxSpots),
         cost: serviceDraft.cost.trim() || undefined,
         notes: serviceDraft.notes.trim() || undefined,
         linkedAddress1: linkedAddress1 || undefined,
@@ -2552,11 +2615,36 @@ export function HaabBookingModule({
     // steps are no longer actionable there, so they just take up space.
     const collapseProgressIndicator = isStickyHeaderActive || isPublicSuccessStep;
 
-    const step2IsAppointment = selectedService?.bookingType === "appointment";
+    const selectionIsSingle = Boolean(
+      selectedService && isSingleOccurrence(selectedService),
+    );
+    const singleSpotsLeft =
+      selectionIsSingle && selectedService
+        ? getSpotsLeft(selectedService, selectedService.occurrenceDate ?? "", bookings)
+        : Infinity;
+    const singleIsFull = selectionIsSingle && singleSpotsLeft <= 0;
+    const singleWindowLabel =
+      selectedService?.startTime
+        ? `${formatTimeLabel(selectedService.startTime)}${
+            selectedService.endTime ? `–${formatTimeLabel(selectedService.endTime)}` : ""
+          }`
+        : "";
+    const singleDateLabel = selectedService?.occurrenceDate
+      ? `${formatDateLabel(selectedService.occurrenceDate)}${
+          singleWindowLabel ? ` · ${singleWindowLabel}` : ""
+        }`
+      : "Date not set";
+    const spotsLeftLabel = Number.isFinite(singleSpotsLeft)
+      ? `${Math.max(0, singleSpotsLeft)} ${copy.phrases.spotsLeftSuffix}`
+      : "";
+
+    const step2IsAppointment =
+      !selectionIsSingle && selectedService?.bookingType === "appointment";
     const step2DateChosen = Boolean(bookingFlow.dateKey);
     const step2TimeChosen = Boolean(bookingFlow.time);
     const step2DateAvailableForFullDay =
       !step2IsAppointment &&
+      !selectionIsSingle &&
       step2DateChosen &&
       Boolean(selectedService) &&
       isDateAvailable(
@@ -2568,36 +2656,50 @@ export function HaabBookingModule({
         activeBookingHolds,
         bookingHold?.released ? undefined : bookingHold?.id,
       );
-    const step2CanContinue = step2IsAppointment
-      ? step2DateChosen && step2TimeChosen
-      : step2DateChosen && step2DateAvailableForFullDay;
-    const step2Summary = step2IsAppointment
-      ? step2DateChosen && step2TimeChosen
-        ? `${formatDateLabel(bookingFlow.dateKey)} · ${formatTimeLabel(bookingFlow.time)}`
+    const step2CanContinue = selectionIsSingle
+      ? step2DateChosen && !singleIsFull
+      : step2IsAppointment
+        ? step2DateChosen && step2TimeChosen
+        : step2DateChosen && step2DateAvailableForFullDay;
+    const step2Summary = selectionIsSingle
+      ? singleDateLabel
+      : step2IsAppointment
+        ? step2DateChosen && step2TimeChosen
+          ? `${formatDateLabel(bookingFlow.dateKey)} · ${formatTimeLabel(bookingFlow.time)}`
+          : step2DateChosen
+            ? formatDateLabel(bookingFlow.dateKey)
+            : "Select a Day"
         : step2DateChosen
-          ? formatDateLabel(bookingFlow.dateKey)
-          : "Select a Day"
-      : step2DateChosen
-        ? `${formatDateLabel(bookingFlow.dateKey)} · Full day`
-        : "Select a Day";
-    const step2Helper = step2IsAppointment
-      ? !step2DateChosen
-        ? "Pick a date from the calendar and time slot below to continue."
-        : !step2TimeChosen
-          ? "Pick a time slot to continue."
-          : "Click the button to enter your details."
-      : !step2DateChosen
-        ? "Pick a date to reserve the full day."
-        : step2DateAvailableForFullDay
-          ? "This day is free. Click the button to enter your details."
-          : "This day isn't available. Pick another date.";
-    const step2ButtonLabel = step2IsAppointment
-      ? !step2DateChosen
-        ? "Select a Date"
-        : !step2TimeChosen
-          ? "Select a Time"
+          ? `${formatDateLabel(bookingFlow.dateKey)} · Full day`
+          : "Select a Day";
+    const step2Helper = selectionIsSingle
+      ? singleIsFull
+        ? copy.phrases.fullyBookedLabel
+        : copy.phrases.singleOccurrenceHelper
+      : step2IsAppointment
+        ? !step2DateChosen
+          ? "Pick a date from the calendar and time slot below to continue."
+          : !step2TimeChosen
+            ? "Pick a time slot to continue."
+            : "Click the button to enter your details."
+        : !step2DateChosen
+          ? "Pick a date to reserve the full day."
+          : step2DateAvailableForFullDay
+            ? "This day is free. Click the button to enter your details."
+            : "This day isn't available. Pick another date.";
+    const step2ButtonLabel = selectionIsSingle
+      ? singleIsFull
+        ? copy.phrases.fullyBookedLabel
+        : copy.bookVerb === "register"
+          ? "Reserve my spot"
           : "Continue to My Details"
-      : copy.bookFullDay;
+      : step2IsAppointment
+        ? !step2DateChosen
+          ? "Select a Date"
+          : !step2TimeChosen
+            ? "Select a Time"
+            : "Continue to My Details"
+        : copy.bookFullDay;
 
     const advanceToDetailsStep = () => {
       const fadeAndAdvance = () => {
@@ -3033,7 +3135,34 @@ export function HaabBookingModule({
                   : undefined
               }
             >
-              {isPublicSelectionStep ? (
+              {isPublicSelectionStep && selectionIsSingle ? (
+                <>
+                  <SectionTitle title={copy.phrases.eventDateLabel} />
+                  <div className={cn("mt-6", publicInsetCardClass)}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {copy.phrases.eventDateLabel}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-[var(--ink)]">
+                      {singleDateLabel}
+                    </p>
+                    {spotsLeftLabel ? (
+                      <p
+                        className={cn(
+                          "mt-3 inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold",
+                          singleIsFull
+                            ? "bg-[#fff1f2] text-[#be123c]"
+                            : "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
+                        )}
+                      >
+                        {singleIsFull ? copy.phrases.fullyBookedLabel : spotsLeftLabel}
+                      </p>
+                    ) : null}
+                    <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                      {copy.phrases.singleOccurrenceHelper}
+                    </p>
+                  </div>
+                </>
+              ) : isPublicSelectionStep ? (
                 <>
                   <SectionTitle
                     title="Pick a date and time"
@@ -3295,7 +3424,7 @@ export function HaabBookingModule({
                 "order-2 lg:order-none self-start",
                 publicElevatedPanelClass,
                 isPublicSelectionStep &&
-                  selectedService.bookingType === "appointment" &&
+                  step2IsAppointment &&
                   bookingFlow.dateKey &&
                   "flex flex-col overflow-hidden",
                 isPublicDetailsStep && "flex min-h-full flex-col",
@@ -3305,7 +3434,7 @@ export function HaabBookingModule({
               style={
                 isDesktopColumns &&
                 isPublicSelectionStep &&
-                selectedService.bookingType === "appointment" &&
+                step2IsAppointment &&
                 bookingFlow.dateKey &&
                 publicPrimaryPanelHeight
                   ? {
@@ -3324,24 +3453,43 @@ export function HaabBookingModule({
                   <SectionTitle
                     eyebrow={hasMultipleServices ? selectedService.name : undefined}
                     title={
-                      selectedService.bookingType === "appointment"
-                        ? "Available time slots"
-                        : "Full-day reservation"
+                      selectionIsSingle
+                        ? copy.bookingSummary
+                        : step2IsAppointment
+                          ? "Available time slots"
+                          : "Full-day reservation"
                     }
                     body={
-                      bookingFlow.dateKey
-                        ? formatDateLabel(bookingFlow.dateKey)
-                        : "Select a highlighted date from the calendar first."
+                      selectionIsSingle
+                        ? singleDateLabel
+                        : bookingFlow.dateKey
+                          ? formatDateLabel(bookingFlow.dateKey)
+                          : "Select a highlighted date from the calendar first."
                     }
                   />
-                  {!bookingFlow.dateKey ? (
+                  {selectionIsSingle ? (
+                    <div className="mt-6 space-y-4">
+                      <div className={publicInsetCardClass}>
+                        <p className="text-sm font-medium text-[var(--muted)]">
+                          {singleIsFull
+                            ? copy.phrases.fullyBookedLabel
+                            : copy.phrases.singleOccurrenceHelper}
+                        </p>
+                        {spotsLeftLabel && !singleIsFull ? (
+                          <p className="mt-2 text-sm font-semibold text-[var(--accent-strong)]">
+                            {spotsLeftLabel}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : !bookingFlow.dateKey ? (
                     <div className="mt-6">
                       <EmptyState
                         title="Choose a date"
                         body="Only real free dates are highlighted. Once you pick one, the next action becomes available here."
                       />
                     </div>
-                  ) : selectedService.bookingType === "appointment" ? (
+                  ) : step2IsAppointment ? (
                     <div className="mt-6 flex min-h-0 flex-1 flex-col gap-4">
                       {publicSlots.length === 0 ? (
                         <div className="min-h-0 flex-1">
@@ -3488,7 +3636,7 @@ export function HaabBookingModule({
                         value={bookingFlow.notes.trim() || "None"}
                       />
                     </dl>
-                    {isPublicDetailsStep ? (
+                    {isPublicDetailsStep && !selectionIsSingle ? (
                       <div className="mt-4 border-t border-[var(--line)] pt-4">
                         {!isNLChangeDateOpen ? (
                           <button

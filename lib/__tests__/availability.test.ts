@@ -3,6 +3,7 @@ import {
   getAvailableSlots,
   isDateAvailable,
   overlapExists,
+  getSpotsLeft,
 } from "@/lib/availability";
 import type {
   BookingRecord,
@@ -261,5 +262,101 @@ describe("isDateAvailable", () => {
       if (m >= 60) { h++; m = 0; }
     }
     expect(isDateAvailable(MONDAY_KEY, svc30, baseAvailability, bookings)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Single-occurrence events
+// ---------------------------------------------------------------------------
+
+const TUESDAY_KEY = "2026-06-02";
+const PAST_KEY = "2026-05-01"; // before mocked TODAY
+
+const svcSingle: Service = {
+  id: "svc_single",
+  name: "Eiffel Tower Visit",
+  bookingType: "appointment",
+  durationMinutes: 120,
+  description: "",
+  occurrenceMode: "single",
+  occurrenceDate: MONDAY_KEY,
+  startTime: "18:00",
+  endTime: "20:00",
+  maxSpots: 2,
+};
+
+describe("getSpotsLeft", () => {
+  it("returns Infinity when the service has no maxSpots cap", () => {
+    expect(getSpotsLeft(svc30, MONDAY_KEY, [])).toBe(Infinity);
+  });
+
+  it("returns the full cap when there are no bookings", () => {
+    expect(getSpotsLeft(svcSingle, MONDAY_KEY, [])).toBe(2);
+  });
+
+  it("subtracts active bookings for the service on that date", () => {
+    const bookings = [
+      makeBooking({ id: "b1", serviceId: "svc_single", dateKey: MONDAY_KEY }),
+    ];
+    expect(getSpotsLeft(svcSingle, MONDAY_KEY, bookings)).toBe(1);
+  });
+
+  it("ignores cancelled bookings and other services/dates", () => {
+    const bookings = [
+      makeBooking({ id: "b1", serviceId: "svc_single", dateKey: MONDAY_KEY, status: "cancelled" }),
+      makeBooking({ id: "b2", serviceId: "other", dateKey: MONDAY_KEY }),
+      makeBooking({ id: "b3", serviceId: "svc_single", dateKey: TUESDAY_KEY }),
+    ];
+    expect(getSpotsLeft(svcSingle, MONDAY_KEY, bookings)).toBe(2);
+  });
+});
+
+describe("isDateAvailable (single occurrence)", () => {
+  it("is available on the event's own date when spots remain", () => {
+    useToday();
+    expect(isDateAvailable(MONDAY_KEY, svcSingle, baseAvailability, [])).toBe(true);
+  });
+
+  it("is unavailable on any other date", () => {
+    useToday();
+    // Tuesday is an enabled weekday, but a single event ignores weekly availability.
+    expect(isDateAvailable(TUESDAY_KEY, svcSingle, baseAvailability, [])).toBe(false);
+  });
+
+  it("is unavailable when the event date is in the past", () => {
+    useToday();
+    expect(
+      isDateAvailable(PAST_KEY, { ...svcSingle, occurrenceDate: PAST_KEY }, baseAvailability, []),
+    ).toBe(false);
+  });
+
+  it("is unavailable once spots are full", () => {
+    useToday();
+    const bookings = [
+      makeBooking({ id: "b1", serviceId: "svc_single", dateKey: MONDAY_KEY }),
+      makeBooking({ id: "b2", serviceId: "svc_single", dateKey: MONDAY_KEY }),
+    ];
+    expect(isDateAvailable(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toBe(false);
+  });
+});
+
+describe("getAvailableSlots (single occurrence)", () => {
+  it("returns the fixed window start on the event date", () => {
+    useToday();
+    expect(getAvailableSlots(MONDAY_KEY, svcSingle, baseAvailability, [])).toEqual(["18:00"]);
+  });
+
+  it("returns nothing on a different date", () => {
+    useToday();
+    expect(getAvailableSlots(TUESDAY_KEY, svcSingle, baseAvailability, [])).toEqual([]);
+  });
+
+  it("returns nothing when the event is full", () => {
+    useToday();
+    const bookings = [
+      makeBooking({ id: "b1", serviceId: "svc_single", dateKey: MONDAY_KEY }),
+      makeBooking({ id: "b2", serviceId: "svc_single", dateKey: MONDAY_KEY }),
+    ];
+    expect(getAvailableSlots(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toEqual([]);
   });
 });

@@ -49,6 +49,9 @@ export function ServiceEditor({
 }) {
   const showMedicalSpecialty =
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
+  const isEvents = vertical === "events";
+  const isSingleOccurrence = serviceDraft.occurrenceMode === "single";
+  const isEventsSingle = isEvents && isSingleOccurrence;
   const hasAddress1 = provider.address1.trim().length > 0;
   const hasAddress2 = provider.address2.trim().length > 0;
   const hasPhone1 = provider.phoneNumber1.trim().length > 0;
@@ -167,6 +170,41 @@ export function ServiceEditor({
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
+          {isEvents ? (
+            <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Occurrence
+              <div className="grid grid-cols-2 gap-2">
+                {(["single", "periodic"] as const).map((mode) => {
+                  const active = serviceDraft.occurrenceMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      disabled={disabled}
+                      aria-pressed={active}
+                      onClick={() =>
+                        onDraftChange((current) => ({ ...current, occurrenceMode: mode }))
+                      }
+                      className={cn(
+                        "min-h-12 rounded-2xl px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
+                        active
+                          ? "bg-[var(--accent-soft)] text-[var(--accent-strong)] ring-2 ring-[var(--accent)]"
+                          : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
+                      )}
+                    >
+                      {mode === "single" ? "Single occurrence" : "Periodic"}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs leading-5 text-[var(--muted)]">
+                {isSingleOccurrence
+                  ? "This event happens once, on a fixed date and time."
+                  : "This event repeats on your weekly availability."}
+              </p>
+            </div>
+          ) : null}
+          {!isEventsSingle ? (
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
             Booking type
             <select
@@ -186,7 +224,51 @@ export function ServiceEditor({
               <option value="full-day">Full Day</option>
             </select>
           </label>
-          {serviceDraft.bookingType === "appointment" ? (
+          ) : null}
+          {isEventsSingle ? (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                {copy.phrases.eventDateLabel}
+                <input
+                  disabled={disabled}
+                  value={serviceDraft.occurrenceDate}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({
+                      ...current,
+                      occurrenceDate: event.target.value,
+                    }))
+                  }
+                  type="date"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                Start
+                <input
+                  disabled={disabled}
+                  value={serviceDraft.startTime}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({ ...current, startTime: event.target.value }))
+                  }
+                  type="time"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                />
+              </label>
+              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                End
+                <input
+                  disabled={disabled}
+                  value={serviceDraft.endTime}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({ ...current, endTime: event.target.value }))
+                  }
+                  type="time"
+                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+                />
+              </label>
+            </div>
+          ) : null}
+          {!isEventsSingle && serviceDraft.bookingType === "appointment" ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               Duration
               <select
@@ -250,6 +332,24 @@ export function ServiceEditor({
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
+          {isEvents ? (
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Maximum spots
+              <input
+                disabled={disabled}
+                value={serviceDraft.maxSpots}
+                onChange={(event) =>
+                  onDraftChange((current) => ({
+                    ...current,
+                    maxSpots: event.target.value.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                inputMode="numeric"
+                placeholder="50"
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+              />
+            </label>
+          ) : null}
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
             Total
             <input

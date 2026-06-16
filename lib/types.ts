@@ -1,4 +1,5 @@
 export type BookingType = "appointment" | "full-day";
+export type OccurrenceMode = "single" | "periodic";
 export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
@@ -37,6 +38,13 @@ export type Service = {
   description: string;
   medicalSpecialty?: string;
   capacity?: string;
+  // Events: single-occurrence scheduling. occurrenceMode undefined === legacy
+  // periodic (weekly availability) behavior used by every other vertical.
+  occurrenceMode?: OccurrenceMode;
+  occurrenceDate?: string; // "YYYY-MM-DD", single mode only
+  startTime?: string; // "HH:MM", single-occurrence window start
+  endTime?: string; // "HH:MM", single-occurrence window end
+  maxSpots?: number; // events: maximum capacity in spots
   cost?: string;
   notes?: string;
   linkedAddress1?: boolean;
@@ -116,6 +124,11 @@ export type ServiceDraft = {
   description: string;
   medicalSpecialty?: string;
   capacity: string;
+  occurrenceMode: OccurrenceMode;
+  occurrenceDate: string;
+  startTime: string;
+  endTime: string;
+  maxSpots: string;
   cost: string;
   notes: string;
   linkedAddress1: boolean;

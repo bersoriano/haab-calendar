@@ -33,6 +33,33 @@ export function getBookingsForDate(
   );
 }
 
+export function isSingleOccurrence(service: Service) {
+  return service.occurrenceMode === "single";
+}
+
+// Remaining capacity for a service on a given date. Returns Infinity when the
+// service has no maxSpots cap (every non-events service today).
+export function getSpotsLeft(
+  service: Service,
+  dateKey: string,
+  bookings: BookingRecord[],
+  ignoredBookingId?: string,
+) {
+  if (typeof service.maxSpots !== "number" || !Number.isFinite(service.maxSpots)) {
+    return Infinity;
+  }
+
+  const taken = bookings.filter(
+    (booking) =>
+      booking.serviceId === service.id &&
+      booking.dateKey === dateKey &&
+      booking.id !== ignoredBookingId &&
+      isActiveBooking(booking),
+  ).length;
+
+  return service.maxSpots - taken;
+}
+
 export function getBookingHoldsForDate(
   bookingHolds: BookingHoldRecord[],
   dateKey: string,
@@ -52,6 +79,21 @@ export function getAvailableSlots(
   bookingHolds: BookingHoldRecord[] = [],
   ignoredHoldId?: string,
 ) {
+  // Single-occurrence events ignore weekly availability: the only bookable slot
+  // is the fixed window on the event's own date, while spots remain.
+  if (isSingleOccurrence(service)) {
+    if (
+      !service.occurrenceDate ||
+      service.occurrenceDate !== dateKey ||
+      !service.startTime ||
+      isPastDate(dateKey) ||
+      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0
+    ) {
+      return [];
+    }
+    return [service.startTime];
+  }
+
   if (service.bookingType !== "appointment" || !service.durationMinutes) {
     return [];
   }
@@ -125,6 +167,21 @@ export function isDateAvailable(
   ignoredHoldId?: string,
 ) {
   if (isPastDate(dateKey)) {
+    return false;
+  }
+
+  // Single-occurrence events: only the event's own date is bookable, and only
+  // while spots remain. Weekly availability does not apply.
+  if (isSingleOccurrence(service)) {
+    return (
+      Boolean(service.occurrenceDate) &&
+      service.occurrenceDate === dateKey &&
+      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) > 0
+    );
+  }
+
+  // Periodic events still respect their per-date capacity cap.
+  if (getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0) {
     return false;
   }
 

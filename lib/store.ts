@@ -56,6 +56,14 @@ export function normalizeVertical(value?: string | null): VerticalId | undefined
     : undefined;
 }
 
+export function parseMaxSpots(value: string | number | undefined): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? Math.floor(value) : undefined;
+  }
+  const parsed = Number((value ?? "").trim());
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
+}
+
 export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
   return drafts.map((draft) => ({
     id: createId("svc"),
@@ -67,6 +75,12 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     medicalSpecialty:
       draft.bookingType === "appointment" ? draft.medicalSpecialty?.trim() || undefined : undefined,
     capacity: draft.capacity,
+    occurrenceMode: draft.occurrenceMode,
+    occurrenceDate:
+      draft.occurrenceMode === "single" ? draft.occurrenceDate || undefined : undefined,
+    startTime: draft.occurrenceMode === "single" ? draft.startTime || undefined : undefined,
+    endTime: draft.occurrenceMode === "single" ? draft.endTime || undefined : undefined,
+    maxSpots: parseMaxSpots(draft.maxSpots),
     cost: draft.cost,
     notes: draft.notes,
     linkedAddress1: draft.linkedAddress1,
@@ -124,7 +138,7 @@ export function setServiceBookingLength(
   };
 }
 
-export function createBlankServiceDraft(): ServiceDraft {
+export function createBlankServiceDraft(vertical?: VerticalId): ServiceDraft {
   return {
     name: "",
     bookingType: "appointment",
@@ -132,6 +146,12 @@ export function createBlankServiceDraft(): ServiceDraft {
     description: "",
     medicalSpecialty: "",
     capacity: "",
+    // Events default to single-occurrence; every other vertical stays periodic.
+    occurrenceMode: vertical === "events" ? "single" : "periodic",
+    occurrenceDate: "",
+    startTime: "",
+    endTime: "",
+    maxSpots: "",
     cost: "",
     notes: "",
     linkedAddress1: false,
@@ -235,6 +255,12 @@ export function normalizeServices(source?: Service[] | null): Service[] {
         ? service.medicalSpecialty?.trim() || undefined
         : undefined,
     capacity: service.capacity,
+    occurrenceMode: service.occurrenceMode,
+    occurrenceDate:
+      service.occurrenceMode === "single" ? service.occurrenceDate || undefined : undefined,
+    startTime: service.occurrenceMode === "single" ? service.startTime || undefined : undefined,
+    endTime: service.occurrenceMode === "single" ? service.endTime || undefined : undefined,
+    maxSpots: parseMaxSpots(service.maxSpots),
     cost: service.cost,
     notes: service.notes,
     linkedAddress1: service.linkedAddress1 ?? false,
