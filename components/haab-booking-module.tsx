@@ -3858,6 +3858,12 @@ export function HaabBookingModule({
                               {selectionIsEvent ? `${copy.Service} details` : "Appointment Details"}
                             </p>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
+                              {selectedService.description ? (
+                                <SummaryField
+                                  label="Description"
+                                  value={selectedService.description}
+                                />
+                              ) : null}
                               {!selectionIsEvent ? (
                                 <SummaryField
                                   label="Type"
