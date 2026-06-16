@@ -64,6 +64,10 @@ export function formatDuration(service: Service) {
 }
 
 export function formatCapacityLabel(service: Service) {
+  // Events carry a numeric spots cap — the single source of truth for capacity.
+  if (typeof service.maxSpots === "number" && Number.isFinite(service.maxSpots)) {
+    return `Up to ${service.maxSpots} ${service.maxSpots === 1 ? "spot" : "spots"}`;
+  }
   return service.capacity || (service.bookingType === "appointment" ? "1 client" : "Not set");
 }
 

@@ -33,6 +33,8 @@ availability/spots math; these cover the end-to-end provider + public flow.
   sightseeing (recurring tours).
 - [events-weekly-recurring.md](events-weekly-recurring.md) — yoga: hot yoga every
   Tuesday 6:30 PM (per-event weekday + time recurrence).
+- [events-capacity-spots.md](events-capacity-spots.md) — spots as the single
+  capacity source; spots-left shown across single/weekly/periodic.
 
 ## Occurrence modes
 

@@ -1044,7 +1044,10 @@ export function HaabBookingModule({
           serviceDraft.bookingType === "appointment"
             ? serviceDraft.medicalSpecialty?.trim() || undefined
             : undefined,
-        capacity: serviceDraft.capacity.trim() || undefined,
+        // Events derive capacity from maxSpots (single source of truth); only
+        // other verticals keep a free-text capacity string.
+        capacity:
+          vertical === "events" ? undefined : serviceDraft.capacity.trim() || undefined,
         occurrenceMode: serviceDraft.occurrenceMode,
         occurrenceDate:
           serviceDraft.occurrenceMode === "single"
@@ -1541,7 +1544,10 @@ export function HaabBookingModule({
       clientEmail: bookingFlow.clientEmail.trim(),
       clientPhone: bookingFlow.clientPhone.trim(),
       notes: bookingFlow.notes.trim(),
-      capacitySnapshot: validationService.capacity,
+      capacitySnapshot:
+        typeof validationService.maxSpots === "number"
+          ? formatCapacityLabel(validationService)
+          : validationService.capacity,
       cost: validationService.cost ?? "",
       status: "confirmed",
       createdAt,
@@ -2666,6 +2672,15 @@ export function HaabBookingModule({
       ? `${Math.max(0, singleSpotsLeft)} ${copy.phrases.spotsLeftSuffix}`
       : "";
 
+    // Remaining spots for the chosen date on weekly/periodic (calendar) events.
+    const selectionDateSpotsLeft =
+      selectedService && bookingFlow.dateKey && !selectionIsSingle
+        ? getSpotsLeft(selectedService, bookingFlow.dateKey, bookings)
+        : Infinity;
+    const selectionDateSpotsLabel = Number.isFinite(selectionDateSpotsLeft)
+      ? `${Math.max(0, selectionDateSpotsLeft)} ${copy.phrases.spotsLeftSuffix}`
+      : "";
+
     const step2IsAppointment =
       !selectionIsSingle && selectedService?.bookingType === "appointment";
     const step2DateChosen = Boolean(bookingFlow.dateKey);
@@ -3082,7 +3097,11 @@ export function HaabBookingModule({
                     {service.description}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                    {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
+                    {vertical === "events" ? (
+                      <span>Capacity: {formatCapacityLabel(service)}</span>
+                    ) : service.capacity ? (
+                      <span>Capacity: {service.capacity}</span>
+                    ) : null}
                     {service.medicalSpecialty ? (
                       <span>Specialty: {service.medicalSpecialty}</span>
                     ) : null}
@@ -3497,7 +3516,9 @@ export function HaabBookingModule({
                       selectionIsSingle
                         ? singleDateLabel
                         : bookingFlow.dateKey
-                          ? formatDateLabel(bookingFlow.dateKey)
+                          ? `${formatDateLabel(bookingFlow.dateKey)}${
+                              selectionDateSpotsLabel ? ` · ${selectionDateSpotsLabel}` : ""
+                            }`
                           : "Select a highlighted date from the calendar first."
                     }
                   />

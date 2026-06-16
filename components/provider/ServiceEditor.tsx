@@ -4,7 +4,7 @@ import type { Dispatch, SetStateAction } from "react";
 import type { BookingType, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
 import { DURATION_OPTIONS, WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
+import { formatCapacityLabel, formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
@@ -107,7 +107,11 @@ export function ServiceEditor({
                       </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                      {service.capacity ? <span>Capacity: {service.capacity}</span> : null}
+                      {isEvents ? (
+                        <span>Capacity: {formatCapacityLabel(service)}</span>
+                      ) : service.capacity ? (
+                        <span>Capacity: {service.capacity}</span>
+                      ) : null}
                       {service.medicalSpecialty ? (
                         <span>Specialty: {service.medicalSpecialty}</span>
                       ) : null}
@@ -391,18 +395,20 @@ export function ServiceEditor({
               className={cn(adminFieldClass, "disabled:opacity-45")}
             />
           </label>
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Capacity
-            <input
-              disabled={disabled}
-              value={serviceDraft.capacity}
-              onChange={(event) =>
-                onDraftChange((current) => ({ ...current, capacity: event.target.value }))
-              }
-              placeholder={hints?.capacity ?? "Max 12 people"}
-              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-            />
-          </label>
+          {!isEvents ? (
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Capacity
+              <input
+                disabled={disabled}
+                value={serviceDraft.capacity}
+                onChange={(event) =>
+                  onDraftChange((current) => ({ ...current, capacity: event.target.value }))
+                }
+                placeholder={hints?.capacity ?? "Max 12 people"}
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+              />
+            </label>
+          ) : null}
           {isEvents ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               Maximum spots

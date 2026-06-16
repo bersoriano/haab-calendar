@@ -4,6 +4,7 @@ import {
   formatTimeRange,
   formatCountdown,
   formatDuration,
+  formatCapacityLabel,
 } from "@/lib/format";
 import type { Service } from "@/lib/types";
 
@@ -158,5 +159,36 @@ describe("formatDuration", () => {
 
   it("formats 240 min as '4 hrs'", () => {
     expect(formatDuration(makeSvc({ durationMinutes: 240 }))).toBe("4 hrs");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatCapacityLabel
+// ---------------------------------------------------------------------------
+
+describe("formatCapacityLabel", () => {
+  const base: Service = {
+    id: "s",
+    name: "X",
+    bookingType: "appointment",
+    description: "",
+  };
+
+  it("derives from maxSpots when set (events single source of truth)", () => {
+    expect(formatCapacityLabel({ ...base, maxSpots: 12 })).toBe("Up to 12 spots");
+  });
+
+  it("uses singular for a single spot", () => {
+    expect(formatCapacityLabel({ ...base, maxSpots: 1 })).toBe("Up to 1 spot");
+  });
+
+  it("prefers maxSpots over any legacy free-text capacity", () => {
+    expect(formatCapacityLabel({ ...base, maxSpots: 30, capacity: "Up to 99 guests" })).toBe(
+      "Up to 30 spots",
+    );
+  });
+
+  it("falls back to free-text capacity when there is no maxSpots", () => {
+    expect(formatCapacityLabel({ ...base, capacity: "Up to 4 people" })).toBe("Up to 4 people");
   });
 });
