@@ -60,11 +60,29 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
 
 ---
 
+## Internationalization
+
+- 🔴 **Spanish translation across all verticals (i18n).** The whole UI is
+  English-only, but real providers are Spanish-speaking (e.g. the UM Grupo
+  Médico urologist in Mexico). Add a language layer so every vertical can render
+  in Spanish (and be extensible to more locales).
+  - **Where the strings live:** `lib/vertical-copy.ts` already centralizes the
+    per-vertical wording (`VerticalCopy` decks: default/healthcare/events/
+    spaces/professional). The natural shape is a locale dimension on top —
+    e.g. `getVerticalCopy(verticalId, locale)` returning the right deck, with
+    `es` decks mirroring the existing `en` ones. Plus the still-hardcoded
+    English strings in `components/haab-booking-module.tsx` and the setup wizard
+    (e.g. "Pick a date and time", "My Details", "Available time slots",
+    weekday/month formatting) need extracting into the same system.
+  - **Scope:** translate all five decks + the hardcoded UI strings; localize
+    date/time formatting (currently `en`-style); a locale selector (provider
+    setting and/or `?lang=es` / Accept-Language on public pages); keep English
+    as fallback. Offline-first: bundle locale strings, no network.
+  - **Out of scope for v1:** user-generated content (service names, notes) stays
+    as the provider typed it.
+
 ## Cross-vertical / platform
 
-- 🔴 **Remaining copy decks.** `spaces` and `professional` verticals still fall
-  back to `defaultCopy` (only `healthcare` and `events` have full decks). See
-  `lib/vertical-copy.ts`.
 - 🔴 **Real backend sync.** Offline-first is in place; the Supabase sync target
   is not wired end-to-end (see `docs/backend-implementation.md`). Unblocks
   notifications, cross-device bookings, and analytics.
@@ -79,3 +97,7 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
 - ✅ Weekly-recurring events — per-event weekday(s) + fixed time.
 - ✅ Capacity = numeric spots (single source of truth); spots-left shown across
   single / weekly / periodic.
+- ✅ Full copy decks for all four verticals (`spaces` + `professional` added;
+  healthcare + events already done).
+- ✅ Hide Reschedule for single-occurrence events (one fixed date — cancel
+  instead).

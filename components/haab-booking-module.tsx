@@ -923,6 +923,13 @@ export function HaabBookingModule({
     setServiceDraft(createBlankServiceDraft(vertical));
   }
 
+  // Single-occurrence events have one fixed date, so rescheduling is meaningless
+  // — offer cancel instead.
+  function isServiceSingleOccurrence(serviceId: string) {
+    const svc = services.find((service) => service.id === serviceId);
+    return svc ? isSingleOccurrence(svc) : false;
+  }
+
   function beginEditingService(service: Service) {
     setEditingServiceId(service.id);
     setServiceDraft({
@@ -2114,9 +2121,11 @@ export function HaabBookingModule({
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
-                          Reschedule
-                        </ActionButton>
+                        {isServiceSingleOccurrence(booking.serviceId) ? null : (
+                          <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
+                            Reschedule
+                          </ActionButton>
+                        )}
                         <ActionButton tone="danger" onClick={() => setCancellationId(booking.id)}>
                           Cancel
                         </ActionButton>
@@ -2209,13 +2218,15 @@ export function HaabBookingModule({
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
-                    <ActionButton
-                      tone="ghost"
-                      disabled={booking.status === "cancelled"}
-                      onClick={() => openReschedule(booking.id)}
-                    >
-                      Reschedule
-                    </ActionButton>
+                    {isServiceSingleOccurrence(booking.serviceId) ? null : (
+                      <ActionButton
+                        tone="ghost"
+                        disabled={booking.status === "cancelled"}
+                        onClick={() => openReschedule(booking.id)}
+                      >
+                        Reschedule
+                      </ActionButton>
+                    )}
                     <ActionButton
                       tone="danger"
                       disabled={booking.status === "cancelled"}
@@ -3944,18 +3955,20 @@ export function HaabBookingModule({
                       Show QR code
                     </ActionButton>
                   ) : null}
-                  <ActionButton
-                    tone="ghost"
-                    className={cn(
-                      "min-w-[150px]",
-                      isDedicatedPublicPage &&
-                        cn(publicPillButtonClass, publicGhostButtonClass),
-                    )}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => openReschedule(successfulBooking.id)}
-                  >
-                    Reschedule
-                  </ActionButton>
+                  {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
+                    <ActionButton
+                      tone="ghost"
+                      className={cn(
+                        "min-w-[150px]",
+                        isDedicatedPublicPage &&
+                          cn(publicPillButtonClass, publicGhostButtonClass),
+                      )}
+                      disabled={isSuccessfulBookingCancelled}
+                      onClick={() => openReschedule(successfulBooking.id)}
+                    >
+                      Reschedule
+                    </ActionButton>
+                  )}
                   <ActionButton
                     tone="danger"
                     className={cn(
