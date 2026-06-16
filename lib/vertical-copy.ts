@@ -303,12 +303,114 @@ export const healthcareCopy: VerticalCopy = {
   },
 };
 
+export const eventsCopy: VerticalCopy = {
+  service: "event",
+  Service: "Event",
+  services: "events",
+  Services: "Events",
+  booking: "registration",
+  Booking: "Registration",
+  bookings: "registrations",
+  Bookings: "Registrations",
+  client: "attendee",
+  Client: "Attendee",
+  clients: "attendees",
+  Clients: "Attendees",
+
+  bookVerb: "register",
+  bookingPage: "registration page",
+  publicBookingUrl: "public registration URL",
+  bookingWorkspace: "Attendee workspace",
+  bookingSummary: "Registration summary",
+  manageBooking: "Manage registration",
+  cancelBooking: "Cancel Registration",
+  rescheduleBooking: "Reschedule Registration",
+  bookFullDay: "Reserve full-day pass",
+
+  phrases: {
+    setupTitle: "Set up your event registration page",
+    setupDoneTitle: "Your registration page is ready",
+    providerInfoBody:
+      "These details feed registration confirmations, branding, and your public registration URL.",
+    availabilityBody:
+      "Timed events generate real spots from these windows. Full-day passes simply need the day enabled and free of conflicts.",
+
+    addServiceFirstError:
+      "Add at least one event before publishing your registration page.",
+    serviceNameRequiredError:
+      "Add an event name and short description before saving it.",
+    keepOneServiceError:
+      "Keep at least one event. Add another before removing this one.",
+    cancelActiveFirstError:
+      "Cancel active registrations for this event before removing it.",
+    enableWeekdayError: "Enable at least one day so attendees can register.",
+    chooseServiceFirstError:
+      "Choose an event before confirming your registration.",
+    pickDateFirstError: "Pick a date before confirming your registration.",
+    clientFieldsRequiredError:
+      "Attendee name, email, and phone number are required.",
+
+    chooseServiceTitle: "Choose an event",
+    chooseServiceBody:
+      "Every card shows whether it's a timed session or an all-day pass.",
+    onlyOneServiceBody:
+      "Only one event is available, so this step is skipped automatically.",
+    serviceUnavailableBody:
+      "This spot may be released, but you can still try to grab it.",
+    notesPlaceholder: "Anything we should know before the event?",
+    bookingSummaryBodyReview:
+      "Review your registration details here before confirming.",
+    bookingSummaryBodySuccess:
+      "Your confirmed registration details remain visible here.",
+
+    upcomingTitle: "Upcoming registrations",
+    upcomingEmptyTitle: "No registrations in the next 7 days",
+    upcomingEmptyBody: "New registrations appear here automatically.",
+    allBookingsTitle: "All registrations",
+    noBookingsMatchTitle: "No registrations match the current filters",
+    bookingsSoonDetail: "Registrations starting soon",
+    activeBookingsDetail: "Currently active registrations",
+    totalBookingsLabel: "Total registrations",
+    servicesStatDetail: "Timed sessions and full-day passes",
+    searchPlaceholder: "Search attendee, event, email, or phone",
+
+    addBookingHint: "Click an available day to add a registration.",
+
+    cancelExplain: "Cancelling frees the spot immediately.",
+    keepBookingButton: "Keep my spot",
+    cancelBookingButton: "Cancel my spot",
+    tryBookingButton: "Try registering",
+
+    loadingBookingTitle: "Loading your registration…",
+    bookingNotFoundTitle: "We can't find this registration on this device",
+    bookingNotFoundBody:
+      "Registrations are stored locally in the browser they were created in. If you registered from a different browser or device, please open this link there. If you've cleared your browser data, the registration is no longer accessible from this device.",
+    bookNewButton: "Register for another event",
+
+    serviceEditorBody:
+      "Each event is a timed session or a full-day pass. Capacity and notes stay visible during registration.",
+    noServicesTitle: "No events yet",
+    noServicesBody: "Add an event so attendees can start registering.",
+    serviceDescPlaceholder:
+      "Explain what the event covers in one or two lines.",
+    newServiceEyebrow: "New event",
+    editServiceEyebrow: "Edit event",
+    newServiceTitle: "Add an event",
+    editServiceTitle: "Update this event",
+    addServiceButton: "Add event",
+    saveServiceButton: "Save event",
+    typeOfServiceLabel: "Type of event",
+
+    clientLabel: "Attendee",
+  },
+};
+
 const COPY_BY_VERTICAL: Record<VerticalId, VerticalCopy> = {
   healthcare: healthcareCopy,
+  events: eventsCopy,
   // Stubbed: these will get their own copy decks in a follow-up.
   spaces: defaultCopy,
   professional: defaultCopy,
-  events: defaultCopy,
 };
 
 export function getVerticalCopy(verticalId?: VerticalId): VerticalCopy {
