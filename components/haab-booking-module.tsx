@@ -595,7 +595,10 @@ export function HaabBookingModule({
       return;
     }
     hasScrolledToSlotsRef.current = false;
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Jump instantly to the top. A smooth scroll here passes through scrolled
+    // positions, which makes the sticky progress header collapse mid-scroll and
+    // then expand on arrival — a visible flicker when entering the booking flow.
+    window.scrollTo({ top: 0, behavior: "instant" });
   }, [resolvedBookingFlow.step]);
 
   useEffect(() => {
