@@ -29,6 +29,7 @@ export type ProviderInfo = {
   publicSlug: string;
   // Public-page branding (all verticals). Vercel Blob URLs.
   headerImageUrl?: string; // banner shown at the public root, above services
+  heroText?: string; // overlaid on the header image; defaults to businessName
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
 };
 

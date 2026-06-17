@@ -2659,15 +2659,28 @@ export function HaabBookingModule({
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
     const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
 
-    // Provider header banner, shown at the public root above the selection.
+    // Provider header banner with hero text overlay, shown at the public root
+    // above the selection. Hero text defaults to the business name.
+    const heroText = (provider.heroText?.trim() || provider.businessName || "").trim();
     const headerBanner = provider.headerImageUrl ? (
-      <div className="overflow-hidden rounded-[28px] ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_22px_56px_rgba(15,23,42,0.10)]">
+      <div className="relative overflow-hidden rounded-[28px] ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_22px_56px_rgba(15,23,42,0.10)]">
         {/* eslint-disable-next-line @next/next/no-img-element -- remote Blob URL */}
         <img
           src={provider.headerImageUrl}
           alt={provider.businessName ? `${provider.businessName} banner` : "Banner"}
           className="aspect-[3/1] w-full object-cover"
         />
+        {heroText ? (
+          <>
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.62),rgba(0,0,0,0.12)_46%,transparent_72%)]"
+            />
+            <h2 className="absolute inset-x-0 bottom-0 p-5 text-2xl font-semibold tracking-[-0.02em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:p-7 sm:text-3xl">
+              {heroText}
+            </h2>
+          </>
+        ) : null}
       </div>
     ) : null;
     // Collapse the progress indicator either when the selection step is stuck

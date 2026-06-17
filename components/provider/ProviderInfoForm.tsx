@@ -104,6 +104,19 @@ export function ProviderInfoForm({
         onChange={(url) => onChange("headerImageUrl", url)}
         disabled={disabled}
       />
+      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+        Hero text
+        <input
+          disabled={disabled}
+          value={provider.heroText ?? ""}
+          onChange={(event) => onChange("heroText", event.target.value)}
+          placeholder={provider.businessName || "Your business name"}
+          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+        />
+        <span className="text-xs leading-5 text-[var(--muted)]">
+          Shown over the header image. Defaults to your business name.
+        </span>
+      </label>
     </div>
   );
 }

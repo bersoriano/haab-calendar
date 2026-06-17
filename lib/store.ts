@@ -252,6 +252,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
       source?.publicSlug ??
       slugify(source?.businessName || source?.fullName || "haab-calendar"),
     headerImageUrl: source?.headerImageUrl?.trim() || undefined,
+    heroText: source?.heroText?.trim() || undefined,
     galleryImageUrls: Array.isArray(source?.galleryImageUrls)
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
