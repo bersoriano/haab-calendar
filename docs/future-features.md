@@ -86,6 +86,23 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
   and it still needs the (unbuilt) provider write-sync to populate. See
   `docs/superpowers/specs/2026-06-16-provider-header-image-design.md`.
 
+## Remote / online services (surfaced by the software-consultant test)
+
+- 🔴 **Online / video-call location.** Remote providers (consultants, telehealth,
+  coaching) have no street address — only a meeting link. Today the only
+  workaround is typing "Online — Google Meet…" into the address field. Wanted: an
+  "online" location type with a structured meeting URL, rendered as a join link
+  on the confirmation/manage page and embedded in the `.ics` (and ideally a
+  per-booking auto-generated link once notifications/back end land). All
+  verticals. See `manual-tests/professional-software-consultant.md`.
+- 🔴 **Optional phone / per-service required fields.** Phone is always required
+  to book; for remote intros email alone may suffice. Make required client
+  fields configurable.
+- 🔴 **Extend event-style wording to all non-healthcare verticals.** Details +
+  confirmation still say "About the Appointment" / "Type: Appointment" for
+  professional and spaces; make the section titles + Type/Length rows
+  copy-driven per vertical (events already done).
+
 ## Cross-vertical / platform
 
 - 🔴 **Real backend sync.** Offline-first is in place; the Supabase sync target

@@ -37,6 +37,8 @@ availability/spots math; these cover the end-to-end provider + public flow.
   capacity source; spots-left shown across single/weekly/periodic.
 - [healthcare-urologist.md](healthcare-urologist.md) — healthcare: urologist with
   two visit types and two clinic locations (CDMX + Chalco).
+- [professional-software-consultant.md](professional-software-consultant.md) —
+  professional: remote software consultant (paid call + free recruiter interview).
 
 ## Occurrence modes
 
