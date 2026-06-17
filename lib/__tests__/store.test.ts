@@ -341,3 +341,53 @@ describe("vertical helpers", () => {
     expect(createEmptyStore().vertical).toBeUndefined();
   });
 });
+
+// ---------------------------------------------------------------------------
+// per-location pricing carries through normalization
+// ---------------------------------------------------------------------------
+
+describe("normalizeStore — per-location pricing", () => {
+  it("keeps service.locationPrices and booking.location", () => {
+    const store = {
+      provider: { businessName: "Co", address1: "A", address2: "B" },
+      services: [
+        {
+          id: "s1",
+          name: "Visit",
+          bookingType: "appointment",
+          description: "",
+          cost: "$100",
+          linkedAddress1: true,
+          linkedAddress2: true,
+          locationPrices: { address2: "$75", address1: "" },
+        },
+      ],
+      bookings: [
+        {
+          id: "b1",
+          serviceId: "s1",
+          serviceName: "Visit",
+          bookingType: "appointment",
+          dateKey: "2026-06-20",
+          clientName: "A",
+          clientEmail: "a@b.com",
+          clientPhone: "1",
+          notes: "",
+          cost: "$75",
+          location: "B",
+          status: "confirmed",
+          createdAt: "",
+          updatedAt: "",
+          manageToken: "t",
+        },
+      ],
+      bookingHolds: [],
+      setupComplete: true,
+    } as unknown as ModuleStore;
+
+    const normalized = normalizeStore(store);
+    // empty override dropped, real one kept
+    expect(normalized.services[0].locationPrices).toEqual({ address2: "$75" });
+    expect(normalized.bookings[0].location).toBe("B");
+  });
+});

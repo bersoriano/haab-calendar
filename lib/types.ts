@@ -1,5 +1,6 @@
 export type BookingType = "appointment" | "full-day";
 export type OccurrenceMode = "single" | "periodic" | "weekly";
+export type LocationKey = "address1" | "address2" | "custom";
 export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
@@ -51,6 +52,8 @@ export type Service = {
   endTime?: string; // "HH:MM", single/weekly window end
   maxSpots?: number; // events: maximum capacity in spots
   cost?: string;
+  // Per-location price overrides (free text). Base price is `cost`.
+  locationPrices?: Partial<Record<LocationKey, string>>;
   notes?: string;
   linkedAddress1?: boolean;
   linkedAddress2?: boolean;
@@ -88,6 +91,7 @@ export type BookingRecord = {
   notes: string;
   capacitySnapshot?: string;
   cost: string;
+  location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
   createdAt: string;
   updatedAt: string;
@@ -136,6 +140,7 @@ export type ServiceDraft = {
   endTime: string;
   maxSpots: string;
   cost: string;
+  locationPrices?: { address1: string; address2: string; custom: string };
   notes: string;
   linkedAddress1: boolean;
   linkedAddress2: boolean;
@@ -150,6 +155,7 @@ export type BookingFlow = {
   serviceId: string;
   dateKey: string;
   time: string;
+  locationKey?: LocationKey;
   clientName: string;
   clientEmail: string;
   clientPhone: string;

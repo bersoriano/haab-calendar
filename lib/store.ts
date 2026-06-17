@@ -7,6 +7,7 @@ import type {
   AvailabilityBlock,
   BookingHoldRecord,
   BookingRecord,
+  LocationKey,
   ModuleStore,
   OccurrenceMode,
   ProviderInfo,
@@ -77,6 +78,19 @@ export function parseMaxSpots(value: string | number | undefined): number | unde
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : undefined;
 }
 
+// Keep only non-empty per-location price overrides; undefined when none.
+function normalizeLocationPrices(
+  source?: Partial<Record<LocationKey, string>> | null,
+): Partial<Record<LocationKey, string>> | undefined {
+  if (!source) return undefined;
+  const out: Partial<Record<LocationKey, string>> = {};
+  for (const key of ["address1", "address2", "custom"] as const) {
+    const value = source[key]?.trim();
+    if (value) out[key] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
   return drafts.map((draft) => ({
     id: createId("svc"),
@@ -96,6 +110,7 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     endTime: hasFixedWindow(draft.occurrenceMode) ? draft.endTime || undefined : undefined,
     maxSpots: parseMaxSpots(draft.maxSpots),
     cost: draft.cost,
+    locationPrices: normalizeLocationPrices(draft.locationPrices),
     notes: draft.notes,
     linkedAddress1: draft.linkedAddress1,
     linkedAddress2: draft.linkedAddress2,
@@ -168,6 +183,7 @@ export function createBlankServiceDraft(vertical?: VerticalId): ServiceDraft {
     endTime: "",
     maxSpots: "",
     cost: "",
+    locationPrices: { address1: "", address2: "", custom: "" },
     notes: "",
     linkedAddress1: false,
     linkedAddress2: false,
@@ -286,6 +302,7 @@ export function normalizeServices(source?: Service[] | null): Service[] {
     endTime: hasFixedWindow(service.occurrenceMode) ? service.endTime || undefined : undefined,
     maxSpots: parseMaxSpots(service.maxSpots),
     cost: service.cost,
+    locationPrices: normalizeLocationPrices(service.locationPrices),
     notes: service.notes,
     linkedAddress1: service.linkedAddress1 ?? false,
     linkedAddress2: service.linkedAddress2 ?? false,
@@ -324,6 +341,7 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       notes: booking.notes ?? "",
       capacitySnapshot: booking.capacitySnapshot,
       cost: booking.cost ?? "",
+      location: booking.location,
       status: booking.status,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,

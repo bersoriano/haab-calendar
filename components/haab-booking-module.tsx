@@ -29,6 +29,7 @@ import type {
   BookingType,
   DayAvailability,
   InjectedConfig,
+  LocationKey,
   ManageLookupState,
   ModuleStore,
   ProviderInfo,
@@ -102,6 +103,7 @@ import {
   isWeeklyOccurrence,
   getSpotsLeft,
 } from "@/lib/availability";
+import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
 import { getBookingHoldSelectionKey } from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
 import {
@@ -375,6 +377,18 @@ export function HaabBookingModule({
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key off the event identity + step
   }, [selectedService?.id, selectedService?.occurrenceDate, selectedService?.startTime, bookingFlow.step]);
+  // Default the public flow's location to the first available one (and capture a
+  // single location's price override), keeping the selection valid per service.
+  useEffect(() => {
+    if (!selectedService) return;
+    const locs = getServiceLocations(selectedService, provider);
+    const valid = locs.some((loc) => loc.key === bookingFlow.locationKey);
+    const desired = locs[0]?.key;
+    if (valid || bookingFlow.locationKey === desired) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync default location to the selected service
+    setBookingFlow((current) => ({ ...current, locationKey: desired }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- key off service + its linked addresses
+  }, [selectedService?.id, selectedService?.linkedAddress1, selectedService?.linkedAddress2, selectedService?.customAddress, provider.address1, provider.address2]);
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
   const bookingHoldSelectionKey =
@@ -951,6 +965,11 @@ export function HaabBookingModule({
       maxSpots:
         typeof service.maxSpots === "number" ? String(service.maxSpots) : "",
       cost: service.cost ?? "",
+      locationPrices: {
+        address1: service.locationPrices?.address1 ?? "",
+        address2: service.locationPrices?.address2 ?? "",
+        custom: service.locationPrices?.custom ?? "",
+      },
       notes: service.notes ?? "",
       linkedAddress1: service.linkedAddress1 ?? false,
       linkedAddress2: service.linkedAddress2 ?? false,
@@ -1071,6 +1090,15 @@ export function HaabBookingModule({
         endTime: isFixedWindow ? serviceDraft.endTime || undefined : undefined,
         maxSpots: parseMaxSpots(serviceDraft.maxSpots),
         cost: serviceDraft.cost.trim() || undefined,
+        locationPrices: (() => {
+          const lp = serviceDraft.locationPrices;
+          if (!lp) return undefined;
+          const out: Partial<Record<"address1" | "address2" | "custom", string>> = {};
+          if (lp.address1.trim()) out.address1 = lp.address1.trim();
+          if (lp.address2.trim()) out.address2 = lp.address2.trim();
+          if (lp.custom.trim()) out.custom = lp.custom.trim();
+          return Object.keys(out).length > 0 ? out : undefined;
+        })(),
         notes: serviceDraft.notes.trim() || undefined,
         linkedAddress1: linkedAddress1 || undefined,
         linkedAddress2: linkedAddress2 || undefined,
@@ -1542,6 +1570,22 @@ export function HaabBookingModule({
     }
 
     const createdAt = new Date().toISOString();
+    // Resolve the chosen location's address from the validated snapshot. Derive
+    // by key directly (consistent with getEffectiveCost) so it never falls out
+    // of sync with the selected price; fall back to the sole location if any.
+    const addressForLocationKey = (key?: LocationKey): string | undefined => {
+      if (key === "address1") return validationStore.provider.address1?.trim() || undefined;
+      if (key === "address2") return validationStore.provider.address2?.trim() || undefined;
+      if (key === "custom") return validationService.customAddress?.trim() || undefined;
+      return undefined;
+    };
+    const validationLocations = getServiceLocations(
+      validationService,
+      validationStore.provider,
+    );
+    const bookingLocationAddress =
+      addressForLocationKey(bookingFlow.locationKey) ??
+      (validationLocations.length === 1 ? validationLocations[0].address : undefined);
     const nextBooking: BookingRecord = {
       id: createId("booking"),
       serviceId: validationService.id,
@@ -1558,7 +1602,8 @@ export function HaabBookingModule({
         typeof validationService.maxSpots === "number"
           ? formatCapacityLabel(validationService)
           : validationService.capacity,
-      cost: validationService.cost ?? "",
+      cost: getEffectiveCost(validationService, bookingFlow.locationKey),
+      location: bookingLocationAddress,
       status: "confirmed",
       createdAt,
       updatedAt: createdAt,
@@ -2699,6 +2744,17 @@ export function HaabBookingModule({
       selectedService && isSingleOccurrence(selectedService),
     );
     const selectionIsEvent = vertical === "events";
+    // Per-location pricing: the service's locations + the effective price/address
+    // for the current selection.
+    const selectionLocations = selectedService
+      ? getServiceLocations(selectedService, provider)
+      : [];
+    const selectedLocation =
+      selectionLocations.find((loc) => loc.key === bookingFlow.locationKey) ??
+      selectionLocations[0];
+    const effectiveCost = selectedService
+      ? getEffectiveCost(selectedService, bookingFlow.locationKey)
+      : "";
     // Single + weekly events have a fixed start/end window to show under "When".
     const selectionWindowLabel =
       selectedService?.startTime && selectedService?.endTime &&
@@ -3228,6 +3284,39 @@ export function HaabBookingModule({
             {isPublicSelectionStep && !hasMultipleServices && headerBanner ? (
               <div className="lg:col-span-2">{headerBanner}</div>
             ) : null}
+            {isPublicSelectionStep && selectionLocations.length >= 2 ? (
+              <div className={cn("lg:col-span-2", publicElevatedPanelClass)}>
+                <SectionTitle title="Choose a location" />
+                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                  {selectionLocations.map((loc) => {
+                    const active = loc.key === bookingFlow.locationKey;
+                    return (
+                      <button
+                        key={loc.key}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() =>
+                          setBookingFlow((current) => ({ ...current, locationKey: loc.key }))
+                        }
+                        className={cn(
+                          "flex flex-col gap-1 rounded-2xl px-4 py-3 text-left transition",
+                          active
+                            ? "bg-[var(--accent-soft)] text-[var(--ink)] ring-2 ring-[var(--accent)]"
+                            : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/50",
+                        )}
+                      >
+                        <span className="text-sm font-medium">{loc.address}</span>
+                        {loc.price ? (
+                          <span className="text-sm font-semibold text-[var(--accent-strong)]">
+                            {loc.price}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
             {!isPublicSuccessStep ? (
             <div
               ref={publicPrimaryPanelRef}
@@ -3441,11 +3530,16 @@ export function HaabBookingModule({
                 <SectionTitle title={selectionIsEvent ? `About the ${copy.Service}` : "About the Appointment"} />
                 <div className={cn("mt-6 min-h-0 flex-1", publicInsetCardClass)}>
                   {(() => {
-                      const aboutAddresses = [
-                        selectedService.linkedAddress1 ? provider.address1 : "",
-                        selectedService.linkedAddress2 ? provider.address2 : "",
-                        selectedService.customAddress ?? "",
-                      ].filter((entry) => entry && entry.trim().length > 0);
+                      // When the service has multiple priced locations, show only
+                      // the one the booker chose; otherwise list all linked ones.
+                      const aboutAddresses =
+                        selectionLocations.length >= 2 && selectedLocation
+                          ? [selectedLocation.address]
+                          : [
+                              selectedService.linkedAddress1 ? provider.address1 : "",
+                              selectedService.linkedAddress2 ? provider.address2 : "",
+                              selectedService.customAddress ?? "",
+                            ].filter((entry) => entry && entry.trim().length > 0);
                       const aboutPhones = [
                         selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
                         selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
@@ -3475,7 +3569,7 @@ export function HaabBookingModule({
                           {!selectionIsSingle ? (
                             <SummaryField label="Length" value={formatDuration(selectedService)} />
                           ) : null}
-                          <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                          <SummaryField label="Total" value={effectiveCost || "Not set"} />
                           {selectedService.notes ? (
                             <SummaryField label="Notes" value={selectedService.notes} />
                           ) : null}
@@ -3864,11 +3958,15 @@ export function HaabBookingModule({
                   <div className="mt-5 h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
 
                   {(() => {
-                    const successAddresses = [
-                      selectedService.linkedAddress1 ? provider.address1 : "",
-                      selectedService.linkedAddress2 ? provider.address2 : "",
-                      selectedService.customAddress ?? "",
-                    ].filter((entry) => entry && entry.trim().length > 0);
+                    // Show the booked location when one was recorded; otherwise
+                    // fall back to the service's linked addresses.
+                    const successAddresses = successfulBooking.location
+                      ? [successfulBooking.location]
+                      : [
+                          selectedService.linkedAddress1 ? provider.address1 : "",
+                          selectedService.linkedAddress2 ? provider.address2 : "",
+                          selectedService.customAddress ?? "",
+                        ].filter((entry) => entry && entry.trim().length > 0);
                     const successPhones = [
                       selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
                       selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
@@ -3907,7 +4005,7 @@ export function HaabBookingModule({
                               {!selectionIsSingle ? (
                                 <SummaryField label="Length" value={formatDuration(selectedService)} />
                               ) : null}
-                              <SummaryField label="Total" value={selectedService.cost || "Not set"} />
+                              <SummaryField label="Total" value={effectiveCost || "Not set"} />
                               {selectedService.notes ? (
                                 <SummaryField label="Notes" value={selectedService.notes} />
                               ) : null}

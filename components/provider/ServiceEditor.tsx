@@ -57,6 +57,28 @@ export function ServiceEditor({
   // Single + weekly events pin their own fixed time window, so the generic
   // appointment/full-day + duration controls don't apply.
   const isEventsFixedWindow = isEventsSingle || isEventsWeekly;
+  const setLocationPrice = (key: "address1" | "address2" | "custom", value: string) =>
+    onDraftChange((current) => ({
+      ...current,
+      locationPrices: {
+        address1: current.locationPrices?.address1 ?? "",
+        address2: current.locationPrices?.address2 ?? "",
+        custom: current.locationPrices?.custom ?? "",
+        [key]: value,
+      },
+    }));
+  const locationPriceField = (key: "address1" | "address2" | "custom") => (
+    <label className="grid gap-1 text-xs font-medium text-[var(--muted)]">
+      Price at this location
+      <input
+        disabled={disabled}
+        value={serviceDraft.locationPrices?.[key] ?? ""}
+        onChange={(event) => setLocationPrice(key, event.target.value)}
+        placeholder={serviceDraft.cost ? `${serviceDraft.cost} (base)` : "Same as base price"}
+        className={cn("min-h-10", adminFieldClass, "disabled:opacity-45")}
+      />
+    </label>
+  );
   const hasAddress1 = provider.address1.trim().length > 0;
   const hasAddress2 = provider.address2.trim().length > 0;
   const hasPhone1 = provider.phoneNumber1.trim().length > 0;
@@ -466,26 +488,32 @@ export function ServiceEditor({
             {hasAddress1 || hasAddress2 ? (
               <div className="grid gap-2">
                 {hasAddress1 ? (
-                  <LinkToggleCard
-                    eyebrow="Address 1"
-                    value={provider.address1}
-                    checked={serviceDraft.linkedAddress1}
-                    disabled={disabled}
-                    onToggle={(next) =>
-                      onDraftChange((current) => ({ ...current, linkedAddress1: next }))
-                    }
-                  />
+                  <div className="grid gap-2">
+                    <LinkToggleCard
+                      eyebrow="Address 1"
+                      value={provider.address1}
+                      checked={serviceDraft.linkedAddress1}
+                      disabled={disabled}
+                      onToggle={(next) =>
+                        onDraftChange((current) => ({ ...current, linkedAddress1: next }))
+                      }
+                    />
+                    {serviceDraft.linkedAddress1 ? locationPriceField("address1") : null}
+                  </div>
                 ) : null}
                 {hasAddress2 ? (
-                  <LinkToggleCard
-                    eyebrow="Address 2"
-                    value={provider.address2}
-                    checked={serviceDraft.linkedAddress2}
-                    disabled={disabled}
-                    onToggle={(next) =>
-                      onDraftChange((current) => ({ ...current, linkedAddress2: next }))
-                    }
-                  />
+                  <div className="grid gap-2">
+                    <LinkToggleCard
+                      eyebrow="Address 2"
+                      value={provider.address2}
+                      checked={serviceDraft.linkedAddress2}
+                      disabled={disabled}
+                      onToggle={(next) =>
+                        onDraftChange((current) => ({ ...current, linkedAddress2: next }))
+                      }
+                    />
+                    {serviceDraft.linkedAddress2 ? locationPriceField("address2") : null}
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -506,7 +534,10 @@ export function ServiceEditor({
                 />
               </label>
               {serviceDraft.customAddress.trim() ? (
-                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{addressHint}</p>
+                <>
+                  <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{addressHint}</p>
+                  <div className="mt-2">{locationPriceField("custom")}</div>
+                </>
               ) : null}
             </div>
           </section>
