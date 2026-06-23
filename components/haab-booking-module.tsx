@@ -143,6 +143,9 @@ type HaabBookingModuleProps = {
   manageBookingToken?: string;
   userEmail?: string;
   onSignOut?: () => void | Promise<void>;
+  // When set (standalone mode, fresh setup), pre-applies this vertical's preset
+  // and starts the setup wizard on it. Used by the landing verticals picker.
+  initialVerticalId?: VerticalId;
 };
 
 function hasExplicitTime(result: ParsedResult) {
@@ -200,6 +203,7 @@ export function HaabBookingModule({
   manageBookingToken,
   userEmail,
   onSignOut,
+  initialVerticalId,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -1257,6 +1261,20 @@ export function HaabBookingModule({
       ),
     );
   }
+
+  // One-shot: apply the landing-selected vertical preset once on mount. This is
+  // a deliberate sync from an external selection (made on the landing page before
+  // this component existed), guarded so it runs a single time.
+  const appliedInitialVerticalRef = useRef(false);
+  useEffect(() => {
+    if (appliedInitialVerticalRef.current) return;
+    if (integratedMode) return;
+    if (!initialVerticalId) return;
+    appliedInitialVerticalRef.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyVertical(initialVerticalId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialVerticalId, integratedMode]);
 
   function updateSetupBookingLength(value: string) {
     if (integratedMode) {

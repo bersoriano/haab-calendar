@@ -22,6 +22,9 @@
   --secondary-container: rgba(104, 250, 221, 0.22);
   --full-day: #1f658f;
   --shadow-air: rgba(25, 28, 29, 0.06);
+  /* Landing page accents (see components/landing/) */
+  --teal: #0d9488;
+  --teal-soft: rgba(13, 148, 136, 0.1);
 }
 
 @theme inline {

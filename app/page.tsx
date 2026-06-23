@@ -1,25 +1,57 @@
-import { HaabBookingModule } from "@/components/haab-booking-module";
-import { logout } from "@/app/login/actions";
+import { HomeExperience } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import type { LandingVertical } from "@/components/landing/landing-ui";
 
-export default async function Home() {
+const LANDING_VERTICALS: LandingVertical[] = [
+  "healthcare",
+  "spaces",
+  "professional",
+  "events",
+];
+
+function parseVertical(value?: string): LandingVertical | undefined {
+  return LANDING_VERTICALS.find((id) => id === value);
+}
+
+type HomePageProps = {
+  searchParams: Promise<{ vertical?: string }>;
+};
+
+export default async function Home({ searchParams }: HomePageProps) {
+  const { vertical } = await searchParams;
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
 
-  if (!claims) {
-    redirect("/login");
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const loggedIn = Boolean(claimsData?.claims);
+
+  let configured = false;
+  let email: string | undefined;
+
+  if (loggedIn) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    email = user?.email ?? claimsData?.claims?.email;
+
+    if (user) {
+      // "Configured" = this provider has completed setup. Drives whether the
+      // landing shows verticals or a "go to your dashboard" panel.
+      const { data: provider } = await supabase
+        .from("providers")
+        .select("setup_complete")
+        .eq("owner_user_id", user.id)
+        .maybeSingle();
+
+      configured = Boolean(provider?.setup_complete);
+    }
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const email = user?.email || claims.email;
-
   return (
-    <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
-      <HaabBookingModule userEmail={email} onSignOut={logout} />
-    </main>
+    <HomeExperience
+      loggedIn={loggedIn}
+      configured={configured}
+      email={email}
+      initialVertical={parseVertical(vertical)}
+    />
   );
 }
