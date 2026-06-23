@@ -6,6 +6,12 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 const publicRoutePrefixes = ["/login", "/auth", "/public", "/api/public"];
 
 function isPublicRoute(pathname: string) {
+  // Root is the public landing page: anon visitors see it and pick a vertical,
+  // which routes them to /login. Exact match — "/" as a prefix matches all.
+  if (pathname === "/") {
+    return true;
+  }
+
   const [verticalSegment] = pathname.split("/").filter(Boolean);
 
   return (
