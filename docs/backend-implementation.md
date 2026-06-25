@@ -344,3 +344,30 @@ The next small backend step should be server-authoritative booking writes:
 4. Keep the existing localStorage mode available for standalone demo mode.
 
 After that, move cancellation and reschedule to server-authoritative manage-token endpoints.
+
+## Provider language (i18n)
+
+The public booking page renders in the provider's preferred language (`en` by
+default, `es` supported), read from `public_providers.language`. The Settings →
+Language selector updates `provider.language` in the client store (and
+`lib/store.ts: normalizeProvider` already round-trips the value). The
+`public-booking-resolver.ts` reads the `language` column from
+`public_providers` and forwards it to `ModuleStore.provider.language` so the
+booking module picks it up automatically.
+
+Because provider config persistence to `public.providers` is not yet
+implemented (see "Admin provider setup persistence" in the list above), the
+Settings selector has no write path to the database. When that persistence
+layer is built, the upsert/update payload **must** include the `language`
+column so the provider's choice reaches the public page:
+
+```ts
+// Example: add this to the provider upsert payload
+language: store.provider.language,  // "en" | "es"
+```
+
+Until persistence lands, set the column directly for testing:
+
+```sql
+update public.providers set language = 'es' where slug = '<provider-slug>';
+```
