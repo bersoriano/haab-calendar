@@ -5,6 +5,8 @@ import {
   formatCountdown,
   formatDuration,
   formatCapacityLabel,
+  getBookingTypeLabel,
+  formatDateLabel,
 } from "@/lib/format";
 import type { Service } from "@/lib/types";
 
@@ -190,5 +192,54 @@ describe("formatCapacityLabel", () => {
 
   it("falls back to free-text capacity when there is no maxSpots", () => {
     expect(formatCapacityLabel({ ...base, capacity: "Up to 4 people" })).toBe("Up to 4 people");
+  });
+});
+
+describe("formatTimeLabel — Spanish (24h)", () => {
+  it("formats noon as 12:00 in es", () => {
+    expect(formatTimeLabel("12:00", "es")).toBe("12:00");
+  });
+  it("formats afternoon in 24h in es", () => {
+    expect(formatTimeLabel("14:00", "es")).toBe("14:00");
+  });
+  it("formats midnight as 00:00 in es", () => {
+    expect(formatTimeLabel("00:00", "es")).toBe("00:00");
+  });
+  it("returns 'Día completo' for full day in es", () => {
+    expect(formatTimeLabel(undefined, "es")).toBe("Día completo");
+  });
+  it("keeps English AM/PM when lang omitted", () => {
+    expect(formatTimeLabel("14:00")).toBe("2:00 PM");
+  });
+});
+
+describe("formatTimeRange — Spanish", () => {
+  it("formats a 24h range in es", () => {
+    expect(formatTimeRange("09:00", "17:30", "es")).toBe("9:00 - 17:30");
+  });
+});
+
+describe("formatDuration / capacity / bookingType — Spanish", () => {
+  const svcBase: Service = { id: "s", name: "X", bookingType: "appointment", description: "" };
+  it("uses Spanish hour/min words", () => {
+    expect(formatDuration({ ...svcBase, durationMinutes: 60 }, "es")).toBe("1 h");
+    expect(formatDuration({ ...svcBase, durationMinutes: 30 }, "es")).toBe("30 min");
+  });
+  it("uses Spanish capacity words", () => {
+    expect(formatCapacityLabel({ ...svcBase, maxSpots: 1 }, "es")).toBe("Hasta 1 lugar");
+    expect(formatCapacityLabel({ ...svcBase, maxSpots: 5 }, "es")).toBe("Hasta 5 lugares");
+  });
+  it("translates booking type label", () => {
+    expect(getBookingTypeLabel("appointment", "es")).toBe("Cita");
+    expect(getBookingTypeLabel("full-day", "es")).toBe("Día completo");
+  });
+});
+
+describe("formatDateLabel — Spanish locale", () => {
+  it("renders a Spanish weekday/month", () => {
+    // 2026-01-05 is a Monday → "lunes" / "enero" in es-MX
+    const label = formatDateLabel("2026-01-05", "es");
+    expect(label.toLowerCase()).toContain("lunes");
+    expect(label.toLowerCase()).toContain("enero");
   });
 });

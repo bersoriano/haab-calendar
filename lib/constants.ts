@@ -1,4 +1,4 @@
-import type { WeekdayKey } from "./types";
+import type { Lang, WeekdayKey } from "./types";
 
 export const WEEKDAY_KEYS: WeekdayKey[] = [
   "sunday",
@@ -23,26 +23,38 @@ export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
 export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
 export const DURATION_OPTIONS = [15, 30, 60, 120, 180, 240];
 
-export const monthFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "long",
-  year: "numeric",
-});
+const LOCALE: Record<Lang, string> = { en: "en-US", es: "es-MX" };
 
-export const longDateFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "long",
-  month: "long",
-  day: "numeric",
-  year: "numeric",
-});
+function memoFormatter(make: (locale: string) => Intl.DateTimeFormat) {
+  const cache = new Map<Lang, Intl.DateTimeFormat>();
+  return (lang: Lang = "en") => {
+    let f = cache.get(lang);
+    if (!f) {
+      f = make(LOCALE[lang]);
+      cache.set(lang, f);
+    }
+    return f;
+  };
+}
 
-export const compactDateFormatter = new Intl.DateTimeFormat("en-US", {
-  month: "short",
-  day: "numeric",
-});
+export const getMonthFormatter = memoFormatter(
+  (locale) => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+);
+export const getLongDateFormatter = memoFormatter(
+  (locale) => new Intl.DateTimeFormat(locale, { weekday: "long", month: "long", day: "numeric", year: "numeric" }),
+);
+export const getCompactDateFormatter = memoFormatter(
+  (locale) => new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }),
+);
+export const getWeekdayShortFormatter = memoFormatter(
+  (locale) => new Intl.DateTimeFormat(locale, { weekday: "short" }),
+);
 
-export const weekdayShortFormatter = new Intl.DateTimeFormat("en-US", {
-  weekday: "short",
-});
+// Backward-compatible English singletons (existing importers).
+export const monthFormatter = getMonthFormatter("en");
+export const longDateFormatter = getLongDateFormatter("en");
+export const compactDateFormatter = getCompactDateFormatter("en");
+export const weekdayShortFormatter = getWeekdayShortFormatter("en");
 
 export const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
 export const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.1em]";
