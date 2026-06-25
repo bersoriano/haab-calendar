@@ -49,6 +49,7 @@ import {
   compactBadgeTextClass,
   compactMetaTextClass,
   weekdayShortFormatter,
+  getWeekdayShortFormatter,
   BOOKING_HOLD_DURATION_MS,
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
@@ -2617,7 +2618,7 @@ export function HaabBookingModule({
 
         <div className="grid grid-cols-7 gap-1.5 text-center text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
           {WEEKDAY_KEYS.map((day) => (
-            <p key={day}>{weekdayShortFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
+            <p key={day}>{getWeekdayShortFormatter(lang).format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
         <div className="grid gap-1.5 sm:gap-2">
@@ -4514,7 +4515,7 @@ export function HaabBookingModule({
               <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                 {WEEKDAY_KEYS.map((day) => (
                   <p key={day}>
-                    {weekdayShortFormatter.format(
+                    {getWeekdayShortFormatter(lang).format(
                       parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`),
                     )}
                   </p>
