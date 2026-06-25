@@ -98,6 +98,10 @@ export interface VerticalCopy {
     // Misc
     clientLabel: string;
 
+    // Calendar QR modal (sentence embeds the vertical booking noun)
+    scanQrBody: string;
+    calendarQrLabel: string;
+
     // Single-occurrence events (events vertical)
     eventDateLabel: string;
     singleOccurrenceHelper: string;
@@ -209,6 +213,9 @@ export const defaultCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of service",
 
     clientLabel: "Client",
+
+    scanQrBody: "Scan the code with your phone camera to add this booking to your calendar.",
+    calendarQrLabel: "QR code to add this booking to a calendar",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This booking happens on a single fixed date.",
@@ -322,6 +329,9 @@ export const defaultCopyEs: VerticalCopy = {
     typeOfServiceLabel: "Tipo de servicio",
 
     clientLabel: "Cliente",
+
+    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
+    calendarQrLabel: "Código QR para agregar esta reserva al calendario",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
@@ -437,6 +447,9 @@ export const healthcareCopy: VerticalCopy = {
 
     clientLabel: "Patient",
 
+    scanQrBody: "Scan the code with your phone camera to add this appointment to your calendar.",
+    calendarQrLabel: "QR code to add this appointment to a calendar",
+
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This appointment happens on a single fixed date.",
     spotsLeftSuffix: "spots left",
@@ -551,6 +564,9 @@ export const healthcareCopyEs: VerticalCopy = {
 
     clientLabel: "Paciente",
 
+    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta cita a su calendario.",
+    calendarQrLabel: "Código QR para agregar esta cita al calendario",
+
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta cita ocurre en una sola fecha fija.",
     spotsLeftSuffix: "lugares disponibles",
@@ -662,6 +678,9 @@ export const eventsCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of event",
 
     clientLabel: "Attendee",
+
+    scanQrBody: "Scan the code with your phone camera to add this registration to your calendar.",
+    calendarQrLabel: "QR code to add this registration to a calendar",
 
     eventDateLabel: "Event date and time",
     singleOccurrenceHelper:
@@ -779,6 +798,9 @@ export const eventsCopyEs: VerticalCopy = {
 
     clientLabel: "Asistente",
 
+    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar este registro a su calendario.",
+    calendarQrLabel: "Código QR para agregar este registro al calendario",
+
     eventDateLabel: "Fecha y hora del evento",
     singleOccurrenceHelper:
       "Este evento ocurre una sola vez, en la fecha y hora indicadas abajo. Reserve su lugar para registrarse.",
@@ -893,6 +915,9 @@ export const spacesCopy: VerticalCopy = {
 
     clientLabel: "Guest",
 
+    scanQrBody: "Scan the code with your phone camera to add this reservation to your calendar.",
+    calendarQrLabel: "QR code to add this reservation to a calendar",
+
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This reservation happens on a single fixed date.",
     spotsLeftSuffix: "spots left",
@@ -1006,6 +1031,9 @@ export const spacesCopyEs: VerticalCopy = {
 
     clientLabel: "Huésped",
 
+    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
+    calendarQrLabel: "Código QR para agregar esta reserva al calendario",
+
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
     spotsLeftSuffix: "lugares disponibles",
@@ -1117,6 +1145,9 @@ export const professionalCopy: VerticalCopy = {
     typeOfServiceLabel: "Type of session",
 
     clientLabel: "Client",
+
+    scanQrBody: "Scan the code with your phone camera to add this session to your calendar.",
+    calendarQrLabel: "QR code to add this session to a calendar",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This session happens on a single fixed date.",
@@ -1230,6 +1261,9 @@ export const professionalCopyEs: VerticalCopy = {
     typeOfServiceLabel: "Tipo de sesión",
 
     clientLabel: "Cliente",
+
+    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta sesión a su calendario.",
+    calendarQrLabel: "Código QR para agregar esta sesión al calendario",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta sesión ocurre en una sola fecha fija.",

@@ -28,6 +28,18 @@ export type BookingDict = {
     rescheduleTitle: string;
     cancelled: string;
     rescheduled: string;
+    close: string;
+    downloadEvent: string;
+    preparingQr: string;
+    confirmCancellation: string;
+    chooseNewSlot: string;
+    chooseNewDay: string;
+    selectReplacementSlot: string;
+    confirmFullDayReschedule: string;
+    noSlotsOnDateHelper: string;
+    newDayFreeReplaceHelper: string;
+    saveNewTime: string;
+    contactProvider: string;
   };
   publicFlow: {
     // Calendar
@@ -153,6 +165,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       rescheduleTitle: "Reschedule your booking",
       cancelled: "Your booking has been cancelled.",
       rescheduled: "Your booking has been rescheduled.",
+      close: "Close",
+      downloadEvent: "Download event to your phone",
+      preparingQr: "Preparing calendar QR...",
+      confirmCancellation: "Confirm cancellation",
+      chooseNewSlot: "Choose a new slot",
+      chooseNewDay: "Choose a new day",
+      selectReplacementSlot: "Select a replacement slot",
+      confirmFullDayReschedule: "Confirm full-day reschedule",
+      noSlotsOnDateHelper: "No available slots on this date. Choose another date from the calendar.",
+      newDayFreeReplaceHelper: "This new day is free and will replace the original full-day reservation as soon as you confirm.",
+      saveNewTime: "Save new time",
+      contactProvider: "Contact provider",
     },
     publicFlow: {
       previous: "Previous",
@@ -271,6 +295,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       rescheduleTitle: "Reagende su reserva",
       cancelled: "Su reserva ha sido cancelada.",
       rescheduled: "Su reserva ha sido reagendada.",
+      close: "Cerrar",
+      downloadEvent: "Descargue el evento en su teléfono",
+      preparingQr: "Preparando código QR del calendario...",
+      confirmCancellation: "Confirmar cancelación",
+      chooseNewSlot: "Elija un nuevo horario",
+      chooseNewDay: "Elija un nuevo día",
+      selectReplacementSlot: "Seleccione un horario de reemplazo",
+      confirmFullDayReschedule: "Confirmar reagenda de día completo",
+      noSlotsOnDateHelper: "No hay horarios disponibles en esta fecha. Elija otra fecha en el calendario.",
+      newDayFreeReplaceHelper: "Este nuevo día está libre y reemplazará la reservación original de día completo en cuanto confirme.",
+      saveNewTime: "Guardar nuevo horario",
+      contactProvider: "Contactar al proveedor",
     },
     publicFlow: {
       previous: "Anterior",

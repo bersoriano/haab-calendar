@@ -4295,9 +4295,9 @@ export function HaabBookingModule({
           )}
         >
           <SectionTitle
-            eyebrow="Add to calendar"
-            title="Download event to your phone"
-            body={`Scan the code with your phone camera to add this ${copy.booking} to your calendar.`}
+            eyebrow={t.publicFlow.addToCalendar}
+            title={t.manage.downloadEvent}
+            body={copy.phrases.scanQrBody}
           />
           <div
             className={cn(
@@ -4307,7 +4307,7 @@ export function HaabBookingModule({
           >
             {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
               <div
-                aria-label={`QR code to add this ${copy.booking} to a calendar`}
+                aria-label={copy.phrases.calendarQrLabel}
                 className="h-full w-full bg-contain bg-center bg-no-repeat"
                 role="img"
                 style={{ backgroundImage: `url(${calendarQrCode.url})` }}
@@ -4316,7 +4316,7 @@ export function HaabBookingModule({
               <p className="px-5 text-center text-sm leading-6 text-[var(--muted)]">
                 {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.error
                   ? calendarQrCode.error
-                  : "Preparing calendar QR..."}
+                  : t.manage.preparingQr}
               </p>
             )}
           </div>
@@ -4328,7 +4328,7 @@ export function HaabBookingModule({
               )}
               onClick={() => setIsCalendarQrModalOpen(false)}
             >
-              Close
+              {t.manage.close}
             </ActionButton>
           </div>
         </div>
@@ -4360,9 +4360,10 @@ export function HaabBookingModule({
           <SectionTitle
             eyebrow={copy.cancelBooking}
             title={booking.serviceName}
-            body={`${booking.clientName} · ${formatDateLabel(booking.dateKey)} · ${formatTimeRange(
+            body={`${booking.clientName} · ${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(
               booking.startTime,
               booking.endTime,
+              lang,
             )}`}
           />
           <p className="mt-6 text-sm leading-6 text-[var(--muted)]">
@@ -4381,7 +4382,7 @@ export function HaabBookingModule({
               className={cn(isDedicatedPublicPage && publicPillButtonClass)}
               onClick={confirmCancellation}
             >
-              Confirm cancellation
+              {t.manage.confirmCancellation}
             </ActionButton>
           </div>
         </div>
@@ -4402,8 +4403,9 @@ export function HaabBookingModule({
     }
 
     const rescheduleWindow = createRollingWeekWindow(new Date(), 7, 4);
-    const rescheduleWindowLabel = `${formatCompactDate(rescheduleWindow.startKey)} - ${formatCompactDate(
+    const rescheduleWindowLabel = `${formatCompactDate(rescheduleWindow.startKey, lang)} - ${formatCompactDate(
       rescheduleWindow.endKey,
+      lang,
     )}`;
     const weeks = rescheduleWindow.weeks;
     const slots =
@@ -4432,7 +4434,7 @@ export function HaabBookingModule({
             eyebrow={copy.rescheduleBooking}
             title={booking.serviceName}
             body={`${booking.clientName} · ${
-              service.bookingType === "appointment" ? "Choose a new slot" : "Choose a new day"
+              service.bookingType === "appointment" ? t.manage.chooseNewSlot : t.manage.chooseNewDay
             }`}
             action={
               <ActionButton
@@ -4440,7 +4442,7 @@ export function HaabBookingModule({
                 className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
                 onClick={() => setRescheduleState(null)}
               >
-                Close
+                {t.manage.close}
               </ActionButton>
             }
           />
@@ -4459,7 +4461,7 @@ export function HaabBookingModule({
                     disabled
                     onClick={() => undefined}
                   >
-                    Previous
+                    {t.publicFlow.previous}
                   </ActionButton>
                   <ActionButton
                     tone="ghost"
@@ -4478,7 +4480,7 @@ export function HaabBookingModule({
                       )
                     }
                   >
-                    Today
+                    {t.publicFlow.today}
                   </ActionButton>
                   <ActionButton
                     tone="ghost"
@@ -4486,7 +4488,7 @@ export function HaabBookingModule({
                     disabled
                     onClick={() => undefined}
                   >
-                    Next
+                    {t.publicFlow.next}
                   </ActionButton>
                 </div>
                 <p className="text-base font-semibold text-[var(--ink)]">
@@ -4576,11 +4578,11 @@ export function HaabBookingModule({
               )}
             >
               <SectionTitle
-                eyebrow={formatCompactDate(rescheduleState.dateKey)}
+                eyebrow={formatCompactDate(rescheduleState.dateKey, lang)}
                 title={
                   service.bookingType === "appointment"
-                    ? "Select a replacement slot"
-                    : "Confirm full-day reschedule"
+                    ? t.manage.selectReplacementSlot
+                    : t.manage.confirmFullDayReschedule
                 }
                 body={service.description}
               />
@@ -4617,13 +4619,13 @@ export function HaabBookingModule({
                               : "hover:border-[var(--accent)]"),
                         )}
                       >
-                        {formatTimeLabel(slot)}
+                        {formatTimeLabel(slot, lang)}
                       </button>
                     ))}
                   </div>
                   {slots.length === 0 ? (
                     <p className="text-sm text-[var(--muted)]">
-                      No available slots on this date. Choose another date from the calendar.
+                      {t.manage.noSlotsOnDateHelper}
                     </p>
                   ) : null}
                 </div>
@@ -4636,7 +4638,7 @@ export function HaabBookingModule({
                       : "rounded-3xl border border-white bg-white/90",
                   )}
                 >
-                  This new day is free and will replace the original full-day reservation as soon as you confirm.
+                  {t.manage.newDayFreeReplaceHelper}
                 </div>
               )}
               <div className="mt-auto grid grid-cols-2 gap-3 pt-6">
@@ -4645,7 +4647,7 @@ export function HaabBookingModule({
                   className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
                   onClick={() => setRescheduleState(null)}
                 >
-                  Cancel
+                  {t.common.cancel}
                 </ActionButton>
                 <ActionButton
                   tone="primary"
@@ -4656,7 +4658,7 @@ export function HaabBookingModule({
                   }
                   onClick={confirmReschedule}
                 >
-                  Save new time
+                  {t.manage.saveNewTime}
                 </ActionButton>
               </div>
             </div>
@@ -4713,7 +4715,7 @@ export function HaabBookingModule({
                 isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass),
               )}
             >
-              Contact provider
+              {t.manage.contactProvider}
             </a>
           ) : null}
         </div>
