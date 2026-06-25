@@ -1,4 +1,4 @@
-import type { VerticalId } from "./types";
+import type { Lang, VerticalId } from "./types";
 
 export interface VerticalCopy {
   // Nouns (case + plural variants)
@@ -216,6 +216,117 @@ export const defaultCopy: VerticalCopy = {
   },
 };
 
+export const defaultCopyEs: VerticalCopy = {
+  service: "servicio",
+  Service: "Servicio",
+  services: "servicios",
+  Services: "Servicios",
+  booking: "reserva",
+  Booking: "Reserva",
+  bookings: "reservas",
+  Bookings: "Reservas",
+  client: "cliente",
+  Client: "Cliente",
+  clients: "clientes",
+  Clients: "Clientes",
+
+  bookVerb: "reservar",
+  bookingPage: "página de reservas",
+  publicBookingUrl: "URL pública de reservas",
+  bookingWorkspace: "Espacio de reservas",
+  bookingSummary: "Resumen de la reserva",
+  manageBooking: "Gestionar reserva",
+  cancelBooking: "Cancelar reserva",
+  rescheduleBooking: "Reagendar reserva",
+  bookFullDay: "Reservar día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de reservas",
+    setupDoneTitle: "Su página de reservas está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones, la marca y la URL pública de reservas.",
+    availabilityBody:
+      "Los servicios por cita generan horarios reales a partir de estas ventanas. Los servicios de día completo solo necesitan que el día de la semana esté habilitado y libre de conflictos.",
+
+    addServiceFirstError:
+      "Agregue al menos un servicio antes de publicar su página de reservas.",
+    serviceNameRequiredError:
+      "Agregue un nombre de servicio y una breve descripción antes de guardarlo.",
+    keepOneServiceError:
+      "Conserve al menos un servicio. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError:
+      "Cancele las reservas activas de este servicio antes de eliminarlo.",
+    enableWeekdayError:
+      "Habilite al menos un día de la semana para que los clientes puedan reservar.",
+    chooseServiceFirstError: "Elija un servicio antes de confirmar la reserva.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la reserva.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del cliente son obligatorios.",
+
+    chooseServiceTitle: "Elija un servicio",
+    chooseServiceBody:
+      "Cada tarjeta muestra claramente si reserva una cita con horario o un día completo.",
+    onlyOneServiceBody:
+      "Solo hay un servicio disponible, por lo que el módulo omite este paso automáticamente.",
+    serviceUnavailableBody:
+      "Este horario podría liberarse, pero aún puede intentar reservarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes de su reserva?",
+    bookingSummaryBodyReview:
+      "Revise aquí los detalles de la reserva en tiempo real antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los detalles de la reserva confirmada permanecen visibles aquí.",
+
+    upcomingTitle: "Próximas reservas",
+    upcomingEmptyTitle: "No hay reservas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas reservas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las reservas",
+    noBookingsMatchTitle: "Ninguna reserva coincide con los filtros actuales",
+    bookingsSoonDetail: "Reservas programadas próximamente",
+    activeBookingsDetail: "Reservas actualmente activas",
+    totalBookingsLabel: "Total de reservas",
+    servicesStatDetail: "Ofertas por cita y de día completo",
+    searchPlaceholder: "Buscar cliente, servicio, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una reserva.",
+
+    cancelExplain: "Cancelar libera el horario de inmediato.",
+    keepBookingButton: "Conservar reserva",
+    cancelBookingButton: "Cancelar reserva",
+    tryBookingButton: "Intentar reservar",
+
+    loadingBookingTitle: "Cargando su reserva…",
+    bookingNotFoundTitle: "No encontramos esta reserva en este dispositivo",
+    bookingNotFoundBody:
+      "Las reservas se almacenan localmente en el navegador en el que se crearon. Si reservó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la reserva ya no es accesible desde este dispositivo.",
+    bookNewButton: "Reservar una nueva cita",
+
+    serviceEditorBody:
+      "Cada servicio es una cita con horario o una reserva de día completo. La capacidad y las notas permanecen visibles durante la reserva.",
+    noServicesTitle: "Aún no hay servicios",
+    noServicesBody:
+      "Agregue un servicio para que el flujo público de reservas pueda abrirse.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas qué incluye la reserva.",
+    newServiceEyebrow: "Nuevo servicio",
+    editServiceEyebrow: "Editar servicio",
+    newServiceTitle: "Agregar un servicio",
+    editServiceTitle: "Actualizar este servicio",
+    addServiceButton: "Agregar servicio",
+    saveServiceButton: "Guardar servicio",
+    typeOfServiceLabel: "Tipo de servicio",
+
+    clientLabel: "Cliente",
+
+    eventDateLabel: "Fecha y hora",
+    singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija una fecha antes de publicar esta reserva.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
+    maxSpotsRequiredError: "Establezca el número máximo de lugares.",
+  },
+};
+
 export const healthcareCopy: VerticalCopy = {
   service: "medical service",
   Service: "Medical service",
@@ -325,6 +436,118 @@ export const healthcareCopy: VerticalCopy = {
     pickEventDateError: "Pick a date before publishing this appointment.",
     pickWeekdaysError: "Pick at least one weekday and a start time.",
     maxSpotsRequiredError: "Set the maximum number of spots.",
+  },
+};
+
+export const healthcareCopyEs: VerticalCopy = {
+  service: "servicio médico",
+  Service: "Servicio médico",
+  services: "servicios médicos",
+  Services: "Servicios médicos",
+  booking: "cita",
+  Booking: "Cita",
+  bookings: "citas",
+  Bookings: "Citas",
+  client: "paciente",
+  Client: "Paciente",
+  clients: "pacientes",
+  Clients: "Pacientes",
+
+  bookVerb: "agendar",
+  bookingPage: "página de citas",
+  publicBookingUrl: "URL pública de citas",
+  bookingWorkspace: "Espacio de pacientes",
+  bookingSummary: "Resumen de la cita",
+  manageBooking: "Gestionar cita",
+  cancelBooking: "Cancelar cita",
+  rescheduleBooking: "Reagendar cita",
+  bookFullDay: "Reservar día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de citas para pacientes",
+    setupDoneTitle: "Su página de citas está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones de citas, la marca y su URL pública de citas.",
+    availabilityBody:
+      "Las citas con horario generan horarios reales a partir de estas ventanas. Las reservas de día completo solo necesitan que el día de la semana esté habilitado y libre de conflictos.",
+
+    addServiceFirstError:
+      "Agregue al menos un servicio médico antes de publicar su página de citas.",
+    serviceNameRequiredError:
+      "Agregue un nombre de servicio y una breve descripción antes de guardarlo.",
+    keepOneServiceError:
+      "Conserve al menos un servicio médico. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError:
+      "Cancele las citas activas de este servicio antes de eliminarlo.",
+    enableWeekdayError:
+      "Habilite al menos un día de la semana para que los pacientes puedan agendar citas.",
+    chooseServiceFirstError:
+      "Elija un servicio médico antes de confirmar la cita.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la cita.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del paciente son obligatorios.",
+
+    chooseServiceTitle: "Elija un servicio médico",
+    chooseServiceBody:
+      "Cada tarjeta muestra si agenda una cita con horario o reserva un día completo.",
+    onlyOneServiceBody:
+      "Solo hay un servicio médico disponible, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody:
+      "Este horario podría liberarse, pero aún puede intentar agendarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes de su cita?",
+    bookingSummaryBodyReview:
+      "Revise aquí los detalles de la cita en tiempo real antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los detalles de la cita confirmada permanecen visibles aquí.",
+
+    upcomingTitle: "Próximas citas",
+    upcomingEmptyTitle: "No hay citas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas citas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las citas",
+    noBookingsMatchTitle: "Ninguna cita coincide con los filtros actuales",
+    bookingsSoonDetail: "Citas programadas próximamente",
+    activeBookingsDetail: "Citas actualmente activas",
+    totalBookingsLabel: "Total de citas",
+    servicesStatDetail: "Ofertas con horario y de día completo",
+    searchPlaceholder: "Buscar paciente, servicio, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una cita.",
+
+    cancelExplain: "Cancelar libera el horario de inmediato.",
+    keepBookingButton: "Conservar cita",
+    cancelBookingButton: "Cancelar cita",
+    tryBookingButton: "Intentar agendar",
+
+    loadingBookingTitle: "Cargando su cita…",
+    bookingNotFoundTitle: "No encontramos esta cita en este dispositivo",
+    bookingNotFoundBody:
+      "Las citas se almacenan localmente en el navegador en el que se agendaron. Si agendó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la cita ya no es accesible desde este dispositivo.",
+    bookNewButton: "Agendar una nueva cita",
+
+    serviceEditorBody:
+      "Cada servicio médico es una cita con horario o una reserva de día completo. La capacidad y las notas permanecen visibles durante el agendamiento.",
+    noServicesTitle: "Aún no hay servicios médicos",
+    noServicesBody:
+      "Agregue un servicio médico para que los pacientes puedan comenzar a agendar citas.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas qué incluye la cita.",
+    newServiceEyebrow: "Nuevo servicio médico",
+    editServiceEyebrow: "Editar servicio médico",
+    newServiceTitle: "Agregar un servicio médico",
+    editServiceTitle: "Actualizar este servicio médico",
+    addServiceButton: "Agregar servicio médico",
+    saveServiceButton: "Guardar servicio médico",
+    typeOfServiceLabel: "Tipo de cita",
+
+    clientLabel: "Paciente",
+
+    eventDateLabel: "Fecha y hora",
+    singleOccurrenceHelper: "Esta cita ocurre en una sola fecha fija.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija una fecha antes de publicar esta cita.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
+    maxSpotsRequiredError: "Establezca el número máximo de lugares.",
   },
 };
 
@@ -440,6 +663,121 @@ export const eventsCopy: VerticalCopy = {
   },
 };
 
+export const eventsCopyEs: VerticalCopy = {
+  service: "evento",
+  Service: "Evento",
+  services: "eventos",
+  Services: "Eventos",
+  booking: "registro",
+  Booking: "Registro",
+  bookings: "registros",
+  Bookings: "Registros",
+  client: "asistente",
+  Client: "Asistente",
+  clients: "asistentes",
+  Clients: "Asistentes",
+
+  bookVerb: "registrarse",
+  bookingPage: "página de registro",
+  publicBookingUrl: "URL pública de registro",
+  bookingWorkspace: "Espacio de asistentes",
+  bookingSummary: "Resumen del registro",
+  manageBooking: "Gestionar registro",
+  cancelBooking: "Cancelar registro",
+  rescheduleBooking: "Reagendar registro",
+  bookFullDay: "Reservar pase de día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de registro de eventos",
+    setupDoneTitle: "Su página de registro está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones de registro, la marca y su URL pública de registro.",
+    availabilityBody:
+      "Los eventos con horario generan lugares reales a partir de estas ventanas. Los pases de día completo solo necesitan que el día esté habilitado y libre de conflictos.",
+
+    addServiceFirstError:
+      "Agregue al menos un evento antes de publicar su página de registro.",
+    serviceNameRequiredError:
+      "Agregue un nombre de evento y una breve descripción antes de guardarlo.",
+    keepOneServiceError:
+      "Conserve al menos un evento. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError:
+      "Cancele los registros activos de este evento antes de eliminarlo.",
+    enableWeekdayError:
+      "Habilite al menos un día para que los asistentes puedan registrarse.",
+    chooseServiceFirstError:
+      "Elija un evento antes de confirmar su registro.",
+    pickDateFirstError: "Elija una fecha antes de confirmar su registro.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del asistente son obligatorios.",
+
+    chooseServiceTitle: "Elija un evento",
+    chooseServiceBody:
+      "Cada tarjeta muestra si es una sesión con horario o un pase de día completo.",
+    onlyOneServiceBody:
+      "Solo hay un evento disponible, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody:
+      "Este lugar podría liberarse, pero aún puede intentar tomarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes del evento?",
+    bookingSummaryBodyReview:
+      "Revise aquí los detalles de su registro antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los detalles de su registro confirmado permanecen visibles aquí.",
+
+    upcomingTitle: "Próximos registros",
+    upcomingEmptyTitle: "No hay registros en los próximos 7 días",
+    upcomingEmptyBody: "Los nuevos registros aparecen aquí automáticamente.",
+    allBookingsTitle: "Todos los registros",
+    noBookingsMatchTitle: "Ningún registro coincide con los filtros actuales",
+    bookingsSoonDetail: "Registros que comienzan próximamente",
+    activeBookingsDetail: "Registros actualmente activos",
+    totalBookingsLabel: "Total de registros",
+    servicesStatDetail: "Sesiones con horario y pases de día completo",
+    searchPlaceholder: "Buscar asistente, evento, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar un registro.",
+
+    cancelExplain: "Cancelar libera el lugar de inmediato.",
+    keepBookingButton: "Conservar mi lugar",
+    cancelBookingButton: "Cancelar mi lugar",
+    tryBookingButton: "Intentar registrarse",
+
+    loadingBookingTitle: "Cargando su registro…",
+    bookingNotFoundTitle: "No encontramos este registro en este dispositivo",
+    bookingNotFoundBody:
+      "Los registros se almacenan localmente en el navegador en el que se crearon. Si se registró desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, el registro ya no es accesible desde este dispositivo.",
+    bookNewButton: "Registrarse en otro evento",
+
+    serviceEditorBody:
+      "Cada evento es una sesión con horario o un pase de día completo. La capacidad y las notas permanecen visibles durante el registro.",
+    noServicesTitle: "Aún no hay eventos",
+    noServicesBody:
+      "Agregue un evento para que los asistentes puedan comenzar a registrarse.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas de qué trata el evento.",
+    newServiceEyebrow: "Nuevo evento",
+    editServiceEyebrow: "Editar evento",
+    newServiceTitle: "Agregar un evento",
+    editServiceTitle: "Actualizar este evento",
+    addServiceButton: "Agregar evento",
+    saveServiceButton: "Guardar evento",
+    typeOfServiceLabel: "Tipo de evento",
+
+    clientLabel: "Asistente",
+
+    eventDateLabel: "Fecha y hora del evento",
+    singleOccurrenceHelper:
+      "Este evento ocurre una sola vez, en la fecha y hora indicadas abajo. Reserve su lugar para registrarse.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija la fecha del evento antes de publicar este evento.",
+    pickWeekdaysError:
+      "Elija al menos un día de la semana y una hora de inicio para este evento recurrente.",
+    maxSpotsRequiredError:
+      "Establezca el número máximo de lugares para este evento.",
+  },
+};
+
 export const spacesCopy: VerticalCopy = {
   service: "space",
   Service: "Space",
@@ -546,6 +884,117 @@ export const spacesCopy: VerticalCopy = {
     pickEventDateError: "Pick a date before publishing this reservation.",
     pickWeekdaysError: "Pick at least one weekday and a start time.",
     maxSpotsRequiredError: "Set the maximum number of spots.",
+  },
+};
+
+export const spacesCopyEs: VerticalCopy = {
+  service: "espacio",
+  Service: "Espacio",
+  services: "espacios",
+  Services: "Espacios",
+  booking: "reserva",
+  Booking: "Reserva",
+  bookings: "reservas",
+  Bookings: "Reservas",
+  client: "huésped",
+  Client: "Huésped",
+  clients: "huéspedes",
+  Clients: "Huéspedes",
+
+  bookVerb: "reservar",
+  bookingPage: "página de reservas",
+  publicBookingUrl: "URL pública de reservas",
+  bookingWorkspace: "Espacio de reservas",
+  bookingSummary: "Resumen de la reserva",
+  manageBooking: "Gestionar reserva",
+  cancelBooking: "Cancelar reserva",
+  rescheduleBooking: "Reagendar reserva",
+  bookFullDay: "Reservar día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de reservas",
+    setupDoneTitle: "Su página de reservas está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones de reservas, la marca y su URL pública de reservas.",
+    availabilityBody:
+      "Los espacios por hora generan horarios reales a partir de estas ventanas. Los recintos de día completo solo necesitan que el día esté habilitado y libre de conflictos.",
+
+    addServiceFirstError:
+      "Agregue al menos un espacio antes de publicar su página de reservas.",
+    serviceNameRequiredError:
+      "Agregue un nombre de espacio y una breve descripción antes de guardarlo.",
+    keepOneServiceError:
+      "Conserve al menos un espacio. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError:
+      "Cancele las reservas activas de este espacio antes de eliminarlo.",
+    enableWeekdayError:
+      "Habilite al menos un día para que los huéspedes puedan reservar.",
+    chooseServiceFirstError: "Elija un espacio antes de confirmar la reserva.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la reserva.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del huésped son obligatorios.",
+
+    chooseServiceTitle: "Elija un espacio",
+    chooseServiceBody:
+      "Cada tarjeta muestra si reserva un horario por hora o el día completo.",
+    onlyOneServiceBody:
+      "Solo hay un espacio disponible, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody:
+      "Este horario podría liberarse, pero aún puede intentar reservarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes de su reserva?",
+    bookingSummaryBodyReview:
+      "Revise aquí los detalles de la reserva en tiempo real antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los detalles de la reserva confirmada permanecen visibles aquí.",
+
+    upcomingTitle: "Próximas reservas",
+    upcomingEmptyTitle: "No hay reservas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas reservas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las reservas",
+    noBookingsMatchTitle: "Ninguna reserva coincide con los filtros actuales",
+    bookingsSoonDetail: "Reservas que comienzan próximamente",
+    activeBookingsDetail: "Reservas actualmente activas",
+    totalBookingsLabel: "Total de reservas",
+    servicesStatDetail: "Espacios por hora y de día completo",
+    searchPlaceholder: "Buscar huésped, espacio, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una reserva.",
+
+    cancelExplain: "Cancelar libera el horario de inmediato.",
+    keepBookingButton: "Conservar reserva",
+    cancelBookingButton: "Cancelar reserva",
+    tryBookingButton: "Intentar reservar",
+
+    loadingBookingTitle: "Cargando su reserva…",
+    bookingNotFoundTitle: "No encontramos esta reserva en este dispositivo",
+    bookingNotFoundBody:
+      "Las reservas se almacenan localmente en el navegador en el que se crearon. Si reservó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la reserva ya no es accesible desde este dispositivo.",
+    bookNewButton: "Hacer una nueva reserva",
+
+    serviceEditorBody:
+      "Cada espacio es una reserva por hora o un recinto de día completo. La capacidad y las notas permanecen visibles durante la reserva.",
+    noServicesTitle: "Aún no hay espacios",
+    noServicesBody:
+      "Agregue un espacio para que los huéspedes puedan comenzar a reservar.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas qué incluye la reserva.",
+    newServiceEyebrow: "Nuevo espacio",
+    editServiceEyebrow: "Editar espacio",
+    newServiceTitle: "Agregar un espacio",
+    editServiceTitle: "Actualizar este espacio",
+    addServiceButton: "Agregar espacio",
+    saveServiceButton: "Guardar espacio",
+    typeOfServiceLabel: "Tipo de espacio",
+
+    clientLabel: "Huésped",
+
+    eventDateLabel: "Fecha y hora",
+    singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija una fecha antes de publicar esta reserva.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
+    maxSpotsRequiredError: "Establezca el número máximo de lugares.",
   },
 };
 
@@ -659,16 +1108,144 @@ export const professionalCopy: VerticalCopy = {
   },
 };
 
-const COPY_BY_VERTICAL: Record<VerticalId, VerticalCopy> = {
-  healthcare: healthcareCopy,
-  events: eventsCopy,
-  spaces: spacesCopy,
-  professional: professionalCopy,
+export const professionalCopyEs: VerticalCopy = {
+  service: "servicio",
+  Service: "Servicio",
+  services: "servicios",
+  Services: "Servicios",
+  booking: "sesión",
+  Booking: "Sesión",
+  bookings: "sesiones",
+  Bookings: "Sesiones",
+  client: "cliente",
+  Client: "Cliente",
+  clients: "clientes",
+  Clients: "Clientes",
+
+  bookVerb: "agendar",
+  bookingPage: "página de agendamiento",
+  publicBookingUrl: "URL pública de agendamiento",
+  bookingWorkspace: "Espacio de clientes",
+  bookingSummary: "Resumen de la sesión",
+  manageBooking: "Gestionar sesión",
+  cancelBooking: "Cancelar sesión",
+  rescheduleBooking: "Reagendar sesión",
+  bookFullDay: "Reservar día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de agendamiento",
+    setupDoneTitle: "Su página de agendamiento está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones de sesiones, la marca y su URL pública de agendamiento.",
+    availabilityBody:
+      "Las sesiones con horario generan horarios reales a partir de estas ventanas. Los compromisos de día completo solo necesitan que el día de la semana esté habilitado y libre de conflictos.",
+
+    addServiceFirstError:
+      "Agregue al menos un servicio antes de publicar su página de agendamiento.",
+    serviceNameRequiredError:
+      "Agregue un nombre de servicio y una breve descripción antes de guardarlo.",
+    keepOneServiceError:
+      "Conserve al menos un servicio. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError:
+      "Cancele las sesiones activas de este servicio antes de eliminarlo.",
+    enableWeekdayError:
+      "Habilite al menos un día de la semana para que los clientes puedan agendar sesiones.",
+    chooseServiceFirstError: "Elija un servicio antes de confirmar la sesión.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la sesión.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del cliente son obligatorios.",
+
+    chooseServiceTitle: "Elija un servicio",
+    chooseServiceBody:
+      "Cada tarjeta muestra si agenda una sesión con horario o reserva un día completo.",
+    onlyOneServiceBody:
+      "Solo hay un servicio disponible, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody:
+      "Este horario podría liberarse, pero aún puede intentar agendarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes de su sesión?",
+    bookingSummaryBodyReview:
+      "Revise aquí los detalles de la sesión en tiempo real antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los detalles de la sesión confirmada permanecen visibles aquí.",
+
+    upcomingTitle: "Próximas sesiones",
+    upcomingEmptyTitle: "No hay sesiones en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas sesiones aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las sesiones",
+    noBookingsMatchTitle: "Ninguna sesión coincide con los filtros actuales",
+    bookingsSoonDetail: "Sesiones programadas próximamente",
+    activeBookingsDetail: "Sesiones actualmente activas",
+    totalBookingsLabel: "Total de sesiones",
+    servicesStatDetail: "Ofertas con horario y de día completo",
+    searchPlaceholder: "Buscar cliente, servicio, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una sesión.",
+
+    cancelExplain: "Cancelar libera el horario de inmediato.",
+    keepBookingButton: "Conservar sesión",
+    cancelBookingButton: "Cancelar sesión",
+    tryBookingButton: "Intentar agendar",
+
+    loadingBookingTitle: "Cargando su sesión…",
+    bookingNotFoundTitle: "No encontramos esta sesión en este dispositivo",
+    bookingNotFoundBody:
+      "Las sesiones se almacenan localmente en el navegador en el que se agendaron. Si agendó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la sesión ya no es accesible desde este dispositivo.",
+    bookNewButton: "Agendar una nueva sesión",
+
+    serviceEditorBody:
+      "Cada servicio es una sesión con horario o un compromiso de día completo. La capacidad y las notas permanecen visibles durante el agendamiento.",
+    noServicesTitle: "Aún no hay servicios",
+    noServicesBody:
+      "Agregue un servicio para que los clientes puedan comenzar a agendar sesiones.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas qué incluye la sesión.",
+    newServiceEyebrow: "Nuevo servicio",
+    editServiceEyebrow: "Editar servicio",
+    newServiceTitle: "Agregar un servicio",
+    editServiceTitle: "Actualizar este servicio",
+    addServiceButton: "Agregar servicio",
+    saveServiceButton: "Guardar servicio",
+    typeOfServiceLabel: "Tipo de sesión",
+
+    clientLabel: "Cliente",
+
+    eventDateLabel: "Fecha y hora",
+    singleOccurrenceHelper: "Esta sesión ocurre en una sola fecha fija.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija una fecha antes de publicar esta sesión.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
+    maxSpotsRequiredError: "Establezca el número máximo de lugares.",
+  },
 };
 
-export function getVerticalCopy(verticalId?: VerticalId): VerticalCopy {
+const COPY: Record<Lang, Record<VerticalId, VerticalCopy>> = {
+  en: {
+    healthcare: healthcareCopy,
+    events: eventsCopy,
+    spaces: spacesCopy,
+    professional: professionalCopy,
+  },
+  es: {
+    healthcare: healthcareCopyEs,
+    events: eventsCopyEs,
+    spaces: spacesCopyEs,
+    professional: professionalCopyEs,
+  },
+};
+
+const DEFAULTS: Record<Lang, VerticalCopy> = {
+  en: defaultCopy,
+  es: defaultCopyEs,
+};
+
+export function getVerticalCopy(
+  verticalId?: VerticalId,
+  lang: Lang = "en",
+): VerticalCopy {
+  const table = COPY[lang] ?? COPY.en;
   if (!verticalId) {
-    return defaultCopy;
+    return DEFAULTS[lang] ?? defaultCopy;
   }
-  return COPY_BY_VERTICAL[verticalId] ?? defaultCopy;
+  return table[verticalId] ?? DEFAULTS[lang] ?? defaultCopy;
 }
