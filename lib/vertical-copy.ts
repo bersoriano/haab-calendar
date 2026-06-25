@@ -52,6 +52,8 @@ export interface VerticalCopy {
     notesPlaceholder: string;
     bookingSummaryBodyReview: string;
     bookingSummaryBodySuccess: string;
+    aboutServiceTitle: string;
+    serviceDetailsTitle: string;
 
     // Provider dashboard
     upcomingTitle: string;
@@ -165,6 +167,8 @@ export const defaultCopy: VerticalCopy = {
       "Review the live booking details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed booking details remain visible here.",
+    aboutServiceTitle: "About the Service",
+    serviceDetailsTitle: "Service details",
 
     upcomingTitle: "Upcoming bookings",
     upcomingEmptyTitle: "No bookings in the next 7 days",
@@ -275,6 +279,8 @@ export const defaultCopyEs: VerticalCopy = {
       "Revise aquí los detalles de la reserva en tiempo real antes de confirmar.",
     bookingSummaryBodySuccess:
       "Los detalles de la reserva confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del servicio",
+    serviceDetailsTitle: "Detalles del servicio",
 
     upcomingTitle: "Próximas reservas",
     upcomingEmptyTitle: "No hay reservas en los próximos 7 días",
@@ -387,6 +393,8 @@ export const healthcareCopy: VerticalCopy = {
       "Review the live appointment details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed appointment details remain visible here.",
+    aboutServiceTitle: "About the Medical service",
+    serviceDetailsTitle: "Medical service details",
 
     upcomingTitle: "Upcoming appointments",
     upcomingEmptyTitle: "No appointments in the next 7 days",
@@ -499,6 +507,8 @@ export const healthcareCopyEs: VerticalCopy = {
       "Revise aquí los detalles de la cita en tiempo real antes de confirmar.",
     bookingSummaryBodySuccess:
       "Los detalles de la cita confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del servicio médico",
+    serviceDetailsTitle: "Detalles del servicio médico",
 
     upcomingTitle: "Próximas citas",
     upcomingEmptyTitle: "No hay citas en los próximos 7 días",
@@ -610,6 +620,8 @@ export const eventsCopy: VerticalCopy = {
       "Review your registration details here before confirming.",
     bookingSummaryBodySuccess:
       "Your confirmed registration details remain visible here.",
+    aboutServiceTitle: "About the Event",
+    serviceDetailsTitle: "Event details",
 
     upcomingTitle: "Upcoming registrations",
     upcomingEmptyTitle: "No registrations in the next 7 days",
@@ -723,6 +735,8 @@ export const eventsCopyEs: VerticalCopy = {
       "Revise aquí los detalles de su registro antes de confirmar.",
     bookingSummaryBodySuccess:
       "Los detalles de su registro confirmado permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del evento",
+    serviceDetailsTitle: "Detalles del evento",
 
     upcomingTitle: "Próximos registros",
     upcomingEmptyTitle: "No hay registros en los próximos 7 días",
@@ -836,6 +850,8 @@ export const spacesCopy: VerticalCopy = {
       "Review the live reservation details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed reservation details remain visible here.",
+    aboutServiceTitle: "About the Space",
+    serviceDetailsTitle: "Space details",
 
     upcomingTitle: "Upcoming reservations",
     upcomingEmptyTitle: "No reservations in the next 7 days",
@@ -946,6 +962,8 @@ export const spacesCopyEs: VerticalCopy = {
       "Revise aquí los detalles de la reserva en tiempo real antes de confirmar.",
     bookingSummaryBodySuccess:
       "Los detalles de la reserva confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del espacio",
+    serviceDetailsTitle: "Detalles del espacio",
 
     upcomingTitle: "Próximas reservas",
     upcomingEmptyTitle: "No hay reservas en los próximos 7 días",
@@ -1057,6 +1075,8 @@ export const professionalCopy: VerticalCopy = {
       "Review the live session details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed session details remain visible here.",
+    aboutServiceTitle: "About the Service",
+    serviceDetailsTitle: "Service details",
 
     upcomingTitle: "Upcoming sessions",
     upcomingEmptyTitle: "No sessions in the next 7 days",
@@ -1167,6 +1187,8 @@ export const professionalCopyEs: VerticalCopy = {
       "Revise aquí los detalles de la sesión en tiempo real antes de confirmar.",
     bookingSummaryBodySuccess:
       "Los detalles de la sesión confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del servicio",
+    serviceDetailsTitle: "Detalles del servicio",
 
     upcomingTitle: "Próximas sesiones",
     upcomingEmptyTitle: "No hay sesiones en los próximos 7 días",

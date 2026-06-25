@@ -119,6 +119,7 @@ import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { VERTICALS } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   ActionButton,
   ActionLink,
@@ -306,7 +307,9 @@ export function HaabBookingModule({
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
   const vertical = activeStore.vertical;
-  const copy = getVerticalCopy(vertical);
+  const lang = provider.language ?? "en";
+  const copy = getVerticalCopy(vertical, lang);
+  const t = bookingTranslations[lang];
 
   // Default a fresh (untouched) service draft to the vertical's occurrence mode:
   // events start single-occurrence, every other vertical stays periodic.
@@ -2552,7 +2555,7 @@ export function HaabBookingModule({
           )}
         >
           <p className="text-center text-base font-semibold text-[var(--ink)] sm:text-right">
-            {formatMonthLabel(publicMonthAnchor)}
+            {formatMonthLabel(publicMonthAnchor, lang)}
           </p>
           <div className="flex items-center gap-2">
             <ActionButton
@@ -2561,21 +2564,21 @@ export function HaabBookingModule({
               disabled={!canGoToPreviousPublicMonth}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, -1))}
             >
-              Previous
+              {t.publicFlow.previous}
             </ActionButton>
             <ActionButton
               tone="ghost"
               className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor(new Date())}
             >
-              Today
+              {t.publicFlow.today}
             </ActionButton>
             <ActionButton
               tone="ghost"
               className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, 1))}
             >
-              Next
+              {t.publicFlow.next}
             </ActionButton>
           </div>
         </div>
@@ -2587,10 +2590,12 @@ export function HaabBookingModule({
           )}
         >
           <p className="text-sm font-medium text-[var(--muted)]">
-            Only real free dates are active.
+            {t.publicFlow.onlyRealFreeDatesActive}
           </p>
           <p className="text-sm font-semibold text-[var(--ink)]">
-            {bookingFlow.dateKey ? formatDateLabel(bookingFlow.dateKey) : "No date selected yet"}
+            {bookingFlow.dateKey
+              ? formatDateLabel(bookingFlow.dateKey, lang)
+              : t.publicFlow.noDateSelectedYet}
           </p>
         </div>
 
@@ -2685,7 +2690,7 @@ export function HaabBookingModule({
                           <>
                             <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:hidden" />
                             <span className={cn("hidden shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)] sm:inline", compactBadgeTextClass)}>
-                              Selected
+                              {t.publicFlow.selected}
                             </span>
                           </>
                         ) : null}
@@ -2698,7 +2703,7 @@ export function HaabBookingModule({
                                 compactBadgeTextClass,
                               )}
                             >
-                              Today
+                              {t.publicFlow.today}
                             </span>
                           </>
                         ) : null}
@@ -2777,7 +2782,7 @@ export function HaabBookingModule({
     const selectionWindowLabel =
       selectedService?.startTime && selectedService?.endTime &&
       (isSingleOccurrence(selectedService) || isWeeklyOccurrence(selectedService))
-        ? `${formatTimeLabel(selectedService.startTime)}–${formatTimeLabel(selectedService.endTime)}`
+        ? `${formatTimeLabel(selectedService.startTime, lang)}–${formatTimeLabel(selectedService.endTime, lang)}`
         : "";
     const singleSpotsLeft =
       selectionIsSingle && selectedService
@@ -2786,15 +2791,15 @@ export function HaabBookingModule({
     const singleIsFull = selectionIsSingle && singleSpotsLeft <= 0;
     const singleWindowLabel =
       selectedService?.startTime
-        ? `${formatTimeLabel(selectedService.startTime)}${
-            selectedService.endTime ? `–${formatTimeLabel(selectedService.endTime)}` : ""
+        ? `${formatTimeLabel(selectedService.startTime, lang)}${
+            selectedService.endTime ? `–${formatTimeLabel(selectedService.endTime, lang)}` : ""
           }`
         : "";
     const singleDateLabel = selectedService?.occurrenceDate
-      ? `${formatDateLabel(selectedService.occurrenceDate)}${
+      ? `${formatDateLabel(selectedService.occurrenceDate, lang)}${
           singleWindowLabel ? ` · ${singleWindowLabel}` : ""
         }`
-      : "Date not set";
+      : t.publicFlow.dateNotSet;
     const spotsLeftLabel = Number.isFinite(singleSpotsLeft)
       ? `${Math.max(0, singleSpotsLeft)} ${copy.phrases.spotsLeftSuffix}`
       : "";
@@ -2835,40 +2840,40 @@ export function HaabBookingModule({
       ? singleDateLabel
       : step2IsAppointment
         ? step2DateChosen && step2TimeChosen
-          ? `${formatDateLabel(bookingFlow.dateKey)} · ${formatTimeLabel(bookingFlow.time)}`
+          ? `${formatDateLabel(bookingFlow.dateKey, lang)} · ${formatTimeLabel(bookingFlow.time, lang)}`
           : step2DateChosen
-            ? formatDateLabel(bookingFlow.dateKey)
-            : "Select a Day"
+            ? formatDateLabel(bookingFlow.dateKey, lang)
+            : t.publicFlow.selectADay
         : step2DateChosen
-          ? `${formatDateLabel(bookingFlow.dateKey)} · Full day`
-          : "Select a Day";
+          ? `${formatDateLabel(bookingFlow.dateKey, lang)} · ${t.publicFlow.fullDay}`
+          : t.publicFlow.selectADay;
     const step2Helper = selectionIsSingle
       ? singleIsFull
         ? copy.phrases.fullyBookedLabel
         : copy.phrases.singleOccurrenceHelper
       : step2IsAppointment
         ? !step2DateChosen
-          ? "Pick a date from the calendar and time slot below to continue."
+          ? t.publicFlow.pickDateAndTimeHelper
           : !step2TimeChosen
-            ? "Pick a time slot to continue."
-            : "Click the button to enter your details."
+            ? t.publicFlow.pickTimeHelper
+            : t.publicFlow.clickToEnterDetails
         : !step2DateChosen
-          ? "Pick a date to reserve the full day."
+          ? t.publicFlow.pickDateFullDayHelper
           : step2DateAvailableForFullDay
-            ? "This day is free. Click the button to enter your details."
-            : "This day isn't available. Pick another date.";
+            ? t.publicFlow.dayFreeHelper
+            : t.publicFlow.dayUnavailablePickAnother;
     const step2ButtonLabel = selectionIsSingle
       ? singleIsFull
         ? copy.phrases.fullyBookedLabel
         : copy.bookVerb === "register"
-          ? "Reserve my spot"
-          : "Continue to My Details"
+          ? t.publicFlow.reserveMySpot
+          : t.publicFlow.continueToMyDetails
       : step2IsAppointment
         ? !step2DateChosen
-          ? "Select a Date"
+          ? t.publicFlow.selectADate
           : !step2TimeChosen
-            ? "Select a Time"
-            : "Continue to My Details"
+            ? t.publicFlow.selectATime
+            : t.publicFlow.continueToMyDetails
         : copy.bookFullDay;
 
     const advanceToDetailsStep = () => {
@@ -3050,7 +3055,7 @@ export function HaabBookingModule({
                         {selectedService.name}
                       </p>
                       <h3 className="mt-1.5 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.33s_both]">
-                        {isSuccessfulBookingCancelled ? "Booking Cancelled" : "Booking Confirmed"}
+                        {isSuccessfulBookingCancelled ? t.publicFlow.bookingCancelled : t.publicFlow.bookingConfirmed}
                       </h3>
                     </div>
                   </div>
@@ -3085,7 +3090,7 @@ export function HaabBookingModule({
                                 fill="none"
                               />
                             </svg>
-                            Choose another {copy.service}
+                            {t.publicFlow.chooseAnother} {copy.service}
                           </button>
                         </div>
                       ) : null}
@@ -3097,7 +3102,7 @@ export function HaabBookingModule({
                       >
                         <div className="flex flex-col gap-0.5">
                           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
-                            Selected Date
+                            {t.publicFlow.selectedDate}
                           </p>
                           <p className="text-[0.9375rem] font-semibold text-[var(--ink)]">
                             {step2Summary}
@@ -3133,7 +3138,7 @@ export function HaabBookingModule({
                       <p className="min-w-0 flex-1 text-[0.9375rem] leading-6 text-[var(--muted)]">
                         {isBookingHoldExpired
                           ? copy.phrases.serviceUnavailableBody
-                          : "Finish your details before the temporary hold expires."}
+                          : t.publicFlow.finishBeforeHoldExpires}
                       </p>
                       <div className="flex flex-wrap items-center justify-end gap-3">
                         <ActionButton
@@ -3145,14 +3150,14 @@ export function HaabBookingModule({
                           )}
                           onClick={goBackToSelectionStep}
                         >
-                          Back
+                          {t.publicFlow.back}
                         </ActionButton>
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
                           onClick={confirmBooking}
                         >
-                          {isBookingHoldExpired ? copy.phrases.tryBookingButton : "Confirm"}
+                          {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
                         </ActionButton>
                       </div>
                     </div>
@@ -3221,24 +3226,24 @@ export function HaabBookingModule({
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-lg font-semibold text-[var(--ink)]">{service.name}</h4>
                     <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                      {getBookingTypeLabel(service.bookingType)}
+                      {getBookingTypeLabel(service.bookingType, lang)}
                     </ToneBadge>
-                    <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
+                    <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
                     {service.description}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                     {vertical === "events" ? (
-                      <span>Capacity: {formatCapacityLabel(service)}</span>
+                      <span>{t.publicFlow.capacity}: {formatCapacityLabel(service, lang)}</span>
                     ) : service.capacity ? (
-                      <span>Capacity: {service.capacity}</span>
+                      <span>{t.publicFlow.capacity}: {service.capacity}</span>
                     ) : null}
                     {service.medicalSpecialty ? (
-                      <span>Specialty: {service.medicalSpecialty}</span>
+                      <span>{t.publicFlow.specialty}: {service.medicalSpecialty}</span>
                     ) : null}
-                    {service.cost ? <span>Total: {service.cost}</span> : null}
-                    {service.notes ? <span>Notes: {service.notes}</span> : null}
+                    {service.cost ? <span>{t.publicFlow.total}: {service.cost}</span> : null}
+                    {service.notes ? <span>{t.publicFlow.notes}: {service.notes}</span> : null}
                   </div>
                   {(() => {
                     const cardAddresses = [
@@ -3304,7 +3309,7 @@ export function HaabBookingModule({
             ) : null}
             {isPublicSelectionStep && selectionLocations.length >= 2 ? (
               <div className={cn("lg:col-span-2", publicElevatedPanelClass)}>
-                <SectionTitle title="Choose a location" />
+                <SectionTitle title={t.publicFlow.chooseLocation} />
                 <div className="mt-4 grid gap-2 sm:grid-cols-2">
                   {selectionLocations.map((loc) => {
                     const active = loc.key === bookingFlow.locationKey;
@@ -3380,7 +3385,7 @@ export function HaabBookingModule({
               ) : isPublicSelectionStep ? (
                 <>
                   <SectionTitle
-                    title="Pick a date and time"
+                    title={t.publicFlow.pickDateAndTime}
                   />
                   <div className="mt-4">
                     {!isNLBookingOpen ? (
@@ -3404,15 +3409,15 @@ export function HaabBookingModule({
                           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                         </svg>
-                        Type a date and time instead
+                        {t.publicFlow.typeDateTimeInstead}
                       </button>
                     ) : (
                       <div className="space-y-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
                         <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
                           <span>
                             {selectedService.bookingType === "appointment"
-                              ? "Describe a date and time"
-                              : "Describe a date"}
+                              ? t.publicFlow.describeDateTime
+                              : t.publicFlow.describeDate}
                           </span>
                           <input
                             type="text"
@@ -3432,8 +3437,8 @@ export function HaabBookingModule({
                             }}
                             placeholder={
                               selectedService.bookingType === "appointment"
-                                ? "e.g. \"next Monday at 2 PM\""
-                                : "e.g. \"next Friday\""
+                                ? t.publicFlow.nlPlaceholderDateTime
+                                : t.publicFlow.nlPlaceholderDate
                             }
                             className={publicFieldClass}
                           />
@@ -3444,7 +3449,7 @@ export function HaabBookingModule({
                             className={cn("flex-1", publicPrimaryActionClass)}
                             onClick={continueWithNaturalLanguageBooking}
                           >
-                            Continue to My Details
+                            {t.publicFlow.continueToMyDetails}
                           </ActionButton>
                           <ActionButton
                             tone="ghost"
@@ -3459,7 +3464,7 @@ export function HaabBookingModule({
                               setNaturalLanguageBookingError(null);
                             }}
                           >
-                            Cancel
+                            {t.publicFlow.cancel}
                           </ActionButton>
                         </div>
                         {naturalLanguageBookingError ? (
@@ -3475,47 +3480,47 @@ export function HaabBookingModule({
               ) : isPublicDetailsStep ? (
                 <>
                   <SectionTitle
-                    title="My Details"
+                    title={t.publicFlow.myDetails}
                   />
                   <div className="mt-6">
                     <div className="grid gap-4">
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                          Full name
+                          {t.publicFlow.fullName}
                         </span>
                         <input
                           value={bookingFlow.clientName}
                           onChange={(event) => updateBookingFlow("clientName", event.target.value)}
-                          placeholder="Jamie Rivera"
+                          placeholder={t.publicFlow.namePlaceholder}
                           className={publicFieldClass}
                         />
                       </label>
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                          Email
+                          {t.publicFlow.email}
                         </span>
                         <input
                           value={bookingFlow.clientEmail}
                           onChange={(event) => updateBookingFlow("clientEmail", event.target.value)}
-                          placeholder="jamie@example.com"
+                          placeholder={t.publicFlow.emailPlaceholder}
                           type="email"
                           className={publicFieldClass}
                         />
                       </label>
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                          Phone number
+                          {t.publicFlow.phoneNumber}
                         </span>
                         <input
                           value={bookingFlow.clientPhone}
                           onChange={(event) => updateBookingFlow("clientPhone", event.target.value)}
-                          placeholder="+1 (555) 123-4567"
+                          placeholder={t.publicFlow.phonePlaceholder}
                           className={publicFieldClass}
                         />
                       </label>
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                          Notes
+                          {t.publicFlow.notes}
                         </span>
                         <textarea
                           value={bookingFlow.notes}
@@ -3545,7 +3550,7 @@ export function HaabBookingModule({
                     : undefined
                 }
               >
-                <SectionTitle title={selectionIsEvent ? `About the ${copy.Service}` : "About the Appointment"} />
+                <SectionTitle title={selectionIsEvent ? copy.phrases.aboutServiceTitle : t.publicFlow.aboutTheAppointment} />
                 <div className={cn("mt-6 min-h-0 flex-1", publicInsetCardClass)}>
                   {(() => {
                       // When the service has multiple priced locations, show only
@@ -3567,33 +3572,33 @@ export function HaabBookingModule({
                         <dl className="grid gap-4">
                           <SummaryField label={copy.phrases.typeOfServiceLabel} value={selectedService.name} />
                           {selectedService.description ? (
-                            <SummaryField label="Description" value={selectedService.description} />
+                            <SummaryField label={t.publicFlow.description} value={selectedService.description} />
                           ) : null}
                           {selectionIsSingle ? (
-                            <SummaryField label="When" value={singleDateLabel} />
+                            <SummaryField label={t.publicFlow.when} value={singleDateLabel} />
                           ) : selectionIsEvent ? null : (
                             <SummaryField
-                              label="Type"
-                              value={getBookingTypeLabel(selectedService.bookingType)}
+                              label={t.publicFlow.type}
+                              value={getBookingTypeLabel(selectedService.bookingType, lang)}
                             />
                           )}
                           {selectedService.medicalSpecialty ? (
                             <SummaryField
-                              label="Specialty"
+                              label={t.publicFlow.specialty}
                               value={selectedService.medicalSpecialty}
                             />
                           ) : null}
-                          <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                          <SummaryField label={t.publicFlow.capacity} value={formatCapacityLabel(selectedService, lang)} />
                           {!selectionIsSingle ? (
-                            <SummaryField label="Length" value={formatDuration(selectedService)} />
+                            <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                           ) : null}
-                          <SummaryField label="Total" value={effectiveCost || "Not set"} />
+                          <SummaryField label={t.publicFlow.total} value={effectiveCost || t.publicFlow.notSet} />
                           {selectedService.notes ? (
-                            <SummaryField label="Notes" value={selectedService.notes} />
+                            <SummaryField label={t.publicFlow.notes} value={selectedService.notes} />
                           ) : null}
                           {aboutAddresses.length > 0 ? (
                             <SummaryField
-                              label={aboutAddresses.length > 1 ? "Locations" : "Location"}
+                              label={aboutAddresses.length > 1 ? t.publicFlow.locations : t.publicFlow.location}
                               value={
                                 <div className="flex flex-col gap-1.5">
                                   {aboutAddresses.map((entry) => (
@@ -3617,7 +3622,7 @@ export function HaabBookingModule({
                           ) : null}
                           {aboutPhones.length > 0 ? (
                             <SummaryField
-                              label={aboutPhones.length > 1 ? "Phones" : "Phone"}
+                              label={aboutPhones.length > 1 ? t.publicFlow.phones : t.publicFlow.phone}
                               value={
                                 <div className="flex flex-col gap-1.5">
                                   {aboutPhones.map((entry) => (
@@ -3685,17 +3690,17 @@ export function HaabBookingModule({
                       selectionIsSingle
                         ? copy.bookingSummary
                         : step2IsAppointment
-                          ? "Available time slots"
-                          : "Full-day reservation"
+                          ? t.publicFlow.availableTimeSlots
+                          : t.publicFlow.fullDayReservation
                     }
                     body={
                       selectionIsSingle
                         ? singleDateLabel
                         : bookingFlow.dateKey
-                          ? `${formatDateLabel(bookingFlow.dateKey)}${
+                          ? `${formatDateLabel(bookingFlow.dateKey, lang)}${
                               selectionDateSpotsLabel ? ` · ${selectionDateSpotsLabel}` : ""
                             }`
-                          : "Select a highlighted date from the calendar first."
+                          : t.publicFlow.selectHighlightedDateFirst
                     }
                   />
                   {selectedService.description ? (
@@ -3721,8 +3726,8 @@ export function HaabBookingModule({
                   ) : !bookingFlow.dateKey ? (
                     <div className="mt-6">
                       <EmptyState
-                        title="Choose a date"
-                        body="Only real free dates are highlighted. Once you pick one, the next action becomes available here."
+                        title={t.publicFlow.chooseADate}
+                        body={t.publicFlow.chooseDateBody}
                       />
                     </div>
                   ) : step2IsAppointment ? (
@@ -3730,8 +3735,8 @@ export function HaabBookingModule({
                       {publicSlots.length === 0 ? (
                         <div className="min-h-0 flex-1">
                           <EmptyState
-                            title="No slots left on this date"
-                            body="Pick another available date from the calendar to continue."
+                            title={t.publicFlow.noSlotsLeft}
+                            body={t.publicFlow.noSlotsLeftBody}
                           />
                         </div>
                       ) : (
@@ -3777,7 +3782,7 @@ export function HaabBookingModule({
                                   />
                                   <div className="pl-4">
                                     <p className="text-base font-semibold text-[var(--ink)]">
-                                      {formatTimeLabel(slot)}
+                                      {formatTimeLabel(slot, lang)}
                                     </p>
                                     <p
                                       className={cn(
@@ -3785,7 +3790,7 @@ export function HaabBookingModule({
                                         compactMetaTextClass,
                                       )}
                                     >
-                                      Ends {formatTimeLabel(slotEnd)}
+                                      {t.publicFlow.ends} {formatTimeLabel(slotEnd, lang)}
                                     </p>
                                   </div>
                                   <span
@@ -3794,7 +3799,7 @@ export function HaabBookingModule({
                                       compactMetaTextClass,
                                     )}
                                   >
-                                    {isSelected ? "Selected" : "Open"}
+                                    {isSelected ? t.publicFlow.selected : t.publicFlow.open}
                                   </span>
                                 </button>
                               );
@@ -3816,8 +3821,8 @@ export function HaabBookingModule({
                             activeBookingHolds,
                             bookingHold?.released ? undefined : bookingHold?.id,
                           )
-                            ? "This day is currently free for a full-day reservation."
-                            : "This day is unavailable. Choose another date from the calendar."}
+                            ? t.publicFlow.dayFreeFullDay
+                            : t.publicFlow.dayUnavailableChooseAnother}
                         </p>
                       </div>
                     </div>
@@ -3838,40 +3843,40 @@ export function HaabBookingModule({
                   <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
                     <dl className="grid gap-4">
                       <SummaryField
-                        label="When"
+                        label={t.publicFlow.when}
                         value={
                           bookingFlow.dateKey
-                            ? `${formatDateLabel(bookingFlow.dateKey)} · ${
+                            ? `${formatDateLabel(bookingFlow.dateKey, lang)} · ${
                                 selectionWindowLabel
                                   ? selectionWindowLabel
                                   : selectedService.bookingType === "appointment"
-                                    ? formatTimeLabel(bookingFlow.time)
-                                    : "Full Day"
+                                    ? formatTimeLabel(bookingFlow.time, lang)
+                                    : t.publicFlow.fullDay
                               }`
-                            : "Not selected"
+                            : t.publicFlow.notSelected
                         }
                       />
                       {selectedService.medicalSpecialty ? (
                         <SummaryField
-                          label="Specialty"
+                          label={t.publicFlow.specialty}
                           value={selectedService.medicalSpecialty}
                         />
                       ) : null}
                       <SummaryField
                         label={copy.phrases.clientLabel}
-                        value={bookingFlow.clientName.trim() || "Not entered yet"}
+                        value={bookingFlow.clientName.trim() || t.publicFlow.notEnteredYet}
                       />
                       <SummaryField
-                        label="Email"
-                        value={bookingFlow.clientEmail.trim() || "Not entered yet"}
+                        label={t.publicFlow.email}
+                        value={bookingFlow.clientEmail.trim() || t.publicFlow.notEnteredYet}
                       />
                       <SummaryField
-                        label="Phone"
-                        value={bookingFlow.clientPhone.trim() || "Not entered yet"}
+                        label={t.publicFlow.phone}
+                        value={bookingFlow.clientPhone.trim() || t.publicFlow.notEnteredYet}
                       />
                       <SummaryField
-                        label="Notes"
-                        value={bookingFlow.notes.trim() || "None"}
+                        label={t.publicFlow.notes}
+                        value={bookingFlow.notes.trim() || t.publicFlow.none}
                       />
                     </dl>
                     {isPublicDetailsStep && !selectionIsSingle ? (
@@ -3890,12 +3895,12 @@ export function HaabBookingModule({
                               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
-                            Change date/time
+                            {t.publicFlow.changeDateTime}
                           </button>
                         ) : (
                           <div className="space-y-3">
                             <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
-                              New date/time
+                              {t.publicFlow.newDateTime}
                               <input
                                 type="text"
                                 value={naturalLanguageBookingInput}
@@ -3914,8 +3919,8 @@ export function HaabBookingModule({
                                 }}
                                 placeholder={
                                   selectedService.bookingType === "appointment"
-                                    ? "e.g. \"next Monday at 2 PM\""
-                                    : "e.g. \"next Friday\""
+                                    ? t.publicFlow.nlPlaceholderDateTime
+                                    : t.publicFlow.nlPlaceholderDate
                                 }
                                 className={publicFieldClass}
                               />
@@ -3926,7 +3931,7 @@ export function HaabBookingModule({
                                 className={cn("flex-1", publicPrimaryActionClass)}
                                 onClick={continueWithNaturalLanguageBooking}
                               >
-                                Update
+                                {t.publicFlow.update}
                               </ActionButton>
                               <ActionButton
                                 tone="ghost"
@@ -3937,7 +3942,7 @@ export function HaabBookingModule({
                                   setNaturalLanguageBookingError(null);
                                 }}
                               >
-                                Cancel
+                                {t.publicFlow.cancel}
                               </ActionButton>
                             </div>
                             {naturalLanguageBookingError ? (
@@ -3966,10 +3971,10 @@ export function HaabBookingModule({
                 <div className={cn("mt-6", publicInsetCardClass)}>
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
                     <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
-                      {formatDateLabel(successfulBooking.dateKey)}
+                      {formatDateLabel(successfulBooking.dateKey, lang)}
                     </p>
                     <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
-                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime)}
+                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime, lang)}
                     </p>
                   </div>
 
@@ -3998,38 +4003,38 @@ export function HaabBookingModule({
                         <div className="mt-4 grid gap-5 lg:grid-cols-2 lg:gap-8">
                           <div>
                             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              {selectionIsEvent ? `${copy.Service} details` : "Appointment Details"}
+                              {selectionIsEvent ? copy.phrases.serviceDetailsTitle : t.publicFlow.appointmentDetails}
                             </p>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
                               {selectedService.description ? (
                                 <SummaryField
-                                  label="Description"
+                                  label={t.publicFlow.description}
                                   value={selectedService.description}
                                 />
                               ) : null}
                               {!selectionIsEvent ? (
                                 <SummaryField
-                                  label="Type"
-                                  value={getBookingTypeLabel(selectedService.bookingType)}
+                                  label={t.publicFlow.type}
+                                  value={getBookingTypeLabel(selectedService.bookingType, lang)}
                                 />
                               ) : null}
                               {selectedService.medicalSpecialty ? (
                                 <SummaryField
-                                  label="Specialty"
+                                  label={t.publicFlow.specialty}
                                   value={selectedService.medicalSpecialty}
                                 />
                               ) : null}
-                              <SummaryField label="Capacity" value={formatCapacityLabel(selectedService)} />
+                              <SummaryField label={t.publicFlow.capacity} value={formatCapacityLabel(selectedService, lang)} />
                               {!selectionIsSingle ? (
-                                <SummaryField label="Length" value={formatDuration(selectedService)} />
+                                <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                               ) : null}
-                              <SummaryField label="Total" value={effectiveCost || "Not set"} />
+                              <SummaryField label={t.publicFlow.total} value={effectiveCost || t.publicFlow.notSet} />
                               {selectedService.notes ? (
-                                <SummaryField label="Notes" value={selectedService.notes} />
+                                <SummaryField label={t.publicFlow.notes} value={selectedService.notes} />
                               ) : null}
                               {successAddresses.length > 0 ? (
                                 <SummaryField
-                                  label={successAddresses.length > 1 ? "Locations" : "Location"}
+                                  label={successAddresses.length > 1 ? t.publicFlow.locations : t.publicFlow.location}
                                   value={
                                     <div className="flex flex-col gap-1.5">
                                       {successAddresses.map((entry) => (
@@ -4053,7 +4058,7 @@ export function HaabBookingModule({
                               ) : null}
                               {successPhones.length > 0 ? (
                                 <SummaryField
-                                  label={successPhones.length > 1 ? "Phones" : "Phone"}
+                                  label={successPhones.length > 1 ? t.publicFlow.phones : t.publicFlow.phone}
                                   value={
                                     <div className="flex flex-col gap-1.5">
                                       {successPhones.map((entry) => (
@@ -4079,7 +4084,7 @@ export function HaabBookingModule({
                           </div>
                           <div className="border-t border-[rgba(15,23,42,0.06)] pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
                             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              Customer Details
+                              {t.publicFlow.customerDetails}
                             </p>
                             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
                               <SummaryField
@@ -4087,13 +4092,13 @@ export function HaabBookingModule({
                                 value={successfulBooking.clientName || "—"}
                               />
                               {successfulBooking.clientEmail.trim() ? (
-                                <SummaryField label="Email" value={successfulBooking.clientEmail} />
+                                <SummaryField label={t.publicFlow.email} value={successfulBooking.clientEmail} />
                               ) : null}
                               {successfulBooking.clientPhone.trim() ? (
-                                <SummaryField label="Phone" value={successfulBooking.clientPhone} />
+                                <SummaryField label={t.publicFlow.phone} value={successfulBooking.clientPhone} />
                               ) : null}
                               {successfulBooking.notes.trim() ? (
-                                <SummaryField label="Notes" value={successfulBooking.notes} />
+                                <SummaryField label={t.publicFlow.notes} value={successfulBooking.notes} />
                               ) : null}
                             </dl>
                           </div>
@@ -4110,7 +4115,7 @@ export function HaabBookingModule({
                     disabled={isSuccessfulBookingCancelled}
                     onClick={() => downloadBookingCalendarFile(successfulBooking)}
                   >
-                    Add to calendar
+                    {t.publicFlow.addToCalendar}
                   </ActionButton>
                 </div>
                 <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-3">
@@ -4125,7 +4130,7 @@ export function HaabBookingModule({
                       disabled={isSuccessfulBookingCancelled}
                       onClick={() => setIsCalendarQrModalOpen(true)}
                     >
-                      Show QR code
+                      {t.publicFlow.showQrCode}
                     </ActionButton>
                   ) : null}
                   {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
@@ -4139,7 +4144,7 @@ export function HaabBookingModule({
                       disabled={isSuccessfulBookingCancelled}
                       onClick={() => openReschedule(successfulBooking.id)}
                     >
-                      Reschedule
+                      {t.publicFlow.reschedule}
                     </ActionButton>
                   )}
                   <ActionButton
@@ -4164,7 +4169,7 @@ export function HaabBookingModule({
                         isDedicatedPublicPage && publicPillButtonClass,
                       )}
                     >
-                      Book another
+                      {t.publicFlow.bookAnother}
                     </Link>
                   ) : (
                     <ActionButton
@@ -4175,14 +4180,14 @@ export function HaabBookingModule({
                       )}
                       onClick={() => startFreshBooking()}
                     >
-                      Book another
+                      {t.publicFlow.bookAnother}
                     </ActionButton>
                   )}
                 </div>
                 {successfulBooking.manageToken ? (
                   <div className="mt-5 flex flex-col gap-2 border-t border-[var(--line)] pt-5">
                     <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                      Manage this booking anytime
+                      {t.publicFlow.manageBookingAnytime}
                     </label>
                     <div className="flex flex-wrap items-center gap-2">
                       <input
@@ -4205,15 +4210,14 @@ export function HaabBookingModule({
                         )}
                         onClick={copyManageLink}
                       >
-                        {copiedManageLink ? "Copied" : "Copy link"}
+                        {copiedManageLink ? t.publicFlow.copied : t.publicFlow.copyLink}
                       </ActionButton>
                       <span className="sr-only" aria-live="polite">
-                        {copiedManageLink ? "Manage link copied to clipboard" : ""}
+                        {copiedManageLink ? t.publicFlow.manageLinkCopied : ""}
                       </span>
                     </div>
                     <p className="text-xs leading-5 text-[var(--muted)]">
-                      Save this link or use the calendar attachment — anyone with the link can
-                      manage this booking.
+                      {t.publicFlow.saveThisLinkBody}
                     </p>
                   </div>
                 ) : null}
@@ -4251,14 +4255,14 @@ export function HaabBookingModule({
                     )}
                     onClick={goBackToSelectionStep}
                   >
-                    Back
+                    {t.publicFlow.back}
                   </ActionButton>
                   <ActionButton
                     tone="primary"
                     className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
                     onClick={confirmBooking}
                   >
-                    {isBookingHoldExpired ? copy.phrases.tryBookingButton : "Confirm"}
+                    {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
                   </ActionButton>
                 </>
               )}
