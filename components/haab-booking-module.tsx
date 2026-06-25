@@ -2499,6 +2499,22 @@ export function HaabBookingModule({
               disabled={integratedMode}
             />
           </div>
+          <div className="mt-6">
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              Language
+              <select
+                value={provider.language ?? "en"}
+                onChange={(event) => updateProvider("language", event.target.value as ProviderInfo["language"])}
+                className={cn("min-h-12", adminFieldClass)}
+              >
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+              <span className="text-xs leading-5 text-[var(--muted)]">
+                Sets the language clients see on your public booking page.
+              </span>
+            </label>
+          </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
             {`Public ${copy.booking} link:`}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
