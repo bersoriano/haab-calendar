@@ -4,6 +4,7 @@ export type LocationKey = "address1" | "address2" | "custom";
 export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
+export type Lang = "en" | "es";
 export type AdminTab = "dashboard" | "bookings" | "calendar" | "services" | "settings";
 export type WeekdayKey =
   | "sunday"
@@ -32,6 +33,8 @@ export type ProviderInfo = {
   headerImageUrl?: string; // banner shown at the public root, above services
   heroText?: string; // overlaid on the header image; defaults to businessName
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
+  /** UI/content language for this provider. Drives the public booking page. */
+  language: Lang;
 };
 
 export type Service = {

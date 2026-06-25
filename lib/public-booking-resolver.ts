@@ -128,6 +128,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       address1: "",
       address2: "",
       publicSlug: provider.slug,
+      language: "en",
     },
     services: services.map(toPublicService),
     availability: provider.availability,

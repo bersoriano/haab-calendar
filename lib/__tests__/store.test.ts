@@ -164,6 +164,22 @@ describe("normalizeProvider", () => {
 });
 
 // ---------------------------------------------------------------------------
+// normalizeProvider — language field
+// ---------------------------------------------------------------------------
+
+describe("normalizeProvider language", () => {
+  it("defaults language to 'en' when missing", () => {
+    expect(normalizeProvider(undefined).language).toBe("en");
+    expect(normalizeProvider({}).language).toBe("en");
+  });
+
+  it("preserves a provided language", () => {
+    expect(normalizeProvider({ language: "en" }).language).toBe("en");
+    expect(normalizeProvider({ language: "es" }).language).toBe("es");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // pruneBookingHolds
 // ---------------------------------------------------------------------------
 

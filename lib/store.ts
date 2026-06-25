@@ -43,6 +43,7 @@ export function createEmptyStore(): ModuleStore {
       address1: "",
       address2: "",
       publicSlug: "",
+      language: "en",
     },
     services: [],
     availability: createDefaultAvailability(),
@@ -272,6 +273,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     galleryImageUrls: Array.isArray(source?.galleryImageUrls)
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
+    language: source?.language === "es" ? "es" : "en",
   };
 }
 

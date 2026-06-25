@@ -15,6 +15,7 @@ const provider: ProviderInfo = {
   address1: "",
   address2: "",
   publicSlug: "alice-wellness",
+  language: "en",
 };
 
 function makeAppointmentBooking(overrides: Partial<BookingRecord> = {}): BookingRecord {
