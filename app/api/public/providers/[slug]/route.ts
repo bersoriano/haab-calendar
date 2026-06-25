@@ -15,6 +15,7 @@ type PublicProviderRow = {
   business_name: string;
   slug: string;
   vertical: VerticalId;
+  language: "en" | "es" | null;
   timezone: string;
   booking_window_days: number;
   availability: WeeklyAvailability;
@@ -69,7 +70,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
       address1: "",
       address2: "",
       publicSlug: provider.slug,
-      language: "en",
+      language: provider.language === "es" ? "es" : "en",
     },
     services: services.map(toPublicService),
     availability: provider.availability,

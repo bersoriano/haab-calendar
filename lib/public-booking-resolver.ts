@@ -13,7 +13,7 @@ import {
 import type { ModuleStore, Service, VerticalId, WeeklyAvailability } from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, timezone, booking_window_days, availability";
+  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability";
 export const PUBLIC_SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order";
 
@@ -23,6 +23,7 @@ type PublicProviderRow = {
   business_name: string;
   slug: string;
   vertical: VerticalId;
+  language: "en" | "es" | null;
   timezone: string;
   booking_window_days: number;
   availability: WeeklyAvailability;
@@ -128,7 +129,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       address1: "",
       address2: "",
       publicSlug: provider.slug,
-      language: "en",
+      language: provider.language === "es" ? "es" : "en",
     },
     services: services.map(toPublicService),
     availability: provider.availability,
