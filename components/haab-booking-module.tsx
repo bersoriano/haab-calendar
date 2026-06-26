@@ -1945,7 +1945,7 @@ export function HaabBookingModule({
                 body={copy.phrases.providerInfoBody}
               />
               <div className="mt-6">
-                <ProviderInfoForm provider={provider} onChange={updateProvider} />
+                <ProviderInfoForm provider={provider} onChange={updateProvider} lang={lang} />
               </div>
             </div>
           </div>
@@ -2482,6 +2482,7 @@ export function HaabBookingModule({
               provider={provider}
               onChange={updateProvider}
               disabled={integratedMode}
+              lang={lang}
             />
           </div>
           <div className="mt-6">

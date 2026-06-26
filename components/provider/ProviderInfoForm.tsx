@@ -1,23 +1,27 @@
 "use client";
 
-import type { ProviderInfo } from "@/lib/types";
+import type { Lang, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { adminFieldClass } from "@/components/provider/adminGlass";
 import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 export function ProviderInfoForm({
   provider,
   onChange,
   disabled = false,
+  lang = "en",
 }: {
   provider: ProviderInfo;
   onChange: <K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) => void;
   disabled?: boolean;
+  lang?: Lang;
 }) {
+  const t = bookingTranslations[lang];
   return (
     <div className="grid gap-4">
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        Full name
+        {t.providerForm.fullName}
         <input
           disabled={disabled}
           value={provider.fullName}
@@ -27,7 +31,7 @@ export function ProviderInfoForm({
         />
       </label>
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        Business name
+        {t.providerForm.businessName}
         <input
           disabled={disabled}
           value={provider.businessName}
@@ -37,7 +41,7 @@ export function ProviderInfoForm({
         />
       </label>
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        Confirmation email
+        {t.providerForm.confirmationEmail}
         <input
           disabled={disabled}
           value={provider.email}
@@ -49,7 +53,7 @@ export function ProviderInfoForm({
       </label>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          Phone Number 1
+          {t.providerForm.phoneNumber1}
           <input
             disabled={disabled}
             value={provider.phoneNumber1}
@@ -62,7 +66,7 @@ export function ProviderInfoForm({
           />
         </label>
         <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          Phone Number 2
+          {t.providerForm.phoneNumber2}
           <input
             disabled={disabled}
             value={provider.phoneNumber2}
@@ -77,7 +81,7 @@ export function ProviderInfoForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          Address 1
+          {t.providerForm.address1}
           <input
             disabled={disabled}
             value={provider.address1}
@@ -88,7 +92,7 @@ export function ProviderInfoForm({
           />
         </label>
         <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          Address 2
+          {t.providerForm.address2}
           <input
             disabled={disabled}
             value={provider.address2}
@@ -105,7 +109,7 @@ export function ProviderInfoForm({
         disabled={disabled}
       />
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        Hero text
+        {t.providerForm.heroText}
         <input
           disabled={disabled}
           value={provider.heroText ?? ""}
@@ -114,7 +118,7 @@ export function ProviderInfoForm({
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
         <span className="text-xs leading-5 text-[var(--muted)]">
-          Shown over the header image. Defaults to your business name.
+          {t.providerForm.heroTextHint}
         </span>
       </label>
     </div>
