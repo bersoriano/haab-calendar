@@ -82,6 +82,7 @@ import {
   formatDuration,
   formatCapacityLabel,
   getBookingTypeLabel,
+  getBookingStatusLabel,
   statusTone,
   bookingTypeTone,
 } from "@/lib/format";
@@ -2112,7 +2113,7 @@ export function HaabBookingModule({
         <div className="grid gap-4 xl:grid-cols-4">
           {[
             {
-              label: "Upcoming (7 days)",
+              label: t.admin.upcoming7Days,
               value: String(upcomingBookings.length),
               detail: copy.phrases.bookingsSoonDetail,
             },
@@ -2122,14 +2123,14 @@ export function HaabBookingModule({
               detail: copy.phrases.servicesStatDetail,
             },
             {
-              label: "Confirmed",
+              label: t.admin.confirmed,
               value: String(bookings.filter((booking) => booking.status === "confirmed").length),
               detail: copy.phrases.activeBookingsDetail,
             },
             {
               label: copy.phrases.totalBookingsLabel,
               value: String(bookings.length),
-              detail: "All time, every status",
+              detail: t.admin.allTimeEveryStatus,
             },
           ].map((stat) => (
             <div
@@ -2168,36 +2169,36 @@ export function HaabBookingModule({
                             {booking.clientName}
                           </p>
                           <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                            {getBookingTypeLabel(booking.bookingType)}
+                            {getBookingTypeLabel(booking.bookingType, lang)}
                           </ToneBadge>
                           <ToneBadge tone={statusTone(booking.status)}>
-                            {booking.status}
+                            {getBookingStatusLabel(booking.status, lang)}
                           </ToneBadge>
                         </div>
                         <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                           {booking.serviceName}
                         </p>
                         <p className="mt-1 text-sm text-[var(--muted)]">
-                          {formatDateLabel(booking.dateKey)} ·{" "}
-                          {formatTimeRange(booking.startTime, booking.endTime)}
+                          {formatDateLabel(booking.dateKey, lang)} ·{" "}
+                          {formatTimeRange(booking.startTime, booking.endTime, lang)}
                         </p>
                         <p className="mt-1 text-sm text-[var(--muted)]">
                           {booking.capacitySnapshot
-                            ? `Capacity: ${booking.capacitySnapshot}`
-                            : "Capacity not set"}
+                            ? `${t.publicFlow.capacity}: ${booking.capacitySnapshot}`
+                            : t.admin.capacityNotSet}
                         </p>
                         <p className="mt-1 text-sm text-[var(--muted)]">
-                          {booking.cost ? `Total: ${booking.cost}` : "Total not set"}
+                          {booking.cost ? `${t.publicFlow.total}: ${booking.cost}` : t.admin.totalNotSet}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {isServiceSingleOccurrence(booking.serviceId) ? null : (
                           <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
-                            Reschedule
+                            {t.publicFlow.reschedule}
                           </ActionButton>
                         )}
                         <ActionButton tone="danger" onClick={() => setCancellationId(booking.id)}>
-                          Cancel
+                          {t.common.cancel}
                         </ActionButton>
                       </div>
                     </div>
@@ -2226,26 +2227,26 @@ export function HaabBookingModule({
             onChange={(event) => setStatusFilter(event.target.value as "all" | BookingStatus)}
             className={cn("min-h-12", adminFieldClass)}
           >
-            <option value="all">All statuses</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="rescheduled">Rescheduled</option>
-            <option value="cancelled">Cancelled</option>
+            <option value="all">{t.admin.allStatuses}</option>
+            <option value="confirmed">{t.admin.confirmed}</option>
+            <option value="rescheduled">{t.admin.rescheduled}</option>
+            <option value="cancelled">{t.admin.cancelled}</option>
           </select>
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value as "all" | BookingType)}
             className={cn("min-h-12", adminFieldClass)}
           >
-            <option value="all">All types</option>
-            <option value="appointment">Appointments</option>
-            <option value="full-day">Full Day</option>
+            <option value="all">{t.admin.allTypes}</option>
+            <option value="appointment">{t.admin.appointments}</option>
+            <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
           </select>
         </div>
         <div className="mt-4 space-y-3">
           {filteredBookings.length === 0 ? (
             <EmptyState
               title={copy.phrases.noBookingsMatchTitle}
-              body="Try a broader search or clear the filters."
+              body={t.admin.tryBroaderSearch}
             />
           ) : (
             filteredBookings.map((booking) => (
@@ -2264,27 +2265,27 @@ export function HaabBookingModule({
                         {booking.clientName}
                       </h4>
                       <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                        {getBookingTypeLabel(booking.bookingType)}
+                        {getBookingTypeLabel(booking.bookingType, lang)}
                       </ToneBadge>
                       <ToneBadge tone={statusTone(booking.status)}>
-                        {booking.status}
+                        {getBookingStatusLabel(booking.status, lang)}
                       </ToneBadge>
                     </div>
                     <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                       {booking.serviceName}
                     </p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
-                      {formatDateLabel(booking.dateKey)} ·{" "}
-                      {formatTimeRange(booking.startTime, booking.endTime)}
+                      {formatDateLabel(booking.dateKey, lang)} ·{" "}
+                      {formatTimeRange(booking.startTime, booking.endTime, lang)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
                       <span>
                         {booking.clientEmail} · {booking.clientPhone}
                       </span>
                       {booking.capacitySnapshot ? (
-                        <span>Capacity: {booking.capacitySnapshot}</span>
+                        <span>{t.publicFlow.capacity}: {booking.capacitySnapshot}</span>
                       ) : null}
-                      {booking.cost ? <span>Total: {booking.cost}</span> : null}
+                      {booking.cost ? <span>{t.publicFlow.total}: {booking.cost}</span> : null}
                     </div>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-2">
@@ -2294,7 +2295,7 @@ export function HaabBookingModule({
                         disabled={booking.status === "cancelled"}
                         onClick={() => openReschedule(booking.id)}
                       >
-                        Reschedule
+                        {t.publicFlow.reschedule}
                       </ActionButton>
                     )}
                     <ActionButton
@@ -2302,7 +2303,7 @@ export function HaabBookingModule({
                       disabled={booking.status === "cancelled"}
                       onClick={() => setCancellationId(booking.id)}
                     >
-                      Cancel
+                      {t.common.cancel}
                     </ActionButton>
                   </div>
                 </div>
