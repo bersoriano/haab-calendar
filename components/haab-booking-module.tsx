@@ -2321,7 +2321,7 @@ export function HaabBookingModule({
     return (
       <div className={cn(adminPanelClass, "space-y-6 p-6")}>
         <SectionTitle
-          title="Monthly calendar"
+          title={t.admin.monthlyCalendar}
           body={copy.phrases.addBookingHint}
           action={
             services.length > 0 ? (
@@ -2332,7 +2332,7 @@ export function HaabBookingModule({
               >
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>
-                    New booking: {service.name}
+                    {t.admin.newBookingPrefix}: {service.name}
                   </option>
                 ))}
               </select>
@@ -2347,41 +2347,41 @@ export function HaabBookingModule({
               className={calendarNavPillClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
             >
-              Previous
+              {t.publicFlow.previous}
             </ActionButton>
             <ActionButton
               tone="ghost"
               className={calendarNavPillClass}
               onClick={() => setCalendarMonthAnchor(new Date())}
             >
-              Today
+              {t.publicFlow.today}
             </ActionButton>
             <ActionButton
               tone="ghost"
               className={calendarNavPillClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
             >
-              Next
+              {t.publicFlow.next}
             </ActionButton>
           </div>
           <p className="text-base font-semibold text-[var(--ink)]">
-            {formatMonthLabel(calendarMonthAnchor)}
+            {formatMonthLabel(calendarMonthAnchor, lang)}
           </p>
           <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-              Appointment
+              {getBookingTypeLabel("appointment", lang)}
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--full-day)]" />
-              Full Day
+              {getBookingTypeLabel("full-day", lang)}
             </span>
           </div>
         </div>
 
         <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
           {WEEKDAY_KEYS.map((day) => (
-            <p key={day}>{weekdayShortFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
+            <p key={day}>{getWeekdayShortFormatter(lang).format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
 
@@ -2431,7 +2431,7 @@ export function HaabBookingModule({
                         {date.getDate()}
                       </span>
                       {canTest ? (
-                        <ToneBadge tone="primary">Open</ToneBadge>
+                        <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
                       ) : null}
                     </div>
                     <div className="mt-3 space-y-2">
@@ -2447,8 +2447,8 @@ export function HaabBookingModule({
                         >
                           <p className="font-semibold">
                             {booking.bookingType === "full-day"
-                              ? "Full Day"
-                              : formatTimeLabel(booking.startTime)}
+                              ? getBookingTypeLabel("full-day", lang)
+                              : formatTimeLabel(booking.startTime, lang)}
                           </p>
                           <p className="mt-1 truncate">{booking.serviceName}</p>
                         </div>
