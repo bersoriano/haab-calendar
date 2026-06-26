@@ -7,6 +7,7 @@ import {
   formatCapacityLabel,
   getBookingTypeLabel,
   formatDateLabel,
+  getBookingStatusLabel,
 } from "@/lib/format";
 import type { Service } from "@/lib/types";
 
@@ -247,8 +248,6 @@ describe("formatDateLabel — Spanish locale", () => {
 // ---------------------------------------------------------------------------
 // getBookingStatusLabel
 // ---------------------------------------------------------------------------
-
-import { getBookingStatusLabel } from "@/lib/format";
 
 describe("getBookingStatusLabel", () => {
   it("returns English labels by default", () => {
