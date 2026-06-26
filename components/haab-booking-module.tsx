@@ -29,6 +29,7 @@ import type {
   BookingType,
   DayAvailability,
   InjectedConfig,
+  Lang,
   LocationKey,
   ManageLookupState,
   ModuleStore,
@@ -155,12 +156,11 @@ function hasExplicitTime(result: ParsedResult) {
   return result.start.isCertain("hour");
 }
 
-function formatSlotSizeOption(minutes: number) {
+function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
   if (minutes >= 60 && minutes % 60 === 0) {
     const hours = minutes / 60;
-    return `${hours} hr`;
+    return lang === "es" ? `${hours} h` : `${hours} hr`;
   }
-
   return `${minutes} min`;
 }
 
@@ -1918,16 +1918,16 @@ export function HaabBookingModule({
       <>
         <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
           <SectionTitle
-            eyebrow="Setup"
+            eyebrow={t.setup.eyebrow}
             title={copy.phrases.setupTitle}
-            body="Add your details and weekly hours, then publish."
+            body={t.setup.wizardBody}
           />
           <div className="mt-6 grid gap-3 md:grid-cols-3">
-            {[
-              ["1", "Provider"],
-              ["2", "Availability"],
-              ["3", "Done"],
-            ].map(([index, label]) => {
+            {([
+              ["1", t.setup.stepProvider],
+              ["2", t.setup.stepAvailability],
+              ["3", t.setup.stepDone],
+            ] as [string, string][]).map(([index, label]) => {
               const stepNumber = Number(index) as SetupStep;
               const isCurrent = setupStep === stepNumber;
               const isComplete = setupStep > stepNumber;
@@ -1942,11 +1942,11 @@ export function HaabBookingModule({
                   )}
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                    Step {index}
+                    {t.setup.stepLabel} {index}
                   </p>
                   <p className="mt-2 text-base font-semibold text-[var(--ink)]">{label}</p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
-                    {isComplete ? "Ready" : isCurrent ? "Current" : "Next"}
+                    {isComplete ? t.setup.statusReady : isCurrent ? t.setup.statusCurrent : t.setup.statusNext}
                   </p>
                 </div>
               );
@@ -1958,7 +1958,7 @@ export function HaabBookingModule({
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
-                title="My data"
+                title={t.setup.step1Title}
                 body={copy.phrases.providerInfoBody}
               />
               <div className="mt-6">
@@ -1971,19 +1971,18 @@ export function HaabBookingModule({
         {setupStep === 2 ? (
           <div className={cn("mt-8", adminPanelClass, "p-6")}>
             <SectionTitle
-              title="Set the weekly availability schedule"
+              title={t.setup.step2Title}
               body={copy.phrases.availabilityBody}
             />
             <div className={cn("mt-6", adminInsetClass, "grid gap-4 p-4 sm:grid-cols-[1fr_220px] sm:items-end")}>
               <div>
-                <p className="text-sm font-semibold text-[var(--ink)]">Booking length</p>
+                <p className="text-sm font-semibold text-[var(--ink)]">{t.setup.bookingLength}</p>
                 <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                  Choose how long each booking should last. You can refine individual services
-                  later from the Services tab.
+                  {t.setup.bookingLengthHint}
                 </p>
               </div>
               <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                Length
+                {t.setup.lengthLabel}
                 <select
                   disabled={!hasServices}
                   value={setupBookingLength}
@@ -1992,10 +1991,10 @@ export function HaabBookingModule({
                 >
                   {DURATION_OPTIONS.map((duration) => (
                     <option key={duration} value={duration}>
-                      {formatSlotSizeOption(duration)}
+                      {formatSlotSizeOption(duration, lang)}
                     </option>
                   ))}
-                  <option value="full-day">Full day</option>
+                  <option value="full-day">{t.setup.fullDayOption}</option>
                 </select>
               </label>
             </div>
@@ -2012,9 +2011,9 @@ export function HaabBookingModule({
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
-                eyebrow="Ready"
+                eyebrow={t.setup.doneEyebrow}
                 title={copy.phrases.setupDoneTitle}
-                body="Publish now, then manage everything from your workspace."
+                body={t.setup.doneBody}
               />
               <div className={cn("mt-6", adminInsetClass, "p-4")}>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
@@ -2051,10 +2050,10 @@ export function HaabBookingModule({
                         className="h-3 w-px bg-[rgba(193,198,214,0.45)]"
                       />
                       <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                        {getBookingTypeLabel(service.bookingType)}
+                        {getBookingTypeLabel(service.bookingType, lang)}
                       </ToneBadge>
                       <span className="text-xs font-medium text-[var(--muted)] tabular-nums">
-                        {formatDuration(service)}
+                        {formatDuration(service, lang)}
                       </span>
                       {service.medicalSpecialty ? (
                         <span className="text-xs font-medium text-[var(--muted)]">
@@ -2065,19 +2064,19 @@ export function HaabBookingModule({
                   ))}
                 </div>
                 <p className="mt-3 text-sm text-[var(--muted)]">
-                  {`Edit these anytime from the ${copy.Services} tab.`}
+                  {t.setup.editServicesPrefix} {copy.Services} {t.setup.editServicesSuffix}
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
                 <ActionButton tone="primary" onClick={() => leaveSetupToSurface("management")}>
-                  Go to dashboard
+                  {t.setup.goToDashboard}
                 </ActionButton>
                 <ActionLink
                   href={publicUrl}
                   tone="secondary"
                   onClick={() => leaveSetupToSurface("public")}
                 >
-                  Open public booking page
+                  {t.setup.openPublicPage}
                 </ActionLink>
               </div>
             </div>
@@ -2095,11 +2094,11 @@ export function HaabBookingModule({
             tone="ghost"
             onClick={goToPreviousSetupStep}
           >
-            Back
+            {t.common.back}
           </ActionButton>
           {setupStep < 3 ? (
             <ActionButton tone="primary" onClick={goToNextSetupStep}>
-              Continue
+              {t.setup.continueButton}
             </ActionButton>
           ) : null}
         </div>

@@ -224,6 +224,8 @@ export type BookingDict = {
     fullDayOption: string;
     doneEyebrow: string;
     doneBody: string;
+    editServicesPrefix: string;
+    editServicesSuffix: string;
     goToDashboard: string;
     openPublicPage: string;
     continueButton: string;
@@ -463,6 +465,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       fullDayOption: "Full day",
       doneEyebrow: "Ready",
       doneBody: "Publish now, then manage everything from your workspace.",
+      editServicesPrefix: "Edit these anytime from the",
+      editServicesSuffix: "tab.",
       goToDashboard: "Go to dashboard",
       openPublicPage: "Open public booking page",
       continueButton: "Continue",
@@ -703,6 +707,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       fullDayOption: "Día completo",
       doneEyebrow: "Todo listo",
       doneBody: "Publique ahora y gestione todo desde su espacio de trabajo.",
+      editServicesPrefix: "Edite estos servicios en cualquier momento desde la pestaña de",
+      editServicesSuffix: ".",
       goToDashboard: "Ir al panel",
       openPublicPage: "Abrir página de reservas",
       continueButton: "Continuar",
