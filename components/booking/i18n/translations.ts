@@ -19,6 +19,9 @@ export type BookingDict = {
     holdRemaining: string;
     spotsLeftSuffix: string;
     fullyBooked: string;
+    holdEndingSoon: string;
+    holdEndingBody: string;
+    holdEndingCta: string;
   };
   manage: {
     title: string;
@@ -134,6 +137,116 @@ export type BookingDict = {
     manageLinkCopied: string;
     saveThisLinkBody: string;
   };
+  admin: {
+    // Dashboard
+    upcoming7Days: string;
+    confirmed: string;
+    allTimeEveryStatus: string;
+    capacityNotSet: string;
+    totalNotSet: string;
+    // Bookings list
+    allStatuses: string;
+    rescheduled: string;
+    cancelled: string;
+    allTypes: string;
+    appointments: string;
+    tryBroaderSearch: string;
+    // Calendar
+    monthlyCalendar: string;
+    newBookingPrefix: string;
+    // Settings
+    providerInformation: string;
+    configuredByParentApp: string;
+    weeklyAvailability: string;
+    resetStandaloneSetup: string;
+    // Nav
+    tabDashboard: string;
+    tabCalendar: string;
+    tabSettings: string;
+    backToWorkspace: string;
+    signOut: string;
+    // ServiceEditor
+    serviceReadOnly: string;
+    editButton: string;
+    deleteButton: string;
+    clearButton: string;
+    occurrenceLabel: string;
+    occurrenceSingle: string;
+    occurrenceWeekly: string;
+    occurrencePeriodic: string;
+    singleOccurrenceHint: string;
+    weeklyOccurrenceHint: string;
+    periodicOccurrenceHint: string;
+    bookingTypeLabel: string;
+    startLabel: string;
+    endLabel: string;
+    repeatsOn: string;
+    durationLabel: string;
+    medicalSpecialtyLabel: string;
+    descriptionLabel: string;
+    capacityLabel: string;
+    maxSpotsLabel: string;
+    notesLabel: string;
+    totalLabel: string;
+    locationSection: string;
+    phoneSection: string;
+    address1Label: string;
+    address2Label: string;
+    addAnotherAddress: string;
+    addAnAddress: string;
+    phone1Label: string;
+    phone2Label: string;
+    addAnotherPhone: string;
+    addAPhone: string;
+    priceAtLocation: string;
+    addressHintSlot1: string;
+    addressHintSlot2: string;
+    addressHintFull: string;
+    phoneHintSlot1: string;
+    phoneHintSlot2: string;
+    phoneHintFull: string;
+  };
+  setup: {
+    eyebrow: string;
+    wizardBody: string;
+    stepLabel: string;
+    stepProvider: string;
+    stepAvailability: string;
+    stepDone: string;
+    statusReady: string;
+    statusCurrent: string;
+    statusNext: string;
+    step1Title: string;
+    step2Title: string;
+    bookingLength: string;
+    bookingLengthHint: string;
+    lengthLabel: string;
+    fullDayOption: string;
+    doneEyebrow: string;
+    doneBody: string;
+    goToDashboard: string;
+    openPublicPage: string;
+    continueButton: string;
+  };
+  welcome: {
+    badge: string;
+    title: string;
+    body: string;
+    featureCustomizable: string;
+    featureNoCard: string;
+    featureReady: string;
+  };
+  providerForm: {
+    fullName: string;
+    businessName: string;
+    confirmationEmail: string;
+    phoneNumber1: string;
+    phoneNumber2: string;
+    address1: string;
+    address2: string;
+    heroText: string;
+    heroTextHint: string;
+  };
 };
 
 export const bookingTranslations: Record<Lang, BookingDict> = {
@@ -156,6 +269,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdRemaining: "Time left to confirm",
       spotsLeftSuffix: "left",
       fullyBooked: "Fully booked",
+      holdEndingSoon: "Hold ending soon",
+      holdEndingBody: "Your booking hold is ending soon.",
+      holdEndingCta: "Confirm now, or the selected time may become available to someone else.",
     },
     manage: {
       title: "Manage your booking",
@@ -266,6 +382,110 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       saveThisLinkBody:
         "Save this link or use the calendar attachment — anyone with the link can manage this booking.",
     },
+    admin: {
+      upcoming7Days: "Upcoming (7 days)",
+      confirmed: "Confirmed",
+      allTimeEveryStatus: "All time, every status",
+      capacityNotSet: "Capacity not set",
+      totalNotSet: "Total not set",
+      allStatuses: "All statuses",
+      rescheduled: "Rescheduled",
+      cancelled: "Cancelled",
+      allTypes: "All types",
+      appointments: "Appointments",
+      tryBroaderSearch: "Try a broader search or clear the filters.",
+      monthlyCalendar: "Monthly calendar",
+      newBookingPrefix: "New booking",
+      providerInformation: "Provider information",
+      configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
+      weeklyAvailability: "Weekly availability",
+      resetStandaloneSetup: "Reset standalone setup",
+      tabDashboard: "Dashboard",
+      tabCalendar: "Calendar",
+      tabSettings: "Settings",
+      backToWorkspace: "← Back to workspace",
+      signOut: "Sign out",
+      serviceReadOnly: "Configured by the parent app. Service editing is read-only in this mode.",
+      editButton: "Edit",
+      deleteButton: "Delete",
+      clearButton: "Clear",
+      occurrenceLabel: "Occurrence",
+      occurrenceSingle: "Single",
+      occurrenceWeekly: "Weekly",
+      occurrencePeriodic: "Periodic",
+      singleOccurrenceHint: "This event happens once, on a fixed date and time.",
+      weeklyOccurrenceHint: "This event recurs on the weekdays you pick, at a fixed time.",
+      periodicOccurrenceHint: "This event repeats on your weekly availability.",
+      bookingTypeLabel: "Booking type",
+      startLabel: "Start",
+      endLabel: "End",
+      repeatsOn: "Repeats on",
+      durationLabel: "Duration",
+      medicalSpecialtyLabel: "Medical specialty",
+      descriptionLabel: "Description",
+      capacityLabel: "Capacity",
+      maxSpotsLabel: "Maximum spots",
+      notesLabel: "Notes",
+      totalLabel: "Total",
+      locationSection: "Location",
+      phoneSection: "Phone",
+      address1Label: "Address 1",
+      address2Label: "Address 2",
+      addAnotherAddress: "Add another address",
+      addAnAddress: "Add an address",
+      phone1Label: "Phone 1",
+      phone2Label: "Phone 2",
+      addAnotherPhone: "Add another phone",
+      addAPhone: "Add a phone",
+      priceAtLocation: "Price at this location",
+      addressHintSlot1: "We'll save this as Address 1 in your provider profile so other services can reuse it.",
+      addressHintSlot2: "We'll save this as Address 2 in your provider profile so other services can reuse it.",
+      addressHintFull: "Both provider address slots are already taken — this address will stay with this service only.",
+      phoneHintSlot1: "We'll save this as Phone 1 in your provider profile so other services can reuse it.",
+      phoneHintSlot2: "We'll save this as Phone 2 in your provider profile so other services can reuse it.",
+      phoneHintFull: "Both provider phone slots are already taken — this phone will stay with this service only.",
+    },
+    setup: {
+      eyebrow: "Setup",
+      wizardBody: "Add your details and weekly hours, then publish.",
+      stepLabel: "Step",
+      stepProvider: "Provider",
+      stepAvailability: "Availability",
+      stepDone: "Done",
+      statusReady: "Ready",
+      statusCurrent: "Current",
+      statusNext: "Next",
+      step1Title: "My data",
+      step2Title: "Set the weekly availability schedule",
+      bookingLength: "Booking length",
+      bookingLengthHint: "Choose how long each booking should last. You can refine individual services later from the Services tab.",
+      lengthLabel: "Length",
+      fullDayOption: "Full day",
+      doneEyebrow: "Ready",
+      doneBody: "Publish now, then manage everything from your workspace.",
+      goToDashboard: "Go to dashboard",
+      openPublicPage: "Open public booking page",
+      continueButton: "Continue",
+    },
+    welcome: {
+      badge: "Welcome to Haab",
+      title: "What kind of business are we setting up today?",
+      body: "Pick your industry and we'll prefill your services, weekly hours, and a polished booking page. You can edit everything afterward in under a minute.",
+      featureCustomizable: "Fully customizable later",
+      featureNoCard: "No credit card required",
+      featureReady: "Ready to share in minutes",
+    },
+    providerForm: {
+      fullName: "Full name",
+      businessName: "Business name",
+      confirmationEmail: "Confirmation email",
+      phoneNumber1: "Phone Number 1",
+      phoneNumber2: "Phone Number 2",
+      address1: "Address 1",
+      address2: "Address 2",
+      heroText: "Hero text",
+      heroTextHint: "Shown over the header image. Defaults to your business name.",
+    },
   },
   es: {
     common: {
@@ -286,6 +506,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdRemaining: "Tiempo restante para confirmar",
       spotsLeftSuffix: "disponibles",
       fullyBooked: "Cupo lleno",
+      holdEndingSoon: "Reserva por expirar",
+      holdEndingBody: "Su reserva temporal está por vencer.",
+      holdEndingCta: "Confirme ahora o el horario podría quedar disponible para otra persona.",
     },
     manage: {
       title: "Gestione su reserva",
@@ -398,6 +621,110 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageLinkCopied: "Enlace de gestión copiado al portapapeles",
       saveThisLinkBody:
         "Guarde este enlace o use el archivo de calendario adjunto; cualquier persona con el enlace puede gestionar esta reserva.",
+    },
+    admin: {
+      upcoming7Days: "Próximos (7 días)",
+      confirmed: "Confirmado",
+      allTimeEveryStatus: "Todo el tiempo, todos los estados",
+      capacityNotSet: "Capacidad no definida",
+      totalNotSet: "Total no definido",
+      allStatuses: "Todos los estados",
+      rescheduled: "Reagendado",
+      cancelled: "Cancelado",
+      allTypes: "Todos los tipos",
+      appointments: "Citas",
+      tryBroaderSearch: "Intente una búsqueda más amplia o limpie los filtros.",
+      monthlyCalendar: "Calendario mensual",
+      newBookingPrefix: "Nueva reserva",
+      providerInformation: "Información del proveedor",
+      configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
+      weeklyAvailability: "Disponibilidad semanal",
+      resetStandaloneSetup: "Restablecer configuración independiente",
+      tabDashboard: "Panel",
+      tabCalendar: "Calendario",
+      tabSettings: "Ajustes",
+      backToWorkspace: "← Volver al espacio de trabajo",
+      signOut: "Cerrar sesión",
+      serviceReadOnly: "Configurado por la aplicación principal. La edición de servicios es de solo lectura en este modo.",
+      editButton: "Editar",
+      deleteButton: "Eliminar",
+      clearButton: "Limpiar",
+      occurrenceLabel: "Frecuencia",
+      occurrenceSingle: "Único",
+      occurrenceWeekly: "Semanal",
+      occurrencePeriodic: "Periódico",
+      singleOccurrenceHint: "Este evento ocurre una vez, en una fecha y hora fija.",
+      weeklyOccurrenceHint: "Este evento se repite los días que elija, a una hora fija.",
+      periodicOccurrenceHint: "Este evento se repite según su disponibilidad semanal.",
+      bookingTypeLabel: "Tipo de reserva",
+      startLabel: "Inicio",
+      endLabel: "Fin",
+      repeatsOn: "Se repite los",
+      durationLabel: "Duración",
+      medicalSpecialtyLabel: "Especialidad médica",
+      descriptionLabel: "Descripción",
+      capacityLabel: "Capacidad",
+      maxSpotsLabel: "Lugares máximos",
+      notesLabel: "Notas",
+      totalLabel: "Total",
+      locationSection: "Ubicación",
+      phoneSection: "Teléfono",
+      address1Label: "Dirección 1",
+      address2Label: "Dirección 2",
+      addAnotherAddress: "Agregar otra dirección",
+      addAnAddress: "Agregar una dirección",
+      phone1Label: "Teléfono 1",
+      phone2Label: "Teléfono 2",
+      addAnotherPhone: "Agregar otro teléfono",
+      addAPhone: "Agregar un teléfono",
+      priceAtLocation: "Precio en esta ubicación",
+      addressHintSlot1: "Lo guardaremos como Dirección 1 en su perfil para que otros servicios puedan reutilizarla.",
+      addressHintSlot2: "Lo guardaremos como Dirección 2 en su perfil para que otros servicios puedan reutilizarla.",
+      addressHintFull: "Ambos campos de dirección ya están ocupados — esta dirección solo se guardará con este servicio.",
+      phoneHintSlot1: "Lo guardaremos como Teléfono 1 en su perfil para que otros servicios puedan reutilizarlo.",
+      phoneHintSlot2: "Lo guardaremos como Teléfono 2 en su perfil para que otros servicios puedan reutilizarlo.",
+      phoneHintFull: "Ambos campos de teléfono ya están ocupados — este teléfono solo se guardará con este servicio.",
+    },
+    setup: {
+      eyebrow: "Configuración",
+      wizardBody: "Agregue sus datos y horarios semanales, y luego publique.",
+      stepLabel: "Paso",
+      stepProvider: "Proveedor",
+      stepAvailability: "Disponibilidad",
+      stepDone: "Listo",
+      statusReady: "Listo",
+      statusCurrent: "Actual",
+      statusNext: "Siguiente",
+      step1Title: "Mis datos",
+      step2Title: "Configure el horario de disponibilidad semanal",
+      bookingLength: "Duración de la reserva",
+      bookingLengthHint: "Elija cuánto debe durar cada reserva. Puede ajustar los servicios individuales más tarde desde la pestaña de Servicios.",
+      lengthLabel: "Duración",
+      fullDayOption: "Día completo",
+      doneEyebrow: "Todo listo",
+      doneBody: "Publique ahora y gestione todo desde su espacio de trabajo.",
+      goToDashboard: "Ir al panel",
+      openPublicPage: "Abrir página de reservas",
+      continueButton: "Continuar",
+    },
+    welcome: {
+      badge: "Bienvenido a Haab",
+      title: "¿Qué tipo de negocio estamos configurando hoy?",
+      body: "Elija su industria y preconfiguraremos sus servicios, horarios semanales y una página de reservas. Puede editar todo en menos de un minuto.",
+      featureCustomizable: "Totalmente personalizable después",
+      featureNoCard: "Sin tarjeta de crédito",
+      featureReady: "Listo para compartir en minutos",
+    },
+    providerForm: {
+      fullName: "Nombre completo",
+      businessName: "Nombre del negocio",
+      confirmationEmail: "Correo de confirmación",
+      phoneNumber1: "Número de teléfono 1",
+      phoneNumber2: "Número de teléfono 2",
+      address1: "Dirección 1",
+      address2: "Dirección 2",
+      heroText: "Texto del encabezado",
+      heroTextHint: "Se muestra sobre la imagen de encabezado. Predeterminado: nombre del negocio.",
     },
   },
 };

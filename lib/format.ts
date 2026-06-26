@@ -86,3 +86,12 @@ export function statusTone(status: BookingStatus) {
 export function bookingTypeTone(type: BookingType) {
   return type === "appointment" ? "primary" : "secondary";
 }
+
+const STATUS_LABELS: Record<Lang, Record<BookingStatus, string>> = {
+  en: { confirmed: "Confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled" },
+  es: { confirmed: "Confirmado", rescheduled: "Reagendado", cancelled: "Cancelado" },
+};
+
+export function getBookingStatusLabel(status: BookingStatus, lang: Lang = "en"): string {
+  return STATUS_LABELS[lang]?.[status] ?? status;
+}

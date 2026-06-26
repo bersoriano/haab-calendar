@@ -243,3 +243,23 @@ describe("formatDateLabel — Spanish locale", () => {
     expect(label.toLowerCase()).toContain("enero");
   });
 });
+
+// ---------------------------------------------------------------------------
+// getBookingStatusLabel
+// ---------------------------------------------------------------------------
+
+import { getBookingStatusLabel } from "@/lib/format";
+
+describe("getBookingStatusLabel", () => {
+  it("returns English labels by default", () => {
+    expect(getBookingStatusLabel("confirmed")).toBe("Confirmed");
+    expect(getBookingStatusLabel("rescheduled")).toBe("Rescheduled");
+    expect(getBookingStatusLabel("cancelled")).toBe("Cancelled");
+  });
+
+  it("returns Spanish labels when lang is es", () => {
+    expect(getBookingStatusLabel("confirmed", "es")).toBe("Confirmado");
+    expect(getBookingStatusLabel("rescheduled", "es")).toBe("Reagendado");
+    expect(getBookingStatusLabel("cancelled", "es")).toBe("Cancelado");
+  });
+});
