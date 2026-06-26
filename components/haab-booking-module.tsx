@@ -1862,16 +1862,13 @@ export function HaabBookingModule({
           <div className="flex flex-col items-start gap-5">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-[var(--accent-strong)] shadow-[0_8px_24px_rgba(15,23,42,0.06)] backdrop-blur-[14px]">
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--action-teal)]" />
-              Welcome to Haab
+              {t.welcome.badge}
             </span>
             <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-[var(--ink)] sm:text-5xl lg:text-6xl">
-              What kind of business
-              <br className="hidden sm:block" /> are we setting up today?
+              {t.welcome.title}
             </h1>
             <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg">
-              Pick your industry and we&apos;ll prefill your services, weekly hours,
-              and a polished booking page. You can edit everything afterward in
-              under a minute.
+              {t.welcome.body}
             </p>
           </div>
 
@@ -1880,30 +1877,16 @@ export function HaabBookingModule({
           </div>
 
           <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-[var(--muted)]">
-            <span className="inline-flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
-                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
+            {[t.welcome.featureCustomizable, t.welcome.featureNoCard, t.welcome.featureReady].map((feature) => (
+              <span key={feature} className="inline-flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
+                    <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                </span>
+                {feature}
               </span>
-              Fully customizable later
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
-                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
-              </span>
-              No credit card required
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" aria-hidden>
-                  <path d="M5 12l4 4L19 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                </svg>
-              </span>
-              Ready to share in minutes
-            </span>
+            ))}
           </div>
         </div>
       </div>
@@ -2487,10 +2470,10 @@ export function HaabBookingModule({
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title="Provider information" />
+          <SectionTitle title={t.admin.providerInformation} />
           {integratedMode ? (
             <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm text-[var(--muted)]")}>
-              Configured by the parent app. These settings are visible but not editable.
+              {t.admin.configuredByParentApp}
             </div>
           ) : null}
           <div className="mt-6">
@@ -2523,14 +2506,14 @@ export function HaabBookingModule({
           {!integratedMode ? (
             <div className="mt-6">
               <ActionButton tone="danger" onClick={resetStandaloneSetup}>
-                Reset standalone setup
+                {t.admin.resetStandaloneSetup}
               </ActionButton>
             </div>
           ) : null}
         </div>
 
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title="Weekly availability" />
+          <SectionTitle title={t.admin.weeklyAvailability} />
           <div className="mt-6">
             <AvailabilityEditor
               availability={availability}
@@ -4827,7 +4810,7 @@ export function HaabBookingModule({
                         type="submit"
                         className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
                       >
-                        Sign out
+                        {t.admin.signOut}
                       </button>
                     </form>
                   ) : null}
@@ -4839,11 +4822,11 @@ export function HaabBookingModule({
               <nav className="mt-6 flex flex-wrap gap-2">
                 {(
                   [
-                    ["dashboard", "Dashboard"],
+                    ["dashboard", t.admin.tabDashboard],
                     ["bookings", copy.Bookings],
-                    ["calendar", "Calendar"],
+                    ["calendar", t.admin.tabCalendar],
                     ["services", copy.Services],
-                    ["settings", "Settings"],
+                    ["settings", t.admin.tabSettings],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (
                   <button
@@ -4868,7 +4851,7 @@ export function HaabBookingModule({
                   onClick={() => setSurface("management")}
                   className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
                 >
-                  ← Back to workspace
+                  {t.admin.backToWorkspace}
                 </button>
               </div>
             ) : null}
@@ -4895,13 +4878,13 @@ export function HaabBookingModule({
           className="fixed right-4 top-4 z-40 max-w-sm rounded-[28px] bg-white px-5 py-4 text-[#be123c] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_24px_60px_rgba(190,18,60,0.16)] ring-1 ring-[#fecdd3] sm:right-6 sm:top-6"
         >
           <p className="text-xs font-semibold uppercase tracking-[0.18em]">
-            Hold ending soon
+            {t.public.holdEndingSoon}
           </p>
           <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
-            Your booking hold is ending soon.
+            {t.public.holdEndingBody}
           </p>
           <p className="mt-1 text-sm leading-5">
-            Confirm now, or the selected time may become available to someone else.
+            {t.public.holdEndingCta}
           </p>
         </div>
       ) : null}
