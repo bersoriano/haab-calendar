@@ -1,21 +1,24 @@
 "use client";
 
 import type { Dispatch, SetStateAction } from "react";
-import type { BookingType, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
-import { DURATION_OPTIONS, WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
+import type { BookingType, Lang, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
+import { DURATION_OPTIONS, WEEKDAY_KEYS, getWeekdayShortFormatter } from "@/lib/constants";
+import { cn, pad } from "@/lib/utils";
 import { formatCapacityLabel, formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { parseDateKey } from "@/lib/date";
 
-function formatDurationOption(minutes: number) {
+function formatDurationOption(minutes: number, lang: Lang = "en") {
   if (minutes >= 60 && minutes % 60 === 0) {
     const hours = minutes / 60;
+    if (lang === "es") return `${hours} h`;
     return `${hours} hour${hours === 1 ? "" : "s"}`;
   }
-  return `${minutes} minutes`;
+  return lang === "es" ? `${minutes} min` : `${minutes} minutes`;
 }
 
 export function ServiceEditor({
@@ -32,6 +35,7 @@ export function ServiceEditor({
   copy = defaultCopy,
   provider,
   vertical,
+  lang = "en",
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -46,7 +50,9 @@ export function ServiceEditor({
   copy?: VerticalCopy;
   provider: ProviderInfo;
   vertical?: VerticalId;
+  lang?: Lang;
 }) {
+  const t = bookingTranslations[lang];
   const showMedicalSpecialty =
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
   const isEvents = vertical === "events";
@@ -69,7 +75,7 @@ export function ServiceEditor({
     }));
   const locationPriceField = (key: "address1" | "address2" | "custom") => (
     <label className="grid gap-1 text-xs font-medium text-[var(--muted)]">
-      Price at this location
+      {t.admin.priceAtLocation}
       <input
         disabled={disabled}
         value={serviceDraft.locationPrices?.[key] ?? ""}
@@ -85,12 +91,16 @@ export function ServiceEditor({
   const hasPhone2 = provider.phoneNumber2.trim().length > 0;
   const nextAddressSlot = !hasAddress1 ? "1" : !hasAddress2 ? "2" : null;
   const nextPhoneSlot = !hasPhone1 ? "1" : !hasPhone2 ? "2" : null;
-  const addressHint = nextAddressSlot
-    ? `We'll save this as Address ${nextAddressSlot} in your provider profile so other services can reuse it.`
-    : "Both provider address slots are already taken — this address will stay with this service only.";
-  const phoneHint = nextPhoneSlot
-    ? `We'll save this as Phone ${nextPhoneSlot} in your provider profile so other services can reuse it.`
-    : "Both provider phone slots are already taken — this phone will stay with this service only.";
+  const addressHint = nextAddressSlot === "1"
+    ? t.admin.addressHintSlot1
+    : nextAddressSlot === "2"
+      ? t.admin.addressHintSlot2
+      : t.admin.addressHintFull;
+  const phoneHint = nextPhoneSlot === "1"
+    ? t.admin.phoneHintSlot1
+    : nextPhoneSlot === "2"
+      ? t.admin.phoneHintSlot2
+      : t.admin.phoneHintFull;
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <div className={cn(adminPanelClass, "p-6")}>
@@ -101,7 +111,7 @@ export function ServiceEditor({
 
         {disabled ? (
           <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
-            Configured by the parent app. Service editing is read-only in this mode.
+            {t.admin.serviceReadOnly}
           </div>
         ) : null}
 
@@ -119,9 +129,9 @@ export function ServiceEditor({
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-base font-semibold text-[var(--ink)]">{service.name}</h4>
                       <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                        {getBookingTypeLabel(service.bookingType)}
+                        {getBookingTypeLabel(service.bookingType, lang)}
                       </ToneBadge>
-                      <ToneBadge tone="neutral">{formatDuration(service)}</ToneBadge>
+                      <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
                     </div>
                     {service.description ? (
                       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
@@ -130,45 +140,45 @@ export function ServiceEditor({
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
                       {isEvents ? (
-                        <span>Capacity: {formatCapacityLabel(service)}</span>
+                        <span>{t.admin.capacityLabel}: {formatCapacityLabel(service, lang)}</span>
                       ) : service.capacity ? (
-                        <span>Capacity: {service.capacity}</span>
+                        <span>{t.admin.capacityLabel}: {service.capacity}</span>
                       ) : null}
                       {service.medicalSpecialty ? (
-                        <span>Specialty: {service.medicalSpecialty}</span>
+                        <span>{t.admin.medicalSpecialtyLabel}: {service.medicalSpecialty}</span>
                       ) : null}
-                      {service.cost ? <span>Total: {service.cost}</span> : null}
-                      {service.notes ? <span>Notes: {service.notes}</span> : null}
+                      {service.cost ? <span>{t.admin.totalLabel}: {service.cost}</span> : null}
+                      {service.notes ? <span>{t.admin.notesLabel}: {service.notes}</span> : null}
                       {service.linkedAddress1 && hasAddress1 ? (
-                        <span>Address 1: {provider.address1}</span>
+                        <span>{t.admin.address1Label}: {provider.address1}</span>
                       ) : null}
                       {service.linkedAddress2 && hasAddress2 ? (
-                        <span>Address 2: {provider.address2}</span>
+                        <span>{t.admin.address2Label}: {provider.address2}</span>
                       ) : null}
                       {service.linkedPhone1 && hasPhone1 ? (
-                        <span>Phone 1: {provider.phoneNumber1}</span>
+                        <span>{t.admin.phone1Label}: {provider.phoneNumber1}</span>
                       ) : null}
                       {service.linkedPhone2 && hasPhone2 ? (
-                        <span>Phone 2: {provider.phoneNumber2}</span>
+                        <span>{t.admin.phone2Label}: {provider.phoneNumber2}</span>
                       ) : null}
                       {service.customAddress ? (
-                        <span>Address: {service.customAddress}</span>
+                        <span>{t.admin.locationSection}: {service.customAddress}</span>
                       ) : null}
                       {service.customPhone ? (
-                        <span>Phone: {service.customPhone}</span>
+                        <span>{t.admin.phoneSection}: {service.customPhone}</span>
                       ) : null}
                     </div>
                   </div>
                   <div className="flex gap-2">
                     <ActionButton tone="ghost" disabled={disabled} onClick={() => onEdit(service)}>
-                      Edit
+                      {t.admin.editButton}
                     </ActionButton>
                     <ActionButton
                       tone="danger"
                       disabled={disabled || services.length <= 1}
                       onClick={() => onRemove(service.id)}
                     >
-                      Delete
+                      {t.admin.deleteButton}
                     </ActionButton>
                   </div>
                 </div>
@@ -203,12 +213,12 @@ export function ServiceEditor({
           </label>
           {isEvents ? (
             <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Occurrence
+              {t.admin.occurrenceLabel}
               <div className="grid grid-cols-3 gap-2">
                 {(["single", "weekly", "periodic"] as const).map((mode) => {
                   const active = serviceDraft.occurrenceMode === mode;
                   const label =
-                    mode === "single" ? "Single" : mode === "weekly" ? "Weekly" : "Periodic";
+                    mode === "single" ? t.admin.occurrenceSingle : mode === "weekly" ? t.admin.occurrenceWeekly : t.admin.occurrencePeriodic;
                   return (
                     <button
                       key={mode}
@@ -232,16 +242,16 @@ export function ServiceEditor({
               </div>
               <p className="text-xs leading-5 text-[var(--muted)]">
                 {isSingleOccurrence
-                  ? "This event happens once, on a fixed date and time."
+                  ? t.admin.singleOccurrenceHint
                   : isWeeklyOccurrence
-                    ? "This event recurs on the weekdays you pick, at a fixed time."
-                    : "This event repeats on your weekly availability."}
+                    ? t.admin.weeklyOccurrenceHint
+                    : t.admin.periodicOccurrenceHint}
               </p>
             </div>
           ) : null}
           {!isEventsFixedWindow ? (
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Booking type
+            {t.admin.bookingTypeLabel}
             <select
               disabled={disabled}
               value={serviceDraft.bookingType}
@@ -255,8 +265,8 @@ export function ServiceEditor({
               }
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             >
-              <option value="appointment">Appointment</option>
-              <option value="full-day">Full Day</option>
+              <option value="appointment">{getBookingTypeLabel("appointment", lang)}</option>
+              <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
             </select>
           </label>
           ) : null}
@@ -278,7 +288,7 @@ export function ServiceEditor({
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                Start
+                {t.admin.startLabel}
                 <input
                   disabled={disabled}
                   value={serviceDraft.startTime}
@@ -290,7 +300,7 @@ export function ServiceEditor({
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                End
+                {t.admin.endLabel}
                 <input
                   disabled={disabled}
                   value={serviceDraft.endTime}
@@ -306,10 +316,13 @@ export function ServiceEditor({
           {isEventsWeekly ? (
             <div className="grid gap-3">
               <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                Repeats on
+                {t.admin.repeatsOn}
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAY_KEYS.map((day) => {
                     const active = serviceDraft.weekdays.includes(day);
+                    const dayLabel = getWeekdayShortFormatter(lang).format(
+                      parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`)
+                    );
                     return (
                       <button
                         key={day}
@@ -331,7 +344,7 @@ export function ServiceEditor({
                             : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
                         )}
                       >
-                        {WEEKDAY_LABELS[day].slice(0, 3)}
+                        {dayLabel}
                       </button>
                     );
                   })}
@@ -339,7 +352,7 @@ export function ServiceEditor({
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  Start
+                  {t.admin.startLabel}
                   <input
                     disabled={disabled}
                     value={serviceDraft.startTime}
@@ -351,7 +364,7 @@ export function ServiceEditor({
                   />
                 </label>
                 <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  End
+                  {t.admin.endLabel}
                   <input
                     disabled={disabled}
                     value={serviceDraft.endTime}
@@ -367,7 +380,7 @@ export function ServiceEditor({
           ) : null}
           {!isEventsFixedWindow && serviceDraft.bookingType === "appointment" ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Duration
+              {t.admin.durationLabel}
               <select
                 disabled={disabled}
                 value={serviceDraft.durationMinutes}
@@ -381,7 +394,7 @@ export function ServiceEditor({
               >
                 {DURATION_OPTIONS.map((duration) => (
                   <option key={duration} value={duration}>
-                    {formatDurationOption(duration)}
+                    {formatDurationOption(duration, lang)}
                   </option>
                 ))}
               </select>
@@ -389,7 +402,7 @@ export function ServiceEditor({
           ) : null}
           {showMedicalSpecialty ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Medical specialty
+              {t.admin.medicalSpecialtyLabel}
               <input
                 disabled={disabled}
                 value={serviceDraft.medicalSpecialty ?? ""}
@@ -405,7 +418,7 @@ export function ServiceEditor({
             </label>
           ) : null}
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Description
+            {t.admin.descriptionLabel}
             <textarea
               disabled={disabled}
               value={serviceDraft.description}
@@ -419,7 +432,7 @@ export function ServiceEditor({
           </label>
           {!isEvents ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Capacity
+              {t.admin.capacityLabel}
               <input
                 disabled={disabled}
                 value={serviceDraft.capacity}
@@ -433,7 +446,7 @@ export function ServiceEditor({
           ) : null}
           {isEvents ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Maximum spots
+              {t.admin.maxSpotsLabel}
               <input
                 disabled={disabled}
                 value={serviceDraft.maxSpots}
@@ -450,7 +463,7 @@ export function ServiceEditor({
             </label>
           ) : null}
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Total
+            {t.admin.totalLabel}
             <input
               disabled={disabled}
               value={serviceDraft.cost}
@@ -462,7 +475,7 @@ export function ServiceEditor({
             />
           </label>
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            Notes
+            {t.admin.notesLabel}
             <input
               disabled={disabled}
               value={serviceDraft.notes}
@@ -483,14 +496,14 @@ export function ServiceEditor({
                   />
                 </svg>
               </span>
-              <span className="text-sm font-semibold text-[var(--ink)]">Location</span>
+              <span className="text-sm font-semibold text-[var(--ink)]">{t.admin.locationSection}</span>
             </header>
             {hasAddress1 || hasAddress2 ? (
               <div className="grid gap-2">
                 {hasAddress1 ? (
                   <div className="grid gap-2">
                     <LinkToggleCard
-                      eyebrow="Address 1"
+                      eyebrow={t.admin.address1Label}
                       value={provider.address1}
                       checked={serviceDraft.linkedAddress1}
                       disabled={disabled}
@@ -504,7 +517,7 @@ export function ServiceEditor({
                 {hasAddress2 ? (
                   <div className="grid gap-2">
                     <LinkToggleCard
-                      eyebrow="Address 2"
+                      eyebrow={t.admin.address2Label}
                       value={provider.address2}
                       checked={serviceDraft.linkedAddress2}
                       disabled={disabled}
@@ -520,7 +533,7 @@ export function ServiceEditor({
             <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
               <label className="grid gap-2">
                 <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {hasAddress1 || hasAddress2 ? "Add another address" : "Add an address"}
+                  {hasAddress1 || hasAddress2 ? t.admin.addAnotherAddress : t.admin.addAnAddress}
                 </span>
                 <input
                   disabled={disabled}
@@ -551,13 +564,13 @@ export function ServiceEditor({
                   />
                 </svg>
               </span>
-              <span className="text-sm font-semibold text-[var(--ink)]">Phone</span>
+              <span className="text-sm font-semibold text-[var(--ink)]">{t.admin.phoneSection}</span>
             </header>
             {hasPhone1 || hasPhone2 ? (
               <div className="grid gap-2">
                 {hasPhone1 ? (
                   <LinkToggleCard
-                    eyebrow="Phone 1"
+                    eyebrow={t.admin.phone1Label}
                     value={provider.phoneNumber1}
                     checked={serviceDraft.linkedPhone1}
                     disabled={disabled}
@@ -568,7 +581,7 @@ export function ServiceEditor({
                 ) : null}
                 {hasPhone2 ? (
                   <LinkToggleCard
-                    eyebrow="Phone 2"
+                    eyebrow={t.admin.phone2Label}
                     value={provider.phoneNumber2}
                     checked={serviceDraft.linkedPhone2}
                     disabled={disabled}
@@ -582,7 +595,7 @@ export function ServiceEditor({
             <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
               <label className="grid gap-2">
                 <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {hasPhone1 || hasPhone2 ? "Add another phone" : "Add a phone"}
+                  {hasPhone1 || hasPhone2 ? t.admin.addAnotherPhone : t.admin.addAPhone}
                 </span>
                 <input
                   disabled={disabled}
@@ -608,7 +621,7 @@ export function ServiceEditor({
             {editingServiceId ? copy.phrases.saveServiceButton : copy.phrases.addServiceButton}
           </ActionButton>
           <ActionButton tone="ghost" onClick={onReset}>
-            Clear
+            {t.admin.clearButton}
           </ActionButton>
         </div>
       </div>

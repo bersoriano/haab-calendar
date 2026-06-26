@@ -2462,6 +2462,7 @@ export function HaabBookingModule({
         copy={copy}
         provider={provider}
         vertical={vertical}
+        lang={lang}
       />
     );
   }
