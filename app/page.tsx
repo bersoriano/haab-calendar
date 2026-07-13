@@ -1,6 +1,8 @@
 import { HomeExperience } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
+import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import type { LandingVertical } from "@/components/landing/landing-ui";
+import type { ModuleStore } from "@/lib/types";
 
 const LANDING_VERTICALS: LandingVertical[] = [
   "healthcare",
@@ -26,6 +28,7 @@ export default async function Home({ searchParams }: HomePageProps) {
 
   let configured = false;
   let email: string | undefined;
+  let dashboardStore: ModuleStore | undefined;
 
   if (loggedIn) {
     const {
@@ -34,15 +37,17 @@ export default async function Home({ searchParams }: HomePageProps) {
     email = user?.email ?? claimsData?.claims?.email;
 
     if (user) {
-      // "Configured" = this provider has completed setup. Drives whether the
-      // landing shows verticals or a "go to your dashboard" panel.
-      const { data: provider } = await supabase
-        .from("providers")
-        .select("setup_complete")
-        .eq("owner_user_id", user.id)
-        .maybeSingle();
-
-      configured = Boolean(provider?.setup_complete);
+      try {
+        dashboardStore = (await getProviderDashboardStore(supabase, user.id)) ?? undefined;
+        // "Configured" = this provider has completed setup. Drives whether the
+        // landing shows verticals or a "go to your dashboard" panel.
+        configured = Boolean(dashboardStore?.setupComplete);
+      } catch (error) {
+        console.error("provider_dashboard_store_load_failed", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+        configured = false;
+      }
     }
   }
 
@@ -52,6 +57,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       configured={configured}
       email={email}
       initialVertical={parseVertical(vertical)}
+      dashboardStore={dashboardStore}
     />
   );
 }

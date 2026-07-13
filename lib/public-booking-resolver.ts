@@ -10,12 +10,19 @@ import {
   validateProviderSlug,
   validateServiceSlug,
 } from "@/lib/public-url";
-import type { ModuleStore, Service, VerticalId, WeeklyAvailability } from "@/lib/types";
+import type {
+  LocationKey,
+  ModuleStore,
+  Service,
+  VerticalId,
+  WeekdayKey,
+  WeeklyAvailability,
+} from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability";
+  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls";
 export const PUBLIC_SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 
 type PublicProviderRow = {
   id: string;
@@ -27,6 +34,13 @@ type PublicProviderRow = {
   timezone: string;
   booking_window_days: number;
   availability: WeeklyAvailability;
+  phone_number_1: string | null;
+  phone_number_2: string | null;
+  address_1: string | null;
+  address_2: string | null;
+  header_image_url: string | null;
+  hero_text: string | null;
+  gallery_image_urls: string[] | null;
 };
 
 type PublicServiceRow = {
@@ -42,6 +56,19 @@ type PublicServiceRow = {
   cost: string | null;
   notes: string | null;
   sort_order: number;
+  occurrence_mode: "single" | "periodic" | "weekly" | null;
+  occurrence_date: string | null;
+  weekdays: WeekdayKey[] | null;
+  start_time: string | null;
+  end_time: string | null;
+  max_spots: number | null;
+  location_prices: Partial<Record<LocationKey, string>> | null;
+  linked_address_1: boolean | null;
+  linked_address_2: boolean | null;
+  linked_phone_1: boolean | null;
+  linked_phone_2: boolean | null;
+  custom_address: string | null;
+  custom_phone: string | null;
 };
 
 type ProviderRedirectRow = {
@@ -107,14 +134,21 @@ function toPublicService(row: PublicServiceRow): Service {
     medicalSpecialty:
       row.booking_type === "appointment" ? row.medical_specialty ?? undefined : undefined,
     capacity: row.capacity ?? "",
+    occurrenceMode: row.occurrence_mode ?? undefined,
+    occurrenceDate: row.occurrence_date ?? undefined,
+    weekdays: row.occurrence_mode === "weekly" ? row.weekdays ?? [] : undefined,
+    startTime: row.start_time?.slice(0, 5),
+    endTime: row.end_time?.slice(0, 5),
+    maxSpots: row.max_spots ?? undefined,
     cost: row.cost ?? "",
+    locationPrices: row.location_prices ?? undefined,
     notes: row.notes ?? "",
-    linkedAddress1: false,
-    linkedAddress2: false,
-    linkedPhone1: false,
-    linkedPhone2: false,
-    customAddress: undefined,
-    customPhone: undefined,
+    linkedAddress1: row.linked_address_1 ?? false,
+    linkedAddress2: row.linked_address_2 ?? false,
+    linkedPhone1: row.linked_phone_1 ?? false,
+    linkedPhone2: row.linked_phone_2 ?? false,
+    customAddress: row.custom_address ?? undefined,
+    customPhone: row.custom_phone ?? undefined,
   };
 }
 
@@ -124,11 +158,16 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       fullName: provider.full_name,
       businessName: provider.business_name,
       email: "",
-      phoneNumber1: "",
-      phoneNumber2: "",
-      address1: "",
-      address2: "",
+      phoneNumber1: provider.phone_number_1 ?? "",
+      phoneNumber2: provider.phone_number_2 ?? "",
+      address1: provider.address_1 ?? "",
+      address2: provider.address_2 ?? "",
       publicSlug: provider.slug,
+      headerImageUrl: provider.header_image_url?.trim() || undefined,
+      heroText: provider.hero_text?.trim() || undefined,
+      galleryImageUrls: Array.isArray(provider.gallery_image_urls)
+        ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
+        : undefined,
       language: provider.language === "es" ? "es" : "en",
     },
     services: services.map(toPublicService),

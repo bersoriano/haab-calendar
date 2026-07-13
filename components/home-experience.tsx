@@ -5,7 +5,7 @@ import { useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { logout } from "@/app/login/actions";
 import { VERTICALS } from "@/config/verticals";
-import type { VerticalId } from "@/lib/types";
+import type { ModuleStore, VerticalId } from "@/lib/types";
 import {
   LandingActionsProvider,
   LandingPage,
@@ -25,6 +25,8 @@ type HomeExperienceProps = {
   email?: string;
   /** Pre-selected vertical, e.g. after returning from login via ?vertical=. */
   initialVertical?: LandingVertical;
+  /** Supabase-backed provider data for configured users. */
+  dashboardStore?: ModuleStore;
 };
 
 function loginHref(next: string) {
@@ -44,11 +46,18 @@ function HomeExperienceInner({
   configured,
   email,
   initialVertical,
+  dashboardStore,
 }: HomeExperienceProps) {
   const router = useRouter();
+  const [persistedDashboardStore, setPersistedDashboardStore] = useState<
+    ModuleStore | undefined
+  >();
+  const effectiveDashboardStore = persistedDashboardStore ?? dashboardStore;
+  const effectiveConfigured = configured || Boolean(effectiveDashboardStore?.setupComplete);
+
   // Returning from login with ?vertical=<id> jumps straight into setup for that
   // vertical. Configured users go to their dashboard instead, so they ignore it.
-  const startInApp = loggedIn && !configured && Boolean(initialVertical);
+  const startInApp = loggedIn && !effectiveConfigured && Boolean(initialVertical);
   const [view, setView] = useState<View>(startInApp ? "app" : "home");
   const [selectedVertical, setSelectedVertical] = useState<
     VerticalId | undefined
@@ -68,7 +77,7 @@ function HomeExperienceInner({
 
   // Generic "create your page" CTA.
   function onStart() {
-    if (configured || loggedIn) {
+    if (effectiveConfigured || loggedIn) {
       openApp();
       return;
     }
@@ -99,9 +108,16 @@ function HomeExperienceInner({
         </div>
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
           <HaabBookingModule
+            injectedConfig={effectiveConfigured ? effectiveDashboardStore : undefined}
             userEmail={email}
             onSignOut={logout}
-            initialVerticalId={configured ? undefined : selectedVertical}
+            persistSetup={loggedIn && !effectiveConfigured}
+            persistAdminChanges={loggedIn && effectiveConfigured}
+            onSetupPersisted={(store) => {
+              setPersistedDashboardStore(store);
+              router.refresh();
+            }}
+            initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
           />
         </main>
       </div>
@@ -112,7 +128,7 @@ function HomeExperienceInner({
     <LandingActionsProvider actions={{ onStart, onSelectVertical }}>
       <LandingPage
         afterHero={
-          configured ? (
+          effectiveConfigured ? (
             <DashboardPanel onOpen={() => openApp()} email={email} />
           ) : (
             <VerticalsPanel onSelectVertical={onSelectVertical} />

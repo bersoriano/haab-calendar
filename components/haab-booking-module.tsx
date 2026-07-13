@@ -49,13 +49,12 @@ import {
   DURATION_OPTIONS,
   compactBadgeTextClass,
   compactMetaTextClass,
-  weekdayShortFormatter,
   getWeekdayShortFormatter,
   BOOKING_HOLD_DURATION_MS,
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
 import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
-import { buildProviderPath, getServiceSlug } from "@/lib/public-url";
+import { buildProviderPath, getPublicVerticalSegment, getServiceSlug } from "@/lib/public-url";
 import {
   toMinutes,
   addMinutes,
@@ -97,6 +96,7 @@ import {
   applyVerticalToStore,
   setServiceBookingLength,
   parseMaxSpots,
+  normalizeStore,
 } from "@/lib/store";
 import {
   getBookingsForDate,
@@ -147,6 +147,9 @@ type HaabBookingModuleProps = {
   manageBookingToken?: string;
   userEmail?: string;
   onSignOut?: () => void | Promise<void>;
+  persistSetup?: boolean;
+  persistAdminChanges?: boolean;
+  onSetupPersisted?: (store: ModuleStore) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
   initialVerticalId?: VerticalId;
@@ -206,6 +209,9 @@ export function HaabBookingModule({
   manageBookingToken,
   userEmail,
   onSignOut,
+  persistSetup = false,
+  persistAdminChanges = false,
+  onSetupPersisted,
   initialVerticalId,
 }: HaabBookingModuleProps) {
   const {
@@ -224,6 +230,10 @@ export function HaabBookingModule({
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupPublished, setSetupPublished] = useState(false);
+  const [isPersistingSetup, setIsPersistingSetup] = useState(false);
+  const [adminSaveError, setAdminSaveError] = useState<string | null>(null);
+  const [adminSaveMessage, setAdminSaveMessage] = useState<string | null>(null);
+  const [isSavingAdmin, setIsSavingAdmin] = useState(false);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraft>(() =>
     createBlankServiceDraft(),
   );
@@ -236,6 +246,10 @@ export function HaabBookingModule({
     createInitialBookingFlow(initialServices, requestedInitialServiceId),
   );
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
+  const [isCreatingHold, setIsCreatingHold] = useState(false);
+  const [isMutatingBooking, setIsMutatingBooking] = useState(false);
+  const [cancellationError, setCancellationError] = useState<string | null>(null);
   const [naturalLanguageBookingInput, setNaturalLanguageBookingInput] = useState("");
   const [naturalLanguageBookingError, setNaturalLanguageBookingError] = useState<string | null>(
     null,
@@ -312,6 +326,11 @@ export function HaabBookingModule({
   const lang = provider.language ?? "en";
   const copy = getVerticalCopy(vertical, lang);
   const t = bookingTranslations[lang];
+  const isDedicatedPublicPage = surfaceMode === "public-only";
+  const businessSlug =
+    provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
+  const publicUrl =
+    businessSlug && vertical ? buildProviderPath(vertical, businessSlug) : "/public";
 
   // Default a fresh (untouched) service draft to the vertical's occurrence mode:
   // events start single-occurrence, every other vertical stays periodic.
@@ -340,9 +359,45 @@ export function HaabBookingModule({
     setManageLookupState("not-found");
   });
 
+  const commitManagedBooking = useEffectEvent((booking: BookingRecord) => {
+    actions.commitBookings([booking], activeStore);
+  });
+
   useEffect(() => {
     if (!manageBookingToken || !hydrated) {
       return;
+    }
+
+    if (integratedMode && isDedicatedPublicPage && vertical) {
+      let cancelled = false;
+
+      fetch(
+        `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/manage/${encodeURIComponent(manageBookingToken)}`,
+      )
+        .then(async (response) => {
+          const payload = (await response.json().catch(() => ({}))) as {
+            booking?: BookingRecord;
+          };
+
+          if (cancelled) return;
+
+          if (!response.ok || !payload.booking) {
+            onManageBookingMissing();
+            return;
+          }
+
+          commitManagedBooking(payload.booking);
+          onManageBookingFound(payload.booking);
+        })
+        .catch(() => {
+          if (!cancelled) {
+            onManageBookingMissing();
+          }
+        });
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     const booking = findBookingByToken({ bookings }, manageBookingToken);
@@ -352,12 +407,8 @@ export function HaabBookingModule({
     } else {
       onManageBookingMissing();
     }
-  }, [manageBookingToken, hydrated, bookings]);
+  }, [manageBookingToken, hydrated, bookings, integratedMode, isDedicatedPublicPage, vertical, businessSlug]);
 
-  const businessSlug =
-    provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
-  const publicUrl =
-    businessSlug && vertical ? buildProviderPath(vertical, businessSlug) : "/public";
   const resolvedBookingFlow = {
     ...bookingFlow,
     serviceId:
@@ -434,7 +485,6 @@ export function HaabBookingModule({
   const requestedServiceReady =
     !requestedServiceSlug ||
     services.some((service) => getServiceSlug(service) === requestedServiceSlug);
-  const isDedicatedPublicPage = surfaceMode === "public-only";
   const hasMultipleServices = services.length > 1;
   const calendarServiceId =
     calendarServicePreference &&
@@ -713,8 +763,24 @@ export function HaabBookingModule({
     };
   }, [businessSlug, provider, successfulBooking, vertical]);
 
+  const releaseSupabaseBookingHold = useCallback((holdId?: string) => {
+    if (!holdId || !integratedMode || !isDedicatedPublicPage || !vertical) {
+      return;
+    }
+
+    void fetch(
+      `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/holds`,
+      {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ holdId }),
+      },
+    ).catch(() => undefined);
+  }, [businessSlug, integratedMode, isDedicatedPublicPage, vertical]);
+
   const releaseExpiredBookingHold = useEffectEvent((holdId: string) => {
     actions.releaseBookingHold(holdId);
+    releaseSupabaseBookingHold(holdId);
   });
 
   useEffect(() => {
@@ -758,7 +824,9 @@ export function HaabBookingModule({
     setIsNLBookingOpen(false);
     setWasBookingUpdatedWithNaturalLanguage(false);
     setIsCalendarQrModalOpen(false);
-    actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+    const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
+    actions.releaseBookingHold(holdIdToRelease);
+    releaseSupabaseBookingHold(holdIdToRelease);
     setBookingHold(null);
     setBookingHoldNow(currentTimestamp());
     setBookingFlow({
@@ -805,8 +873,8 @@ export function HaabBookingModule({
     });
   }
 
-  function continueWithNaturalLanguageBooking() {
-    if (!selectedService) {
+  async function continueWithNaturalLanguageBooking() {
+    if (!selectedService || isCreatingHold) {
       return;
     }
 
@@ -903,7 +971,7 @@ export function HaabBookingModule({
         return;
       }
 
-      const didBeginDetails = beginClientDetailsStep(dateKey, requestedTime);
+      const didBeginDetails = await beginClientDetailsStep(dateKey, requestedTime);
 
       if (didBeginDetails && isUpdatingExistingSelection) {
         setWasBookingUpdatedWithNaturalLanguage(true);
@@ -937,7 +1005,7 @@ export function HaabBookingModule({
       return;
     }
 
-    const didBeginDetails = beginClientDetailsStep(dateKey, "");
+    const didBeginDetails = await beginClientDetailsStep(dateKey, "");
 
     if (didBeginDetails && isUpdatingExistingSelection) {
       setWasBookingUpdatedWithNaturalLanguage(true);
@@ -947,6 +1015,47 @@ export function HaabBookingModule({
   function resetServiceEditor() {
     setEditingServiceId(null);
     setServiceDraft(createBlankServiceDraft(vertical));
+  }
+
+  async function persistAdminStore(nextStore: ModuleStore, fallbackMessage: string) {
+    if (!integratedMode || !persistAdminChanges) {
+      return true;
+    }
+
+    setIsSavingAdmin(true);
+    setAdminSaveError(null);
+    setAdminSaveMessage(null);
+
+    try {
+      const response = await fetch("/api/provider/store", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ store: nextStore }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        store?: ModuleStore;
+        userMessage?: string;
+      };
+
+      if (!response.ok || !payload.store) {
+        setAdminSaveError(payload.userMessage ?? fallbackMessage);
+        return false;
+      }
+
+      const persistedStore = normalizeStore(payload.store);
+      actions.updateStandaloneStore(() => persistedStore);
+      onSetupPersisted?.(persistedStore);
+      setAdminSaveMessage("Saved.");
+      window.setTimeout(() => setAdminSaveMessage(null), 1600);
+      return true;
+    } catch {
+      setAdminSaveError(fallbackMessage);
+      return false;
+    } finally {
+      setIsSavingAdmin(false);
+    }
   }
 
   // Single-occurrence events have one fixed date, so rescheduling is meaningless
@@ -989,7 +1098,7 @@ export function HaabBookingModule({
     });
   }
 
-  function upsertService() {
+  async function upsertService() {
     if (!serviceDraft.name.trim() || !serviceDraft.description.trim()) {
       setSetupError(copy.phrases.serviceNameRequiredError);
       return;
@@ -1013,10 +1122,6 @@ export function HaabBookingModule({
       return;
     }
 
-    if (integratedMode) {
-      return;
-    }
-
     // Promote the typed value to the first empty provider slot; if both slots
     // are already taken, keep the value as a service-local override. The
     // service link flag is set whenever we promote. Provider + service writes
@@ -1024,7 +1129,7 @@ export function HaabBookingModule({
     const typedAddress = serviceDraft.customAddress.trim();
     const typedPhone = serviceDraft.customPhone.trim();
 
-    actions.updateStandaloneStore((current) => {
+    const buildNextStore = (current: ModuleStore): ModuleStore => {
       let nextProvider = current.provider;
       let linkedAddress1 = serviceDraft.linkedAddress1;
       let linkedAddress2 = serviceDraft.linkedAddress2;
@@ -1126,16 +1231,19 @@ export function HaabBookingModule({
             )
           : [...current.services, nextService],
       };
-    });
+    };
+    const nextStore = buildNextStore(activeStore);
+
+    actions.updateStandaloneStore(() => nextStore);
+    if (integratedMode) {
+      const persisted = await persistAdminStore(nextStore, "Could not save that service.");
+      if (!persisted) return;
+    }
     setSetupError(null);
     resetServiceEditor();
   }
 
-  function removeService(serviceId: string) {
-    if (integratedMode) {
-      return;
-    }
-
+  async function removeService(serviceId: string) {
     if (services.length <= 1) {
       setSetupError(copy.phrases.keepOneServiceError);
       return;
@@ -1150,22 +1258,29 @@ export function HaabBookingModule({
       return;
     }
 
-    actions.updateStandaloneStore((current) => ({
-      ...current,
-      services: current.services.filter((service) => service.id !== serviceId),
-    }));
+    const nextStore = {
+      ...activeStore,
+      services: activeStore.services.filter((service) => service.id !== serviceId),
+    };
+
+    actions.updateStandaloneStore(() => nextStore);
+
+    if (integratedMode) {
+      const persisted = await persistAdminStore(nextStore, "Could not remove that service.");
+      if (!persisted) return;
+    }
 
     if (editingServiceId === serviceId) {
       resetServiceEditor();
     }
   }
 
-  // Mark the standalone booking page live and persist it. Called when the
-  // provider reaches the Done step, so the public URL works however it is
-  // opened (new tab, copied link, etc.) — not only via the link's onClick.
-  function publishStandaloneSetup() {
+  // Mark the booking page live. In standalone mode this only writes
+  // localStorage. For signed-in setup it also persists the same store to
+  // Supabase and swaps the UI to the returned database-backed IDs.
+  async function publishSetup() {
     if (integratedMode) {
-      return;
+      return true;
     }
 
     const nextStore: ModuleStore = {
@@ -1183,8 +1298,43 @@ export function HaabBookingModule({
       setupComplete: true,
     };
 
-    actions.persistStandaloneStore(nextStore);
-    actions.updateStandaloneStore(() => nextStore);
+    if (!persistSetup) {
+      actions.persistStandaloneStore(nextStore);
+      actions.updateStandaloneStore(() => nextStore);
+      return true;
+    }
+
+    setIsPersistingSetup(true);
+
+    try {
+      const response = await fetch("/api/provider/store", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ store: nextStore }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        store?: ModuleStore;
+        userMessage?: string;
+      };
+
+      if (!response.ok || !payload.store) {
+        setSetupError(payload.userMessage ?? "Could not save your booking page.");
+        return false;
+      }
+
+      const persistedStore = normalizeStore(payload.store);
+      actions.persistStandaloneStore(persistedStore);
+      actions.updateStandaloneStore(() => persistedStore);
+      onSetupPersisted?.(persistedStore);
+      return true;
+    } catch {
+      setSetupError("Could not save your booking page. Please try again.");
+      return false;
+    } finally {
+      setIsPersistingSetup(false);
+    }
   }
 
   // Leave the Done step for the chosen surface. Setup is already published by
@@ -1196,10 +1346,6 @@ export function HaabBookingModule({
   }
 
   function updateProvider<K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) {
-    if (integratedMode) {
-      return;
-    }
-
     actions.updateStandaloneStore((current) => ({
       ...current,
       provider: {
@@ -1218,10 +1364,6 @@ export function HaabBookingModule({
     day: WeekdayKey,
     patch: Partial<DayAvailability>,
   ) {
-    if (integratedMode) {
-      return;
-    }
-
     actions.updateStandaloneStore((current) => ({
       ...current,
       availability: {
@@ -1371,7 +1513,11 @@ export function HaabBookingModule({
     return null;
   }
 
-  function goToNextSetupStep() {
+  async function goToNextSetupStep() {
+    if (isPersistingSetup) {
+      return;
+    }
+
     const error = validateSetup(setupStep);
 
     if (error) {
@@ -1388,7 +1534,10 @@ export function HaabBookingModule({
         return;
       }
 
-      publishStandaloneSetup();
+      const published = await publishSetup();
+      if (!published) {
+        return;
+      }
       setSetupPublished(true);
     }
 
@@ -1397,6 +1546,10 @@ export function HaabBookingModule({
   }
 
   function goToPreviousSetupStep() {
+    if (isPersistingSetup) {
+      return;
+    }
+
     setSetupError(null);
 
     if (setupStep > 1) {
@@ -1426,7 +1579,7 @@ export function HaabBookingModule({
     });
   }
 
-  function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
+  async function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
     if (!selectedService || !dateKey) {
       return false;
     }
@@ -1441,6 +1594,7 @@ export function HaabBookingModule({
     const latestService =
       baseStore.services.find((service) => service.id === selectedService.id) ?? selectedService;
     const currentHoldId = bookingHold?.released ? undefined : bookingHold?.id;
+    const previousHoldId = currentHoldId;
     const currentHolds = pruneBookingHolds(baseStore.bookingHolds, now).filter(
       (hold) => hold.id !== currentHoldId,
     );
@@ -1481,7 +1635,7 @@ export function HaabBookingModule({
 
     const startedAt = now;
     const expiresAt = startedAt + BOOKING_HOLD_DURATION_MS;
-    const holdRecord: BookingHoldRecord = {
+    let holdRecord: BookingHoldRecord = {
       id: createId("hold"),
       serviceId: latestService.id,
       bookingType: latestService.bookingType,
@@ -1492,20 +1646,59 @@ export function HaabBookingModule({
       expiresAt,
     };
 
+    if (integratedMode && isDedicatedPublicPage && vertical) {
+      setIsCreatingHold(true);
+      setBookingError(null);
+
+      try {
+        const response = await fetch(
+          `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/holds`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              serviceId: latestService.id,
+              dateKey,
+              time: time || undefined,
+            }),
+          },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          hold?: BookingHoldRecord;
+          userMessage?: string;
+        };
+
+        if (!response.ok || !payload.hold) {
+          setBookingError(payload.userMessage ?? "Could not hold that slot.");
+          return false;
+        }
+
+        holdRecord = payload.hold;
+      } catch {
+        setBookingError("Could not hold that slot. Please try again.");
+        return false;
+      } finally {
+        setIsCreatingHold(false);
+      }
+    }
+
     if (!integratedMode && latestStandaloneStore) {
       actions.setStandaloneStore(latestStandaloneStore);
     }
 
     setBookingError(null);
     actions.commitBookingHolds([...currentHolds, holdRecord], baseStore);
+    if (previousHoldId && previousHoldId !== holdRecord.id) {
+      releaseSupabaseBookingHold(previousHoldId);
+    }
     setBookingHold({
       id: holdRecord.id,
       selectionKey: getBookingHoldSelectionKey(latestService, dateKey, time),
-      startedAt,
-      expiresAt,
+      startedAt: new Date(holdRecord.createdAt).getTime(),
+      expiresAt: holdRecord.expiresAt,
       released: false,
     });
-    setBookingHoldNow(startedAt);
+    setBookingHoldNow(new Date(holdRecord.createdAt).getTime());
     setBookingFlow((current) => ({
       ...current,
       serviceId: latestService.id,
@@ -1516,7 +1709,11 @@ export function HaabBookingModule({
     return true;
   }
 
-  function confirmBooking() {
+  async function confirmBooking() {
+    if (isConfirmingBooking) {
+      return;
+    }
+
     setIsCalendarQrModalOpen(false);
     const now = currentTimestamp();
     const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
@@ -1634,18 +1831,84 @@ export function HaabBookingModule({
     };
 
     const nextHolds = validationHolds.filter((hold) => hold.id !== ignoredHoldId);
+    let bookingToCommit = nextBooking;
 
-    console.log("Haab Calendar booking confirmed:", nextBooking);
+    if (integratedMode && isDedicatedPublicPage && vertical) {
+      setIsConfirmingBooking(true);
+      setBookingError(null);
 
-    actions.commitBookings([...validationStore.bookings, nextBooking], validationStore, nextHolds);
+      try {
+        const response = await fetch(
+          `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/bookings`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              serviceId: validationService.id,
+              dateKey: bookingFlow.dateKey,
+              time: bookingFlow.time || undefined,
+              clientName: bookingFlow.clientName.trim(),
+              clientEmail: bookingFlow.clientEmail.trim(),
+              clientPhone: bookingFlow.clientPhone.trim(),
+              notes: bookingFlow.notes.trim(),
+              location: bookingLocationAddress,
+              locationKey: bookingFlow.locationKey,
+              details: {
+                locationKey: bookingFlow.locationKey ?? null,
+              },
+              detailsSchemaKey: "base",
+              detailsSchemaVersion: 1,
+              idempotencyKey:
+                typeof crypto.randomUUID === "function" ? crypto.randomUUID() : createId("idem"),
+              holdId: ignoredHoldId,
+            }),
+          },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          booking?: BookingRecord;
+          userMessage?: string;
+        };
+
+        if (!response.ok || !payload.booking) {
+          setBookingError(payload.userMessage ?? "Could not confirm this booking.");
+          return;
+        }
+
+        bookingToCommit = payload.booking;
+      } catch {
+        setBookingError("Could not confirm this booking. Please try again.");
+        return;
+      } finally {
+        setIsConfirmingBooking(false);
+      }
+    }
+
+    console.log("Haab Calendar booking confirmed:", bookingToCommit);
+
+    actions.commitBookings([...validationStore.bookings, bookingToCommit], validationStore, nextHolds);
     setBookingError(null);
     setBookingHold(null);
     setBookingHoldNow(now);
     setBookingFlow((current) => ({
       ...current,
       step: 4,
-      successBookingId: nextBooking.id,
+      successBookingId: bookingToCommit.id,
     }));
+  }
+
+  function commitBookingMutation(baseStore: ModuleStore, updatedBooking: BookingRecord) {
+    const bookingExists = baseStore.bookings.some((booking) => booking.id === updatedBooking.id);
+    const nextBookings = bookingExists
+      ? baseStore.bookings.map((booking) =>
+          booking.id === updatedBooking.id ? updatedBooking : booking,
+        )
+      : [...baseStore.bookings, updatedBooking];
+
+    actions.commitBookings(nextBookings, baseStore);
+  }
+
+  function getManageTokenForBooking(booking: BookingRecord) {
+    return manageBookingToken || booking.manageToken || undefined;
   }
 
   function openReschedule(bookingId: string) {
@@ -1671,8 +1934,13 @@ export function HaabBookingModule({
     });
   }
 
-  function confirmReschedule() {
-    if (!rescheduleState) {
+  function openCancellation(bookingId: string) {
+    setCancellationError(null);
+    setCancellationId(bookingId);
+  }
+
+  async function confirmReschedule() {
+    if (!rescheduleState || isMutatingBooking) {
       return;
     }
 
@@ -1734,49 +2002,136 @@ export function HaabBookingModule({
       return;
     }
 
-    actions.commitBookings(
-      validationStore.bookings.map((candidate) =>
-        candidate.id === booking.id
-          ? {
-              ...candidate,
-              dateKey: rescheduleState.dateKey,
-              startTime: resolveBookingStartTime(service, rescheduleState.time),
-              endTime: resolveBookingEndTime(service, rescheduleState.time),
-              status: "rescheduled",
-              updatedAt: new Date().toISOString(),
-            }
-          : candidate,
-      ),
-      validationStore,
-    );
+    let bookingToCommit: BookingRecord = {
+      ...booking,
+      dateKey: rescheduleState.dateKey,
+      startTime: resolveBookingStartTime(service, rescheduleState.time),
+      endTime: resolveBookingEndTime(service, rescheduleState.time),
+      status: "rescheduled",
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (integratedMode) {
+      const manageToken = getManageTokenForBooking(booking);
+      const endpoint =
+        isDedicatedPublicPage && vertical && manageToken
+          ? `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/manage/${encodeURIComponent(manageToken)}`
+          : `/api/provider/bookings/${encodeURIComponent(booking.id)}`;
+
+      setIsMutatingBooking(true);
+      setRescheduleState((current) => (current ? { ...current, error: undefined } : current));
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "reschedule",
+            dateKey: rescheduleState.dateKey,
+            time: rescheduleState.time || undefined,
+          }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          booking?: BookingRecord;
+          userMessage?: string;
+        };
+
+        if (!response.ok || !payload.booking) {
+          setRescheduleState((current) =>
+            current
+              ? {
+                  ...current,
+                  error: payload.userMessage ?? "Could not reschedule that booking.",
+                }
+              : current,
+          );
+          return;
+        }
+
+        bookingToCommit = {
+          ...payload.booking,
+          manageToken: payload.booking.manageToken || booking.manageToken || manageToken || "",
+        };
+      } catch {
+        setRescheduleState((current) =>
+          current
+            ? { ...current, error: "Could not reschedule that booking. Please try again." }
+            : current,
+        );
+        return;
+      } finally {
+        setIsMutatingBooking(false);
+      }
+    }
+
+    commitBookingMutation(validationStore, bookingToCommit);
     setRescheduleState(null);
   }
 
-  function confirmCancellation() {
-    if (!cancellationId) {
+  async function confirmCancellation() {
+    if (!cancellationId || isMutatingBooking) {
       return;
     }
 
     const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
+    const booking = validationStore.bookings.find((candidate) => candidate.id === cancellationId);
 
     if (!integratedMode && latestStandaloneStore) {
       actions.setStandaloneStore(latestStandaloneStore);
     }
 
-    actions.commitBookings(
-      validationStore.bookings.map((booking) =>
-        booking.id === cancellationId
-          ? {
-              ...booking,
-              status: "cancelled",
-              updatedAt: new Date().toISOString(),
-            }
-          : booking,
-      ),
-      validationStore,
-    );
+    if (!booking) {
+      return;
+    }
+
+    let bookingToCommit: BookingRecord = {
+      ...booking,
+      status: "cancelled",
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (integratedMode) {
+      const manageToken = getManageTokenForBooking(booking);
+      const endpoint =
+        isDedicatedPublicPage && vertical && manageToken
+          ? `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/manage/${encodeURIComponent(manageToken)}`
+          : `/api/provider/bookings/${encodeURIComponent(booking.id)}`;
+
+      setIsMutatingBooking(true);
+      setCancellationError(null);
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "cancel" }),
+        });
+        const payload = (await response.json().catch(() => ({}))) as {
+          booking?: BookingRecord;
+          userMessage?: string;
+        };
+
+        if (!response.ok || !payload.booking) {
+          setCancellationError(payload.userMessage ?? "Could not cancel that booking.");
+          return;
+        }
+
+        bookingToCommit = {
+          ...payload.booking,
+          manageToken: payload.booking.manageToken || booking.manageToken || manageToken || "",
+        };
+      } catch {
+        setCancellationError("Could not cancel that booking. Please try again.");
+        return;
+      } finally {
+        setIsMutatingBooking(false);
+      }
+    }
+
+    commitBookingMutation(validationStore, bookingToCommit);
     setCancellationId(null);
+    setCancellationError(null);
   }
 
   async function copyPublicLink() {
@@ -2073,15 +2428,22 @@ export function HaabBookingModule({
         ) : null}
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
-          <ActionButton
-            tone="ghost"
-            onClick={goToPreviousSetupStep}
-          >
-            {t.common.back}
-          </ActionButton>
+          {setupStep === 3 && setupPublished ? <span /> : (
+            <ActionButton
+              tone="ghost"
+              onClick={goToPreviousSetupStep}
+              disabled={isPersistingSetup}
+            >
+              {t.common.back}
+            </ActionButton>
+          )}
           {setupStep < 3 ? (
-            <ActionButton tone="primary" onClick={goToNextSetupStep}>
-              {t.setup.continueButton}
+            <ActionButton
+              tone="primary"
+              onClick={goToNextSetupStep}
+              disabled={isPersistingSetup}
+            >
+              {isPersistingSetup ? "Saving..." : t.setup.continueButton}
             </ActionButton>
           ) : null}
         </div>
@@ -2179,7 +2541,7 @@ export function HaabBookingModule({
                             {t.publicFlow.reschedule}
                           </ActionButton>
                         )}
-                        <ActionButton tone="danger" onClick={() => setCancellationId(booking.id)}>
+                        <ActionButton tone="danger" onClick={() => openCancellation(booking.id)}>
                           {t.common.cancel}
                         </ActionButton>
                       </div>
@@ -2283,7 +2645,7 @@ export function HaabBookingModule({
                     <ActionButton
                       tone="danger"
                       disabled={booking.status === "cancelled"}
-                      onClick={() => setCancellationId(booking.id)}
+                      onClick={() => openCancellation(booking.id)}
                     >
                       {t.common.cancel}
                     </ActionButton>
@@ -2457,7 +2819,7 @@ export function HaabBookingModule({
         onReset={resetServiceEditor}
         onEdit={beginEditingService}
         onRemove={removeService}
-        disabled={integratedMode}
+        disabled={isSavingAdmin}
         hints={VERTICALS.find((item) => item.id === vertical)?.hints}
         copy={copy}
         provider={provider}
@@ -2471,17 +2833,35 @@ export function HaabBookingModule({
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={t.admin.providerInformation} />
-          {integratedMode ? (
-            <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm text-[var(--muted)]")}>
-              {t.admin.configuredByParentApp}
+          <SectionTitle
+            title={t.admin.providerInformation}
+            action={
+              integratedMode && persistAdminChanges ? (
+                <ActionButton
+                  tone="primary"
+                  disabled={isSavingAdmin}
+                  onClick={() => persistAdminStore(activeStore, "Could not save settings.")}
+                >
+                  {isSavingAdmin ? "Saving..." : "Save changes"}
+                </ActionButton>
+              ) : undefined
+            }
+          />
+          {adminSaveError ? (
+            <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+              {adminSaveError}
+            </div>
+          ) : null}
+          {adminSaveMessage ? (
+            <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
+              {adminSaveMessage}
             </div>
           ) : null}
           <div className="mt-6">
             <ProviderInfoForm
               provider={provider}
               onChange={updateProvider}
-              disabled={integratedMode}
+              disabled={isSavingAdmin}
               lang={lang}
             />
           </div>
@@ -2491,6 +2871,7 @@ export function HaabBookingModule({
               <select
                 value={provider.language ?? "en"}
                 onChange={(event) => updateProvider("language", event.target.value as ProviderInfo["language"])}
+                disabled={isSavingAdmin}
                 className={cn("min-h-12", adminFieldClass)}
               >
                 <option value="en">English</option>
@@ -2520,7 +2901,7 @@ export function HaabBookingModule({
             <AvailabilityEditor
               availability={availability}
               onChange={updateAvailabilityDay}
-              disabled={integratedMode}
+              disabled={isSavingAdmin}
             />
           </div>
         </div>
@@ -2879,18 +3260,23 @@ export function HaabBookingModule({
         : copy.bookFullDay;
 
     const advanceToDetailsStep = () => {
+      if (!step2CanContinue || isCreatingHold) {
+        return;
+      }
+
       const fadeAndAdvance = () => {
         setIsPublicFlowFadingOut(true);
         window.setTimeout(() => {
-          beginClientDetailsStep();
-          window.requestAnimationFrame(() => {
-            setIsPublicFlowFadingOut(false);
+          void beginClientDetailsStep().finally(() => {
+            window.requestAnimationFrame(() => {
+              setIsPublicFlowFadingOut(false);
+            });
           });
         }, 220);
       };
       if (typeof window === "undefined" || window.scrollY <= 0) {
         if (typeof window === "undefined") {
-          beginClientDetailsStep();
+          void beginClientDetailsStep();
           return;
         }
         fadeAndAdvance();
@@ -2912,7 +3298,9 @@ export function HaabBookingModule({
     };
 
     const goBackToSelectionStep = () => {
-      actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
+      actions.releaseBookingHold(holdIdToRelease);
+      releaseSupabaseBookingHold(holdIdToRelease);
       setBookingHold(null);
       setBookingHoldNow(currentTimestamp());
       setBookingError(null);
@@ -2924,7 +3312,9 @@ export function HaabBookingModule({
     };
 
     const goBackToServiceChoice = () => {
-      actions.releaseBookingHold(bookingHold?.released ? undefined : bookingHold?.id);
+      const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
+      actions.releaseBookingHold(holdIdToRelease);
+      releaseSupabaseBookingHold(holdIdToRelease);
       setBookingHold(null);
       setBookingHoldNow(currentTimestamp());
       setBookingError(null);
@@ -3123,10 +3513,10 @@ export function HaabBookingModule({
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
-                          disabled={!step2CanContinue}
+                          disabled={!step2CanContinue || isCreatingHold}
                           onClick={advanceToDetailsStep}
                         >
-                          {step2ButtonLabel}
+                          {isCreatingHold ? t.common.loading : step2ButtonLabel}
                         </ActionButton>
                       </div>
                     </div>
@@ -3157,6 +3547,7 @@ export function HaabBookingModule({
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
+                          disabled={isConfirmingBooking}
                           onClick={confirmBooking}
                         >
                           {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
@@ -3449,9 +3840,10 @@ export function HaabBookingModule({
                           <ActionButton
                             tone="primary"
                             className={cn("flex-1", publicPrimaryActionClass)}
+                            disabled={isCreatingHold}
                             onClick={continueWithNaturalLanguageBooking}
                           >
-                            {t.publicFlow.continueToMyDetails}
+                            {isCreatingHold ? t.common.loading : t.publicFlow.continueToMyDetails}
                           </ActionButton>
                           <ActionButton
                             tone="ghost"
@@ -3931,9 +4323,10 @@ export function HaabBookingModule({
                               <ActionButton
                                 tone="primary"
                                 className={cn("flex-1", publicPrimaryActionClass)}
+                                disabled={isCreatingHold}
                                 onClick={continueWithNaturalLanguageBooking}
                               >
-                                {t.publicFlow.update}
+                                {isCreatingHold ? t.common.loading : t.publicFlow.update}
                               </ActionButton>
                               <ActionButton
                                 tone="ghost"
@@ -4156,7 +4549,7 @@ export function HaabBookingModule({
                       isDedicatedPublicPage && publicPillButtonClass,
                     )}
                     disabled={isSuccessfulBookingCancelled}
-                    onClick={() => setCancellationId(successfulBooking.id)}
+                    onClick={() => openCancellation(successfulBooking.id)}
                   >
                     {copy.phrases.cancelBookingButton}
                   </ActionButton>
@@ -4241,10 +4634,10 @@ export function HaabBookingModule({
                 <ActionButton
                   tone="primary"
                   className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
-                  disabled={!step2CanContinue}
+                  disabled={!step2CanContinue || isCreatingHold}
                   onClick={advanceToDetailsStep}
                 >
-                  {step2ButtonLabel}
+                  {isCreatingHold ? t.common.loading : step2ButtonLabel}
                 </ActionButton>
               ) : (
                 <>
@@ -4262,6 +4655,7 @@ export function HaabBookingModule({
                   <ActionButton
                     tone="primary"
                     className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                    disabled={isConfirmingBooking}
                     onClick={confirmBooking}
                   >
                     {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
@@ -4371,20 +4765,33 @@ export function HaabBookingModule({
           <p className="mt-6 text-sm leading-6 text-[var(--muted)]">
             {copy.phrases.cancelExplain}
           </p>
+          {cancellationError ? (
+            <div
+              role="alert"
+              className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]"
+            >
+              {cancellationError}
+            </div>
+          ) : null}
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <ActionButton
               tone="ghost"
               className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
-              onClick={() => setCancellationId(null)}
+              disabled={isMutatingBooking}
+              onClick={() => {
+                setCancellationId(null);
+                setCancellationError(null);
+              }}
             >
               {copy.phrases.keepBookingButton}
             </ActionButton>
             <ActionButton
               tone="danger"
               className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+              disabled={isMutatingBooking}
               onClick={confirmCancellation}
             >
-              {t.manage.confirmCancellation}
+              {isMutatingBooking ? t.common.loading : t.manage.confirmCancellation}
             </ActionButton>
           </div>
         </div>
@@ -4442,6 +4849,7 @@ export function HaabBookingModule({
               <ActionButton
                 tone="ghost"
                 className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                disabled={isMutatingBooking}
                 onClick={() => setRescheduleState(null)}
               >
                 {t.manage.close}
@@ -4647,6 +5055,7 @@ export function HaabBookingModule({
                 <ActionButton
                   tone="danger"
                   className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
+                  disabled={isMutatingBooking}
                   onClick={() => setRescheduleState(null)}
                 >
                   {t.common.cancel}
@@ -4655,12 +5064,13 @@ export function HaabBookingModule({
                   tone="primary"
                   className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
                   disabled={
+                    isMutatingBooking ||
                     !rescheduleState.dateKey ||
                     (service.bookingType === "appointment" && !rescheduleState.time)
                   }
                   onClick={confirmReschedule}
                 >
-                  {t.manage.saveNewTime}
+                  {isMutatingBooking ? t.common.loading : t.manage.saveNewTime}
                 </ActionButton>
               </div>
             </div>
@@ -4760,7 +5170,7 @@ export function HaabBookingModule({
 
   // `setupPublished` keeps the Done step visible after publishing flips
   // `setupComplete` true (which would otherwise close the wizard).
-  if (isSetupOpen || (setupPublished && !integratedMode)) {
+  if (isSetupOpen || setupPublished) {
     if (!vertical) {
       return renderWelcome();
     }

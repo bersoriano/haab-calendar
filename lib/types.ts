@@ -127,6 +127,7 @@ export type InjectedConfig = {
   services: Service[];
   availability: WeeklyAvailability;
   bookings?: BookingRecord[];
+  vertical?: VerticalId;
 };
 
 export type ServiceDraft = {

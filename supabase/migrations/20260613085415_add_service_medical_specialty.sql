@@ -16,6 +16,8 @@ grant select (
   sort_order
 ) on public.services to anon;
 
+drop view if exists public.public_services;
+
 create or replace view public.public_services
 with (security_invoker = true)
 as

@@ -8,6 +8,7 @@ import {
   normalizeProvider,
   normalizeServices,
   normalizeStore,
+  normalizeVertical,
   pruneBookingHolds,
   sortBookings,
   createEmptyStore,
@@ -61,6 +62,7 @@ export function useModuleStore(params: {
     normalizeBookings(injectedConfig?.bookings),
   );
   const [shadowBookingHolds, setShadowBookingHolds] = useState<BookingHoldRecord[]>([]);
+  const [shadowConfig, setShadowConfig] = useState<ModuleStore | null>(null);
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -125,14 +127,21 @@ export function useModuleStore(params: {
     return () => window.removeEventListener("storage", handleStorage);
   }, [integratedMode, storageKey]);
 
+  const integratedBaseStore: ModuleStore = shadowConfig ?? {
+    provider: normalizeProvider(injectedConfig?.provider),
+    services: normalizeServices(injectedConfig?.services),
+    availability: normalizeAvailability(injectedConfig?.availability),
+    bookings: shadowBookings,
+    bookingHolds: shadowBookingHolds,
+    setupComplete: true,
+    vertical: normalizeVertical(injectedConfig?.vertical),
+  };
+
   const activeStore: ModuleStore = integratedMode
     ? {
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
+        ...integratedBaseStore,
         bookings: shadowBookings,
         bookingHolds: shadowBookingHolds,
-        setupComplete: true,
       }
     : standaloneStore;
 
@@ -141,6 +150,15 @@ export function useModuleStore(params: {
   }
 
   function updateStandaloneStore(updater: (current: ModuleStore) => ModuleStore) {
+    if (integratedMode) {
+      const next = normalizeStore(updater(activeStore));
+      setShadowConfig(next);
+      setShadowBookings(next.bookings);
+      setShadowBookingHolds(next.bookingHolds);
+      emitStoreChange(next);
+      return;
+    }
+
     setStandaloneStore((current) => {
       const next = updater(current);
       emitStoreChange(next);
@@ -180,12 +198,9 @@ export function useModuleStore(params: {
     if (integratedMode) {
       setShadowBookingHolds(normalized);
       emitStoreChange({
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
+        ...integratedBaseStore,
         bookings: shadowBookings,
         bookingHolds: normalized,
-        setupComplete: true,
       });
       return;
     }
@@ -231,12 +246,9 @@ export function useModuleStore(params: {
       setShadowBookingHolds(normalizedHolds);
       onBookingsChange?.(normalized);
       emitStoreChange({
-        provider: normalizeProvider(injectedConfig?.provider),
-        services: normalizeServices(injectedConfig?.services),
-        availability: normalizeAvailability(injectedConfig?.availability),
+        ...integratedBaseStore,
         bookings: normalized,
         bookingHolds: normalizedHolds,
-        setupComplete: true,
       });
       return;
     }
