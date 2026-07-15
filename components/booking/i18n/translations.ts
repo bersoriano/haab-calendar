@@ -1,4 +1,4 @@
-import type { Lang } from "@/lib/types";
+import type { Lang, WeekdayKey } from "@/lib/types";
 
 export type BookingDict = {
   common: {
@@ -7,6 +7,8 @@ export type BookingDict = {
     confirm: string;
     cancel: string;
     loading: string;
+    saving: string;
+    saved: string;
     required: string;
   };
   public: {
@@ -22,6 +24,14 @@ export type BookingDict = {
     holdEndingSoon: string;
     holdEndingBody: string;
     holdEndingCta: string;
+    holdLabel: string;
+    holdCancelled: string;
+    holdSecured: string;
+    holdExpired: string;
+    holdInactiveBody: string;
+    holdConfirmedBody: string;
+    holdFinishBody: string;
+    expired: string;
   };
   manage: {
     title: string;
@@ -136,6 +146,15 @@ export type BookingDict = {
     copyLink: string;
     manageLinkCopied: string;
     saveThisLinkBody: string;
+    progressLabel: string;
+    dateAndTime: string;
+    completedPrefix: string;
+    currentStepPrefix: string;
+    upcomingPrefix: string;
+    bookingSummaryStatus: string;
+    statusCancelled: string;
+    statusUpdated: string;
+    statusConfirmed: string;
   };
   admin: {
     // Dashboard
@@ -159,6 +178,21 @@ export type BookingDict = {
     configuredByParentApp: string;
     weeklyAvailability: string;
     resetStandaloneSetup: string;
+    saveChanges: string;
+    couldNotSaveSettings: string;
+    languageLabel: string;
+    languageHint: string;
+    publicBookingLink: string;
+    viewPublicPage: string;
+    availabilityStart: string;
+    availabilityEnd: string;
+    blockedTimes: string;
+    blockedTimesHint: string;
+    addBlock: string;
+    blockedFrom: string;
+    blockedTo: string;
+    removeBlock: string;
+    weekdays: Record<WeekdayKey, string>;
     // Nav
     tabDashboard: string;
     tabCalendar: string;
@@ -205,6 +239,7 @@ export type BookingDict = {
     phoneHintSlot1: string;
     phoneHintSlot2: string;
     phoneHintFull: string;
+    notesPlaceholder: string;
   };
   setup: {
     eyebrow: string;
@@ -246,8 +281,27 @@ export type BookingDict = {
     phoneNumber2: string;
     address1: string;
     address2: string;
+    fullNamePlaceholder: string;
+    businessNamePlaceholder: string;
+    emailPlaceholder: string;
+    phone1Placeholder: string;
+    phone2Placeholder: string;
+    address1Placeholder: string;
+    address2Placeholder: string;
     heroText: string;
     heroTextHint: string;
+    heroTextPlaceholder: string;
+    headerImage: string;
+    headerImageHint: string;
+    headerImagePreviewAlt: string;
+    noHeaderImage: string;
+    uploadingImage: string;
+    replaceImage: string;
+    uploadImage: string;
+    removeImage: string;
+    imageTypeError: string;
+    imageSizeError: string;
+    imageUploadError: string;
   };
 };
 
@@ -259,6 +313,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       confirm: "Confirm",
       cancel: "Cancel",
       loading: "Loading…",
+      saving: "Saving...",
+      saved: "Saved.",
       required: "Required",
     },
     public: {
@@ -274,6 +330,14 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdEndingSoon: "Hold ending soon",
       holdEndingBody: "Your booking hold is ending soon.",
       holdEndingCta: "Confirm now, or the selected time may become available to someone else.",
+      holdLabel: "Booking hold",
+      holdCancelled: "Booking cancelled",
+      holdSecured: "Booking secured",
+      holdExpired: "Hold expired",
+      holdInactiveBody: "This reservation is no longer active.",
+      holdConfirmedBody: "Your booking is confirmed and the temporary hold is complete.",
+      holdFinishBody: "Finish your details before the temporary hold expires.",
+      expired: "Expired",
     },
     manage: {
       title: "Manage your booking",
@@ -383,6 +447,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageLinkCopied: "Manage link copied to clipboard",
       saveThisLinkBody:
         "Save this link or use the calendar attachment — anyone with the link can manage this booking.",
+      progressLabel: "Booking progress",
+      dateAndTime: "Date & Time",
+      completedPrefix: "Completed: ",
+      currentStepPrefix: "Current step: ",
+      upcomingPrefix: "Upcoming: ",
+      bookingSummaryStatus: "Booking summary",
+      statusCancelled: "Cancelled",
+      statusUpdated: "Updated",
+      statusConfirmed: "Confirmed",
     },
     admin: {
       upcoming7Days: "Upcoming (7 days)",
@@ -402,6 +475,29 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
       resetStandaloneSetup: "Reset standalone setup",
+      saveChanges: "Save changes",
+      couldNotSaveSettings: "Could not save settings.",
+      languageLabel: "Language",
+      languageHint: "Sets the language clients see on your public booking page.",
+      publicBookingLink: "Public booking link:",
+      viewPublicPage: "View public page",
+      availabilityStart: "Start",
+      availabilityEnd: "End",
+      blockedTimes: "Blocked times",
+      blockedTimesHint: "Hide breaks or unavailable windows from booking.",
+      addBlock: "Add block",
+      blockedFrom: "From",
+      blockedTo: "To",
+      removeBlock: "Remove",
+      weekdays: {
+        sunday: "Sunday",
+        monday: "Monday",
+        tuesday: "Tuesday",
+        wednesday: "Wednesday",
+        thursday: "Thursday",
+        friday: "Friday",
+        saturday: "Saturday",
+      },
       tabDashboard: "Dashboard",
       tabCalendar: "Calendar",
       tabSettings: "Settings",
@@ -446,6 +542,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintSlot1: "We'll save this as Phone 1 in your provider profile so other services can reuse it.",
       phoneHintSlot2: "We'll save this as Phone 2 in your provider profile so other services can reuse it.",
       phoneHintFull: "Both provider phone slots are already taken — this phone will stay with this service only.",
+      notesPlaceholder: "Bring prior records or arrive 10 minutes early.",
     },
     setup: {
       eyebrow: "Setup",
@@ -487,8 +584,27 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneNumber2: "Phone Number 2",
       address1: "Address 1",
       address2: "Address 2",
+      fullNamePlaceholder: "Dr. Maya Alvarez",
+      businessNamePlaceholder: "Haab Health Studio",
+      emailPlaceholder: "bookings@haabcalendar.com",
+      phone1Placeholder: "+1 (555) 123-4567",
+      phone2Placeholder: "Optional secondary number",
+      address1Placeholder: "123 Main St, Suite 4, Springfield",
+      address2Placeholder: "Optional secondary location",
       heroText: "Hero text",
       heroTextHint: "Shown over the header image. Defaults to your business name.",
+      heroTextPlaceholder: "Your business name",
+      headerImage: "Header image",
+      headerImageHint: "Shown as a banner at the top of your public page, above the list to book.",
+      headerImagePreviewAlt: "Header banner preview",
+      noHeaderImage: "No header image yet",
+      uploadingImage: "Uploading…",
+      replaceImage: "Replace image",
+      uploadImage: "Upload image",
+      removeImage: "Remove",
+      imageTypeError: "Use a JPG, PNG, or WEBP image.",
+      imageSizeError: "Image must be 5 MB or smaller.",
+      imageUploadError: "Upload failed. Check your connection and try again.",
     },
   },
   es: {
@@ -498,6 +614,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       confirm: "Confirmar",
       cancel: "Cancelar",
       loading: "Cargando…",
+      saving: "Guardando...",
+      saved: "Guardado.",
       required: "Obligatorio",
     },
     public: {
@@ -513,6 +631,14 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdEndingSoon: "Reserva por expirar",
       holdEndingBody: "Su reserva temporal está por vencer.",
       holdEndingCta: "Confirme ahora o el horario podría quedar disponible para otra persona.",
+      holdLabel: "Reserva temporal",
+      holdCancelled: "Reserva cancelada",
+      holdSecured: "Reserva asegurada",
+      holdExpired: "Reserva temporal vencida",
+      holdInactiveBody: "Esta reserva ya no está activa.",
+      holdConfirmedBody: "Su reserva está confirmada y la retención temporal ha finalizado.",
+      holdFinishBody: "Complete sus datos antes de que expire la reserva temporal.",
+      expired: "Vencida",
     },
     manage: {
       title: "Gestione su reserva",
@@ -625,6 +751,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageLinkCopied: "Enlace de gestión copiado al portapapeles",
       saveThisLinkBody:
         "Guarde este enlace o use el archivo de calendario adjunto; cualquier persona con el enlace puede gestionar esta reserva.",
+      progressLabel: "Progreso de la reserva",
+      dateAndTime: "Fecha y horario",
+      completedPrefix: "Completado: ",
+      currentStepPrefix: "Paso actual: ",
+      upcomingPrefix: "Próximo: ",
+      bookingSummaryStatus: "Resumen de la reserva",
+      statusCancelled: "Cancelada",
+      statusUpdated: "Actualizada",
+      statusConfirmed: "Confirmada",
     },
     admin: {
       upcoming7Days: "Próximos (7 días)",
@@ -644,6 +779,29 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
       resetStandaloneSetup: "Restablecer configuración independiente",
+      saveChanges: "Guardar cambios",
+      couldNotSaveSettings: "No se pudieron guardar los ajustes.",
+      languageLabel: "Idioma",
+      languageHint: "Define el idioma que sus clientes ven en la página pública de reservas.",
+      publicBookingLink: "Enlace público de reservas:",
+      viewPublicPage: "Ver página pública",
+      availabilityStart: "Inicio",
+      availabilityEnd: "Fin",
+      blockedTimes: "Horarios bloqueados",
+      blockedTimesHint: "Oculte descansos u horarios no disponibles para reservas.",
+      addBlock: "Agregar bloqueo",
+      blockedFrom: "Desde",
+      blockedTo: "Hasta",
+      removeBlock: "Eliminar",
+      weekdays: {
+        sunday: "Domingo",
+        monday: "Lunes",
+        tuesday: "Martes",
+        wednesday: "Miércoles",
+        thursday: "Jueves",
+        friday: "Viernes",
+        saturday: "Sábado",
+      },
       tabDashboard: "Panel",
       tabCalendar: "Calendario",
       tabSettings: "Ajustes",
@@ -688,6 +846,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintSlot1: "Lo guardaremos como Teléfono 1 en su perfil para que otros servicios puedan reutilizarlo.",
       phoneHintSlot2: "Lo guardaremos como Teléfono 2 en su perfil para que otros servicios puedan reutilizarlo.",
       phoneHintFull: "Ambos campos de teléfono ya están ocupados — este teléfono solo se guardará con este servicio.",
+      notesPlaceholder: "Traiga sus estudios previos o llegue 10 minutos antes.",
     },
     setup: {
       eyebrow: "Configuración",
@@ -729,8 +888,27 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneNumber2: "Número de teléfono 2",
       address1: "Dirección 1",
       address2: "Dirección 2",
+      fullNamePlaceholder: "Dra. Maya Álvarez",
+      businessNamePlaceholder: "Centro de Salud Haab",
+      emailPlaceholder: "citas@haabcalendar.com",
+      phone1Placeholder: "+52 55 1234 5678",
+      phone2Placeholder: "Número secundario opcional",
+      address1Placeholder: "Av. Principal 123, consultorio 4",
+      address2Placeholder: "Ubicación secundaria opcional",
       heroText: "Texto del encabezado",
       heroTextHint: "Se muestra sobre la imagen de encabezado. Predeterminado: nombre del negocio.",
+      heroTextPlaceholder: "Nombre de su negocio",
+      headerImage: "Imagen de encabezado",
+      headerImageHint: "Se muestra como banner en la parte superior de su página pública, antes de la lista de reservas.",
+      headerImagePreviewAlt: "Vista previa del banner de encabezado",
+      noHeaderImage: "Aún no hay imagen de encabezado",
+      uploadingImage: "Subiendo…",
+      replaceImage: "Reemplazar imagen",
+      uploadImage: "Subir imagen",
+      removeImage: "Eliminar",
+      imageTypeError: "Use una imagen JPG, PNG o WEBP.",
+      imageSizeError: "La imagen debe pesar 5 MB o menos.",
+      imageUploadError: "No se pudo subir la imagen. Revise su conexión e inténtelo de nuevo.",
     },
   },
 };

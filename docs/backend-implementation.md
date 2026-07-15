@@ -349,25 +349,28 @@ After that, move cancellation and reschedule to server-authoritative manage-toke
 
 The public booking page renders in the provider's preferred language (`en` by
 default, `es` supported), read from `public_providers.language`. The Settings →
-Language selector updates `provider.language` in the client store (and
-`lib/store.ts: normalizeProvider` already round-trips the value). The
-`public-booking-resolver.ts` reads the `language` column from
-`public_providers` and forwards it to `ModuleStore.provider.language` so the
-booking module picks it up automatically.
+Language selector updates `provider.language`, and authenticated setup/admin
+saves send the normalized store through `PUT /api/provider/store`.
 
-Because provider config persistence to `public.providers` is not yet
-implemented (see "Admin provider setup persistence" in the list above), the
-Settings selector has no write path to the database. When that persistence
-layer is built, the upsert/update payload **must** include the `language`
-column so the provider's choice reaches the public page:
+`lib/supabase/provider-store.ts: upsertProvider` includes
+`language: provider.language` in both provider inserts and updates. The public
+read path then carries the value through `lib/public-booking-resolver.ts` into
+`ModuleStore.provider.language`. `app/api/public/providers/[slug]/route.ts`
+contains the parallel public mapper and must stay aligned.
 
-```ts
-// Example: add this to the provider upsert payload
-language: store.provider.language,  // "en" | "es"
-```
+The schema contract lives in
+`supabase/migrations/20260625120000_add_provider_language.sql`: the column
+defaults to `en`, is constrained to `en` or `es`, and is exposed through the
+`public_providers` view. Source control proves that the migration exists, but
+not that it has been applied to every remote environment. Confirm remote
+migration history during deployment.
 
-Until persistence lands, set the column directly for testing:
+For diagnosis only, the stored value can be inspected or changed directly:
 
 ```sql
+select slug, language from public.providers where slug = '<provider-slug>';
 update public.providers set language = 'es' where slug = '<provider-slug>';
 ```
+
+The current implementation status and remaining untranslated surfaces are
+tracked in `docs/booking-i18n-status.md`.

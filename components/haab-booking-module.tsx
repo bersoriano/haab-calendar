@@ -1047,7 +1047,7 @@ export function HaabBookingModule({
       const persistedStore = normalizeStore(payload.store);
       actions.updateStandaloneStore(() => persistedStore);
       onSetupPersisted?.(persistedStore);
-      setAdminSaveMessage("Saved.");
+      setAdminSaveMessage(t.common.saved);
       window.setTimeout(() => setAdminSaveMessage(null), 1600);
       return true;
     } catch {
@@ -2340,6 +2340,7 @@ export function HaabBookingModule({
               <AvailabilityEditor
                 availability={availability}
                 onChange={updateAvailabilityDay}
+                lang={lang}
               />
             </div>
           </div>
@@ -2443,7 +2444,7 @@ export function HaabBookingModule({
               onClick={goToNextSetupStep}
               disabled={isPersistingSetup}
             >
-              {isPersistingSetup ? "Saving..." : t.setup.continueButton}
+              {isPersistingSetup ? t.common.saving : t.setup.continueButton}
             </ActionButton>
           ) : null}
         </div>
@@ -2840,9 +2841,9 @@ export function HaabBookingModule({
                 <ActionButton
                   tone="primary"
                   disabled={isSavingAdmin}
-                  onClick={() => persistAdminStore(activeStore, "Could not save settings.")}
+                  onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
                 >
-                  {isSavingAdmin ? "Saving..." : "Save changes"}
+                  {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
                 </ActionButton>
               ) : undefined
             }
@@ -2867,7 +2868,7 @@ export function HaabBookingModule({
           </div>
           <div className="mt-6">
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              Language
+              {t.admin.languageLabel}
               <select
                 value={provider.language ?? "en"}
                 onChange={(event) => updateProvider("language", event.target.value as ProviderInfo["language"])}
@@ -2878,12 +2879,12 @@ export function HaabBookingModule({
                 <option value="es">Español</option>
               </select>
               <span className="text-xs leading-5 text-[var(--muted)]">
-                Sets the language clients see on your public booking page.
+                {t.admin.languageHint}
               </span>
             </label>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
-            {`Public ${copy.booking} link:`}{" "}
+            {lang === "en" ? `Public ${copy.booking} link:` : t.admin.publicBookingLink}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
           </p>
           {!integratedMode ? (
@@ -2902,6 +2903,7 @@ export function HaabBookingModule({
               availability={availability}
               onChange={updateAvailabilityDay}
               disabled={isSavingAdmin}
+              lang={lang}
             />
           </div>
         </div>
@@ -3366,6 +3368,7 @@ export function HaabBookingModule({
                     <PublicProgressIndicator
                       currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                       isDedicatedPublicPage={isDedicatedPublicPage}
+                      lang={lang}
                     />
                   </div>
                 </div>
@@ -3378,6 +3381,7 @@ export function HaabBookingModule({
                     remainingRatio={bookingHoldRemainingRatio}
                     helperDesktopHidden
                     copy={copy}
+                    lang={lang}
                   />
                 </div>
               ) : null}
@@ -4227,7 +4231,7 @@ export function HaabBookingModule({
                   <SectionTitle
                     title={
                       isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
-                        <SummaryStatusTitle status="updated" />
+                        <SummaryStatusTitle status="updated" lang={lang} />
                       ) : (
                         copy.bookingSummary
                       )
@@ -5198,7 +5202,7 @@ export function HaabBookingModule({
                     onClick={copyPublicLink}
                     className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
                   >
-                    {copiedLink ? "Copied" : "Copy link"}
+                    {copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
                   </button>
                   <a
                     href={publicUrl}
@@ -5206,7 +5210,7 @@ export function HaabBookingModule({
                     rel="noopener noreferrer"
                     className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
                   >
-                    View public page
+                    {t.admin.viewPublicPage}
                   </a>
                 </div>
               </div>

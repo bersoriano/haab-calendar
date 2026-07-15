@@ -1,9 +1,10 @@
 "use client";
 
-import type { AvailabilityBlock, DayAvailability, WeekdayKey } from "@/lib/types";
-import { WEEKDAY_KEYS, WEEKDAY_LABELS } from "@/lib/constants";
+import type { AvailabilityBlock, DayAvailability, Lang, WeekdayKey } from "@/lib/types";
+import { WEEKDAY_KEYS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { adminFieldClass, adminInsetClass } from "@/components/provider/adminGlass";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 const DEFAULT_BLOCK = { startTime: "14:00", endTime: "16:00" };
 
@@ -11,11 +12,15 @@ export function AvailabilityEditor({
   availability,
   onChange,
   disabled = false,
+  lang = "en",
 }: {
   availability: Record<WeekdayKey, DayAvailability>;
   onChange: (day: WeekdayKey, patch: Partial<DayAvailability>) => void;
   disabled?: boolean;
+  lang?: Lang;
 }) {
+  const t = bookingTranslations[lang];
+
   function addBlockedWindow(day: WeekdayKey) {
     onChange(day, {
       blockedWindows: [...(availability[day].blockedWindows ?? []), DEFAULT_BLOCK],
@@ -60,10 +65,10 @@ export function AvailabilityEditor({
                   type="checkbox"
                   className="h-5 w-5 rounded border-[var(--line)] text-[var(--accent)] disabled:opacity-45"
                 />
-                {WEEKDAY_LABELS[day]}
+                {t.admin.weekdays[day]}
               </label>
               <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                Start
+                {t.admin.availabilityStart}
                 <input
                   disabled={dayDisabled}
                   value={availability[day].startTime}
@@ -73,7 +78,7 @@ export function AvailabilityEditor({
                 />
               </label>
               <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                End
+                {t.admin.availabilityEnd}
                 <input
                   disabled={dayDisabled}
                   value={availability[day].endTime}
@@ -88,10 +93,10 @@ export function AvailabilityEditor({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                    Blocked times
+                    {t.admin.blockedTimes}
                   </p>
                   <p className="mt-1 text-sm text-[var(--muted)]">
-                    Hide breaks or unavailable windows from booking.
+                    {t.admin.blockedTimesHint}
                   </p>
                 </div>
                 <button
@@ -100,7 +105,7 @@ export function AvailabilityEditor({
                   onClick={() => addBlockedWindow(day)}
                   className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_14px_26px_rgba(25,28,29,0.05)] transition-colors hover:text-[var(--primary-container)] disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  Add block
+                  {t.admin.addBlock}
                 </button>
               </div>
 
@@ -112,7 +117,7 @@ export function AvailabilityEditor({
                       className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
                     >
                       <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                        From
+                        {t.admin.blockedFrom}
                         <input
                           disabled={dayDisabled}
                           value={block.startTime}
@@ -124,7 +129,7 @@ export function AvailabilityEditor({
                         />
                       </label>
                       <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                        To
+                        {t.admin.blockedTo}
                         <input
                           disabled={dayDisabled}
                           value={block.endTime}
@@ -141,7 +146,7 @@ export function AvailabilityEditor({
                         onClick={() => removeBlockedWindow(day, index)}
                         className="inline-flex min-h-12 items-center justify-center self-end rounded-xl bg-transparent px-3 text-sm font-semibold text-[#be123c] transition-colors hover:bg-[#fff1f2] disabled:cursor-not-allowed disabled:opacity-45"
                       >
-                        Remove
+                        {t.admin.removeBlock}
                       </button>
                     </div>
                   ))}

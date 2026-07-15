@@ -1,20 +1,25 @@
 import { cn } from "@/lib/utils";
+import type { Lang } from "@/lib/types";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 export function PublicProgressIndicator({
   currentStep,
   isDedicatedPublicPage,
+  lang = "en",
 }: {
   currentStep: 2 | 3 | 4;
   isDedicatedPublicPage: boolean;
+  lang?: Lang;
 }) {
+  const t = bookingTranslations[lang];
   const steps = [
-    { key: 2 as const, label: "Date & Time" },
-    { key: 3 as const, label: "My Details" },
-    { key: 4 as const, label: "Confirm" },
+    { key: 2 as const, label: t.publicFlow.dateAndTime },
+    { key: 3 as const, label: t.publicFlow.myDetails },
+    { key: 4 as const, label: t.publicFlow.confirm },
   ];
 
   return (
-    <nav aria-label="Booking progress">
+    <nav aria-label={t.publicFlow.progressLabel}>
       <ol className="flex items-start" role="list">
         {steps.map((step, index) => {
           const isFinished = currentStep === 4;
@@ -81,10 +86,10 @@ export function PublicProgressIndicator({
                 >
                   <span className="sr-only">
                     {status === "complete"
-                      ? "Completed: "
+                      ? t.publicFlow.completedPrefix
                       : status === "current"
-                        ? "Current step: "
-                        : "Upcoming: "}
+                        ? t.publicFlow.currentStepPrefix
+                        : t.publicFlow.upcomingPrefix}
                   </span>
                   {step.label}
                 </span>

@@ -15,6 +15,69 @@ export const translations = {
       createPageLong: "Crea tu página de reservas",
       openMenu: "Abrir menú",
     },
+    home: {
+      backToHome: "← Volver al inicio",
+      signedInAs: "Sesión iniciada como",
+      signedIn: "Sesión iniciada",
+      bookingPageReady: "Tu página de reservas está lista",
+      dashboardBody:
+        "Administra disponibilidad, servicios y reservas entrantes desde tu panel.",
+      goToDashboard: "Ir a tu panel →",
+      verticals: {
+        healthcare: {
+          label: "Salud",
+          tagline: "Para médicos y especialistas",
+          start: "Empezar con salud →",
+        },
+        spaces: {
+          label: "Espacios",
+          tagline: "Para canchas, salones y oficinas compartidas",
+          start: "Empezar con espacios →",
+        },
+        professional: {
+          label: "Servicios profesionales",
+          tagline: "Para asesores, contadores y consultores",
+          start: "Empezar con servicios profesionales →",
+        },
+        events: {
+          label: "Eventos",
+          tagline: "Para talleres, clases y reuniones",
+          start: "Empezar con eventos →",
+        },
+      },
+    },
+    auth: {
+      languageSelector: "Idioma de inicio de sesión",
+      pageTitle: "Inicia sesión para administrar tu espacio de reservas.",
+      pageBody:
+        "Usa tu cuenta de proveedor para configurar servicios, disponibilidad, reservas y la página pública de reservas.",
+      panelTitle: "Acceso para proveedores",
+      panelBody: "La autenticación con correo y contraseña se gestiona con Supabase Auth.",
+      email: "Correo electrónico",
+      emailPlaceholder: "tu@ejemplo.com",
+      password: "Contraseña",
+      passwordPlaceholder: "Al menos 6 caracteres",
+      signIn: "Iniciar sesión",
+      signingIn: "Iniciando sesión...",
+      createAccount: "Crear cuenta",
+      creatingAccount: "Creando cuenta...",
+      creatingAndSending:
+        "Creando tu cuenta y enviando el correo de confirmación...",
+      requiredCredentials: "Ingresa tu correo electrónico y contraseña.",
+      passwordMin: "La contraseña debe tener al menos 6 caracteres.",
+      signInFailed: "No se pudo iniciar sesión con esos datos.",
+      invalidCredentials: "El correo o la contraseña son incorrectos.",
+      emailNotConfirmed: "Confirma tu correo electrónico antes de iniciar sesión.",
+      createFailed: "No se pudo crear la cuenta.",
+      userExists: "Ya existe una cuenta con este correo electrónico.",
+      signupDisabled: "La creación de cuentas no está disponible en este momento.",
+      emailInvalid: "Ingresa un correo electrónico válido.",
+      emailConfirmed: "Correo confirmado. Inicia sesión para continuar.",
+      accountCreated:
+        "Cuenta creada. Enviamos un enlace de confirmación a tu correo. Confírmalo y después inicia sesión aquí.",
+      confirmationExpired:
+        "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
+    },
     hero: {
       badge: "Páginas de reservas para quienes odian el software de citas",
       title: "Deja de perseguir reservas. Manda un solo enlace.",
@@ -360,6 +423,69 @@ export const translations = {
       createPageLong: "Create your booking page",
       openMenu: "Open menu",
     },
+    home: {
+      backToHome: "← Back to home",
+      signedInAs: "Signed in as",
+      signedIn: "You're signed in",
+      bookingPageReady: "Your booking page is ready",
+      dashboardBody:
+        "Manage availability, services, and incoming bookings from your dashboard.",
+      goToDashboard: "Go to your dashboard →",
+      verticals: {
+        healthcare: {
+          label: "Healthcare",
+          tagline: "For doctors and medical specialists",
+          start: "Start with Healthcare →",
+        },
+        spaces: {
+          label: "Spaces",
+          tagline: "For courts, venues, and shared offices",
+          start: "Start with Spaces →",
+        },
+        professional: {
+          label: "Professional services",
+          tagline: "For advisors, accountants, and consultants",
+          start: "Start with Professional services →",
+        },
+        events: {
+          label: "Events",
+          tagline: "For workshops, classes, and gatherings",
+          start: "Start with Events →",
+        },
+      },
+    },
+    auth: {
+      languageSelector: "Login language",
+      pageTitle: "Sign in to manage your booking workspace.",
+      pageBody:
+        "Use your provider account to configure services, availability, bookings, and the public booking page.",
+      panelTitle: "Provider login",
+      panelBody: "Email and password authentication is handled by Supabase Auth.",
+      email: "Email",
+      emailPlaceholder: "you@example.com",
+      password: "Password",
+      passwordPlaceholder: "At least 6 characters",
+      signIn: "Sign in",
+      signingIn: "Signing in...",
+      createAccount: "Create account",
+      creatingAccount: "Creating account...",
+      creatingAndSending:
+        "Creating your account and sending your confirmation email...",
+      requiredCredentials: "Enter both an email address and password.",
+      passwordMin: "Password must be at least 6 characters.",
+      signInFailed: "Could not sign in with those credentials.",
+      invalidCredentials: "Invalid email or password.",
+      emailNotConfirmed: "Confirm your email before signing in.",
+      createFailed: "Could not create that account.",
+      userExists: "An account already exists for this email address.",
+      signupDisabled: "Account creation is not available right now.",
+      emailInvalid: "Enter a valid email address.",
+      emailConfirmed: "Email confirmed. Sign in to continue.",
+      accountCreated:
+        "Account created. We sent a confirmation link to your email. Confirm it, then sign in here.",
+      confirmationExpired:
+        "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
+    },
     hero: {
       badge: "Booking pages for people who hate booking software",
       title: "Stop chasing bookings. Send one link.",
@@ -693,3 +819,7 @@ export const translations = {
 };
 
 export type Dict = (typeof translations)["en"];
+
+export function normalizeLandingLang(value: unknown): Lang {
+  return value === "en" ? "en" : "es";
+}

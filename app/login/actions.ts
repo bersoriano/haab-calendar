@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { translations, type Lang } from "@/components/landing/translations";
+import { getAuthCopy, getAuthErrorMessage } from "@/lib/auth-i18n";
 
 export type AuthFormState = {
   message: string;
@@ -16,10 +18,12 @@ type CredentialsResult =
         email: string;
         password: string;
       };
+      lang: Lang;
       next: string;
     }
   | {
       error: string;
+      lang: Lang;
       next: string;
     };
 
@@ -32,23 +36,27 @@ function getCredentials(formData: FormData): CredentialsResult {
   const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const next = getSafeNextPath(String(formData.get("next") || "/"));
+  const { lang, t } = getAuthCopy(formData.get("lang"));
 
   if (!email || !password) {
     return {
-      error: "Enter both an email address and password.",
+      error: t.requiredCredentials,
+      lang,
       next,
     };
   }
 
   if (password.length < 6) {
     return {
-      error: "Password must be at least 6 characters.",
+      error: t.passwordMin,
+      lang,
       next,
     };
   }
 
   return {
     data: { email, password },
+    lang,
     next,
   };
 }
@@ -78,8 +86,14 @@ async function getOrigin() {
   return `${protocol}://${host}`;
 }
 
-function buildLoginMessageUrl(origin: string, message: string, next: string) {
+function buildLoginMessageUrl(
+  origin: string,
+  message: string,
+  next: string,
+  lang: Lang,
+) {
   const url = new URL("/login", origin);
+  url.searchParams.set("lang", lang);
   url.searchParams.set("status", "success");
   url.searchParams.set("message", message);
   url.searchParams.set("next", next);
@@ -103,7 +117,7 @@ export async function login(
 
   if (error) {
     return {
-      message: error.message || "Could not sign in with those credentials.",
+      message: getAuthErrorMessage(error, credentials.lang, "signInFailed"),
       status: "error",
     };
   }
@@ -125,11 +139,13 @@ export async function signup(
   }
 
   const supabase = await createClient();
+  const t = translations[credentials.lang].auth;
   const origin = await getOrigin();
   const confirmedRedirectTo = buildLoginMessageUrl(
     origin,
-    "Email confirmed. Sign in to continue.",
+    t.emailConfirmed,
     credentials.next,
+    credentials.lang,
   );
   const { data, error } = await supabase.auth.signUp({
     ...credentials.data,
@@ -140,7 +156,7 @@ export async function signup(
 
   if (error) {
     return {
-      message: error.message || "Could not create that account.",
+      message: getAuthErrorMessage(error, credentials.lang, "createFailed"),
       status: "error",
     };
   }
@@ -151,8 +167,7 @@ export async function signup(
   }
 
   return {
-    message:
-      "Account created. We sent a confirmation link to your email. Confirm it, then sign in here.",
+    message: t.accountCreated,
     status: "success",
   };
 }

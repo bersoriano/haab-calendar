@@ -10,7 +10,7 @@ import {
 } from "react";
 import { translations, type Dict, type Lang } from "./translations";
 
-const STORAGE_KEY = "haab-lang";
+export const LANDING_LANGUAGE_STORAGE_KEY = "haab-lang";
 
 type LanguageContextValue = {
   lang: Lang;
@@ -28,7 +28,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // server-rendered default ("es") matches the first client render and avoids a
   // hydration mismatch; localStorage is only read after mount.
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
+    const saved = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
     if (saved === "es" || saved === "en") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLangState(saved);
@@ -38,7 +38,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Keep <html lang> and storage in sync.
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(STORAGE_KEY, lang);
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => setLangState(next), []);

@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { formatCountdown } from "@/lib/format";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
+import type { Lang } from "@/lib/types";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 export function BookingHoldCountdownBar({
   isCancelled,
@@ -10,6 +12,7 @@ export function BookingHoldCountdownBar({
   remainingRatio,
   helperDesktopHidden,
   copy = defaultCopy,
+  lang = "en",
 }: {
   isCancelled?: boolean;
   isConfirmed?: boolean;
@@ -18,31 +21,51 @@ export function BookingHoldCountdownBar({
   remainingRatio: number;
   helperDesktopHidden?: boolean;
   copy?: VerticalCopy;
+  lang?: Lang;
 }) {
+  const t = bookingTranslations[lang];
   const isUrgent = remainingMs <= 2 * 60 * 1000 || isExpired;
   const isWarning = !isUrgent && remainingMs <= 5 * 60 * 1000;
   const remainingPercent = Math.max(0, Math.min(100, remainingRatio * 100));
   const displayedRemainingPercent = isExpired
     ? 100
     : Math.max(isUrgent && remainingPercent > 0 ? 8 : 0, remainingPercent);
-  const statusLabel = isCancelled
-    ? `${copy.Booking} cancelled`
-    : isConfirmed
-      ? `${copy.Booking} secured`
-      : isExpired
-        ? "Hold expired"
-        : isUrgent
-          ? "Hold ending soon"
-          : isWarning
-            ? "Hold ending soon"
-            : "";
-  const helperText = isCancelled
-    ? "This reservation is no longer active."
-    : isConfirmed
-      ? `Your ${copy.booking} is confirmed and the temporary hold is complete.`
-      : isExpired
-        ? copy.phrases.serviceUnavailableBody
-        : "Finish your details before the temporary hold expires.";
+  const statusLabel =
+    lang === "en"
+      ? isCancelled
+        ? `${copy.Booking} cancelled`
+        : isConfirmed
+          ? `${copy.Booking} secured`
+          : isExpired
+            ? "Hold expired"
+            : isUrgent || isWarning
+              ? "Hold ending soon"
+              : ""
+      : isCancelled
+        ? t.public.holdCancelled
+        : isConfirmed
+          ? t.public.holdSecured
+          : isExpired
+            ? t.public.holdExpired
+            : isUrgent || isWarning
+              ? t.public.holdEndingSoon
+              : "";
+  const helperText =
+    lang === "en"
+      ? isCancelled
+        ? "This reservation is no longer active."
+        : isConfirmed
+          ? `Your ${copy.booking} is confirmed and the temporary hold is complete.`
+          : isExpired
+            ? copy.phrases.serviceUnavailableBody
+            : "Finish your details before the temporary hold expires."
+      : isCancelled
+        ? t.public.holdInactiveBody
+        : isConfirmed
+          ? t.public.holdConfirmedBody
+          : isExpired
+            ? copy.phrases.serviceUnavailableBody
+            : t.public.holdFinishBody;
 
   return (
     <div
@@ -60,7 +83,7 @@ export function BookingHoldCountdownBar({
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
-            {`${copy.Booking} hold`}
+            {lang === "en" ? `${copy.Booking} hold` : t.public.holdLabel}
           </p>
           {statusLabel ? (
             <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
@@ -77,7 +100,7 @@ export function BookingHoldCountdownBar({
                 : "text-2xl tracking-[-0.04em]",
             )}
           >
-            {isExpired ? "Expired" : formatCountdown(remainingMs)}
+            {isExpired ? t.public.expired : formatCountdown(remainingMs)}
           </p>
         ) : null}
       </div>

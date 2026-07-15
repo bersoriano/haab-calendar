@@ -482,7 +482,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, notes: event.target.value }))
               }
-              placeholder="Bring prior records or arrive 10 minutes early."
+              placeholder={t.admin.notesPlaceholder}
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>

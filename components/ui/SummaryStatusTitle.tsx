@@ -1,6 +1,15 @@
 import { cn } from "@/lib/utils";
+import type { Lang } from "@/lib/types";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 
-export function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelled" | "updated" }) {
+export function SummaryStatusTitle({
+  status,
+  lang = "en",
+}: {
+  status: "confirmed" | "cancelled" | "updated";
+  lang?: Lang;
+}) {
+  const t = bookingTranslations[lang];
   const isCancelled = status === "cancelled";
   const isUpdated = status === "updated";
 
@@ -44,7 +53,12 @@ export function SummaryStatusTitle({ status }: { status: "confirmed" | "cancelle
         </svg>
       </span>
       <span>
-        Booking summary - {isCancelled ? "Cancelled" : isUpdated ? "Updated" : "Confirmed"}
+        {t.publicFlow.bookingSummaryStatus} -{" "}
+        {isCancelled
+          ? t.publicFlow.statusCancelled
+          : isUpdated
+            ? t.publicFlow.statusUpdated
+            : t.publicFlow.statusConfirmed}
       </span>
     </span>
   );

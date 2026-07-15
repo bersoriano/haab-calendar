@@ -1,8 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import { authenticate, type AuthFormState } from "@/app/login/actions";
+import {
+  translations,
+  type Lang,
+} from "@/components/landing/translations";
+import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
 
 const initialState: AuthFormState = {
   message: "",
@@ -10,18 +15,26 @@ const initialState: AuthFormState = {
 };
 
 type AuthFormProps = {
+  lang: Lang;
   nextPath: string;
 };
 
 type AuthIntent = "login" | "signup";
 
-export function AuthForm({ nextPath }: AuthFormProps) {
+export function AuthForm({ lang, nextPath }: AuthFormProps) {
+  const t = translations[lang].auth;
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
   const [pendingIntent, setPendingIntent] = useState<AuthIntent>("login");
   const showSignupPendingMessage = isPending && pendingIntent === "signup";
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
+  }, [lang]);
+
   const formMessage = showSignupPendingMessage
     ? {
-        message: "Creating your account and sending your confirmation email...",
+        message: t.creatingAndSending,
         status: "success" as const,
       }
     : state;
@@ -29,14 +42,15 @@ export function AuthForm({ nextPath }: AuthFormProps) {
   return (
     <form className="mt-8 grid gap-5" action={formAction}>
       <input type="hidden" name="next" value={nextPath} />
+      <input type="hidden" name="lang" value={lang} />
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]" htmlFor="email">
-        Email
+        {t.email}
         <input
           autoComplete="email"
           className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-4 py-3 text-base text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]"
           id="email"
           name="email"
-          placeholder="you@example.com"
+          placeholder={t.emailPlaceholder}
           required
           type="email"
         />
@@ -45,14 +59,14 @@ export function AuthForm({ nextPath }: AuthFormProps) {
         className="grid gap-2 text-sm font-medium text-[var(--ink)]"
         htmlFor="password"
       >
-        Password
+        {t.password}
         <input
           autoComplete="current-password"
           className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-4 py-3 text-base text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]"
           id="password"
           minLength={6}
           name="password"
-          placeholder="At least 6 characters"
+          placeholder={t.passwordPlaceholder}
           required
           type="password"
         />
@@ -78,7 +92,7 @@ export function AuthForm({ nextPath }: AuthFormProps) {
           type="submit"
           value="login"
         >
-          {isPending && pendingIntent === "login" ? "Signing in..." : "Sign in"}
+          {isPending && pendingIntent === "login" ? t.signingIn : t.signIn}
         </button>
         <button
           className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--primary)] disabled:cursor-not-allowed disabled:opacity-55"
@@ -88,7 +102,9 @@ export function AuthForm({ nextPath }: AuthFormProps) {
           type="submit"
           value="signup"
         >
-          {isPending && pendingIntent === "signup" ? "Creating account..." : "Create account"}
+          {isPending && pendingIntent === "signup"
+            ? t.creatingAccount
+            : t.createAccount}
         </button>
       </div>
     </form>

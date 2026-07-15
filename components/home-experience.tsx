@@ -15,6 +15,7 @@ import {
   LanguageProvider,
   useLanguage,
 } from "@/components/landing/language-provider";
+import type { Lang as LandingLang } from "@/components/landing/translations";
 
 type View = "home" | "app";
 
@@ -29,8 +30,9 @@ type HomeExperienceProps = {
   dashboardStore?: ModuleStore;
 };
 
-function loginHref(next: string) {
-  return `/login?next=${encodeURIComponent(next)}`;
+function loginHref(next: string, lang: LandingLang) {
+  const params = new URLSearchParams({ next, lang });
+  return `/login?${params.toString()}`;
 }
 
 export function HomeExperience(props: HomeExperienceProps) {
@@ -49,6 +51,7 @@ function HomeExperienceInner({
   dashboardStore,
 }: HomeExperienceProps) {
   const router = useRouter();
+  const { lang, t } = useLanguage();
   const [persistedDashboardStore, setPersistedDashboardStore] = useState<
     ModuleStore | undefined
   >();
@@ -81,7 +84,7 @@ function HomeExperienceInner({
       openApp();
       return;
     }
-    router.push(loginHref("/"));
+    router.push(loginHref("/", lang));
   }
 
   function onSelectVertical(vertical: LandingVertical) {
@@ -89,7 +92,7 @@ function HomeExperienceInner({
       openApp(vertical);
       return;
     }
-    router.push(loginHref(`/?vertical=${vertical}`));
+    router.push(loginHref(`/?vertical=${vertical}`, lang));
   }
 
   if (view === "app") {
@@ -102,7 +105,7 @@ function HomeExperienceInner({
               onClick={backToHome}
               className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
             >
-              ← Back to home
+              {t.home.backToHome}
             </button>
           </div>
         </div>
@@ -147,25 +150,26 @@ function DashboardPanel({
   onOpen: () => void;
   email?: string;
 }) {
+  const { t } = useLanguage();
+
   return (
     <section className="px-5 py-14 sm:px-8">
       <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-8 text-center shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-          {email ? `Signed in as ${email}` : "You're signed in"}
+          {email ? `${t.home.signedInAs} ${email}` : t.home.signedIn}
         </p>
         <h2 className="text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-          Your booking page is ready
+          {t.home.bookingPageReady}
         </h2>
         <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
-          Manage availability, services, and incoming bookings from your
-          dashboard.
+          {t.home.dashboardBody}
         </p>
         <button
           type="button"
           onClick={onOpen}
           className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(26,115,232,0.28)] transition hover:shadow-[0_18px_40px_rgba(26,115,232,0.34)] active:translate-y-px"
         >
-          Go to your dashboard →
+          {t.home.goToDashboard}
         </button>
       </div>
     </section>
@@ -199,30 +203,34 @@ function VerticalsPanel({
           </h2>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {VERTICALS.map((v, i) => (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => onSelectVertical(v.id as LandingVertical)}
-              className="flex flex-col gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
-            >
-              <span
-                aria-hidden="true"
-                className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${tones[i % tones.length]}`}
+          {VERTICALS.map((v, i) => {
+            const verticalCopy = t.home.verticals[v.id];
+
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => onSelectVertical(v.id as LandingVertical)}
+                className="flex flex-col gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
               >
-                {v.label.charAt(0)}
-              </span>
-              <span className="text-lg font-semibold text-[var(--ink)]">
-                {v.label}
-              </span>
-              <span className="text-[15px] leading-7 text-[var(--muted)]">
-                {v.tagline}
-              </span>
-              <span className="mt-auto text-sm font-semibold text-[var(--primary)]">
-                Start with {v.label} →
-              </span>
-            </button>
-          ))}
+                <span
+                  aria-hidden="true"
+                  className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${tones[i % tones.length]}`}
+                >
+                  {verticalCopy.label.charAt(0)}
+                </span>
+                <span className="text-lg font-semibold text-[var(--ink)]">
+                  {verticalCopy.label}
+                </span>
+                <span className="text-[15px] leading-7 text-[var(--muted)]">
+                  {verticalCopy.tagline}
+                </span>
+                <span className="mt-auto text-sm font-semibold text-[var(--primary)]">
+                  {verticalCopy.start}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -53,24 +53,27 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
 
 ## Internationalization
 
-- 🔴 **Spanish translation across all verticals (i18n).** The whole UI is
-  English-only, but real providers are Spanish-speaking (e.g. the UM Grupo
-  Médico urologist in Mexico). Add a language layer so every vertical can render
-  in Spanish (and be extensible to more locales).
-  - **Where the strings live:** `lib/vertical-copy.ts` already centralizes the
-    per-vertical wording (`VerticalCopy` decks: default/healthcare/events/
-    spaces/professional). The natural shape is a locale dimension on top —
-    e.g. `getVerticalCopy(verticalId, locale)` returning the right deck, with
-    `es` decks mirroring the existing `en` ones. Plus the still-hardcoded
-    English strings in `components/haab-booking-module.tsx` and the setup wizard
-    (e.g. "Pick a date and time", "My Details", "Available time slots",
-    weekday/month formatting) need extracting into the same system.
-  - **Scope:** translate all five decks + the hardcoded UI strings; localize
-    date/time formatting (currently `en`-style); a locale selector (provider
-    setting and/or `?lang=es` / Accept-Language on public pages); keep English
-    as fallback. Offline-first: bundle locale strings, no network.
-  - **Out of scope for v1:** user-generated content (service names, notes) stays
-    as the provider typed it.
+- 🟡 **Finish Spanish translation coverage.** English/Spanish infrastructure,
+  all vertical-copy decks, es-MX date/time formatting, public booking/manage
+  flows, and most provider/admin surfaces are implemented. Provider language is
+  persisted to Supabase and English remains the booking fallback.
+  - **Remaining product UI:** booking/provider client and server error states.
+    Landing integration panels, vertical cards, login/signup/confirmation,
+    availability, image upload, shared status/accessibility UI, and
+    Settings/public-link helpers are now localized.
+  - **Remaining exported/system copy:** ICS descriptions, booking API/persistence
+    errors, metadata, Supabase-hosted confirmation email copy, and future
+    booking email/SMS templates.
+  - **Platform decision:** choose whether visitor-owned landing/login language
+    should remain a client-side preference or move to locale-prefixed routes or
+    server-side language negotiation. Provider-owned booking language does not
+    require localized URLs.
+  - **Content-model decision:** provider-authored service names, descriptions,
+    notes, and hero text currently remain exactly as entered. Decide whether a
+    future version needs per-locale content fields and fallback rules.
+  - **Quality:** landing dictionary parity and auth-error mapping are covered;
+    add hardcoded-copy detection and English/Spanish browser tests. See
+    `docs/booking-i18n-status.md` for the audited inventory.
 
 ## Public-page branding
 

@@ -24,4 +24,17 @@ describe("bookingTranslations", () => {
       );
     expect(flatten(bookingTranslations.es).every((s) => s.trim().length > 0)).toBe(true);
   });
+
+  it("covers the shared provider and public-flow components in Spanish", () => {
+    const { admin, providerForm, public: publicCopy, publicFlow } =
+      bookingTranslations.es;
+
+    expect(admin.weekdays.monday).toBe("Lunes");
+    expect(admin.blockedTimes).toBe("Horarios bloqueados");
+    expect(admin.saveChanges).toBe("Guardar cambios");
+    expect(providerForm.uploadImage).toBe("Subir imagen");
+    expect(publicCopy.expired).toBe("Vencida");
+    expect(publicFlow.progressLabel).toBe("Progreso de la reserva");
+    expect(publicFlow.statusUpdated).toBe("Actualizada");
+  });
 });

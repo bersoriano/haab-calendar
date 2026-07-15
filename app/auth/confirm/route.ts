@@ -1,6 +1,11 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import {
+  normalizeLandingLang,
+  translations,
+  type Lang,
+} from "@/components/landing/translations";
 
 function getSafeNextPath(next: string | null) {
   if (!next || !next.startsWith("/") || next.startsWith("//")) {
@@ -17,18 +22,42 @@ function getSafeNextPath(next: string | null) {
 function getLoginRedirect(
   request: NextRequest,
   message: string,
+  lang: Lang,
   status: "error" | "success" = "error",
 ) {
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
   loginUrl.search = "";
+  loginUrl.searchParams.set("lang", lang);
   loginUrl.searchParams.set("message", message);
   loginUrl.searchParams.set("status", status);
   return loginUrl;
 }
 
+function getRequestLang(requestUrl: URL) {
+  const directLang = requestUrl.searchParams.get("lang");
+  if (directLang === "en" || directLang === "es") {
+    return directLang;
+  }
+
+  const redirectTo = requestUrl.searchParams.get("redirect_to");
+  if (redirectTo) {
+    try {
+      return normalizeLandingLang(
+        new URL(redirectTo, requestUrl).searchParams.get("lang"),
+      );
+    } catch {
+      // Fall through to the visitor-facing default.
+    }
+  }
+
+  return normalizeLandingLang(undefined);
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
+  const lang = getRequestLang(requestUrl);
+  const t = translations[lang].auth;
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = (requestUrl.searchParams.get("type") || "email") as EmailOtpType;
@@ -48,8 +77,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       getLoginRedirect(
         request,
-        "Email confirmed. Sign in to continue.",
-        "success",
+        t.confirmationExpired,
+        lang,
       ),
     );
   }
@@ -68,7 +97,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       getLoginRedirect(
         request,
-        "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
+        t.confirmationExpired,
+        lang,
       ),
     );
   }
@@ -76,7 +106,8 @@ export async function GET(request: NextRequest) {
   return NextResponse.redirect(
     getLoginRedirect(
       request,
-      "Email confirmed. Sign in to continue.",
+      t.emailConfirmed,
+      lang,
       "success",
     ),
   );

@@ -1,144 +1,206 @@
-# Booking App Internationalization (i18n) — Status & Strategy
+# Internationalization (i18n) — Current Status
 
-> **Scope:** The booking application only. The marketing **landing page is a separate system**
-> (`components/landing/` with its own `LanguageProvider` + `translations.ts`) and is intentionally not
-> covered here.
+> **Last audited:** 2026-07-15 on `main`.
 >
-> **Phase 1 (shipped on `feat/booking-spanish-i18n`):** Spanish (es-MX) for the **public-facing**
-> booking surfaces, behind bilingual infrastructure, with **English as the default**.
+> The booking application and marketing landing page use separate language
+> systems. This document describes both boundaries, with the booking application
+> as the primary focus.
 
 Related documents:
-- Design spec: `docs/superpowers/specs/2026-06-25-booking-spanish-i18n-design.md`
-- Implementation plan: `docs/superpowers/plans/2026-06-25-booking-spanish-i18n.md`
-- Manual test: `docs/manual-tests/booking-spanish-public-flow.md`
-- Backend gap note: `docs/backend-implementation.md` → "Provider language (i18n)"
+
+- Phase 1 public-flow design: `docs/superpowers/specs/2026-06-25-booking-spanish-i18n-design.md`
+- Phase 1 implementation plan: `docs/superpowers/plans/2026-06-25-booking-spanish-i18n.md`
+- Phase 2 admin implementation plan: `docs/superpowers/plans/2026-06-26-admin-i18n.md`
+- Public-flow manual test: `docs/manual-tests/booking-spanish-public-flow.md`
+- Backend data path: `docs/backend-implementation.md` → "Provider language (i18n)"
+- Next.js 16 reference: `node_modules/next/dist/docs/01-app/02-guides/internationalization.md`
 
 ---
 
-## 1. Goal
+## 1. Supported Languages and Ownership
 
-Make the booking app bilingual (English / Spanish) where the **provider's configured language** drives
-which language their clients see on the public booking page. English is the default; a provider opts into
-Spanish from their Settings. Spanish targets **Mexican Spanish (es-MX), formal `usted`**, with Spanish
-month/weekday names and 24-hour time.
+The application supports English (`en`) and Mexican Spanish (`es`, formatted
+with the `es-MX` locale).
+
+The two language systems have different owners and defaults:
+
+| Surface | Language owner | Default | Persistence |
+| --- | --- | --- | --- |
+| Marketing landing page | Visitor | Spanish | `localStorage` key `haab-lang` |
+| Provider/admin application | Provider configuration | English | `public.providers.language` |
+| Public booking and manage pages | Provider configuration | English | Read through `public_providers.language` |
+| Login, signup, and confirmation | Visitor | Spanish | `lang` query/form value plus `haab-lang` synchronization |
+
+The booking copy uses formal Mexican Spanish (`usted`). English remains the
+fallback whenever stored language data is absent or invalid.
+
+Visitor language travels from the landing page to `/login?lang=...`, then in a
+hidden form field to the authentication Server Action. Signup confirmation URLs
+and `app/auth/confirm/route.ts` preserve the same value. The login client also
+synchronizes `haab-lang`, so changing language on the login page survives the
+return to the landing page. This is intentionally separate from provider-owned
+booking language.
 
 ---
 
-## 2. Strategy & Architecture
+## 2. Booking i18n Architecture
 
-**Mechanism — "Option A": language is data, threaded from config (no new React context).**
+The booking application uses configuration-threaded language data rather than a
+React language context.
 
-The language is a field on the provider config (`provider.language: "en" | "es"`), travelling the exact
-same path the existing `vertical` field already does: stored on the provider row → exposed by the
-`public_providers` view → mapped into the `ModuleStore` by the resolver → read inside the booking module.
-Because both the provider and public render contexts already hold the provider config in the store, no
-wrapping provider/context was needed. This deliberately does **not** reuse the landing page's
-per-visitor `localStorage` `LanguageProvider`, keeping booking and landing separate.
+### Text layers
 
-**Three text layers, all keyed by `lang` (English path unchanged = the default):**
+1. **Vertical copy** — `lib/vertical-copy.ts`
+   - Language-specific terminology and phrases for default, healthcare, events,
+     spaces, and professional-services verticals.
+   - `getVerticalCopy(verticalId?, lang = "en")` selects the deck.
+   - TypeScript enforces matching object shapes.
+2. **Generic UI copy** — `components/booking/i18n/translations.ts`
+   - Typed `BookingDict` groups: `common`, `public`, `manage`, `publicFlow`,
+     `admin`, `setup`, `welcome`, and `providerForm`.
+   - `bookingTranslations: Record<Lang, BookingDict>` provides English and
+     Spanish values.
+   - Unit tests enforce English/Spanish key parity and reject empty Spanish
+     values.
+3. **Locale-aware formatting** — `lib/constants.ts` and `lib/format.ts`
+   - Spanish uses `es-MX` month and weekday names and 24-hour time.
+   - English keeps the existing `en-US` and AM/PM behavior.
 
-1. **Vertical copy** — `lib/vertical-copy.ts`. The bulk of public copy (vertical-specific nouns/verbs/
-   phrases). Now `getVerticalCopy(verticalId?, lang = "en")` selects from a
-   `Record<Lang, Record<VerticalId, VerticalCopy>>`. Spanish sibling objects added for all 4 verticals +
-   default. TypeScript enforces structural parity (every phrase key must exist in every object).
-2. **Inline UI strings** — `components/booking/i18n/translations.ts` (`bookingTranslations: Record<Lang, BookingDict>`).
-   Generic/structural public strings not in vertical copy (buttons, step labels, manage/reschedule UI,
-   hold countdown). Separate from the landing dictionary. A runtime test enforces en/es key parity and
-   "no empty Spanish strings".
-3. **Locale formatters** — `lib/constants.ts` + `lib/format.ts`. Date/time formatters are now
-   `lang`-aware: `es` → `es-MX` month/weekday names + 24-hour time + Spanish words ("Día completo",
-   "Cita", "lugares"…); `en` → byte-for-byte identical to before.
+### Persisted data flow
 
-**Source of truth & data flow (public page):**
-
-```
-Settings "Language" selector → updateProvider("language", …)            [client store]
-public.providers.language (migration, default 'en', check en|es)
-  → public_providers view (exposes language)
-  → lib/public-booking-resolver.ts (PUBLIC_PROVIDER_SELECT + toModuleStore)
+```text
+Settings → Language
+  → updateProvider("language", ...)
+  → PUT /api/provider/store
+  → lib/supabase/provider-store.ts
+  → public.providers.language
+  → public_providers.language
+  → lib/public-booking-resolver.ts
   → ModuleStore.provider.language
-  → components/haab-booking-module.tsx: const lang = provider.language ?? "en"
-  → getVerticalCopy(vertical, lang) · bookingTranslations[lang] · format*(…, lang)
+  → getVerticalCopy(...) · bookingTranslations[lang] · format*(..., lang)
 ```
 
-The same `language` value is also read by `app/api/public/providers/[slug]/route.ts` (a second public
-mapper kept in lockstep with the resolver).
+`app/api/public/providers/[slug]/route.ts` contains a second public mapper and
+must remain aligned with `lib/public-booking-resolver.ts`.
+
+The schema contract is introduced by
+`supabase/migrations/20260625120000_add_provider_language.sql`: the column
+defaults to `en`, accepts only `en` or `es`, and is exposed by the public view.
+The repository cannot prove whether this migration is applied to every remote
+environment; deployment verification must check remote migration history.
 
 ---
 
-## 3. What Was Done (Phase 1)
+## 3. Implemented Coverage
 
-All changes are on branch `feat/booking-spanish-i18n` (10 implementation commits + 1 polish):
-
-| Area | Change |
+| Area | Current state |
 | --- | --- |
-| Types | `Lang = "en" \| "es"`; `ProviderInfo.language` (default `"en"`); `normalizeProvider` defaults it |
-| Database | Migration `20260625120000_add_provider_language.sql`: `providers.language` column + check + grant + `public_providers` view recreated to expose it |
-| Resolver | `PUBLIC_PROVIDER_SELECT` + `toModuleStore` map `language`; API route mapper updated too |
-| Formatters | `lib/constants.ts` per-locale memoized formatters + `lib/format.ts` `lang`-aware (es-MX, 24h) |
-| Vertical copy | Spanish objects for all verticals; `getVerticalCopy(vertical, lang)`; 4 new phrase keys for grammatical Spanish titles |
-| Dictionary | `components/booking/i18n/translations.ts` (`common`/`public`/`publicFlow`/`manage` groups, en+es) |
-| Public booking flow | `renderPublicCalendar` + `renderPublicFlow` render in `lang`; all formatter calls threaded |
-| Manage flow | `renderRescheduleModal`, `renderCancellationModal`, `renderCalendarQrModal`, manage-lookup states |
-| Calendar headers | Public + reschedule weekday headers localized (`getWeekdayShortFormatter(lang)`) |
-| Settings | English-labelled **Language** selector (English / Español) writing `provider.language` |
-| Docs/tests | Manual-test script; unit tests for formatters (es), vertical-copy (es), dictionary parity, store default |
+| Public provider and service pages | Localized |
+| Public calendar and booking flow | Localized |
+| Booking confirmation | Localized |
+| Manage, cancel, and reschedule flows | Localized |
+| Booking hold warning | Localized, including shared countdown states |
+| Provider dashboard and bookings list | Localized |
+| Admin calendar | Localized |
+| Setup wizard and welcome screen | Localized |
+| Availability editor | Localized, including weekdays and blocked-time controls |
+| Provider information and header-image form | Localized, including placeholders and upload controls |
+| Service editor | Localized, including the notes placeholder |
+| Settings and admin navigation | Localized, including save, language, and public-link helpers |
+| Shared progress and booking-status UI | Localized, including screen-reader labels |
+| Marketing landing page | Localized, including home integration panels and vertical cards |
+| Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects |
 
-**Quality gates:** every task passed a spec-compliance review and a code-quality review; a final holistic
-review confirmed the end-to-end data flow and the English-default guarantee. Current state: `vitest`
-**191 passing**, `tsc --noEmit` clean, `npm run build` succeeds, `npm run lint` clean.
-
-**English-default guarantee:** every entry point defaults to `"en"` (DB column default, `normalizeProvider`,
-resolver/route ternaries on null, `getVerticalCopy` default param, every `format*` default arg, the module's
-`?? "en"`). Admin formatter calls pass no `lang`, so admin dates/times stay `en-US`. A provider who never
-touches the setting sees the exact pre-change English app.
-
----
-
-## 4. What's Missing / Next Steps
-
-### 4.1 Blocking for production use of the toggle — provider→Supabase write path
-The provider config is currently **localStorage-first**; there is **no write path** that persists provider
-config (including `language`) to `public.providers`. So today the Settings selector updates only the client
-store and the choice does **not** reach the public page in production. The DB column, view, resolver, and UI
-are all ready — when provider-config persistence is implemented, its upsert/update payload **must include
-`language`**. Until then, set it manually to validate:
-```sql
-update public.providers set language = 'es' where slug = '<provider-slug>';
-```
-(Documented in `docs/backend-implementation.md`.)
-
-### 4.2 Apply the migration
-`supabase/migrations/20260625120000_add_provider_language.sql` has not been applied in this environment
-(no Supabase CLI). Run `supabase migration up` (or apply via MCP/dashboard) before the public Spanish flow
-works against a real backend.
-
-### 4.3 Phase 2 — provider/admin surfaces
-Phase 1 deliberately left admin **inline** strings in English. To fully localize the provider-facing app
-(dashboard, bookings list, admin calendar, service & availability editors, setup wizard, rest of Settings):
-translate those strings into `BookingDict` groups and thread `lang` into their `format*` calls. No schema
-or mechanism change is required — the infrastructure already supports it.
-- Note: shared `copy.phrases.*` and the shared manage/reschedule modals already localize for an
-  es-provider on admin (accepted in phase 1). Phase 2 makes the rest consistent.
-
-### 4.4 Additional languages
-Adding a language = extend the `Lang` union, add a locale to `LOCALE` in `lib/constants.ts`, add the new
-key to each `Record<Lang, …>` (vertical copy, dictionary), and update the DB check constraint + Settings
-options. TypeScript will flag every place that needs a new translation.
-
-### 4.5 Nice-to-haves / known minor gaps
-- `bookingT()` helper in the dictionary is exported but unused (harmless; the module reads
-  `bookingTranslations[lang]` directly).
-- Generated `.ics` calendar text (`lib/ics.ts`) and any system emails are not yet localized.
-- The Settings selector labels themselves are English in phase 1 (intentional).
+Phase 1 supplied the public booking infrastructure. Phase 2 subsequently added
+the `admin`, `setup`, `welcome`, and `providerForm` dictionaries and wired most
+provider-facing surfaces to the same stored language. The old Phase 1 statement
+that the admin application remains English is no longer accurate.
 
 ---
 
-## 5. How to Test the Spanish Public Flow Now
-1. Apply the migration (4.2).
-2. Pick a provider with `setup_complete = true`: `update public.providers set language = 'es' where slug = '<slug>';`
-3. Open `/<vertical>/<slug>` and walk the public booking + `/manage/<token>` flows.
-4. Verify: es-MX formal copy, Spanish weekday/month names, 24-hour times, "lugares disponibles".
-5. Reset to `'en'` and confirm the original English is unchanged.
+## 4. Remaining Translation Gaps
 
-Full script: `docs/manual-tests/booking-spanish-public-flow.md`.
+### Booking and provider application
+
+- Client-side natural-language parsing, setup validation, provider-save,
+  booking, reschedule, and cancellation errors still contain English fallbacks
+  in `components/haab-booking-module.tsx`.
+- Booking/provider API validation, persistence, and fallback error messages are
+  English-only. A client dictionary cannot translate raw server messages
+  reliably; these need stable error codes or localized server output.
+- Upload-route error details can still arrive as raw English server messages,
+  although the image uploader's own labels, validation, and fallback error are
+  localized.
+
+### Landing and authentication
+
+- `config/verticals.ts` stores English preset labels, descriptions, seeded
+  service content, and hints. Landing cards no longer render these fields
+  directly, but applying a preset still seeds English provider-authored content.
+  Its translation policy must be explicit.
+- The Supabase-hosted confirmation email template is external to the application
+  dictionary and is not selected by the visitor's `lang` value.
+- Metadata in `app/layout.tsx` is English-only.
+
+### Exported and provider-authored content
+
+- `lib/ics.ts` exports English labels (`Client`, `Phone`, `Notes`, and manage-link
+  instructions) and an English product identifier.
+- Provider-authored service names, descriptions, notes, and hero text are stored
+  in one language only. There is no localized content model or fallback chain.
+- Booking email/SMS notification templates are not part of the current i18n
+  dictionaries.
+
+### Document language and routing
+
+- `app/layout.tsx` server-renders `<html lang="en">`, while the landing page
+  initially renders Spanish and updates the document language only after client
+  hydration. This is inaccurate during the landing server render. The login page
+  now scopes its rendered content with `lang`, but the root element remains
+  static.
+- The application does not implement locale-prefixed routes, `Accept-Language`
+  negotiation, or server-loaded locale dictionaries. The bundled Next.js 16
+  guide documents those patterns, but provider-owned booking language does not
+  require locale-prefixed booking URLs. A product decision is still needed for
+  visitor-owned landing and authentication routes.
+
+---
+
+## 5. Verification
+
+Audit baseline on 2026-07-15:
+
+- `npm test` — 206 tests passing across 13 test files.
+- `npx tsc --noEmit` — clean.
+- `npm run lint` — clean.
+- Booking dictionary parity and non-empty Spanish values are covered by
+  `components/booking/i18n/__tests__/translations.test.ts`.
+- Landing dictionary parity, non-empty values, visitor-language normalization,
+  and Supabase auth-error mapping are covered by
+  `components/landing/__tests__/translations.test.ts` and
+  `lib/__tests__/auth-i18n.test.ts`.
+- Locale formatting and vertical-copy behavior are covered in `lib/__tests__`.
+
+Missing automated coverage:
+
+- No hardcoded-string detector or per-surface translation coverage test.
+- No browser-level English/Spanish end-to-end test.
+- No automated assertion for `<html lang>` on each surface.
+
+Use `docs/manual-tests/booking-spanish-public-flow.md` for the current manual
+public and manage-flow regression.
+
+---
+
+## 6. Adding Another Language
+
+1. Extend `Lang` in `lib/types.ts`.
+2. Add the locale to `LOCALE` in `lib/constants.ts`.
+3. Add a complete vertical-copy deck in `lib/vertical-copy.ts`.
+4. Add a complete `BookingDict` entry.
+5. Update the provider-language database constraint and Settings options.
+6. Update the public resolver and public API mapper normalization.
+7. Add formatter, dictionary-parity, persistence, and browser-flow tests.
+
+Do not assume TypeScript alone covers strings outside the typed dictionaries;
+the remaining hardcoded surfaces require an explicit audit.

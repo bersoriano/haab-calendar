@@ -24,17 +24,20 @@ Last run: (not yet run) · Result: —
 5. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
    is an appointment type.
 
-### Set language to Spanish via SQL
+### Set language to Spanish
 
-Provider config persistence is not yet implemented (see
-`docs/backend-implementation.md` — Provider language (i18n)). Set the column
-directly in Supabase:
+In the provider application, open Settings → **Language**, choose **Español**,
+and save the admin changes. The save must pass through `PUT /api/provider/store`
+and persist `public.providers.language = 'es'`.
+
+Reload the public page to pick up the saved value. If the page remains English,
+inspect the stored value and public view before changing it manually:
 
 ```sql
+select slug, language from public.providers where slug = 'clinica-salinas';
+select slug, language from public.public_providers where slug = 'clinica-salinas';
 update public.providers set language = 'es' where slug = 'clinica-salinas';
 ```
-
-Reload the public page to pick up the change.
 
 ---
 
@@ -131,7 +134,8 @@ From the success summary, click **"Mostrar código QR"**.
 
 ## English regression (default)
 
-Restore the provider to English:
+Restore the provider to English from Settings → **Language** and save. Use SQL
+only as a diagnostic fallback:
 
 ```sql
 update public.providers set language = 'en' where slug = 'clinica-salinas';
@@ -161,9 +165,9 @@ Reload `http://localhost:3000/doctors/clinica-salinas` and confirm:
 - The `language` column must be present in `public_providers`; the migration in
   `supabase/migrations/` must expose it through the view. If the column is
   missing, the resolver silently defaults to `"en"`.
-- Standalone (localStorage) mode: the Settings → Language selector updates
-  `provider.language` in the local store and the public page picks it up
-  immediately, with no SQL needed. The SQL step above is only required when
-  using a live Supabase backend.
-- Provider config persistence to `public.providers` is not yet implemented; see
-  `docs/backend-implementation.md` for the required `language` column note.
+- Standalone (localStorage) mode updates `provider.language` locally. In an
+  authenticated Supabase-backed setup/admin flow, saving persists the same
+  value through `PUT /api/provider/store`.
+- If the saved database value is correct but the public page remains English,
+  verify that `public_providers` exposes `language` and that the resolver/API
+  mapper has not defaulted a missing value to `en`.

@@ -26,7 +26,7 @@ export function ProviderInfoForm({
           disabled={disabled}
           value={provider.fullName}
           onChange={(event) => onChange("fullName", event.target.value)}
-          placeholder="Dr. Maya Alvarez"
+          placeholder={t.providerForm.fullNamePlaceholder}
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
       </label>
@@ -36,7 +36,7 @@ export function ProviderInfoForm({
           disabled={disabled}
           value={provider.businessName}
           onChange={(event) => onChange("businessName", event.target.value)}
-          placeholder="Haab Health Studio"
+          placeholder={t.providerForm.businessNamePlaceholder}
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
       </label>
@@ -46,7 +46,7 @@ export function ProviderInfoForm({
           disabled={disabled}
           value={provider.email}
           onChange={(event) => onChange("email", event.target.value)}
-          placeholder="bookings@haabcalendar.com"
+          placeholder={t.providerForm.emailPlaceholder}
           type="email"
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
@@ -58,7 +58,7 @@ export function ProviderInfoForm({
             disabled={disabled}
             value={provider.phoneNumber1}
             onChange={(event) => onChange("phoneNumber1", event.target.value)}
-            placeholder="+1 (555) 123-4567"
+            placeholder={t.providerForm.phone1Placeholder}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -71,7 +71,7 @@ export function ProviderInfoForm({
             disabled={disabled}
             value={provider.phoneNumber2}
             onChange={(event) => onChange("phoneNumber2", event.target.value)}
-            placeholder="Optional secondary number"
+            placeholder={t.providerForm.phone2Placeholder}
             type="tel"
             inputMode="tel"
             autoComplete="tel"
@@ -86,7 +86,7 @@ export function ProviderInfoForm({
             disabled={disabled}
             value={provider.address1}
             onChange={(event) => onChange("address1", event.target.value)}
-            placeholder="123 Main St, Suite 4, Springfield"
+            placeholder={t.providerForm.address1Placeholder}
             autoComplete="street-address"
             className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
@@ -97,7 +97,7 @@ export function ProviderInfoForm({
             disabled={disabled}
             value={provider.address2}
             onChange={(event) => onChange("address2", event.target.value)}
-            placeholder="Optional secondary location"
+            placeholder={t.providerForm.address2Placeholder}
             autoComplete="street-address"
             className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
@@ -107,6 +107,7 @@ export function ProviderInfoForm({
         value={provider.headerImageUrl}
         onChange={(url) => onChange("headerImageUrl", url)}
         disabled={disabled}
+        lang={lang}
       />
       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
         {t.providerForm.heroText}
@@ -114,7 +115,7 @@ export function ProviderInfoForm({
           disabled={disabled}
           value={provider.heroText ?? ""}
           onChange={(event) => onChange("heroText", event.target.value)}
-          placeholder={provider.businessName || "Your business name"}
+          placeholder={provider.businessName || t.providerForm.heroTextPlaceholder}
           className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
         <span className="text-xs leading-5 text-[var(--muted)]">
