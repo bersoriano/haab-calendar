@@ -8,7 +8,7 @@
 
 - **Primary audience (assumption — retarget if wrong):** service providers and small businesses who need to take bookings — clinics, coaches/advisors, padel & sports courts, salons, venues/banquet halls, coworking spaces. They are the buyer and the setup user. Their clients are the *end bookers* (a secondary audience addressed only through the provider's eyes).
 - **One job of this page:** get a provider to start creating their booking page.
-- **Primary CTA (used everywhere):** `Create your booking page` → links to the setup wizard (`/` setup flow).
+- **Primary CTA (used everywhere):** `Create your booking page` → scrolls to the required workflow selector. Setup/authentication starts only after the provider chooses a vertical.
 - **Secondary CTA:** `See a live booking page` → opens a demo public flow on the canonical route, for example `/doctors/<demo-slug>`.
 - **Tone:** confident, concrete, calm. Sell outcomes (filled calendar, fewer no-shows, zero back-and-forth), not features.
 - **Proof posture:** the product has real, specific differentiators (offline-first, natural-language booking, slot holds, no-login self-service). Lead with those instead of inventing metrics.
@@ -167,6 +167,8 @@ Visual: subtle "offline → synced" state indicator.
 
 **Section heading:** One page, shaped to your business.
 
+**Subtitle:** Select a workflow below to start with the right services, availability, and booking settings.
+
 **Cards (mirror the in-app templates):**
 - **Clinics & practitioners** — New-patient consults, follow-ups, timed appointments with capacity and price.
 - **Padel, tennis & sports courts** — Hourly court rentals, max-player capacity, back-to-back slots without overlap.
@@ -174,9 +176,9 @@ Visual: subtle "offline → synced" state indicator.
 - **Venues & banquet halls** — Full-day exclusive reservations for events and receptions.
 - **Coworking & private offices** — Day-pass desk and office bookings, seats per space.
 
-**Microcopy under grid:** Don't see yours? Start from blank — it takes two minutes.
+**Microcopy under grid:** Choose the workflow closest to your business. You can adjust its services and availability during setup.
 
-**CTA:** `Create your booking page`
+**CTA:** `Create your booking page` → returns to the required workflow selector; it must not open an untyped setup flow.
 
 **Conversion notes:** each card = a "that's me" moment; use the real template names already in the product.
 

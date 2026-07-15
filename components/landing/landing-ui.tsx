@@ -43,8 +43,8 @@ function useLandingActions() {
   return useContext(LandingActionsContext);
 }
 
-// CTA button that kicks off setup. Replaces the original marketing links to
-// /setup and /demo, which do not exist in this app — both funnel into onStart.
+// Generic CTA button. For unconfigured users, the host scrolls to the required
+// workflow selector; setup starts only after a vertical card is chosen.
 function StartButton({
   className,
   children,
@@ -895,7 +895,11 @@ export function UseCases() {
   return (
     <section id="use-cases" className={sectionPadding}>
       <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.useCases.eyebrow} title={t.useCases.title} />
+        <SectionHeading
+          eyebrow={t.useCases.eyebrow}
+          title={t.useCases.title}
+          body={t.useCases.body}
+        />
         <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {t.useCases.cards.map((c, i) => (
             <button

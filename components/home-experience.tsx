@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
+import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
 import { logout } from "@/app/login/actions";
 import { VERTICALS } from "@/config/verticals";
 import type { ModuleStore, VerticalId } from "@/lib/types";
@@ -90,11 +91,15 @@ function HomeExperienceInner({
 
   // Generic "create your page" CTA.
   function onStart() {
-    if (effectiveConfigured || loggedIn) {
+    if (effectiveConfigured) {
       openApp();
       return;
     }
-    router.push(loginHref("/", lang));
+
+    document.getElementById("verticals")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   function onSelectVertical(vertical: LandingVertical) {
@@ -106,19 +111,29 @@ function HomeExperienceInner({
   }
 
   if (view === "app") {
+    const showSelectedWorkflow = !effectiveConfigured && selectedVertical;
+
     return (
       <div className="flex min-h-full flex-col">
-        <div className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--surface)] backdrop-blur">
+        <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--surface)]/95 backdrop-blur">
           <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
-            <button
-              type="button"
-              onClick={backToHome}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
-            >
-              {t.home.backToHome}
-            </button>
+            {showSelectedWorkflow ? (
+              <SelectedWorkflowHeader
+                lang={lang}
+                vertical={selectedVertical}
+                onChooseAnother={backToHome}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={backToHome}
+                className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
+              >
+                {t.home.backToHome}
+              </button>
+            )}
           </div>
-        </div>
+        </header>
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
           <HaabBookingModule
             injectedConfig={effectiveConfigured ? effectiveDashboardStore : undefined}
@@ -133,6 +148,7 @@ function HomeExperienceInner({
             initialLanguage={effectiveConfigured ? undefined : lang}
             initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
             onLanguageChange={setLang}
+            onVerticalChange={setSelectedVertical}
           />
         </main>
       </div>
@@ -204,7 +220,7 @@ function VerticalsPanel({
   ];
 
   return (
-    <section id="verticals" className="px-5 py-16 sm:px-8 sm:py-20">
+    <section id="verticals" className="scroll-mt-20 px-5 py-16 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-[1280px]">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
@@ -213,6 +229,9 @@ function VerticalsPanel({
           <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
             {t.useCases.title}
           </h2>
+          <p className="mt-4 text-base leading-7 text-[var(--muted)] sm:text-lg">
+            {t.useCases.body}
+          </p>
         </div>
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {VERTICALS.map((v, i) => {

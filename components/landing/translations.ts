@@ -23,6 +23,10 @@ export const translations = {
       dashboardBody:
         "Administra disponibilidad, servicios y reservas entrantes desde tu panel.",
       goToDashboard: "Ir a tu panel →",
+      selectedWorkflow: "Flujo de trabajo seleccionado",
+      selectedWorkflowHint:
+        "La configuración usará los servicios, la disponibilidad y las reglas de reserva predeterminados para este flujo.",
+      chooseAnotherWorkflow: "Elegir otro flujo",
       verticals: {
         healthcare: {
           label: "Salud",
@@ -132,7 +136,7 @@ export const translations = {
       steps: [
         {
           title: "Agrega lo que ofreces.",
-          body: "Elige una plantilla — consulta, renta de cancha, sesión de estrategia, salón de día completo, oficina por día — o empieza en blanco. Define duración, capacidad, precio y tu horario semanal. Listo en minutos.",
+          body: "Elige el flujo que mejor se adapte a tu negocio y comienza con los servicios y las reglas de reserva adecuados. Luego ajusta duración, capacidad, precio y horario semanal. Listo en minutos.",
         },
         {
           title: "Comparte un solo enlace.",
@@ -226,6 +230,8 @@ export const translations = {
     useCases: {
       eyebrow: "Casos de uso",
       title: "Una página, moldeada a tu negocio.",
+      body:
+        "Selecciona un flujo a continuación para comenzar con los servicios, la disponibilidad y la configuración de reservas adecuados.",
       cards: [
         {
           title: "Salud — médicos y especialistas",
@@ -244,7 +250,8 @@ export const translations = {
           body: "Admisiones con boleto y cupo real más pases de día completo — la página lleva la cuenta de los lugares por ti.",
         },
       ],
-      note: "¿Tu giro es otro? Empieza en blanco — toma dos minutos.",
+      note:
+        "Elige el flujo más parecido a tu negocio. Podrás ajustar sus servicios y disponibilidad durante la configuración.",
       cta: "Crea tu página de reservas",
     },
     mobile: {
@@ -431,6 +438,10 @@ export const translations = {
       dashboardBody:
         "Manage availability, services, and incoming bookings from your dashboard.",
       goToDashboard: "Go to your dashboard →",
+      selectedWorkflow: "Selected workflow",
+      selectedWorkflowHint:
+        "Setup will use this workflow's service, availability, and booking defaults.",
+      chooseAnotherWorkflow: "Choose another workflow",
       verticals: {
         healthcare: {
           label: "Healthcare",
@@ -540,7 +551,7 @@ export const translations = {
       steps: [
         {
           title: "Add what you offer.",
-          body: "Pick a template — consult, court rental, strategy session, full-day venue, day office — or start blank. Set duration, capacity, price, and your weekly hours. Done in minutes.",
+          body: "Choose the workflow that best fits your business and start with the right services and booking rules. Then adjust duration, capacity, price, and weekly hours. Done in minutes.",
         },
         {
           title: "Share one link.",
@@ -634,6 +645,8 @@ export const translations = {
     useCases: {
       eyebrow: "Use cases",
       title: "One page, shaped to your business.",
+      body:
+        "Select a workflow below to start with the right services, availability, and booking settings.",
       cards: [
         {
           title: "Healthcare — doctors & specialists",
@@ -652,7 +665,8 @@ export const translations = {
           body: "Ticketed admissions with real capacity plus full-day passes — the page tracks spots left for you.",
         },
       ],
-      note: "Different line of work? Start from blank — it takes two minutes.",
+      note:
+        "Choose the workflow closest to your business. You can adjust its services and availability during setup.",
       cta: "Create your booking page",
     },
     mobile: {

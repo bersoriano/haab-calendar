@@ -1,6 +1,11 @@
 # Booking App Spanish Translation (i18n) — Design
 
-> **Status:** Approved design, ready for implementation planning.
+> **Status:** Historical Phase 1 design. Implementation is complete and later
+> landing/auth/admin work superseded part of the boundary described below.
+> Use `docs/booking-i18n-status.md` as the authoritative current architecture.
+> The landing and booking dictionaries remain separate, but first-time
+> onboarding now bridges the visitor's language and required vertical selection
+> into provider setup.
 > **Scope of this spec:** Phase 1 — translate the **public-facing booking surfaces** of the booking
 > application to Spanish, behind bilingual infrastructure. The marketing **landing page is explicitly
 > out of scope** and is treated as a fully separate system (it has its own `LanguageProvider` and

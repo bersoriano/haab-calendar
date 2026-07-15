@@ -352,11 +352,19 @@ default, `es` supported), read from `public_providers.language`. The Settings â†
 Language selector updates `provider.language`, and authenticated setup/admin
 saves send the normalized store through `PUT /api/provider/store`.
 
-During first-time setup, the visitor's landing/login language is also carried in
-the authentication return path and seeds `provider.language`. This seed applies
-only while setup is incomplete; a completed provider keeps the language loaded
-from `public.providers.language`. Resetting a standalone setup preserves the
-currently selected language.
+During first-time setup, the provider must select a workflow vertical before
+authentication or setup can begin. The visitor's landing/login language and the
+selected vertical are both carried in the authentication return path. The
+language seeds `provider.language`, while the vertical determines the initial
+services, availability, terminology, and booking defaults. This seed applies
+only while setup is incomplete; a completed provider keeps the language and
+vertical loaded from persisted provider data. Resetting a standalone setup
+preserves the currently selected language but clears the workflow selection.
+
+The first-setup admin header mirrors the active vertical and offers a return to
+the landing workflow selector. It is presentation-only; the canonical values
+remain `ModuleStore.provider.language` and `ModuleStore.vertical` until publish,
+then `public.providers.language` and `public.providers.vertical`.
 
 `lib/supabase/provider-store.ts: upsertProvider` includes
 `language: provider.language` in both provider inserts and updates. The public

@@ -56,7 +56,10 @@ Came out of the events single-occurrence / weekly-recurrence work (June 2026).
 - 🟡 **Finish Spanish translation coverage.** English/Spanish infrastructure,
   all vertical-copy decks, es-MX date/time formatting, public booking/manage
   flows, and most provider/admin surfaces are implemented. Provider language is
-  persisted to Supabase and English remains the booking fallback.
+  persisted to Supabase and English remains the booking fallback. First-time
+  onboarding now carries the visitor language through authentication, requires
+  a workflow vertical before setup, and surfaces that selection in the localized
+  admin setup header.
   - **Remaining product UI:** booking/provider client and server error states.
     Landing integration panels, vertical cards, login/signup/confirmation,
     availability, image upload, shared status/accessibility UI, and

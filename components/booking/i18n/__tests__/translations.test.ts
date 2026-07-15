@@ -37,4 +37,13 @@ describe("bookingTranslations", () => {
     expect(publicFlow.progressLabel).toBe("Progreso de la reserva");
     expect(publicFlow.statusUpdated).toBe("Actualizada");
   });
+
+  it("uses physician terminology for the healthcare vertical in both languages", () => {
+    expect(bookingTranslations.en.healthcareRole.dataTitle).toBe("Physician Data");
+    expect(bookingTranslations.es.healthcareRole.dataTitle).toBe("Datos del Médico");
+    expect(bookingTranslations.en.healthcareRole.informationTitle).toBe("Physician information");
+    expect(bookingTranslations.es.healthcareRole.informationTitle).toBe("Información del Médico");
+    expect(Object.values(bookingTranslations.en.healthcareRole).join(" ")).not.toMatch(/\bprovider\b/i);
+    expect(Object.values(bookingTranslations.es.healthcareRole).join(" ")).not.toMatch(/\bproveedor\b/i);
+  });
 });

@@ -2,13 +2,14 @@
 
 > **Last audited:** 2026-07-15 on `main`.
 >
-> The booking application and marketing landing page use separate language
-> systems. This document describes both boundaries, with the booking application
-> as the primary focus.
+> The booking application and marketing landing page keep separate dictionaries
+> and persistence owners, but first-time onboarding deliberately bridges the
+> visitor's landing/login language into provider setup. This document describes
+> that boundary, with the booking application as the primary focus.
 
 Related documents:
 
-- Phase 1 public-flow design: `docs/superpowers/specs/2026-06-25-booking-spanish-i18n-design.md`
+- Historical Phase 1 public-flow design: `docs/superpowers/specs/2026-06-25-booking-spanish-i18n-design.md`
 - Phase 1 implementation plan: `docs/superpowers/plans/2026-06-25-booking-spanish-i18n.md`
 - Phase 2 admin implementation plan: `docs/superpowers/plans/2026-06-26-admin-i18n.md`
 - Public-flow manual test: `docs/manual-tests/booking-spanish-public-flow.md`
@@ -46,6 +47,43 @@ For a provider who has not completed setup, that explicit return language seeds
 same value therefore drives the setup wizard and becomes provider-owned when
 setup is published. A completed provider's persisted language wins instead and
 is not overwritten by a visitor preference.
+
+### First-time onboarding contract
+
+This is the required landing-to-admin behavior. Future CTA, authentication, or
+setup changes must preserve it:
+
+1. For an unconfigured provider, a generic **Create your booking page** CTA does
+   not open authentication or an untyped setup. It scrolls to `#verticals`.
+2. The provider must choose exactly one workflow: `healthcare`, `spaces`,
+   `professional`, or `events`. There is no blank/no-vertical setup path.
+3. A vertical card starts authentication with both values represented in the
+   request and return path, for example
+   `/login?next=%2F%3Fvertical%3Dhealthcare%26lang%3Des&lang=es`.
+4. Changing language on `/login` updates both the login page and the language
+   inside `next`; the two values must not diverge.
+5. On return, `HomeExperience` supplies `initialVertical` and `initialLanguage`.
+   An incomplete setup store is seeded with that language, and the selected
+   vertical determines the services, availability, terminology, and booking
+   defaults shown by the wizard.
+6. The first-setup admin header displays the localized selected workflow and a
+   localized action for returning to workflow selection. It is admin-only and
+   disappears after setup is complete.
+7. Publishing transfers ownership to persisted provider configuration. Later
+   admin and public renders use `public.providers.language` and the provider's
+   stored vertical; visitor preference no longer overrides a completed provider.
+
+Primary implementation touchpoints:
+
+- `components/home-experience.tsx` — CTA gating, vertical selection, and
+  landing/setup handoff.
+- `components/landing/language-provider.tsx` — visitor preference.
+- `app/login/page.tsx` and `app/login/actions.ts` — language-preserving auth.
+- `components/booking/state/useModuleStore.ts` and `lib/store.ts` — incomplete
+  setup hydration and language seeding.
+- `components/provider/SelectedWorkflowHeader.tsx` — admin-only workflow
+  context and change-workflow action.
+- `lib/supabase/provider-store.ts` — persisted provider ownership.
 
 ---
 
@@ -116,13 +154,13 @@ environment; deployment verification must check remote migration history.
 | Booking hold warning | Localized, including shared countdown states |
 | Provider dashboard and bookings list | Localized |
 | Admin calendar | Localized |
-| Setup wizard and welcome screen | Localized |
+| Setup wizard and welcome screen | Localized, including the first-setup selected-workflow header, change-workflow action, and healthcare-only Physician Data / Datos del Médico terminology |
 | Availability editor | Localized, including weekdays and blocked-time controls |
-| Provider information and header-image form | Localized, including placeholders and upload controls |
+| Provider information and header-image form | Localized, including placeholders, upload controls, and Physician / Médico terminology throughout the healthcare admin experience |
 | Service editor | Localized, including the notes placeholder |
 | Settings and admin navigation | Localized, including save, language, and public-link helpers |
 | Shared progress and booking-status UI | Localized, including screen-reader labels |
-| Marketing landing page | Localized, including home integration panels and vertical cards |
+| Marketing landing page | Localized, including home integration panels, vertical cards, and the required workflow-selection CTA/subtitle |
 | Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects |
 | Landing → authentication → setup → admin continuity | Selected language seeds incomplete setup, persists on publish, and stays synchronized with Settings |
 
@@ -185,7 +223,7 @@ that the admin application remains English is no longer accurate.
 
 Audit baseline on 2026-07-15:
 
-- `npm test` — 212 tests passing across 14 test files.
+- `npm test` — 215 tests passing across 15 test files.
 - `npx tsc --noEmit` — clean.
 - `npm run lint` — clean.
 - Booking dictionary parity and non-empty Spanish values are covered by

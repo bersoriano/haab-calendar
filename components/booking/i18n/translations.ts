@@ -264,6 +264,19 @@ export type BookingDict = {
     goToDashboard: string;
     openPublicPage: string;
     continueButton: string;
+    providerRequiredFieldsError: string;
+  };
+  healthcareRole: {
+    dataTitle: string;
+    informationTitle: string;
+    contactLabel: string;
+    requiredFieldsError: string;
+    addressHintSlot1: string;
+    addressHintSlot2: string;
+    addressHintFull: string;
+    phoneHintSlot1: string;
+    phoneHintSlot2: string;
+    phoneHintFull: string;
   };
   welcome: {
     badge: string;
@@ -567,6 +580,19 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       goToDashboard: "Go to dashboard",
       openPublicPage: "Open public booking page",
       continueButton: "Continue",
+      providerRequiredFieldsError: "Provider name, business name, and email are all required.",
+    },
+    healthcareRole: {
+      dataTitle: "Physician Data",
+      informationTitle: "Physician information",
+      contactLabel: "Contact physician",
+      requiredFieldsError: "Physician name, business name, and email are all required.",
+      addressHintSlot1: "We'll save this as Address 1 in your physician profile so other services can reuse it.",
+      addressHintSlot2: "We'll save this as Address 2 in your physician profile so other services can reuse it.",
+      addressHintFull: "Both physician address slots are already taken — this address will stay with this service only.",
+      phoneHintSlot1: "We'll save this as Phone 1 in your physician profile so other services can reuse it.",
+      phoneHintSlot2: "We'll save this as Phone 2 in your physician profile so other services can reuse it.",
+      phoneHintFull: "Both physician phone slots are already taken — this phone will stay with this service only.",
     },
     welcome: {
       badge: "Welcome to Haab",
@@ -871,6 +897,19 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       goToDashboard: "Ir al panel",
       openPublicPage: "Abrir página de reservas",
       continueButton: "Continuar",
+      providerRequiredFieldsError: "El nombre del proveedor, el nombre del negocio y el correo electrónico son obligatorios.",
+    },
+    healthcareRole: {
+      dataTitle: "Datos del Médico",
+      informationTitle: "Información del Médico",
+      contactLabel: "Contactar al médico",
+      requiredFieldsError: "El nombre del médico, el nombre del negocio y el correo electrónico son obligatorios.",
+      addressHintSlot1: "Lo guardaremos como Dirección 1 en el perfil del médico para que otros servicios puedan reutilizarla.",
+      addressHintSlot2: "Lo guardaremos como Dirección 2 en el perfil del médico para que otros servicios puedan reutilizarla.",
+      addressHintFull: "Ambos campos de dirección del médico ya están ocupados — esta dirección solo se guardará con este servicio.",
+      phoneHintSlot1: "Lo guardaremos como Teléfono 1 en el perfil del médico para que otros servicios puedan reutilizarlo.",
+      phoneHintSlot2: "Lo guardaremos como Teléfono 2 en el perfil del médico para que otros servicios puedan reutilizarlo.",
+      phoneHintFull: "Ambos campos de teléfono del médico ya están ocupados — este teléfono solo se guardará con este servicio.",
     },
     welcome: {
       badge: "Bienvenido a Haab",

@@ -155,6 +155,7 @@ type HaabBookingModuleProps = {
   // Completed providers continue to use their persisted provider language.
   initialLanguage?: Lang;
   onLanguageChange?: (language: Lang) => void;
+  onVerticalChange?: (vertical?: VerticalId) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
   initialVerticalId?: VerticalId;
@@ -220,6 +221,7 @@ export function HaabBookingModule({
   initialLanguage,
   initialVerticalId,
   onLanguageChange,
+  onVerticalChange,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -339,6 +341,7 @@ export function HaabBookingModule({
   const lang = provider.language ?? "en";
   const copy = getVerticalCopy(vertical, lang);
   const t = bookingTranslations[lang];
+  const healthcareRole = vertical === "healthcare" ? t.healthcareRole : null;
   const isDedicatedPublicPage = surfaceMode === "public-only";
   const businessSlug =
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
@@ -1404,6 +1407,7 @@ export function HaabBookingModule({
     resetServiceEditor();
     startFreshBooking();
     actions.updateStandaloneStore(() => empty);
+    onVerticalChange?.(undefined);
   }
 
   function applyVertical(id: VerticalId) {
@@ -1424,6 +1428,7 @@ export function HaabBookingModule({
         DEFAULT_APPOINTMENT_DURATION_MINUTES,
       ),
     );
+    onVerticalChange?.(id);
   }
 
   // One-shot: apply the landing-selected vertical preset once on mount. This is
@@ -1456,7 +1461,7 @@ export function HaabBookingModule({
   function validateSetup(step: SetupStep) {
     if (step === 1) {
       if (!provider.fullName.trim() || !provider.businessName.trim() || !provider.email.trim()) {
-        return "Provider name, business name, and email are all required.";
+        return healthcareRole?.requiredFieldsError ?? t.setup.providerRequiredFieldsError;
       }
     }
 
@@ -2279,7 +2284,7 @@ export function HaabBookingModule({
           />
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {([
-              ["1", t.setup.stepProvider],
+              ["1", healthcareRole?.dataTitle ?? t.setup.stepProvider],
               ["2", t.setup.stepAvailability],
               ["3", t.setup.stepDone],
             ] as [string, string][]).map(([index, label]) => {
@@ -2313,7 +2318,7 @@ export function HaabBookingModule({
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
-                title={t.setup.step1Title}
+                title={healthcareRole?.dataTitle ?? t.setup.step1Title}
                 body={copy.phrases.providerInfoBody}
               />
               <div className="mt-6">
@@ -2852,7 +2857,7 @@ export function HaabBookingModule({
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
           <SectionTitle
-            title={t.admin.providerInformation}
+            title={healthcareRole?.informationTitle ?? t.admin.providerInformation}
             action={
               integratedMode && persistAdminChanges ? (
                 <ActionButton
@@ -5148,7 +5153,7 @@ export function HaabBookingModule({
                 isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass),
               )}
             >
-              {t.manage.contactProvider}
+              {healthcareRole?.contactLabel ?? t.manage.contactProvider}
             </a>
           ) : null}
         </div>

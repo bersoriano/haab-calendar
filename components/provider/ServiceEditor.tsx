@@ -91,16 +91,17 @@ export function ServiceEditor({
   const hasPhone2 = provider.phoneNumber2.trim().length > 0;
   const nextAddressSlot = !hasAddress1 ? "1" : !hasAddress2 ? "2" : null;
   const nextPhoneSlot = !hasPhone1 ? "1" : !hasPhone2 ? "2" : null;
+  const profileHints = vertical === "healthcare" ? t.healthcareRole : t.admin;
   const addressHint = nextAddressSlot === "1"
-    ? t.admin.addressHintSlot1
+    ? profileHints.addressHintSlot1
     : nextAddressSlot === "2"
-      ? t.admin.addressHintSlot2
-      : t.admin.addressHintFull;
+      ? profileHints.addressHintSlot2
+      : profileHints.addressHintFull;
   const phoneHint = nextPhoneSlot === "1"
-    ? t.admin.phoneHintSlot1
+    ? profileHints.phoneHintSlot1
     : nextPhoneSlot === "2"
-      ? t.admin.phoneHintSlot2
-      : t.admin.phoneHintFull;
+      ? profileHints.phoneHintSlot2
+      : profileHints.phoneHintFull;
   return (
     <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
       <div className={cn(adminPanelClass, "p-6")}>

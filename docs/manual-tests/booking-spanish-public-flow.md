@@ -11,26 +11,37 @@ Last run: (not yet run) · Result: —
 ## Setup
 
 1. `npm run dev` → `http://localhost:3000`.
-2. On the landing page, select **Español**, then choose **Salud**. Confirm the
+2. On the landing page, select **Español** and click **Crea tu página de
+   reservas**. Confirm the page scrolls to **Una página, moldeada a tu
+   negocio**, the subtitle begins **Selecciona un flujo**, and setup does not
+   open before a vertical is selected.
+3. Choose **Salud**. Confirm the
    login URL contains `lang=es` and its encoded `next` path also contains
    `lang=es`.
-3. On the login page, switch to **EN** and back to **ES**. Confirm both `lang`
+4. On the login page, switch to **EN** and back to **ES**. Confirm both `lang`
    and the language inside the encoded `next` path change together.
-4. Sign in or create an account. On return, confirm the URL contains
+5. Sign in or create an account. On return, confirm the URL contains
    `vertical=healthcare&lang=es` and the setup heading reads **Configure su
    página de citas para pacientes** rather than the English equivalent.
-5. Provider:
+   At the top of the admin setup, confirm the sticky workflow header shows
+   **Salud**, **Para médicos y especialistas**, and **Elegir otro flujo**. Use
+   that action once and confirm it returns to the vertical picker before
+   selecting **Salud** again.
+6. Confirm Step 1 is labeled **Datos del Médico**, not **Proveedor** or **Mis
+   datos**. Enter the physician data:
    - Full name `Dra. Carmen Salinas`
    - Business `Clínica Salinas`
    - Email `citas@clinicasalinas.example`
    - Phone 1 `55 1234 5678`
    - Address 1 `Av. Insurgentes Sur 100, Col. Roma Norte, CDMX`
-6. Availability: Mon–Fri 09:00–17:00 → Continue → publish.
+7. Availability: Mon–Fri 09:00–17:00 → Continue → publish.
    Public page: `/doctors/clinica-salinas`.
-7. Enter the admin side and confirm dashboard, bookings, calendar, services,
+8. Enter the admin side and confirm dashboard, bookings, calendar, services,
    and settings remain Spanish. Reload and confirm Settings → Language is still
-   **Español**.
-8. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
+   **Español**. Settings must show **Información del Médico**, and healthcare
+   service-editor profile hints must refer to **el médico**, never **el
+   proveedor**.
+9. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
    is an appointment type.
 
 ### Set language to Spanish

@@ -42,6 +42,9 @@ describe("landing translations", () => {
   it("covers home integration and authentication copy", () => {
     expect(translations.es.home.verticals.healthcare.label).toBe("Salud");
     expect(translations.es.home.goToDashboard).toBe("Ir a tu panel →");
+    expect(translations.es.useCases.body).toContain("Selecciona un flujo");
+    expect(translations.en.useCases.body).toContain("Select a workflow");
+    expect(translations.en.useCases.note).not.toContain("blank");
     expect(translations.es.auth.signIn).toBe("Iniciar sesión");
     expect(translations.es.auth.confirmationExpired).toContain("venció");
   });
