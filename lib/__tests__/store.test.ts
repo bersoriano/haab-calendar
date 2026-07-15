@@ -11,6 +11,7 @@ import {
   setServiceBookingLength,
   normalizeServices,
   normalizeVertical,
+  seedSetupLanguage,
 } from "@/lib/store";
 import { VERTICALS } from "@/config/verticals";
 import type { BookingHoldRecord, BookingRecord, ModuleStore } from "@/lib/types";
@@ -176,6 +177,32 @@ describe("normalizeProvider language", () => {
   it("preserves a provided language", () => {
     expect(normalizeProvider({ language: "en" }).language).toBe("en");
     expect(normalizeProvider({ language: "es" }).language).toBe("es");
+  });
+});
+
+describe("seedSetupLanguage", () => {
+  it("seeds the landing language into a fresh setup store", () => {
+    const next = seedSetupLanguage(createEmptyStore(), "es");
+
+    expect(next.provider.language).toBe("es");
+    expect(next.setupComplete).toBe(false);
+  });
+
+  it("overrides a stale language while setup is still incomplete", () => {
+    const healthcare = VERTICALS.find((vertical) => vertical.id === "healthcare")!;
+    const incomplete = applyVerticalToStore(createEmptyStore(), healthcare);
+
+    expect(seedSetupLanguage(incomplete, "es").provider.language).toBe("es");
+  });
+
+  it("preserves the saved language of a completed provider", () => {
+    const completed = {
+      ...createEmptyStore(),
+      setupComplete: true,
+    };
+
+    expect(seedSetupLanguage(completed, "es")).toBe(completed);
+    expect(completed.provider.language).toBe("en");
   });
 });
 

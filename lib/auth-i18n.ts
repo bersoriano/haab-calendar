@@ -9,6 +9,15 @@ export type AuthErrorLike = {
   message?: string;
 };
 
+export function withAuthReturnLanguage(path: string, lang: Lang) {
+  const [pathAndQuery, hash] = path.split("#", 2);
+  const [pathname, query] = pathAndQuery.split("?", 2);
+  const params = new URLSearchParams(query);
+  params.set("lang", lang);
+
+  return `${pathname}?${params.toString()}${hash ? `#${hash}` : ""}`;
+}
+
 export function getAuthCopy(value: unknown) {
   const lang = normalizeLandingLang(value);
   return { lang, t: translations[lang].auth };

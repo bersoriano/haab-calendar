@@ -1,12 +1,26 @@
 import { describe, expect, it } from "vitest";
 
-import { getAuthCopy, getAuthErrorMessage } from "@/lib/auth-i18n";
+import {
+  getAuthCopy,
+  getAuthErrorMessage,
+  withAuthReturnLanguage,
+} from "@/lib/auth-i18n";
 
 describe("auth i18n", () => {
   it("normalizes the requested login language", () => {
     expect(getAuthCopy("en").lang).toBe("en");
     expect(getAuthCopy("es").t.signIn).toBe("Iniciar sesión");
     expect(getAuthCopy(null).lang).toBe("es");
+  });
+
+  it("keeps the selected language in the post-authentication return path", () => {
+    expect(withAuthReturnLanguage("/", "es")).toBe("/?lang=es");
+    expect(withAuthReturnLanguage("/?vertical=healthcare", "es")).toBe(
+      "/?vertical=healthcare&lang=es",
+    );
+    expect(withAuthReturnLanguage("/?vertical=events#setup", "en")).toBe(
+      "/?vertical=events&lang=en#setup",
+    );
   });
 
   it("maps known Supabase auth errors to Spanish", () => {

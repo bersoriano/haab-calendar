@@ -1,8 +1,8 @@
 # Manual test — Spanish public booking flow (es-MX)
 
-Validates the full public booking experience when a provider's `language` is
-`es`. Covers the forward booking flow, the manage/reschedule/cancel flow, and
-an English regression pass to confirm the default language is fully restored.
+Validates Spanish continuity from the landing page through authentication,
+provider setup/admin, the public booking experience, and the
+manage/reschedule/cancel flow. It also includes an English regression pass.
 
 Last run: (not yet run) · Result: —
 
@@ -11,24 +11,34 @@ Last run: (not yet run) · Result: —
 ## Setup
 
 1. `npm run dev` → `http://localhost:3000`.
-2. Reset workspace: Settings → **Reset standalone setup** → choose **Healthcare**
-   (or any vertical; healthcare is used here as the reference persona).
-3. Provider:
+2. On the landing page, select **Español**, then choose **Salud**. Confirm the
+   login URL contains `lang=es` and its encoded `next` path also contains
+   `lang=es`.
+3. On the login page, switch to **EN** and back to **ES**. Confirm both `lang`
+   and the language inside the encoded `next` path change together.
+4. Sign in or create an account. On return, confirm the URL contains
+   `vertical=healthcare&lang=es` and the setup heading reads **Configure su
+   página de citas para pacientes** rather than the English equivalent.
+5. Provider:
    - Full name `Dra. Carmen Salinas`
    - Business `Clínica Salinas`
    - Email `citas@clinicasalinas.example`
    - Phone 1 `55 1234 5678`
    - Address 1 `Av. Insurgentes Sur 100, Col. Roma Norte, CDMX`
-4. Availability: Mon–Fri 09:00–17:00 → Continue → publish.
+6. Availability: Mon–Fri 09:00–17:00 → Continue → publish.
    Public page: `/doctors/clinica-salinas`.
-5. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
+7. Enter the admin side and confirm dashboard, bookings, calendar, services,
+   and settings remain Spanish. Reload and confirm Settings → Language is still
+   **Español**.
+8. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
    is an appointment type.
 
 ### Set language to Spanish
 
-In the provider application, open Settings → **Language**, choose **Español**,
-and save the admin changes. The save must pass through `PUT /api/provider/store`
-and persist `public.providers.language = 'es'`.
+The first setup publish must pass through `PUT /api/provider/store` and persist
+`public.providers.language = 'es'`. Settings → Language remains available for
+changing the provider language later; saving an admin change uses the same
+persistence path.
 
 Reload the public page to pick up the saved value. If the page remains English,
 inspect the stored value and public view before changing it manually:
@@ -165,9 +175,10 @@ Reload `http://localhost:3000/doctors/clinica-salinas` and confirm:
 - The `language` column must be present in `public_providers`; the migration in
   `supabase/migrations/` must expose it through the view. If the column is
   missing, the resolver silently defaults to `"en"`.
-- Standalone (localStorage) mode updates `provider.language` locally. In an
-  authenticated Supabase-backed setup/admin flow, saving persists the same
-  value through `PUT /api/provider/store`.
+- Standalone (localStorage) mode seeds `provider.language` from the landing
+  choice while setup is incomplete. In an authenticated Supabase-backed
+  setup/admin flow, publishing and later Settings saves persist the same value
+  through `PUT /api/provider/store`.
 - If the saved database value is correct but the public page remains English,
   verify that `public_providers` exposes `language` and that the resolver/API
   mapper has not defaulted a missing value to `en`.

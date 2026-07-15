@@ -1,6 +1,6 @@
 "use client";
 
-import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
 import { backfillManageTokens } from "@/lib/booking-tokens";
 import {
   normalizeAvailability,
@@ -12,16 +12,19 @@ import {
   pruneBookingHolds,
   sortBookings,
   createEmptyStore,
+  seedSetupLanguage,
 } from "@/lib/store";
 import type {
   BookingHoldRecord,
   BookingRecord,
   InjectedConfig,
+  Lang,
   ModuleStore,
 } from "@/lib/types";
 
 export function useModuleStore(params: {
   injectedConfig?: Partial<InjectedConfig>;
+  initialLanguage?: Lang;
   storageKey: string;
   onStoreChange?: (store: ModuleStore) => void;
   onBookingsChange?: (bookings: BookingRecord[]) => void;
@@ -46,7 +49,7 @@ export function useModuleStore(params: {
     releaseBookingHold: (holdId?: string) => void;
   };
 } {
-  const { injectedConfig, storageKey, onStoreChange, onBookingsChange } = params;
+  const { injectedConfig, initialLanguage, storageKey, onStoreChange, onBookingsChange } = params;
 
   const integratedMode = Boolean(
     injectedConfig?.provider &&
@@ -56,8 +59,9 @@ export function useModuleStore(params: {
 
   const [hydrated, setHydrated] = useState(integratedMode);
   const [standaloneStore, setStandaloneStore] = useState<ModuleStore>(() =>
-    createEmptyStore(),
+    seedSetupLanguage(createEmptyStore(), initialLanguage),
   );
+  const initialLanguageRef = useRef(initialLanguage);
   const [shadowBookings, setShadowBookings] = useState<BookingRecord[]>(() =>
     normalizeBookings(injectedConfig?.bookings),
   );
@@ -75,14 +79,19 @@ export function useModuleStore(params: {
 
       if (raw) {
         try {
-          const normalized = normalizeStore(JSON.parse(raw) as ModuleStore);
+          const normalized = seedSetupLanguage(
+            normalizeStore(JSON.parse(raw) as ModuleStore),
+            initialLanguageRef.current,
+          );
           const { changed, store: backfilled } = backfillManageTokens(normalized);
           if (changed) {
             window.localStorage.setItem(storageKey, JSON.stringify(backfilled));
           }
           setStandaloneStore(backfilled);
         } catch {
-          setStandaloneStore(createEmptyStore());
+          setStandaloneStore(
+            seedSetupLanguage(createEmptyStore(), initialLanguageRef.current),
+          );
         }
       }
 

@@ -16,6 +16,7 @@ import {
   useLanguage,
 } from "@/components/landing/language-provider";
 import type { Lang as LandingLang } from "@/components/landing/translations";
+import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 
 type View = "home" | "app";
 
@@ -26,18 +27,27 @@ type HomeExperienceProps = {
   email?: string;
   /** Pre-selected vertical, e.g. after returning from login via ?vertical=. */
   initialVertical?: LandingVertical;
+  /** Visitor language carried explicitly through the authentication return URL. */
+  initialLanguage?: LandingLang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
 };
 
 function loginHref(next: string, lang: LandingLang) {
-  const params = new URLSearchParams({ next, lang });
+  const params = new URLSearchParams({
+    next: withAuthReturnLanguage(next, lang),
+    lang,
+  });
   return `/login?${params.toString()}`;
 }
 
 export function HomeExperience(props: HomeExperienceProps) {
+  const configuredLanguage = props.configured
+    ? props.dashboardStore?.provider.language
+    : undefined;
+
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLang={configuredLanguage ?? props.initialLanguage}>
       <HomeExperienceInner {...props} />
     </LanguageProvider>
   );
@@ -51,7 +61,7 @@ function HomeExperienceInner({
   dashboardStore,
 }: HomeExperienceProps) {
   const router = useRouter();
-  const { lang, t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const [persistedDashboardStore, setPersistedDashboardStore] = useState<
     ModuleStore | undefined
   >();
@@ -120,7 +130,9 @@ function HomeExperienceInner({
               setPersistedDashboardStore(store);
               router.refresh();
             }}
+            initialLanguage={effectiveConfigured ? undefined : lang}
             initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
+            onLanguageChange={setLang}
           />
         </main>
       </div>

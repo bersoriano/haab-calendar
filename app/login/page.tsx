@@ -5,6 +5,7 @@ import {
   translations,
   type Lang,
 } from "@/components/landing/translations";
+import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -28,7 +29,10 @@ function getSafeNextPath(next?: string) {
 }
 
 function languageHref(lang: Lang, nextPath: string) {
-  const params = new URLSearchParams({ lang, next: nextPath });
+  const params = new URLSearchParams({
+    lang,
+    next: withAuthReturnLanguage(nextPath, lang),
+  });
   return `/login?${params.toString()}`;
 }
 
@@ -36,7 +40,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const lang = normalizeLandingLang(params.lang);
   const t = translations[lang].auth;
-  const nextPath = getSafeNextPath(params.next);
+  const nextPath = withAuthReturnLanguage(getSafeNextPath(params.next), lang);
   const message = params.message;
   const messageStatus = params.status === "success" ? "success" : "error";
 

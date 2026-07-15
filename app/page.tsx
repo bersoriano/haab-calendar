@@ -2,6 +2,7 @@ import { HomeExperience } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import type { LandingVertical } from "@/components/landing/landing-ui";
+import type { Lang } from "@/components/landing/translations";
 import type { ModuleStore } from "@/lib/types";
 
 const LANDING_VERTICALS: LandingVertical[] = [
@@ -16,11 +17,15 @@ function parseVertical(value?: string): LandingVertical | undefined {
 }
 
 type HomePageProps = {
-  searchParams: Promise<{ vertical?: string }>;
+  searchParams: Promise<{ lang?: string; vertical?: string }>;
 };
 
+function parseLanguage(value?: string): Lang | undefined {
+  return value === "en" || value === "es" ? value : undefined;
+}
+
 export default async function Home({ searchParams }: HomePageProps) {
-  const { vertical } = await searchParams;
+  const { lang, vertical } = await searchParams;
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -56,6 +61,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       loggedIn={loggedIn}
       configured={configured}
       email={email}
+      initialLanguage={parseLanguage(lang)}
       initialVertical={parseVertical(vertical)}
       dashboardStore={dashboardStore}
     />

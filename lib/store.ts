@@ -17,6 +17,7 @@ import type {
   WeekdayKey,
   WeeklyAvailability,
   BookingFlow,
+  Lang,
 } from "./types";
 import type { Vertical } from "../config/verticals";
 
@@ -51,6 +52,20 @@ export function createEmptyStore(): ModuleStore {
     bookingHolds: [],
     setupComplete: false,
     vertical: undefined,
+  };
+}
+
+export function seedSetupLanguage(store: ModuleStore, language?: Lang): ModuleStore {
+  if (!language || store.setupComplete || store.provider.language === language) {
+    return store;
+  }
+
+  return {
+    ...store,
+    provider: {
+      ...store.provider,
+      language,
+    },
   };
 }
 

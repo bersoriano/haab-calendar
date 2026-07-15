@@ -97,6 +97,7 @@ import {
   setServiceBookingLength,
   parseMaxSpots,
   normalizeStore,
+  seedSetupLanguage,
 } from "@/lib/store";
 import {
   getBookingsForDate,
@@ -150,6 +151,10 @@ type HaabBookingModuleProps = {
   persistSetup?: boolean;
   persistAdminChanges?: boolean;
   onSetupPersisted?: (store: ModuleStore) => void;
+  // Seeds an incomplete setup store from the visitor's landing/login choice.
+  // Completed providers continue to use their persisted provider language.
+  initialLanguage?: Lang;
+  onLanguageChange?: (language: Lang) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
   initialVerticalId?: VerticalId;
@@ -212,14 +217,22 @@ export function HaabBookingModule({
   persistSetup = false,
   persistAdminChanges = false,
   onSetupPersisted,
+  initialLanguage,
   initialVerticalId,
+  onLanguageChange,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
     hydrated,
     store: activeStore,
     actions,
-  } = useModuleStore({ injectedConfig, storageKey, onStoreChange, onBookingsChange });
+  } = useModuleStore({
+    injectedConfig,
+    initialLanguage,
+    storageKey,
+    onStoreChange,
+    onBookingsChange,
+  });
 
   const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   const [isDesktopColumns, setIsDesktopColumns] = useState(false);
@@ -1358,6 +1371,10 @@ export function HaabBookingModule({
               slugify(current.provider.businessName || current.provider.fullName || "haab-calendar"),
       },
     }));
+
+    if (key === "language") {
+      onLanguageChange?.(value as Lang);
+    }
   }
 
   function updateAvailabilityDay(
@@ -1381,7 +1398,7 @@ export function HaabBookingModule({
       return;
     }
 
-    const empty = createEmptyStore();
+    const empty = seedSetupLanguage(createEmptyStore(), lang);
     setSetupStep(1);
     setSetupError(null);
     resetServiceEditor();
@@ -1415,13 +1432,13 @@ export function HaabBookingModule({
   const appliedInitialVerticalRef = useRef(false);
   useEffect(() => {
     if (appliedInitialVerticalRef.current) return;
-    if (integratedMode) return;
+    if (integratedMode || !hydrated) return;
     if (!initialVerticalId) return;
     appliedInitialVerticalRef.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     applyVertical(initialVerticalId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialVerticalId, integratedMode]);
+  }, [hydrated, initialVerticalId, integratedMode]);
 
   function updateSetupBookingLength(value: string) {
     if (integratedMode) {

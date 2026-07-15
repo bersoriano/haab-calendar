@@ -27,19 +27,25 @@ The two language systems have different owners and defaults:
 | Surface | Language owner | Default | Persistence |
 | --- | --- | --- | --- |
 | Marketing landing page | Visitor | Spanish | `localStorage` key `haab-lang` |
-| Provider/admin application | Provider configuration | English | `public.providers.language` |
+| Provider/admin application | Provider configuration, seeded from the visitor during first setup | Selected visitor language for first setup; English fallback | `public.providers.language` |
 | Public booking and manage pages | Provider configuration | English | Read through `public_providers.language` |
 | Login, signup, and confirmation | Visitor | Spanish | `lang` query/form value plus `haab-lang` synchronization |
 
 The booking copy uses formal Mexican Spanish (`usted`). English remains the
 fallback whenever stored language data is absent or invalid.
 
-Visitor language travels from the landing page to `/login?lang=...`, then in a
-hidden form field to the authentication Server Action. Signup confirmation URLs
-and `app/auth/confirm/route.ts` preserve the same value. The login client also
-synchronizes `haab-lang`, so changing language on the login page survives the
-return to the landing page. This is intentionally separate from provider-owned
-booking language.
+Visitor language travels from the landing page to `/login?lang=...`, in the
+post-authentication `next` path, and in a hidden form field to the authentication
+Server Action. Signup confirmation URLs and `app/auth/confirm/route.ts` preserve
+the same value. Changing language on the login page updates both the visible
+login language and the language inside `next`. The login client also synchronizes
+`haab-lang`.
+
+For a provider who has not completed setup, that explicit return language seeds
+`ModuleStore.provider.language`, including over an incomplete local draft. The
+same value therefore drives the setup wizard and becomes provider-owned when
+setup is published. A completed provider's persisted language wins instead and
+is not overwritten by a visitor preference.
 
 ---
 
@@ -69,6 +75,14 @@ React language context.
 ### Persisted data flow
 
 ```text
+Landing language
+  → /login?lang=... + language-bearing next path
+  → HomeExperience initialLanguage
+  → seedSetupLanguage(...) for incomplete setup only
+  → ModuleStore.provider.language
+  → setup and admin dictionaries
+  → PUT /api/provider/store on publish
+
 Settings → Language
   → updateProvider("language", ...)
   → PUT /api/provider/store
@@ -110,6 +124,7 @@ environment; deployment verification must check remote migration history.
 | Shared progress and booking-status UI | Localized, including screen-reader labels |
 | Marketing landing page | Localized, including home integration panels and vertical cards |
 | Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects |
+| Landing → authentication → setup → admin continuity | Selected language seeds incomplete setup, persists on publish, and stays synchronized with Settings |
 
 Phase 1 supplied the public booking infrastructure. Phase 2 subsequently added
 the `admin`, `setup`, `welcome`, and `providerForm` dictionaries and wired most
@@ -170,7 +185,7 @@ that the admin application remains English is no longer accurate.
 
 Audit baseline on 2026-07-15:
 
-- `npm test` — 206 tests passing across 13 test files.
+- `npm test` — 212 tests passing across 14 test files.
 - `npx tsc --noEmit` — clean.
 - `npm run lint` — clean.
 - Booking dictionary parity and non-empty Spanish values are covered by
@@ -179,6 +194,8 @@ Audit baseline on 2026-07-15:
   and Supabase auth-error mapping are covered by
   `components/landing/__tests__/translations.test.ts` and
   `lib/__tests__/auth-i18n.test.ts`.
+- Setup-language seeding and completed-provider protection are covered by
+  `lib/__tests__/store.test.ts`.
 - Locale formatting and vertical-copy behavior are covered in `lib/__tests__`.
 
 Missing automated coverage:

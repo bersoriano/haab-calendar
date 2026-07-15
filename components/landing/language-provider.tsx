@@ -21,29 +21,49 @@ type LanguageContextValue = {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("es");
+export function LanguageProvider({
+  children,
+  initialLang,
+}: {
+  children: ReactNode;
+  initialLang?: Lang;
+}) {
+  const [lang, setLangState] = useState<Lang>(initialLang ?? "es");
+  const [isReady, setIsReady] = useState(Boolean(initialLang));
 
-  // Restore saved preference on mount. Done in an effect (not lazy init) so the
-  // server-rendered default ("es") matches the first client render and avoids a
-  // hydration mismatch; localStorage is only read after mount.
+  // A server-known language (auth return or configured provider) wins. Otherwise
+  // restore the visitor preference after mount so browser APIs stay client-only.
   useEffect(() => {
+    if (initialLang) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize a server-known language after a refreshed client boundary
+      setLangState(initialLang);
+      setIsReady(true);
+      return;
+    }
+
     const saved = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
     if (saved === "es" || saved === "en") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLangState(saved);
     }
-  }, []);
+    setIsReady(true);
+  }, [initialLang]);
 
   // Keep <html lang> and storage in sync.
   useEffect(() => {
+    if (!isReady) return;
     document.documentElement.lang = lang;
     window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
-  }, [lang]);
+  }, [isReady, lang]);
 
-  const setLang = useCallback((next: Lang) => setLangState(next), []);
+  const setLang = useCallback((next: Lang) => {
+    setIsReady(true);
+    setLangState(next);
+  }, []);
   const toggle = useCallback(
-    () => setLangState((prev) => (prev === "es" ? "en" : "es")),
+    () => {
+      setIsReady(true);
+      setLangState((prev) => (prev === "es" ? "en" : "es"));
+    },
     [],
   );
 

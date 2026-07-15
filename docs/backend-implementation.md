@@ -352,6 +352,12 @@ default, `es` supported), read from `public_providers.language`. The Settings â†
 Language selector updates `provider.language`, and authenticated setup/admin
 saves send the normalized store through `PUT /api/provider/store`.
 
+During first-time setup, the visitor's landing/login language is also carried in
+the authentication return path and seeds `provider.language`. This seed applies
+only while setup is incomplete; a completed provider keeps the language loaded
+from `public.providers.language`. Resetting a standalone setup preserves the
+currently selected language.
+
 `lib/supabase/provider-store.ts: upsertProvider` includes
 `language: provider.language` in both provider inserts and updates. The public
 read path then carries the value through `lib/public-booking-resolver.ts` into
