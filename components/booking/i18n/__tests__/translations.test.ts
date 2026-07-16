@@ -26,7 +26,7 @@ describe("bookingTranslations", () => {
   });
 
   it("covers the shared provider and public-flow components in Spanish", () => {
-    const { admin, providerForm, public: publicCopy, publicFlow } =
+    const { admin, providerForm, public: publicCopy, publicFlow, setup } =
       bookingTranslations.es;
 
     expect(admin.weekdays.monday).toBe("Lunes");
@@ -36,6 +36,8 @@ describe("bookingTranslations", () => {
     expect(publicCopy.expired).toBe("Vencida");
     expect(publicFlow.progressLabel).toBe("Progreso de la reserva");
     expect(publicFlow.statusUpdated).toBe("Actualizada");
+    expect(setup.stepProvider).toBe("Mis Datos");
+    expect(bookingTranslations.en.setup.stepProvider).toBe("My Data");
   });
 
   it("uses physician terminology for the healthcare vertical in both languages", () => {

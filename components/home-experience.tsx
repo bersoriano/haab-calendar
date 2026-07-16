@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
+import { AdminHero } from "@/components/provider/AdminHero";
 import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
 import { logout } from "@/app/login/actions";
 import { VERTICALS } from "@/config/verticals";
@@ -89,6 +90,15 @@ function HomeExperienceInner({
     router.replace("/");
   }
 
+  function handleVerticalChange(vertical?: VerticalId) {
+    if (!vertical && !effectiveConfigured) {
+      backToHome();
+      return;
+    }
+
+    setSelectedVertical(vertical);
+  }
+
   // Generic "create your page" CTA.
   function onStart() {
     if (effectiveConfigured) {
@@ -115,7 +125,14 @@ function HomeExperienceInner({
 
     return (
       <div className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[var(--surface)]/95 backdrop-blur">
+        <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
+          <AdminHero />
+        </div>
+        <header
+          className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${
+            showSelectedWorkflow ? "" : "border-b border-[var(--line)]"
+          }`}
+        >
           <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
             {showSelectedWorkflow ? (
               <SelectedWorkflowHeader
@@ -150,7 +167,7 @@ function HomeExperienceInner({
             initialLanguage={effectiveConfigured ? undefined : lang}
             initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
             onLanguageChange={setLang}
-            onVerticalChange={setSelectedVertical}
+            onVerticalChange={handleVerticalChange}
           />
         </main>
       </div>

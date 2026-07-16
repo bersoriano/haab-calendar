@@ -1604,6 +1604,7 @@ export function HaabBookingModule({
       ...current,
       vertical: undefined,
     }));
+    onVerticalChange?.(undefined);
   }
 
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
@@ -2305,13 +2306,12 @@ export function HaabBookingModule({
           />
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             {([
-              ["1", healthcareRole?.dataTitle ?? t.setup.stepProvider],
+              ["1", t.setup.stepProvider],
               ["2", t.setup.stepAvailability],
               ["3", t.setup.stepDone],
             ] as [string, string][]).map(([index, label]) => {
               const stepNumber = Number(index) as SetupStep;
               const isCurrent = setupStep === stepNumber;
-              const isComplete = setupStep > stepNumber;
 
               return (
                 <div
@@ -2326,9 +2326,6 @@ export function HaabBookingModule({
                     {t.setup.stepLabel} {index}
                   </p>
                   <p className="mt-2 text-base font-semibold text-[var(--ink)]">{label}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    {isComplete ? t.setup.statusReady : isCurrent ? t.setup.statusCurrent : t.setup.statusNext}
-                  </p>
                 </div>
               );
             })}
