@@ -10,6 +10,8 @@ import {
   createRollingWeekWindow,
   isPastDate,
   getWeekdayKey,
+  getTimeWindowDurationMinutes,
+  isValidTimeWindow,
 } from "@/lib/date";
 
 describe("toMinutes", () => {
@@ -27,6 +29,22 @@ describe("toMinutes", () => {
 
   it("converts 23:59 to 1439", () => {
     expect(toMinutes("23:59")).toBe(1439);
+  });
+});
+
+describe("fixed time windows", () => {
+  it("calculates the duration from the visible event window", () => {
+    expect(getTimeWindowDurationMinutes("07:00", "08:30")).toBe(90);
+  });
+
+  it("rejects missing, equal, and backwards event windows", () => {
+    expect(isValidTimeWindow("", "08:30")).toBe(false);
+    expect(isValidTimeWindow("07:00", "07:00")).toBe(false);
+    expect(isValidTimeWindow("08:30", "07:00")).toBe(false);
+  });
+
+  it("accepts an end time later than the start time", () => {
+    expect(isValidTimeWindow("07:00", "08:30")).toBe(true);
   });
 });
 

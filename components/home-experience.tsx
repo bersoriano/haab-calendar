@@ -122,6 +122,8 @@ function HomeExperienceInner({
                 lang={lang}
                 vertical={selectedVertical}
                 onChooseAnother={backToHome}
+                onSignOut={logout}
+                userEmail={email}
               />
             ) : (
               <button

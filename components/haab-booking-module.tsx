@@ -72,6 +72,8 @@ import {
   todayKey,
   isPastDate,
   getTimeKeyFromDate,
+  getTimeWindowDurationMinutes,
+  isValidTimeWindow,
 } from "@/lib/date";
 import {
   formatDateLabel,
@@ -82,6 +84,7 @@ import {
   formatDuration,
   formatCapacityLabel,
   getBookingTypeLabel,
+  getOccurrenceModeLabel,
   getBookingStatusLabel,
   statusTone,
   bookingTypeTone,
@@ -1130,9 +1133,26 @@ export function HaabBookingModule({
       return;
     }
 
+    const isFixedWindow =
+      vertical === "events" &&
+      (serviceDraft.occurrenceMode === "single" ||
+        serviceDraft.occurrenceMode === "weekly");
+
+    if (
+      isFixedWindow &&
+      !isValidTimeWindow(serviceDraft.startTime, serviceDraft.endTime)
+    ) {
+      setSetupError(
+        lang === "es"
+          ? "Agregue horas de inicio y fin válidas. La hora de fin debe ser posterior a la de inicio."
+          : "Add valid start and end times. The end time must be later than the start time.",
+      );
+      return;
+    }
+
     if (
       serviceDraft.occurrenceMode === "weekly" &&
-      (serviceDraft.weekdays.length === 0 || !serviceDraft.startTime)
+      serviceDraft.weekdays.length === 0
     ) {
       setSetupError(copy.phrases.pickWeekdaysError);
       return;
@@ -1178,20 +1198,21 @@ export function HaabBookingModule({
         }
       }
 
-      const isFixedWindow =
+      const hasFixedWindow =
         serviceDraft.occurrenceMode === "single" ||
         serviceDraft.occurrenceMode === "weekly";
       const windowMinutes =
-        serviceDraft.startTime && serviceDraft.endTime
-          ? toMinutes(serviceDraft.endTime) - toMinutes(serviceDraft.startTime)
-          : 0;
+        getTimeWindowDurationMinutes(serviceDraft.startTime, serviceDraft.endTime);
 
       const nextService: Service = {
         id: editingServiceId ?? createId("service"),
         name: serviceDraft.name.trim(),
-        bookingType: serviceDraft.bookingType,
+        // Fixed-window events are represented by their own start/end times.
+        // Keep the internal booking type timed so legacy full-day seeds do not
+        // override the visible event window or its derived duration.
+        bookingType: hasFixedWindow ? "appointment" : serviceDraft.bookingType,
         durationMinutes:
-          serviceDraft.occurrenceMode === "weekly"
+          hasFixedWindow
             ? windowMinutes > 0
               ? windowMinutes
               : 60
@@ -1216,8 +1237,8 @@ export function HaabBookingModule({
           serviceDraft.occurrenceMode === "weekly"
             ? [...serviceDraft.weekdays]
             : undefined,
-        startTime: isFixedWindow ? serviceDraft.startTime || undefined : undefined,
-        endTime: isFixedWindow ? serviceDraft.endTime || undefined : undefined,
+        startTime: hasFixedWindow ? serviceDraft.startTime || undefined : undefined,
+        endTime: hasFixedWindow ? serviceDraft.endTime || undefined : undefined,
         maxSpots: parseMaxSpots(serviceDraft.maxSpots),
         cost: serviceDraft.cost.trim() || undefined,
         locationPrices: (() => {
@@ -3644,8 +3665,10 @@ export function HaabBookingModule({
                 >
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-lg font-semibold text-[var(--ink)]">{service.name}</h4>
-                    <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                      {getBookingTypeLabel(service.bookingType, lang)}
+                    <ToneBadge tone={vertical === "events" ? "secondary" : bookingTypeTone(service.bookingType)}>
+                      {vertical === "events"
+                        ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+                        : getBookingTypeLabel(service.bookingType, lang)}
                     </ToneBadge>
                     <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
                   </div>
@@ -3653,6 +3676,14 @@ export function HaabBookingModule({
                     {service.description}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
+                    {vertical === "events" &&
+                    service.occurrenceMode === "single" &&
+                    service.occurrenceDate ? (
+                      <span>
+                        {t.publicFlow.when}: {formatDateLabel(service.occurrenceDate, lang)} ·{" "}
+                        {formatTimeRange(service.startTime, service.endTime, lang)}
+                      </span>
+                    ) : null}
                     {vertical === "events" ? (
                       <span>{t.publicFlow.capacity}: {formatCapacityLabel(service, lang)}</span>
                     ) : service.capacity ? (

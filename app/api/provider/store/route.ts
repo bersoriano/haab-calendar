@@ -15,6 +15,24 @@ type ProviderStoreBody = {
   store?: unknown;
 };
 
+function describeWriteCause(cause: unknown) {
+  if (cause instanceof Error) {
+    return cause.message;
+  }
+
+  if (cause && typeof cause === "object") {
+    const record = cause as Record<string, unknown>;
+    return {
+      code: typeof record.code === "string" ? record.code : undefined,
+      message: typeof record.message === "string" ? record.message : undefined,
+      details: typeof record.details === "string" ? record.details : undefined,
+      hint: typeof record.hint === "string" ? record.hint : undefined,
+    };
+  }
+
+  return String(cause);
+}
+
 export async function PUT(request: NextRequest) {
   const supabase = await createClient();
   const {
@@ -52,10 +70,13 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     if (error instanceof ProviderStoreWriteError) {
       if (error.status >= 500) {
-        console.error("provider_store_save_failed", {
-          userId: user.id,
-          error: error.cause instanceof Error ? error.cause.message : error.message,
-        });
+        console.error(
+          "provider_store_save_failed",
+          JSON.stringify({
+            userId: user.id,
+            error: describeWriteCause(error.cause ?? error),
+          }),
+        );
       }
 
       return NextResponse.json(

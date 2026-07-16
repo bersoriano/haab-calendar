@@ -4,7 +4,13 @@ import type { Dispatch, SetStateAction } from "react";
 import type { BookingType, Lang, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
 import { DURATION_OPTIONS, WEEKDAY_KEYS, getWeekdayShortFormatter } from "@/lib/constants";
 import { cn, pad } from "@/lib/utils";
-import { formatCapacityLabel, formatDuration, getBookingTypeLabel, bookingTypeTone } from "@/lib/format";
+import {
+  formatCapacityLabel,
+  formatDuration,
+  getBookingTypeLabel,
+  getOccurrenceModeLabel,
+  bookingTypeTone,
+} from "@/lib/format";
 import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
@@ -129,8 +135,10 @@ export function ServiceEditor({
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-base font-semibold text-[var(--ink)]">{service.name}</h4>
-                      <ToneBadge tone={bookingTypeTone(service.bookingType)}>
-                        {getBookingTypeLabel(service.bookingType, lang)}
+                      <ToneBadge tone={isEvents ? "secondary" : bookingTypeTone(service.bookingType)}>
+                        {isEvents
+                          ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+                          : getBookingTypeLabel(service.bookingType, lang)}
                       </ToneBadge>
                       <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
                     </div>

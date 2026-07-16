@@ -4,10 +4,14 @@ import type { VerticalId } from "@/lib/types";
 export function SelectedWorkflowHeader({
   lang,
   onChooseAnother,
+  onSignOut,
+  userEmail,
   vertical,
 }: {
   lang: Lang;
   onChooseAnother: () => void;
+  onSignOut?: () => void | Promise<void>;
+  userEmail?: string;
   vertical: VerticalId;
 }) {
   const copy = translations[lang].home;
@@ -40,13 +44,30 @@ export function SelectedWorkflowHeader({
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onChooseAnother}
-        className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full border border-[var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
-      >
-        {copy.chooseAnotherWorkflow}
-      </button>
+      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+        {userEmail ? (
+          <span className="w-full break-all px-1 text-xs text-[var(--muted)] sm:w-auto sm:max-w-56 sm:text-right">
+            {userEmail}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={onChooseAnother}
+          className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line)] bg-white px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:border-[var(--primary)] hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+        >
+          {copy.chooseAnotherWorkflow}
+        </button>
+        {onSignOut ? (
+          <form action={onSignOut}>
+            <button
+              type="submit"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--ink)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2"
+            >
+              {copy.signOut}
+            </button>
+          </form>
+        ) : null}
+      </div>
     </div>
   );
 }

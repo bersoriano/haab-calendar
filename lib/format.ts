@@ -5,10 +5,14 @@ import {
 } from "./constants";
 import { parseDateKey } from "./date";
 import { pad } from "./utils";
-import type { BookingStatus, BookingType, Lang, Service } from "./types";
+import type { BookingStatus, BookingType, Lang, OccurrenceMode, Service } from "./types";
 
 const FULL_DAY: Record<Lang, string> = { en: "Full Day", es: "Día completo" };
 const APPOINTMENT: Record<Lang, string> = { en: "Appointment", es: "Cita" };
+const OCCURRENCE: Record<Lang, Record<OccurrenceMode, string>> = {
+  en: { single: "Single", weekly: "Weekly", periodic: "Periodic" },
+  es: { single: "Único", weekly: "Semanal", periodic: "Periódico" },
+};
 
 export function formatDateLabel(dateKey: string, lang: Lang = "en") {
   return getLongDateFormatter(lang).format(parseDateKey(dateKey));
@@ -69,6 +73,13 @@ export function formatCapacityLabel(service: Service, lang: Lang = "en") {
 export function getBookingTypeLabel(type: BookingType, lang: Lang = "en") {
   if (lang === "es") return type === "appointment" ? "Cita" : "Día completo";
   return type === "appointment" ? "Appointment" : "Full Day";
+}
+
+export function getOccurrenceModeLabel(
+  mode: OccurrenceMode | undefined,
+  lang: Lang = "en",
+) {
+  return OCCURRENCE[lang][mode ?? "periodic"];
 }
 
 export function statusTone(status: BookingStatus) {

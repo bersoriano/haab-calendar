@@ -8,6 +8,7 @@ import {
   getBookingTypeLabel,
   formatDateLabel,
   getBookingStatusLabel,
+  getOccurrenceModeLabel,
 } from "@/lib/format";
 import type { Service } from "@/lib/types";
 
@@ -162,6 +163,18 @@ describe("formatDuration", () => {
 
   it("formats 240 min as '4 hrs'", () => {
     expect(formatDuration(makeSvc({ durationMinutes: 240 }))).toBe("4 hrs");
+  });
+});
+
+describe("getOccurrenceModeLabel", () => {
+  it("formats event recurrence labels in English and Spanish", () => {
+    expect(getOccurrenceModeLabel("single")).toBe("Single");
+    expect(getOccurrenceModeLabel("weekly", "es")).toBe("Semanal");
+    expect(getOccurrenceModeLabel("periodic", "es")).toBe("Periódico");
+  });
+
+  it("treats a legacy missing mode as periodic", () => {
+    expect(getOccurrenceModeLabel(undefined)).toBe("Periodic");
   });
 });
 

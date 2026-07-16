@@ -236,8 +236,8 @@ export const VERTICALS: Vertical[] = [
   {
     id: "events",
     label: "Events",
-    tagline: "For workshops, classes, and gatherings",
-    description: "Ticketed admissions and full-day passes, open later and on weekends.",
+    tagline: "For races, workshops, classes, and gatherings",
+    description: "One-time and recurring registrations with schedules, locations, and real capacity.",
     availability: WED_TO_SUN_10_20,
     services: [
       {
@@ -284,8 +284,8 @@ export const VERTICALS: Vertical[] = [
       },
     ],
     hints: {
-      serviceName: "Workshop session",
-      description: "What attendees can expect.",
+      serviceName: "City race, workshop, or class",
+      description: "What attendees can expect, where to arrive, and what is included.",
       capacity: "Up to 50 attendees",
       cost: "$25 / ticket",
     },

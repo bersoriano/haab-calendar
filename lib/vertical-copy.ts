@@ -607,7 +607,7 @@ export const eventsCopy: VerticalCopy = {
     providerInfoBody:
       "These details feed registration confirmations, branding, and your public registration URL.",
     availabilityBody:
-      "Timed events generate real spots from these windows. Full-day passes simply need the day enabled and free of conflicts.",
+      "Availability-based events use these weekly hours. One-time and weekly events keep their own schedule.",
 
     addServiceFirstError:
       "Add at least one event before publishing your registration page.",
@@ -626,7 +626,7 @@ export const eventsCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose an event",
     chooseServiceBody:
-      "Every card shows whether it's a timed session or an all-day pass.",
+      "Compare each event's schedule, location, price, and spots before registering.",
     onlyOneServiceBody:
       "Only one event is available, so this step is skipped automatically.",
     serviceUnavailableBody:
@@ -647,7 +647,7 @@ export const eventsCopy: VerticalCopy = {
     bookingsSoonDetail: "Registrations starting soon",
     activeBookingsDetail: "Currently active registrations",
     totalBookingsLabel: "Total registrations",
-    servicesStatDetail: "Timed sessions and full-day passes",
+    servicesStatDetail: "One-time, weekly, and availability-based events",
     searchPlaceholder: "Search attendee, event, email, or phone",
 
     addBookingHint: "Click an available day to add a registration.",
@@ -664,7 +664,7 @@ export const eventsCopy: VerticalCopy = {
     bookNewButton: "Register for another event",
 
     serviceEditorBody:
-      "Each event is a timed session or a full-day pass. Capacity and notes stay visible during registration.",
+      "Give each event its own schedule, capacity, price, and location. Use one-time for dated events or weekly and periodic for recurring registration.",
     noServicesTitle: "No events yet",
     noServicesBody: "Add an event so attendees can start registering.",
     serviceDescPlaceholder:
@@ -724,7 +724,7 @@ export const eventsCopyEs: VerticalCopy = {
     providerInfoBody:
       "Estos datos alimentan las confirmaciones de registro, la marca y su URL pública de registro.",
     availabilityBody:
-      "Los eventos con horario generan lugares reales a partir de estas ventanas. Los pases de día completo solo necesitan que el día esté habilitado y libre de conflictos.",
+      "Los eventos basados en disponibilidad usan este horario semanal. Los eventos únicos y semanales conservan su propia programación.",
 
     addServiceFirstError:
       "Agregue al menos un evento antes de publicar su página de registro.",
@@ -744,7 +744,7 @@ export const eventsCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un evento",
     chooseServiceBody:
-      "Cada tarjeta muestra si es una sesión con horario o un pase de día completo.",
+      "Compare el horario, la ubicación, el precio y los lugares de cada evento antes de registrarse.",
     onlyOneServiceBody:
       "Solo hay un evento disponible, por lo que este paso se omite automáticamente.",
     serviceUnavailableBody:
@@ -765,7 +765,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookingsSoonDetail: "Registros que comienzan próximamente",
     activeBookingsDetail: "Registros actualmente activos",
     totalBookingsLabel: "Total de registros",
-    servicesStatDetail: "Sesiones con horario y pases de día completo",
+    servicesStatDetail: "Eventos únicos, semanales y basados en disponibilidad",
     searchPlaceholder: "Buscar asistente, evento, correo o teléfono",
 
     addBookingHint: "Haga clic en un día disponible para agregar un registro.",
@@ -782,7 +782,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookNewButton: "Registrarse en otro evento",
 
     serviceEditorBody:
-      "Cada evento es una sesión con horario o un pase de día completo. La capacidad y las notas permanecen visibles durante el registro.",
+      "Asigne a cada evento su propio horario, capacidad, precio y ubicación. Use único para eventos con fecha, o semanal y periódico para registros recurrentes.",
     noServicesTitle: "Aún no hay eventos",
     noServicesBody:
       "Agregue un evento para que los asistentes puedan comenzar a registrarse.",

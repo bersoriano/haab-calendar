@@ -24,13 +24,18 @@ describe("SelectedWorkflowHeader", () => {
       <SelectedWorkflowHeader
         lang="en"
         onChooseAnother={() => undefined}
+        onSignOut={() => undefined}
+        userEmail="manager@example.com"
         vertical="events"
       />,
     );
 
     expect(html).toContain("Selected workflow");
     expect(html).toContain("Events");
-    expect(html).toContain("For workshops, classes, and gatherings");
+    expect(html).toContain("For races, workshops, classes, and gatherings");
     expect(html).toContain("Choose another workflow");
+    expect(html).toContain("manager@example.com");
+    expect(html).toContain("Sign out");
+    expect(html).toContain('type="submit"');
   });
 });

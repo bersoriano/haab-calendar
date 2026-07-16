@@ -7,6 +7,15 @@ export function toMinutes(time: string) {
   return hours * 60 + minutes;
 }
 
+export function getTimeWindowDurationMinutes(startTime: string, endTime: string) {
+  if (!startTime || !endTime) return 0;
+  return toMinutes(endTime) - toMinutes(startTime);
+}
+
+export function isValidTimeWindow(startTime: string, endTime: string) {
+  return getTimeWindowDurationMinutes(startTime, endTime) > 0;
+}
+
 export function addMinutes(time: string, amount: number) {
   const total = toMinutes(time) + amount;
   const hours = Math.floor(total / 60);

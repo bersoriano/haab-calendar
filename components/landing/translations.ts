@@ -27,6 +27,7 @@ export const translations = {
       selectedWorkflowHint:
         "La configuración usará los servicios, la disponibilidad y las reglas de reserva predeterminados para este flujo.",
       chooseAnotherWorkflow: "Elegir otro flujo",
+      signOut: "Cerrar sesión",
       verticals: {
         healthcare: {
           label: "Salud",
@@ -45,7 +46,7 @@ export const translations = {
         },
         events: {
           label: "Eventos",
-          tagline: "Para talleres, clases y reuniones",
+          tagline: "Para carreras, talleres, clases y reuniones",
           start: "Empezar con eventos →",
         },
       },
@@ -111,7 +112,7 @@ export const translations = {
         { name: "Asesores y consultores", detail: "Servicios pro" },
         { name: "Salones de eventos", detail: "Espacios" },
         { name: "Coworking y oficinas", detail: "Espacios" },
-        { name: "Talleres y clases", detail: "Eventos" },
+        { name: "Carreras y eventos comunitarios", detail: "Eventos" },
       ],
       footer:
         "Diseñado para la realidad desordenada de los equipos pequeños: llamadas, clientes que llegan sin cita, mala señal y gente que solo quiere un horario que les funcione.",
@@ -185,7 +186,7 @@ export const translations = {
         },
         {
           title: "Vende boletos, no solo horarios.",
-          body: "Para clases, talleres y eventos, define un cupo real y la página cuenta los lugares disponibles y deja de vender en cuanto se llena.",
+          body: "Para carreras, clases, talleres y eventos, define un cupo real y la página cuenta los lugares disponibles y deja de vender en cuanto se llena.",
           tag: "Boletos y cupo por evento",
         },
         {
@@ -246,8 +247,8 @@ export const translations = {
           body: "Sesiones de estrategia y consultas rápidas, precios premium, un cliente por horario.",
         },
         {
-          title: "Eventos — talleres, clases y reuniones",
-          body: "Admisiones con boleto y cupo real más pases de día completo — la página lleva la cuenta de los lugares por ti.",
+          title: "Eventos — carreras, talleres y clases",
+          body: "Registros únicos o recurrentes con fecha, ubicación, precio y cupo real — la página lleva la cuenta de los lugares por ti.",
         },
       ],
       note:
@@ -406,7 +407,7 @@ export const translations = {
         healthcare: ["Primera vez · $120", "Seguimiento · $60", "30 y 15 min"],
         spaces: ["Cancha · $40/hr", "Salón día completo", "Hasta 100"],
         professional: ["Estrategia · $200", "Consulta · $90", "1 cliente"],
-        events: ["Boleto · $25", "Quedan 50 lugares", "Pase día completo"],
+        events: ["Carrera · $590", "Quedan 50 lugares", "Evento con fecha"],
       },
       mobile: {
         calendar: { name: "Sarah Chen", service: "Consulta de marketing", cta: "Elige un horario" },
@@ -442,6 +443,7 @@ export const translations = {
       selectedWorkflowHint:
         "Setup will use this workflow's service, availability, and booking defaults.",
       chooseAnotherWorkflow: "Choose another workflow",
+      signOut: "Sign out",
       verticals: {
         healthcare: {
           label: "Healthcare",
@@ -460,7 +462,7 @@ export const translations = {
         },
         events: {
           label: "Events",
-          tagline: "For workshops, classes, and gatherings",
+          tagline: "For races, workshops, classes, and gatherings",
           start: "Start with Events →",
         },
       },
@@ -526,7 +528,7 @@ export const translations = {
         { name: "Advisors & consultants", detail: "Professional" },
         { name: "Event venues", detail: "Spaces" },
         { name: "Coworking & offices", detail: "Spaces" },
-        { name: "Workshops & classes", detail: "Events" },
+        { name: "Races & community events", detail: "Events" },
       ],
       footer:
         "Designed around the messy reality of small teams: calls, walk-ins, bad signal, and clients who just want a time that works.",
@@ -600,7 +602,7 @@ export const translations = {
         },
         {
           title: "Sell tickets, not just slots.",
-          body: "For classes, workshops, and events, set a real capacity and the page tracks spots left — and stops selling the moment it's full.",
+          body: "For races, classes, workshops, and events, set a real capacity and the page tracks spots left — and stops selling the moment it's full.",
           tag: "Ticketed events & capacity",
         },
         {
@@ -661,8 +663,8 @@ export const translations = {
           body: "Strategy sessions and quick consults, premium pricing, one client per slot.",
         },
         {
-          title: "Events — workshops, classes & gatherings",
-          body: "Ticketed admissions with real capacity plus full-day passes — the page tracks spots left for you.",
+          title: "Events — races, workshops & classes",
+          body: "One-time or recurring registrations with a date, location, price, and real capacity — the page tracks spots left for you.",
         },
       ],
       note:
@@ -821,7 +823,7 @@ export const translations = {
         healthcare: ["New patient · $120", "Follow-up · $60", "30 & 15 min"],
         spaces: ["Court · $40/hr", "Full-day venue", "Up to 100"],
         professional: ["Strategy · $200", "Quick consult · $90", "1 client"],
-        events: ["Ticket · $25", "50 spots left", "Full-day pass"],
+        events: ["Race · $590", "50 spots left", "Dated event"],
       },
       mobile: {
         calendar: { name: "Sarah Chen", service: "Marketing Consult", cta: "Pick a time" },

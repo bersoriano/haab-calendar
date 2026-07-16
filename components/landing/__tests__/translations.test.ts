@@ -47,6 +47,8 @@ describe("landing translations", () => {
     expect(translations.en.useCases.note).not.toContain("blank");
     expect(translations.es.auth.signIn).toBe("Iniciar sesión");
     expect(translations.es.auth.confirmationExpired).toContain("venció");
+    expect(translations.es.home.verticals.events.tagline).toContain("carreras");
+    expect(translations.en.home.verticals.events.tagline).toContain("races");
   });
 
   it("defaults visitor-owned surfaces to Spanish", () => {

@@ -35,6 +35,9 @@ availability/spots math; these cover the end-to-end provider + public flow.
   Tuesday 6:30 PM (per-event weekday + time recurrence).
 - [events-capacity-spots.md](events-capacity-spots.md) — spots as the single
   capacity source; spots-left shown across single/weekly/periodic.
+- [events-multi-city-running.md](events-multi-city-running.md) — event manager:
+  dated 3K/5K/10K races across CDMX, Guadalajara, and Monterrey, based on a
+  real-world race registration page.
 - [healthcare-urologist.md](healthcare-urologist.md) — healthcare: urologist with
   two visit types and two clinic locations (CDMX + Chalco).
 - [professional-software-consultant.md](professional-software-consultant.md) —
