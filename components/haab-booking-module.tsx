@@ -121,6 +121,7 @@ import {
   adminPanelClass,
 } from "@/components/provider/adminGlass";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
+import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
@@ -2906,6 +2907,14 @@ export function HaabBookingModule({
               lang={lang}
             />
           </div>
+          <div className="mt-6 border-t border-[var(--line)] pt-6">
+            <LogoImageUploader
+              value={provider.logoImageUrl}
+              onChange={(url) => updateProvider("logoImageUrl", url)}
+              disabled={isSavingAdmin}
+              lang={lang}
+            />
+          </div>
           <div className="mt-6">
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               {t.admin.languageLabel}
@@ -3152,35 +3161,50 @@ export function HaabBookingModule({
     const isPublicDetailsStep = resolvedBookingFlow.step === 3;
     const isPublicSuccessStep = resolvedBookingFlow.step === 4 && Boolean(successfulBooking);
 
-    // Provider header banner with hero text overlay, shown at the public root
-    // above the selection. Hero text defaults to the business name.
+    // Public-page branding shown above the selection. The logo stays beside
+    // the page title, while the optional hero text overlays the banner image.
     const heroText = (provider.heroText?.trim() || provider.businessName || "").trim();
-    const headerBanner = provider.headerImageUrl ? (
-      <div className="space-y-4">
+    const publicPageTitle = provider.businessName || provider.logoImageUrl ? (
+      <div className="flex min-w-0 items-center gap-4">
+        {provider.logoImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
+          <img
+            src={provider.logoImageUrl}
+            alt={provider.businessName ? `${provider.businessName} logo` : "Provider logo"}
+            className="h-14 w-[10.5rem] shrink-0 object-contain sm:h-16 sm:w-48"
+          />
+        ) : null}
         {provider.businessName ? (
-          <h1 className="text-center text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">
+          <h1 className="min-w-0 text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">
             {provider.businessName}
           </h1>
         ) : null}
-        <div className="relative overflow-hidden rounded-[28px] ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_22px_56px_rgba(15,23,42,0.10)]">
-          {/* eslint-disable-next-line @next/next/no-img-element -- remote Blob URL */}
-          <img
-            src={provider.headerImageUrl}
-            alt={provider.businessName ? `${provider.businessName} banner` : "Banner"}
-            className="aspect-[3/1] w-full object-cover"
-          />
-          {heroText ? (
-            <>
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.62),rgba(0,0,0,0.12)_46%,transparent_72%)]"
-              />
-              <h2 className="absolute inset-x-0 bottom-0 p-5 text-2xl font-semibold tracking-[-0.02em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:p-7 sm:text-3xl">
-                {heroText}
-              </h2>
-            </>
-          ) : null}
-        </div>
+      </div>
+    ) : null;
+    const headerBanner = publicPageTitle || provider.headerImageUrl ? (
+      <div className="space-y-4">
+        {publicPageTitle}
+        {provider.headerImageUrl ? (
+          <div className="relative overflow-hidden rounded-[28px] ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_22px_56px_rgba(15,23,42,0.10)]">
+            {/* eslint-disable-next-line @next/next/no-img-element -- remote Blob URL */}
+            <img
+              src={provider.headerImageUrl}
+              alt={provider.businessName ? `${provider.businessName} banner` : "Banner"}
+              className="aspect-[3/1] w-full object-cover"
+            />
+            {heroText ? (
+              <>
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(0,0,0,0.62),rgba(0,0,0,0.12)_46%,transparent_72%)]"
+                />
+                <h2 className="absolute inset-x-0 bottom-0 p-5 text-2xl font-semibold tracking-[-0.02em] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)] sm:p-7 sm:text-3xl">
+                  {heroText}
+                </h2>
+              </>
+            ) : null}
+          </div>
+        ) : null}
       </div>
     ) : null;
     // Collapse the progress indicator either when the selection step is stuck

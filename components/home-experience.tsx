@@ -121,7 +121,8 @@ function HomeExperienceInner({
   }
 
   if (view === "app") {
-    const showSelectedWorkflow = !effectiveConfigured && selectedVertical;
+    const activeWorkflowVertical =
+      selectedVertical ?? effectiveDashboardStore?.vertical;
 
     return (
       <div className="flex min-h-full flex-col">
@@ -130,14 +131,14 @@ function HomeExperienceInner({
         </div>
         <header
           className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${
-            showSelectedWorkflow ? "" : "border-b border-[var(--line)]"
+            activeWorkflowVertical ? "" : "border-b border-[var(--line)]"
           }`}
         >
           <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
-            {showSelectedWorkflow ? (
+            {activeWorkflowVertical ? (
               <SelectedWorkflowHeader
                 lang={lang}
-                vertical={selectedVertical}
+                vertical={activeWorkflowVertical}
                 onChooseAnother={backToHome}
                 onSignOut={logout}
                 userEmail={email}

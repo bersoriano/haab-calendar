@@ -159,6 +159,7 @@ async function upsertProvider(options: {
     phone_number_2: provider.phoneNumber2.trim(),
     address_1: provider.address1.trim(),
     address_2: provider.address2.trim(),
+    logo_image_url: trimOptional(provider.logoImageUrl),
     header_image_url: trimOptional(provider.headerImageUrl),
     hero_text: trimOptional(provider.heroText),
     gallery_image_urls: Array.isArray(provider.galleryImageUrls)

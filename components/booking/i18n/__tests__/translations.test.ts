@@ -33,6 +33,8 @@ describe("bookingTranslations", () => {
     expect(admin.blockedTimes).toBe("Horarios bloqueados");
     expect(admin.saveChanges).toBe("Guardar cambios");
     expect(providerForm.uploadImage).toBe("Subir imagen");
+    expect(providerForm.logoImage).toBe("Logotipo de la página pública");
+    expect(providerForm.logoImageSizeError).toContain("1 MB");
     expect(publicCopy.expired).toBe("Vencida");
     expect(publicFlow.progressLabel).toBe("Progreso de la reserva");
     expect(publicFlow.statusUpdated).toBe("Actualizada");

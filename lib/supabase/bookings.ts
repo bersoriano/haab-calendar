@@ -32,7 +32,7 @@ import type {
 } from "@/lib/types";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
@@ -57,6 +57,7 @@ type ProviderRow = {
   phone_number_2: string | null;
   address_1: string | null;
   address_2: string | null;
+  logo_image_url: string | null;
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
@@ -225,6 +226,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
     address1: row.address_1 ?? "",
     address2: row.address_2 ?? "",
     publicSlug: row.slug,
+    logoImageUrl: row.logo_image_url?.trim() || undefined,
     headerImageUrl: row.header_image_url?.trim() || undefined,
     heroText: row.hero_text?.trim() || undefined,
     galleryImageUrls: Array.isArray(row.gallery_image_urls)

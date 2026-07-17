@@ -20,7 +20,7 @@ import type {
 } from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls";
+  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 export const PUBLIC_SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 
@@ -38,6 +38,7 @@ type PublicProviderRow = {
   phone_number_2: string | null;
   address_1: string | null;
   address_2: string | null;
+  logo_image_url: string | null;
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
@@ -163,6 +164,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       address1: provider.address_1 ?? "",
       address2: provider.address_2 ?? "",
       publicSlug: provider.slug,
+      logoImageUrl: provider.logo_image_url?.trim() || undefined,
       headerImageUrl: provider.header_image_url?.trim() || undefined,
       heroText: provider.hero_text?.trim() || undefined,
       galleryImageUrls: Array.isArray(provider.gallery_image_urls)

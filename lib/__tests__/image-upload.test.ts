@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   validateImageFile,
   MAX_HEADER_IMAGE_BYTES,
+  MAX_LOGO_IMAGE_BYTES,
 } from "@/lib/image-upload";
 
 describe("validateImageFile", () => {
@@ -32,5 +33,17 @@ describe("validateImageFile", () => {
 
   it("honors a custom max size", () => {
     expect(validateImageFile({ type: "image/png", size: 2048 }, 1024).ok).toBe(false);
+  });
+
+  it("enforces the 1 MB logo limit", () => {
+    expect(
+      validateImageFile({ type: "image/png", size: MAX_LOGO_IMAGE_BYTES }, MAX_LOGO_IMAGE_BYTES),
+    ).toEqual({ ok: true });
+    expect(
+      validateImageFile(
+        { type: "image/png", size: MAX_LOGO_IMAGE_BYTES + 1 },
+        MAX_LOGO_IMAGE_BYTES,
+      ).ok,
+    ).toBe(false);
   });
 });

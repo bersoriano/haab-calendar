@@ -162,6 +162,12 @@ describe("normalizeProvider", () => {
     expect(provider.businessName).toBe("");
     expect(provider.email).toBe("");
   });
+
+  it("normalizes the public logo URL", () => {
+    expect(normalizeProvider({ logoImageUrl: " https://example.com/logo.png " }).logoImageUrl)
+      .toBe("https://example.com/logo.png");
+    expect(normalizeProvider({ logoImageUrl: "  " }).logoImageUrl).toBeUndefined();
+  });
 });
 
 // ---------------------------------------------------------------------------

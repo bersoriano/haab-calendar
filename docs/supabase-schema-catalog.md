@@ -106,6 +106,7 @@ Stores one provider profile, its public URL scope, and its weekly availability.
 | `phone_number_2` | `text` | `ProviderInfo.phoneNumber2` | Optional second public/provider contact phone. |
 | `address_1` | `text` | `ProviderInfo.address1` | Public/provider location address. |
 | `address_2` | `text` | `ProviderInfo.address2` | Optional second public/provider location address. |
+| `logo_image_url` | `text` | `ProviderInfo.logoImageUrl` | Optional public page logo URL. |
 | `header_image_url` | `text` | `ProviderInfo.headerImageUrl` | Optional public page header image URL. |
 | `hero_text` | `text` | `ProviderInfo.heroText` | Optional public page hero copy. |
 | `gallery_image_urls` | `jsonb` | `ProviderInfo.galleryImageUrls` | Array of public gallery image URLs. |
@@ -143,6 +144,7 @@ Example row:
   "phone_number_2": "",
   "address_1": "123 Market Street",
   "address_2": "",
+  "logo_image_url": "https://example.com/logo.png",
   "header_image_url": "https://example.com/header.jpg",
   "hero_text": "Specialist care without the waiting-room shuffle.",
   "gallery_image_urls": [],
@@ -510,6 +512,7 @@ Exposes published provider data where `setup_complete = true`.
 | `phone_number_2` | `ProviderInfo.phoneNumber2` |
 | `address_1` | `ProviderInfo.address1` |
 | `address_2` | `ProviderInfo.address2` |
+| `logo_image_url` | `ProviderInfo.logoImageUrl` |
 | `header_image_url` | `ProviderInfo.headerImageUrl` |
 | `hero_text` | `ProviderInfo.heroText` |
 | `gallery_image_urls` | `ProviderInfo.galleryImageUrls` |
@@ -518,7 +521,7 @@ Usage example:
 
 ```ts
 const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls";
+  "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 
 const { data: provider } = await supabase
   .from("public_providers")
@@ -641,6 +644,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
     address1: row.address_1 ?? "",
     address2: row.address_2 ?? "",
     publicSlug: row.slug,
+    logoImageUrl: row.logo_image_url?.trim() || undefined,
     headerImageUrl: row.header_image_url?.trim() || undefined,
     heroText: row.hero_text?.trim() || undefined,
     galleryImageUrls: Array.isArray(row.gallery_image_urls)
@@ -1007,6 +1011,7 @@ type PublicProviderRow = {
   phone_number_2: string | null;
   address_1: string | null;
   address_2: string | null;
+  logo_image_url: string | null;
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
@@ -1094,6 +1099,7 @@ type ProviderRow = {
   phone_number_2: string | null;
   address_1: string | null;
   address_2: string | null;
+  logo_image_url: string | null;
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;

@@ -30,6 +30,7 @@ type PublicProviderRow = {
   phone_number_2: string | null;
   address_1: string | null;
   address_2: string | null;
+  logo_image_url: string | null;
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
@@ -104,6 +105,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
       address1: provider.address_1 ?? "",
       address2: provider.address_2 ?? "",
       publicSlug: provider.slug,
+      logoImageUrl: provider.logo_image_url?.trim() || undefined,
       headerImageUrl: provider.header_image_url?.trim() || undefined,
       heroText: provider.hero_text?.trim() || undefined,
       galleryImageUrls: Array.isArray(provider.gallery_image_urls)

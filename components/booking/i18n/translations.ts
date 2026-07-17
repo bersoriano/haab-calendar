@@ -308,6 +308,11 @@ export type BookingDict = {
     headerImageHint: string;
     headerImagePreviewAlt: string;
     noHeaderImage: string;
+    logoImage: string;
+    logoImageHint: string;
+    logoImagePreviewAlt: string;
+    noLogoImage: string;
+    logoImageSizeError: string;
     uploadingImage: string;
     replaceImage: string;
     uploadImage: string;
@@ -624,6 +629,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       headerImageHint: "Shown as a banner at the top of your public page, above the list to book.",
       headerImagePreviewAlt: "Header banner preview",
       noHeaderImage: "No header image yet",
+      logoImage: "Public page logo",
+      logoImageHint: "Shown at the top left beside your public page title. JPG, PNG, or WEBP, up to 1 MB.",
+      logoImagePreviewAlt: "Public page logo preview",
+      noLogoImage: "No logo uploaded yet",
+      logoImageSizeError: "Logo must be 1 MB or smaller.",
       uploadingImage: "Uploading…",
       replaceImage: "Replace image",
       uploadImage: "Upload image",
@@ -941,6 +951,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       headerImageHint: "Se muestra como banner en la parte superior de su página pública, antes de la lista de reservas.",
       headerImagePreviewAlt: "Vista previa del banner de encabezado",
       noHeaderImage: "Aún no hay imagen de encabezado",
+      logoImage: "Logotipo de la página pública",
+      logoImageHint: "Se muestra arriba a la izquierda, junto al título de su página pública. JPG, PNG o WEBP, hasta 1 MB.",
+      logoImagePreviewAlt: "Vista previa del logotipo de la página pública",
+      noLogoImage: "Aún no hay logotipo",
+      logoImageSizeError: "El logotipo debe pesar 1 MB o menos.",
       uploadingImage: "Subiendo…",
       replaceImage: "Reemplazar imagen",
       uploadImage: "Subir imagen",

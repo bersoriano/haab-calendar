@@ -2,6 +2,7 @@
 // Kept framework-free so it can run client-side before upload and be unit-tested.
 
 export const MAX_HEADER_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_LOGO_IMAGE_BYTES = 1 * 1024 * 1024; // 1 MB
 export const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",

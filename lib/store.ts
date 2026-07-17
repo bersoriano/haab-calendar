@@ -283,6 +283,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     publicSlug:
       source?.publicSlug ??
       slugify(source?.businessName || source?.fullName || "haab-calendar"),
+    logoImageUrl: source?.logoImageUrl?.trim() || undefined,
     headerImageUrl: source?.headerImageUrl?.trim() || undefined,
     heroText: source?.heroText?.trim() || undefined,
     galleryImageUrls: Array.isArray(source?.galleryImageUrls)
