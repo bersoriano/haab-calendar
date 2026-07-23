@@ -7,6 +7,7 @@ import {
   type Lang,
 } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
+import { getAuthReturnVertical } from "@/lib/auth-vertical";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -42,6 +43,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const lang = normalizeLandingLang(params.lang);
   const t = translations[lang].auth;
   const nextPath = withAuthReturnLanguage(getSafeNextPath(params.next), lang);
+  const isEventsFlow = getAuthReturnVertical(nextPath) === "events";
   const message = params.message;
   const messageStatus = params.status === "success" ? "success" : "error";
 
@@ -76,11 +78,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               {t.pageTitle}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-[var(--muted)]">
-              {t.pageBody}
+              {isEventsFlow ? t.eventOrganizerPageBody : t.pageBody}
             </p>
           </div>
           <section className="rounded-[28px] bg-[rgba(248,249,250,0.94)] p-6 shadow-[0_28px_64px_rgba(25,28,29,0.08)] ring-1 ring-[rgba(255,255,255,0.68)] sm:p-8">
-            <h2 className="text-2xl font-semibold text-[var(--ink)]">{t.panelTitle}</h2>
+            <h2 className="text-2xl font-semibold text-[var(--ink)]">
+              {isEventsFlow ? t.eventOrganizerPanelTitle : t.panelTitle}
+            </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
               {t.panelBody}
             </p>

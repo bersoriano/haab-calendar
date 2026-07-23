@@ -194,7 +194,7 @@ async function getProviderByScopedSlug(
     .maybeSingle<PublicProviderRow>();
 
   if (error) {
-    throw new PublicUrlLookupError("Could not resolve provider URL.", error);
+    throw new PublicUrlLookupError("Could not resolve public URL.", error);
   }
 
   return data;
@@ -211,7 +211,7 @@ async function getProviderById(
     .maybeSingle<PublicProviderRow>();
 
   if (error) {
-    throw new PublicUrlLookupError("Could not load redirected provider.", error);
+    throw new PublicUrlLookupError("Could not load redirected booking page.", error);
   }
 
   return data;
@@ -230,7 +230,7 @@ async function getProviderRedirect(
     .maybeSingle<ProviderRedirectRow>();
 
   if (error) {
-    throw new PublicUrlLookupError("Could not resolve provider redirect.", error);
+    throw new PublicUrlLookupError("Could not resolve booking-page redirect.", error);
   }
 
   return data;
@@ -249,7 +249,7 @@ async function getServicesForProvider(
     .returns<PublicServiceRow[]>();
 
   if (error) {
-    throw new PublicUrlLookupError("Could not load provider services.", error);
+    throw new PublicUrlLookupError("Could not load booking-page services.", error);
   }
 
   return data ?? [];

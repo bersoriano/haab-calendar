@@ -1,6 +1,6 @@
 # Internationalization (i18n) — Current Status
 
-> **Last audited:** 2026-07-15 on `main`.
+> **Last audited:** 2026-07-23 on `main`.
 >
 > The booking application and marketing landing page keep separate dictionaries
 > and persistence owners, but first-time onboarding deliberately bridges the
@@ -102,6 +102,8 @@ React language context.
 2. **Generic UI copy** — `components/booking/i18n/translations.ts`
    - Typed `BookingDict` groups: `common`, `public`, `manage`, `publicFlow`,
      `admin`, `setup`, `welcome`, and `providerForm`.
+   - Vertical-scoped role groups keep healthcare on Physician / Médico and
+     events on Organizer / Organizador without renaming shared internal models.
    - `bookingTranslations: Record<Lang, BookingDict>` provides English and
      Spanish values.
    - Unit tests enforce English/Spanish key parity and reject empty Spanish
@@ -154,14 +156,14 @@ environment; deployment verification must check remote migration history.
 | Booking hold warning | Localized, including shared countdown states |
 | Provider dashboard and bookings list | Localized |
 | Admin calendar | Localized |
-| Setup wizard and welcome screen | Localized, including the first-setup selected-workflow header, change-workflow action, and healthcare-only Physician Data / Datos del Médico terminology |
+| Setup wizard and welcome screen | Localized, including the first-setup selected-workflow header, change-workflow action, healthcare-only Physician / Médico terminology, and events-only Organizer / Organizador terminology |
 | Availability editor | Localized, including weekdays and blocked-time controls |
-| Provider information and header-image form | Localized, including placeholders, upload controls, and Physician / Médico terminology throughout the healthcare admin experience |
+| Provider information and header-image form | Localized, including placeholders, upload controls, Physician / Médico terminology throughout healthcare, and Organizer / Organizador terminology throughout events |
 | Service editor | Localized, including the notes placeholder |
 | Settings and admin navigation | Localized, including save, language, and public-link helpers |
 | Shared progress and booking-status UI | Localized, including screen-reader labels |
 | Marketing landing page | Localized, including home integration panels, vertical cards, and the required workflow-selection CTA/subtitle |
-| Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects |
+| Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects; event return paths use Organizer / Organizador login copy |
 | Landing → authentication → setup → admin continuity | Selected language seeds incomplete setup, persists on publish, and stays synchronized with Settings |
 
 Phase 1 supplied the public booking infrastructure. Phase 2 subsequently added

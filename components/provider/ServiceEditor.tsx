@@ -97,7 +97,12 @@ export function ServiceEditor({
   const hasPhone2 = provider.phoneNumber2.trim().length > 0;
   const nextAddressSlot = !hasAddress1 ? "1" : !hasAddress2 ? "2" : null;
   const nextPhoneSlot = !hasPhone1 ? "1" : !hasPhone2 ? "2" : null;
-  const profileHints = vertical === "healthcare" ? t.healthcareRole : t.admin;
+  const profileHints =
+    vertical === "healthcare"
+      ? t.healthcareRole
+      : vertical === "events"
+        ? t.eventOrganizerRole
+        : t.admin;
   const addressHint = nextAddressSlot === "1"
     ? profileHints.addressHintSlot1
     : nextAddressSlot === "2"
@@ -223,11 +228,11 @@ export function ServiceEditor({
           {isEvents ? (
             <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               {t.admin.occurrenceLabel}
-              <div className="grid grid-cols-3 gap-2">
-                {(["single", "weekly", "periodic"] as const).map((mode) => {
+              <div className="grid grid-cols-2 gap-2">
+                {(["single", "weekly"] as const).map((mode) => {
                   const active = serviceDraft.occurrenceMode === mode;
                   const label =
-                    mode === "single" ? t.admin.occurrenceSingle : mode === "weekly" ? t.admin.occurrenceWeekly : t.admin.occurrencePeriodic;
+                    mode === "single" ? t.admin.occurrenceSingle : t.admin.occurrenceWeekly;
                   return (
                     <button
                       key={mode}
@@ -254,7 +259,7 @@ export function ServiceEditor({
                   ? t.admin.singleOccurrenceHint
                   : isWeeklyOccurrence
                     ? t.admin.weeklyOccurrenceHint
-                    : t.admin.periodicOccurrenceHint}
+                    : t.admin.legacyPeriodicEventHint}
               </p>
             </div>
           ) : null}

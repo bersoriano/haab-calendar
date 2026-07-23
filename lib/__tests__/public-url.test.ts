@@ -132,6 +132,25 @@ describe("slug availability checks", () => {
     expect(result.available).toBe(false);
   });
 
+  it("uses organizer terminology for unavailable event URLs", async () => {
+    const client = createSlugClient({
+      providers: [{ id: "provider-1", vertical: "events", slug: "city-run" }],
+      provider_slug_redirects: [],
+    });
+
+    const result = await checkProviderSlugAvailability(client, {
+      vertical: "events",
+      slug: "city-run",
+    });
+
+    expect(result.available).toBe(false);
+    if (result.available) {
+      throw new Error("Expected the event organizer URL to be unavailable.");
+    }
+    expect(result.message).toContain("organizer URL");
+    expect(result.message).not.toContain("provider URL");
+  });
+
   it("blocks service slugs already used by the same provider", async () => {
     const client = createSlugClient({
       services: [{ id: "service-1", provider_id: "provider-1", slug: "consultation" }],

@@ -153,7 +153,7 @@ export async function GET(
       return Response.json(
         {
           userMessage:
-            "This booking link is shared by multiple verticals. Use the full provider URL.",
+            "This booking link is shared by multiple verticals. Use the full public URL.",
         },
         { status: 409 },
       );

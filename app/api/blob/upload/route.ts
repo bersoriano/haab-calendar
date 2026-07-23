@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   if (!user) {
     return NextResponse.json(
-      { userMessage: "Sign in before uploading provider images." },
+      { userMessage: "Sign in before uploading booking-page images." },
       { status: 401 },
     );
   }
@@ -47,7 +47,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       request,
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
         if (clientPayload !== "header" && clientPayload !== "logo") {
-          throw new Error("Choose a supported provider image type.");
+          throw new Error("Choose a supported branding image type.");
         }
 
         return {

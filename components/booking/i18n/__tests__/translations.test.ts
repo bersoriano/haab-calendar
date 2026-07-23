@@ -32,6 +32,8 @@ describe("bookingTranslations", () => {
     expect(admin.weekdays.monday).toBe("Lunes");
     expect(admin.blockedTimes).toBe("Horarios bloqueados");
     expect(admin.saveChanges).toBe("Guardar cambios");
+    expect(admin.eventSchedulingTitle).toBe("Programación de eventos");
+    expect(admin.manageEvents).toBe("Gestionar eventos");
     expect(providerForm.uploadImage).toBe("Subir imagen");
     expect(providerForm.logoImage).toBe("Logotipo de la página pública");
     expect(providerForm.logoImageSizeError).toContain("1 MB");
@@ -49,5 +51,26 @@ describe("bookingTranslations", () => {
     expect(bookingTranslations.es.healthcareRole.informationTitle).toBe("Información del Médico");
     expect(Object.values(bookingTranslations.en.healthcareRole).join(" ")).not.toMatch(/\bprovider\b/i);
     expect(Object.values(bookingTranslations.es.healthcareRole).join(" ")).not.toMatch(/\bproveedor\b/i);
+  });
+
+  it("uses organizer terminology for the events vertical in both languages", () => {
+    expect(bookingTranslations.en.eventOrganizerRole.informationTitle).toBe(
+      "Organizer information",
+    );
+    expect(bookingTranslations.es.eventOrganizerRole.informationTitle).toBe(
+      "Información del organizador",
+    );
+    expect(bookingTranslations.en.eventOrganizerRole.contactLabel).toBe(
+      "Contact organizer",
+    );
+    expect(bookingTranslations.es.eventOrganizerRole.contactLabel).toBe(
+      "Contactar al organizador",
+    );
+    expect(
+      Object.values(bookingTranslations.en.eventOrganizerRole).join(" "),
+    ).not.toMatch(/\bprovider\b/i);
+    expect(
+      Object.values(bookingTranslations.es.eventOrganizerRole).join(" "),
+    ).not.toMatch(/\bproveedor\b/i);
   });
 });

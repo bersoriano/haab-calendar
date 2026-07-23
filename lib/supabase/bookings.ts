@@ -320,7 +320,12 @@ function validateDateWindow(provider: ProviderRow, dateKey: string) {
 
   const maxDateKey = getDateKey(addDays(new Date(), provider.booking_window_days));
   if (compareDateKeys(dateKey, maxDateKey) > 0) {
-    throw new PublicBookingWriteError("That date is outside this provider's booking window.", 400);
+    throw new PublicBookingWriteError(
+      provider.vertical === "events"
+        ? "That date is outside this organizer's registration window."
+        : "That date is outside this provider's booking window.",
+      400,
+    );
   }
 }
 
@@ -427,11 +432,11 @@ async function getProviderById(supabase: SupabaseClient, providerId: string) {
     .maybeSingle<ProviderRow>();
 
   if (error) {
-    throw new PublicBookingWriteError("Could not load this provider.", 500, error);
+    throw new PublicBookingWriteError("Could not load this booking page.", 500, error);
   }
 
   if (!data) {
-    throw new PublicBookingWriteError("This provider was not found.", 404);
+    throw new PublicBookingWriteError("This booking page was not found.", 404);
   }
 
   return data;

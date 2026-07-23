@@ -51,6 +51,7 @@ export async function checkProviderSlugAvailability(
   },
 ): Promise<SlugAvailabilityResult> {
   const validation = validateProviderSlug(options.slug);
+  const profileRole = options.vertical === "events" ? "organizer" : "provider";
 
   if (!validation.ok) {
     return {
@@ -77,7 +78,7 @@ export async function checkProviderSlugAvailability(
     return {
       available: false,
       slug: validation.slug,
-      message: "That provider URL is already taken for this vertical.",
+      message: `That ${profileRole} URL is already taken for this vertical.`,
     };
   }
 
@@ -97,7 +98,7 @@ export async function checkProviderSlugAvailability(
     return {
       available: false,
       slug: validation.slug,
-      message: "That provider URL is reserved by a previous redirect.",
+      message: `That ${profileRole} URL is reserved by a previous redirect.`,
     };
   }
 
@@ -139,7 +140,7 @@ export async function checkServiceSlugAvailability(
     return {
       available: false,
       slug: validation.slug,
-      message: "That service URL is already taken for this provider.",
+      message: "That service URL is already taken for this account.",
     };
   }
 

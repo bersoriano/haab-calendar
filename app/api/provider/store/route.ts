@@ -52,7 +52,7 @@ export async function PUT(request: NextRequest) {
     body = (await request.json()) as ProviderStoreBody;
   } catch {
     return NextResponse.json(
-      { userMessage: "Invalid provider setup request." },
+      { userMessage: "Invalid booking setup request." },
       { status: 400 },
     );
   }

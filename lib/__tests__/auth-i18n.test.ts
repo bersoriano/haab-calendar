@@ -5,6 +5,7 @@ import {
   getAuthErrorMessage,
   withAuthReturnLanguage,
 } from "@/lib/auth-i18n";
+import { getAuthReturnVertical } from "@/lib/auth-vertical";
 
 describe("auth i18n", () => {
   it("normalizes the requested login language", () => {
@@ -21,6 +22,12 @@ describe("auth i18n", () => {
     expect(withAuthReturnLanguage("/?vertical=events#setup", "en")).toBe(
       "/?vertical=events&lang=en#setup",
     );
+  });
+
+  it("recognizes the events vertical in the authentication return path", () => {
+    expect(getAuthReturnVertical("/?vertical=events&lang=es#setup")).toBe("events");
+    expect(getAuthReturnVertical("/?vertical=healthcare")).toBe("healthcare");
+    expect(getAuthReturnVertical("/?vertical=unknown")).toBeUndefined();
   });
 
   it("maps known Supabase auth errors to Spanish", () => {

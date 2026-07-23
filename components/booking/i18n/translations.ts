@@ -177,6 +177,10 @@ export type BookingDict = {
     providerInformation: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
+    eventSchedulingTitle: string;
+    eventSchedulingBody: string;
+    eventSchedulingHint: string;
+    manageEvents: string;
     resetStandaloneSetup: string;
     saveChanges: string;
     couldNotSaveSettings: string;
@@ -211,6 +215,7 @@ export type BookingDict = {
     singleOccurrenceHint: string;
     weeklyOccurrenceHint: string;
     periodicOccurrenceHint: string;
+    legacyPeriodicEventHint: string;
     bookingTypeLabel: string;
     startLabel: string;
     endLabel: string;
@@ -277,6 +282,19 @@ export type BookingDict = {
     phoneHintSlot1: string;
     phoneHintSlot2: string;
     phoneHintFull: string;
+  };
+  eventOrganizerRole: {
+    informationTitle: string;
+    contactLabel: string;
+    requiredFieldsError: string;
+    addressHintSlot1: string;
+    addressHintSlot2: string;
+    addressHintFull: string;
+    phoneHintSlot1: string;
+    phoneHintSlot2: string;
+    phoneHintFull: string;
+    logoAlt: string;
+    bookingPageUnavailableBody: string;
   };
   welcome: {
     badge: string;
@@ -492,6 +510,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerInformation: "Provider information",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
+      eventSchedulingTitle: "Event scheduling",
+      eventSchedulingBody: "Weekly availability does not apply to events.",
+      eventSchedulingHint:
+        "Set each event's date, time, location, pricing, and capacity from the Services tab.",
+      manageEvents: "Manage events",
       resetStandaloneSetup: "Reset standalone setup",
       saveChanges: "Save changes",
       couldNotSaveSettings: "Could not save settings.",
@@ -532,6 +555,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       singleOccurrenceHint: "This event happens once, on a fixed date and time.",
       weeklyOccurrenceHint: "This event recurs on the weekdays you pick, at a fixed time.",
       periodicOccurrenceHint: "This event repeats on your weekly availability.",
+      legacyPeriodicEventHint:
+        "This legacy event uses weekly availability. Choose Single or Weekly to update its schedule.",
       bookingTypeLabel: "Booking type",
       startLabel: "Start",
       endLabel: "End",
@@ -598,6 +623,20 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintSlot1: "We'll save this as Phone 1 in your physician profile so other services can reuse it.",
       phoneHintSlot2: "We'll save this as Phone 2 in your physician profile so other services can reuse it.",
       phoneHintFull: "Both physician phone slots are already taken — this phone will stay with this service only.",
+    },
+    eventOrganizerRole: {
+      informationTitle: "Organizer information",
+      contactLabel: "Contact organizer",
+      requiredFieldsError: "Organizer name, business name, and email are all required.",
+      addressHintSlot1: "We'll save this as Address 1 in your organizer profile so other events can reuse it.",
+      addressHintSlot2: "We'll save this as Address 2 in your organizer profile so other events can reuse it.",
+      addressHintFull: "Both organizer address slots are already taken — this address will stay with this event only.",
+      phoneHintSlot1: "We'll save this as Phone 1 in your organizer profile so other events can reuse it.",
+      phoneHintSlot2: "We'll save this as Phone 2 in your organizer profile so other events can reuse it.",
+      phoneHintFull: "Both organizer phone slots are already taken — this phone will stay with this event only.",
+      logoAlt: "Organizer logo",
+      bookingPageUnavailableBody:
+        "The link may be wrong, or this organizer hasn't finished setting up their registration page yet. Head back home to start the setup wizard.",
     },
     welcome: {
       badge: "Welcome to Haab",
@@ -814,6 +853,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerInformation: "Información del proveedor",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
+      eventSchedulingTitle: "Programación de eventos",
+      eventSchedulingBody: "La disponibilidad semanal no aplica a los eventos.",
+      eventSchedulingHint:
+        "Configure la fecha, hora, ubicación, precio y capacidad de cada evento en la pestaña Servicios.",
+      manageEvents: "Gestionar eventos",
       resetStandaloneSetup: "Restablecer configuración independiente",
       saveChanges: "Guardar cambios",
       couldNotSaveSettings: "No se pudieron guardar los ajustes.",
@@ -854,6 +898,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       singleOccurrenceHint: "Este evento ocurre una vez, en una fecha y hora fija.",
       weeklyOccurrenceHint: "Este evento se repite los días que elija, a una hora fija.",
       periodicOccurrenceHint: "Este evento se repite según su disponibilidad semanal.",
+      legacyPeriodicEventHint:
+        "Este evento heredado usa la disponibilidad semanal. Elija Único o Semanal para actualizar su programación.",
       bookingTypeLabel: "Tipo de reserva",
       startLabel: "Inicio",
       endLabel: "Fin",
@@ -920,6 +966,20 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintSlot1: "Lo guardaremos como Teléfono 1 en el perfil del médico para que otros servicios puedan reutilizarlo.",
       phoneHintSlot2: "Lo guardaremos como Teléfono 2 en el perfil del médico para que otros servicios puedan reutilizarlo.",
       phoneHintFull: "Ambos campos de teléfono del médico ya están ocupados — este teléfono solo se guardará con este servicio.",
+    },
+    eventOrganizerRole: {
+      informationTitle: "Información del organizador",
+      contactLabel: "Contactar al organizador",
+      requiredFieldsError: "El nombre del organizador, el nombre del negocio y el correo electrónico son obligatorios.",
+      addressHintSlot1: "Lo guardaremos como Dirección 1 en el perfil del organizador para que otros eventos puedan reutilizarla.",
+      addressHintSlot2: "Lo guardaremos como Dirección 2 en el perfil del organizador para que otros eventos puedan reutilizarla.",
+      addressHintFull: "Ambos campos de dirección del organizador ya están ocupados — esta dirección solo se guardará con este evento.",
+      phoneHintSlot1: "Lo guardaremos como Teléfono 1 en el perfil del organizador para que otros eventos puedan reutilizarlo.",
+      phoneHintSlot2: "Lo guardaremos como Teléfono 2 en el perfil del organizador para que otros eventos puedan reutilizarlo.",
+      phoneHintFull: "Ambos campos de teléfono del organizador ya están ocupados — este teléfono solo se guardará con este evento.",
+      logoAlt: "Logotipo del organizador",
+      bookingPageUnavailableBody:
+        "El enlace puede ser incorrecto o este organizador aún no ha terminado de configurar su página de registro. Vuelva al inicio para comenzar el asistente de configuración.",
     },
     welcome: {
       badge: "Bienvenido a Haab",

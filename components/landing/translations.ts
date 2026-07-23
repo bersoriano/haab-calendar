@@ -57,6 +57,9 @@ export const translations = {
       pageBody:
         "Usa tu cuenta de proveedor para configurar servicios, disponibilidad, reservas y la página pública de reservas.",
       panelTitle: "Acceso para proveedores",
+      eventOrganizerPageBody:
+        "Usa tu cuenta de organizador para configurar eventos, registros y la página pública de registro.",
+      eventOrganizerPanelTitle: "Acceso para organizadores",
       panelBody: "La autenticación con correo y contraseña se gestiona con Supabase Auth.",
       email: "Correo electrónico",
       emailPlaceholder: "tu@ejemplo.com",
@@ -473,6 +476,9 @@ export const translations = {
       pageBody:
         "Use your provider account to configure services, availability, bookings, and the public booking page.",
       panelTitle: "Provider login",
+      eventOrganizerPageBody:
+        "Use your organizer account to configure events, registrations, and the public registration page.",
+      eventOrganizerPanelTitle: "Organizer login",
       panelBody: "Email and password authentication is handled by Supabase Auth.",
       email: "Email",
       emailPlaceholder: "you@example.com",

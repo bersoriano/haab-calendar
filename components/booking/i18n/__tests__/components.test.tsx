@@ -2,11 +2,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
+import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { BookingHoldCountdownBar } from "@/components/ui/BookingHoldCountdownBar";
 import { PublicProgressIndicator } from "@/components/ui/PublicProgressIndicator";
 import { SummaryStatusTitle } from "@/components/ui/SummaryStatusTitle";
-import { createEmptyStore } from "@/lib/store";
+import { createBlankServiceDraft, createEmptyStore } from "@/lib/store";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 describe("shared booking components", () => {
@@ -22,6 +24,72 @@ describe("shared booking components", () => {
     expect(html).toContain("Lunes");
     expect(html).toContain("Horarios bloqueados");
     expect(html).toContain("Agregar bloqueo");
+  });
+
+  it("replaces weekly availability with event scheduling guidance", () => {
+    const store = createEmptyStore();
+    const html = renderToStaticMarkup(
+      <AvailabilitySettingsSection
+        vertical="events"
+        availability={store.availability}
+        onChange={() => undefined}
+        onManageEvents={() => undefined}
+        lang="en"
+      />,
+    );
+
+    expect(html).toContain("Event scheduling");
+    expect(html).toContain("Weekly availability does not apply to events.");
+    expect(html).toContain("Manage events");
+    expect(html).not.toContain(">Monday<");
+  });
+
+  it("keeps weekly availability settings for non-event verticals", () => {
+    const store = createEmptyStore();
+    const html = renderToStaticMarkup(
+      <AvailabilitySettingsSection
+        vertical="professional"
+        availability={store.availability}
+        onChange={() => undefined}
+        onManageEvents={() => undefined}
+        lang="en"
+      />,
+    );
+
+    expect(html).toContain("Weekly availability");
+    expect(html).toContain("Monday");
+    expect(html).not.toContain("Manage events");
+  });
+
+  it("offers only single and weekly scheduling for events", () => {
+    const store = createEmptyStore();
+    const eventDraft = {
+      ...createBlankServiceDraft("events"),
+      customAddress: "123 Main Street",
+      customPhone: "+1 555 123 4567",
+    };
+    const html = renderToStaticMarkup(
+      <ServiceEditor
+        services={[]}
+        serviceDraft={eventDraft}
+        onDraftChange={() => undefined}
+        editingServiceId={null}
+        onUpsert={() => undefined}
+        onReset={() => undefined}
+        onEdit={() => undefined}
+        onRemove={() => undefined}
+        copy={getVerticalCopy("events", "en")}
+        provider={store.provider}
+        vertical="events"
+        lang="en"
+      />,
+    );
+
+    expect(html).toContain(">Single<");
+    expect(html).toContain(">Weekly<");
+    expect(html).not.toContain(">Periodic<");
+    expect(html).toContain("organizer profile");
+    expect(html).not.toMatch(/\bprovider profile\b/i);
   });
 
   it("renders header-image controls in Spanish", () => {

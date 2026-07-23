@@ -124,6 +124,7 @@ import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { VERTICALS } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -346,6 +347,8 @@ export function HaabBookingModule({
   const copy = getVerticalCopy(vertical, lang);
   const t = bookingTranslations[lang];
   const healthcareRole = vertical === "healthcare" ? t.healthcareRole : null;
+  const eventOrganizerRole = vertical === "events" ? t.eventOrganizerRole : null;
+  const profileRole = healthcareRole ?? eventOrganizerRole;
   const isDedicatedPublicPage = surfaceMode === "public-only";
   const businessSlug =
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
@@ -1483,7 +1486,7 @@ export function HaabBookingModule({
   function validateSetup(step: SetupStep) {
     if (step === 1) {
       if (!provider.fullName.trim() || !provider.businessName.trim() || !provider.email.trim()) {
-        return healthcareRole?.requiredFieldsError ?? t.setup.providerRequiredFieldsError;
+        return profileRole?.requiredFieldsError ?? t.setup.providerRequiredFieldsError;
       }
     }
 
@@ -2876,7 +2879,7 @@ export function HaabBookingModule({
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
           <SectionTitle
-            title={healthcareRole?.informationTitle ?? t.admin.providerInformation}
+            title={profileRole?.informationTitle ?? t.admin.providerInformation}
             action={
               integratedMode && persistAdminChanges ? (
                 <ActionButton
@@ -2945,17 +2948,14 @@ export function HaabBookingModule({
           ) : null}
         </div>
 
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={t.admin.weeklyAvailability} />
-          <div className="mt-6">
-            <AvailabilityEditor
-              availability={availability}
-              onChange={updateAvailabilityDay}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
-        </div>
+        <AvailabilitySettingsSection
+          vertical={vertical}
+          availability={availability}
+          onChange={updateAvailabilityDay}
+          onManageEvents={() => setAdminTab("services")}
+          disabled={isSavingAdmin}
+          lang={lang}
+        />
       </div>
     );
   }
@@ -3170,7 +3170,11 @@ export function HaabBookingModule({
           // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
           <img
             src={provider.logoImageUrl}
-            alt={provider.businessName ? `${provider.businessName} logo` : "Provider logo"}
+            alt={
+              provider.businessName
+                ? `${provider.businessName} logo`
+                : eventOrganizerRole?.logoAlt ?? "Provider logo"
+            }
             className="h-14 w-[10.5rem] shrink-0 object-contain sm:h-16 sm:w-48"
           />
         ) : null}
@@ -5205,7 +5209,7 @@ export function HaabBookingModule({
                 isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass),
               )}
             >
-              {healthcareRole?.contactLabel ?? t.manage.contactProvider}
+              {profileRole?.contactLabel ?? t.manage.contactProvider}
             </a>
           ) : null}
         </div>
@@ -5232,8 +5236,12 @@ export function HaabBookingModule({
             This booking page doesn&apos;t exist
           </h3>
           <p className="max-w-md text-sm leading-6 text-[var(--muted)]">
-            The link may be wrong, or this provider hasn&apos;t finished setting up their
-            booking page yet. Head back home to start the setup wizard.
+            {eventOrganizerRole?.bookingPageUnavailableBody ?? (
+              <>
+                The link may be wrong, or this booking page isn&apos;t available yet.
+                Head back home to start the setup wizard.
+              </>
+            )}
           </p>
           <Link
             href="/"

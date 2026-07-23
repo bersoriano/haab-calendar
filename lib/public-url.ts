@@ -157,7 +157,7 @@ export function validateSlug(
 
 export function validateProviderSlug(value: string) {
   return validateSlug(value, {
-    fieldLabel: "Provider URL slug",
+    fieldLabel: "Public URL slug",
     maxLength: PROVIDER_SLUG_MAX_LENGTH,
     reserved: RESERVED_PROVIDER_SLUGS,
   });

@@ -647,7 +647,7 @@ export const eventsCopy: VerticalCopy = {
     bookingsSoonDetail: "Registrations starting soon",
     activeBookingsDetail: "Currently active registrations",
     totalBookingsLabel: "Total registrations",
-    servicesStatDetail: "One-time, weekly, and availability-based events",
+    servicesStatDetail: "One-time and weekly events",
     searchPlaceholder: "Search attendee, event, email, or phone",
 
     addBookingHint: "Click an available day to add a registration.",
@@ -664,7 +664,7 @@ export const eventsCopy: VerticalCopy = {
     bookNewButton: "Register for another event",
 
     serviceEditorBody:
-      "Give each event its own schedule, capacity, price, and location. Use one-time for dated events or weekly and periodic for recurring registration.",
+      "Give each event its own schedule, capacity, price, and location. Use one-time for dated events or weekly for recurring registration.",
     noServicesTitle: "No events yet",
     noServicesBody: "Add an event so attendees can start registering.",
     serviceDescPlaceholder:
@@ -765,7 +765,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookingsSoonDetail: "Registros que comienzan próximamente",
     activeBookingsDetail: "Registros actualmente activos",
     totalBookingsLabel: "Total de registros",
-    servicesStatDetail: "Eventos únicos, semanales y basados en disponibilidad",
+    servicesStatDetail: "Eventos únicos y semanales",
     searchPlaceholder: "Buscar asistente, evento, correo o teléfono",
 
     addBookingHint: "Haga clic en un día disponible para agregar un registro.",
@@ -782,7 +782,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookNewButton: "Registrarse en otro evento",
 
     serviceEditorBody:
-      "Asigne a cada evento su propio horario, capacidad, precio y ubicación. Use único para eventos con fecha, o semanal y periódico para registros recurrentes.",
+      "Asigne a cada evento su propio horario, capacidad, precio y ubicación. Use único para eventos con fecha o semanal para registros recurrentes.",
     noServicesTitle: "Aún no hay eventos",
     noServicesBody:
       "Agregue un evento para que los asistentes puedan comenzar a registrarse.",

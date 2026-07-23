@@ -126,7 +126,7 @@ async function getExistingProviderId(supabase: SupabaseClient, ownerUserId: stri
     .returns<ProviderIdRow[]>();
 
   if (error) {
-    throw new ProviderStoreWriteError("Could not load your provider profile.", 500, error);
+    throw new ProviderStoreWriteError("Could not load your booking profile.", 500, error);
   }
 
   return data?.[0]?.id;
@@ -140,14 +140,16 @@ async function upsertProvider(options: {
 }) {
   const provider = normalizeProvider(options.store.provider);
   const vertical = requireVertical(options.store.vertical);
+  const profileRole = vertical === "events" ? "organizer" : "provider";
+  const profileRoleTitle = profileRole === "organizer" ? "Organizer" : "Provider";
   const existingProviderId = await getExistingProviderId(options.supabase, options.ownerUserId);
   const email = requireText(
     provider.email || options.ownerEmail || "",
-    "Provider email is required.",
+    `${profileRoleTitle} email is required.`,
   );
   const payload = {
     owner_user_id: options.ownerUserId,
-    full_name: requireText(provider.fullName, "Provider name is required."),
+    full_name: requireText(provider.fullName, `${profileRoleTitle} name is required.`),
     business_name: requireText(provider.businessName, "Business name is required."),
     email,
     slug: provider.publicSlug,
@@ -178,7 +180,11 @@ async function upsertProvider(options: {
       .single<ProviderIdRow>();
 
     if (error) {
-      throw new ProviderStoreWriteError("Could not update your provider profile.", 500, error);
+      throw new ProviderStoreWriteError(
+        `Could not update your ${profileRole} profile.`,
+        500,
+        error,
+      );
     }
 
     return data.id;
@@ -191,7 +197,11 @@ async function upsertProvider(options: {
     .single<ProviderIdRow>();
 
   if (error) {
-    throw new ProviderStoreWriteError("Could not create your provider profile.", 500, error);
+    throw new ProviderStoreWriteError(
+      `Could not create your ${profileRole} profile.`,
+      500,
+      error,
+    );
   }
 
   return data.id;
@@ -311,7 +321,7 @@ export async function persistProviderStore(options: {
   const dashboardStore = await getProviderDashboardStore(options.supabase, options.ownerUserId);
 
   if (!dashboardStore) {
-    throw new ProviderStoreWriteError("Could not reload your saved provider profile.", 500);
+    throw new ProviderStoreWriteError("Could not reload your saved booking profile.", 500);
   }
 
   return dashboardStore;

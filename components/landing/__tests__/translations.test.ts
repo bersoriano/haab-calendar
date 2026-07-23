@@ -49,6 +49,10 @@ describe("landing translations", () => {
     expect(translations.es.auth.confirmationExpired).toContain("venció");
     expect(translations.es.home.verticals.events.tagline).toContain("carreras");
     expect(translations.en.home.verticals.events.tagline).toContain("races");
+    expect(translations.en.auth.eventOrganizerPanelTitle).toBe("Organizer login");
+    expect(translations.es.auth.eventOrganizerPanelTitle).toBe("Acceso para organizadores");
+    expect(translations.en.auth.eventOrganizerPageBody).not.toMatch(/\bprovider\b/i);
+    expect(translations.es.auth.eventOrganizerPageBody).not.toMatch(/\bproveedor\b/i);
   });
 
   it("defaults visitor-owned surfaces to Spanish", () => {
