@@ -1,6 +1,11 @@
 import { HomeExperience } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderDashboardStore } from "@/lib/supabase/bookings";
+import {
+  getPublicationStatus,
+  type PublicationStatus,
+} from "@/lib/supabase/publication";
+import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import type { LandingVertical } from "@/components/landing/landing-ui";
 import type { Lang } from "@/components/landing/translations";
 import type { ModuleStore } from "@/lib/types";
@@ -34,16 +39,22 @@ export default async function Home({ searchParams }: HomePageProps) {
   let configured = false;
   let email: string | undefined;
   let dashboardStore: ModuleStore | undefined;
+  let publicationStatus: PublicationStatus | undefined;
+  let isSuperAdmin = false;
 
   if (loggedIn) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     email = user?.email ?? claimsData?.claims?.email;
+    isSuperAdmin = isSuperAdminEmail(email);
 
     if (user) {
       try {
-        dashboardStore = (await getProviderDashboardStore(supabase, user.id)) ?? undefined;
+        [dashboardStore, publicationStatus] = await Promise.all([
+          getProviderDashboardStore(supabase, user.id).then((store) => store ?? undefined),
+          getPublicationStatus(supabase, user.id),
+        ]);
         // "Configured" = this provider has completed setup. Drives whether the
         // landing shows verticals or a "go to your dashboard" panel.
         configured = Boolean(dashboardStore?.setupComplete);
@@ -61,9 +72,11 @@ export default async function Home({ searchParams }: HomePageProps) {
       loggedIn={loggedIn}
       configured={configured}
       email={email}
+      isSuperAdmin={isSuperAdmin}
       initialLanguage={parseLanguage(lang)}
       initialVertical={parseVertical(vertical)}
       dashboardStore={dashboardStore}
+      publicationStatus={publicationStatus}
     />
   );
 }

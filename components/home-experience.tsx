@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
@@ -19,6 +20,7 @@ import {
 } from "@/components/landing/language-provider";
 import type { Lang as LandingLang } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
+import type { PublicationStatus } from "@/lib/supabase/publication";
 
 type View = "home" | "app";
 
@@ -33,6 +35,10 @@ type HomeExperienceProps = {
   initialLanguage?: LandingLang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
+  /** Server-controlled ability to expose public URLs and booking actions. */
+  publicationStatus?: PublicationStatus;
+  /** Whether the signed-in account can open the super-admin area. */
+  isSuperAdmin?: boolean;
 };
 
 function loginHref(next: string, lang: LandingLang) {
@@ -61,6 +67,8 @@ function HomeExperienceInner({
   email,
   initialVertical,
   dashboardStore,
+  publicationStatus,
+  isSuperAdmin,
 }: HomeExperienceProps) {
   const router = useRouter();
   const { lang, setLang, t } = useLanguage();
@@ -126,6 +134,10 @@ function HomeExperienceInner({
 
     return (
       <div className="flex min-h-full flex-col">
+        <AccountStatusBar
+          isSuperAdmin={isSuperAdmin}
+          publicationStatus={publicationStatus}
+        />
         <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
           <AdminHero />
         </div>
@@ -176,17 +188,64 @@ function HomeExperienceInner({
   }
 
   return (
-    <LandingActionsProvider actions={{ onStart, onSelectVertical }}>
-      <LandingPage
-        afterHero={
-          effectiveConfigured ? (
-            <DashboardPanel onOpen={() => openApp()} email={email} />
-          ) : (
-            <VerticalsPanel onSelectVertical={onSelectVertical} />
-          )
-        }
+    <>
+      <AccountStatusBar
+        isSuperAdmin={isSuperAdmin}
+        publicationStatus={publicationStatus}
       />
-    </LandingActionsProvider>
+      <LandingActionsProvider actions={{ onStart, onSelectVertical }}>
+        <LandingPage
+          afterHero={
+            effectiveConfigured ? (
+              <DashboardPanel onOpen={() => openApp()} email={email} />
+            ) : (
+              <VerticalsPanel onSelectVertical={onSelectVertical} />
+            )
+          }
+        />
+      </LandingActionsProvider>
+    </>
+  );
+}
+
+function AccountStatusBar({
+  isSuperAdmin,
+  publicationStatus,
+}: {
+  isSuperAdmin?: boolean;
+  publicationStatus?: PublicationStatus;
+}) {
+  if (!isSuperAdmin && !publicationStatus?.dashboardMessage) {
+    return null;
+  }
+
+  return (
+    <aside className="border-b border-[var(--line)] bg-white px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {publicationStatus?.dashboardMessage ? (
+          <div
+            className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
+              publicationStatus.publishingEnabled
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-rose-200 bg-rose-50 text-rose-800"
+            }`}
+            role={publicationStatus.publishingEnabled ? "status" : "alert"}
+          >
+            {publicationStatus.dashboardMessage}
+          </div>
+        ) : (
+          <span />
+        )}
+        {isSuperAdmin ? (
+          <Link
+            href="/super-admin"
+            className="inline-flex shrink-0 items-center justify-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800"
+          >
+            Open super admin
+          </Link>
+        ) : null}
+      </div>
+    </aside>
   );
 }
 

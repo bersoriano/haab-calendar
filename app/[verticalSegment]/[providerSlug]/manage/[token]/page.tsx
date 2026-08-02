@@ -1,4 +1,4 @@
-import { permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { PublicBookingPageShell } from "@/components/public-booking-page-shell";
 import {
   isPublicUrlBackendUnavailable,
@@ -36,12 +36,7 @@ export default async function PublicManageBookingPage({
   }
 
   if (!resolution) {
-    return (
-      <PublicBookingPageShell
-        requestedPublicSlug={normalizeUrlSlugSegment(providerSlug)}
-        manageBookingToken={token}
-      />
-    );
+    notFound();
   }
 
   if (resolution.status === "redirect") {

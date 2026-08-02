@@ -421,6 +421,24 @@ async function getPublishedProvider(
     throw new PublicBookingWriteError("This booking link was not found.", 404);
   }
 
+  const { data: publication, error: publicationError } = await supabase
+    .from("user_publication_settings")
+    .select("publishing_enabled")
+    .eq("user_id", data.owner_user_id)
+    .maybeSingle<{ publishing_enabled: boolean }>();
+
+  if (publicationError) {
+    throw new PublicBookingWriteError(
+      "Could not load this booking page.",
+      500,
+      publicationError,
+    );
+  }
+
+  if (publication?.publishing_enabled === false) {
+    throw new PublicBookingWriteError("This booking link was not found.", 404);
+  }
+
   return data;
 }
 
