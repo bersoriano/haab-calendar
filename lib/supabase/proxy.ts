@@ -1,22 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { parsePublicVerticalSegment } from "@/lib/public-url";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
-const publicRoutePrefixes = ["/login", "/auth", "/public", "/api/public"];
+const protectedRoutePrefixes = [
+  "/super-admin",
+  "/api/blob",
+  "/api/provider",
+  "/api/super-admin",
+] as const;
 
-function isPublicRoute(pathname: string) {
-  // Root is the public landing page: anon visitors see it and pick a vertical,
-  // which routes them to /login. Exact match — "/" as a prefix matches all.
-  if (pathname === "/") {
-    return true;
-  }
-
-  const [verticalSegment] = pathname.split("/").filter(Boolean);
-
-  return (
-    publicRoutePrefixes.some((prefix) => pathname.startsWith(prefix)) ||
-    Boolean(verticalSegment && parsePublicVerticalSegment(verticalSegment))
+export function isProtectedRoute(pathname: string) {
+  return protectedRoutePrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
@@ -47,7 +42,7 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
 
-  if (!claims && !isPublicRoute(request.nextUrl.pathname)) {
+  if (!claims && isProtectedRoute(request.nextUrl.pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);

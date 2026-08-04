@@ -7,6 +7,7 @@ type PublicBookingPageShellProps = {
   requestedServiceSlug?: string;
   manageBookingToken?: string;
   initialPublicLanguage?: Lang;
+  providerTimeZone?: string;
 };
 
 export function PublicBookingPageShell({
@@ -15,6 +16,7 @@ export function PublicBookingPageShell({
   requestedServiceSlug,
   manageBookingToken,
   initialPublicLanguage,
+  providerTimeZone,
 }: PublicBookingPageShellProps) {
   return (
     <main className="relative isolate min-h-screen overflow-x-clip bg-[#eef2f5]">
@@ -38,6 +40,7 @@ export function PublicBookingPageShell({
           surfaceMode="public-only"
           manageBookingToken={manageBookingToken}
           initialPublicLanguage={initialPublicLanguage}
+          providerTimeZone={providerTimeZone}
         />
       </div>
     </main>

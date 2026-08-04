@@ -116,6 +116,7 @@ export type BookingDict = {
     // Section titles & misc actions
     bookingCancelled: string;
     bookingConfirmed: string;
+    bookingUpdated: string;
     chooseAnother: string;
     selectedDate: string;
     finishBeforeHoldExpires: string;
@@ -172,6 +173,7 @@ export type BookingDict = {
     manageBookingAnytime: string;
     copied: string;
     copyLink: string;
+    openPrivateLink: string;
     manageLinkCopied: string;
     saveThisLinkBody: string;
     progressLabel: string;
@@ -488,6 +490,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       dayUnavailablePickAnother: "This day isn't available. Pick another date.",
       bookingCancelled: "Booking Cancelled",
       bookingConfirmed: "Booking Confirmed",
+      bookingUpdated: "Booking Updated",
       chooseAnother: "Choose another",
       selectedDate: "Selected Date",
       finishBeforeHoldExpires: "Finish your details before the temporary hold expires.",
@@ -541,9 +544,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageBookingAnytime: "Manage this booking anytime",
       copied: "Copied",
       copyLink: "Copy link",
+      openPrivateLink: "Open private link",
       manageLinkCopied: "Manage link copied to clipboard",
       saveThisLinkBody:
-        "Save this link or use the calendar attachment — anyone with the link can manage this booking.",
+        "Keep this private link. It lets you reschedule or cancel without an account or contacting the business. Anyone with the link can manage this booking.",
       progressLabel: "Booking progress",
       dateAndTime: "Date and time",
       completedPrefix: "Completed: ",
@@ -865,6 +869,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       dayUnavailablePickAnother: "Este día no está disponible. Elija otra fecha.",
       bookingCancelled: "Reserva cancelada",
       bookingConfirmed: "Reserva confirmada",
+      bookingUpdated: "Reserva actualizada",
       chooseAnother: "Elija otro",
       selectedDate: "Fecha seleccionada",
       finishBeforeHoldExpires:
@@ -920,9 +925,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageBookingAnytime: "Gestione esta reserva en cualquier momento",
       copied: "Copiado",
       copyLink: "Copiar enlace",
+      openPrivateLink: "Abrir enlace privado",
       manageLinkCopied: "Enlace de gestión copiado al portapapeles",
       saveThisLinkBody:
-        "Guarde este enlace o use el archivo de calendario adjunto; cualquier persona con el enlace puede gestionar esta reserva.",
+        "Guarde este enlace privado. Le permite reagendar o cancelar sin crear una cuenta ni contactar al negocio. Cualquier persona con el enlace puede gestionar esta reserva.",
       progressLabel: "Progreso de la reserva",
       dateAndTime: "Fecha y horario",
       completedPrefix: "Completado: ",

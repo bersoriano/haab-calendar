@@ -181,7 +181,11 @@ export async function GET(
       throw servicesError;
     }
 
-    const schedule = await loadPublicSchedule(provider.id, provider.booking_window_days);
+    const schedule = await loadPublicSchedule(
+      provider.id,
+      provider.booking_window_days,
+      provider.timezone,
+    );
 
     return Response.json({
       store: {

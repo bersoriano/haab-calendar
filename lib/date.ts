@@ -27,6 +27,42 @@ export function getDateKey(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
+export function getDateTimeKeysInTimeZone(date: Date, timeZone?: string) {
+  if (!timeZone) {
+    return {
+      dateKey: getDateKey(date),
+      timeKey: getTimeKeyFromDate(date),
+    };
+  }
+
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(date);
+    const values = Object.fromEntries(
+      parts
+        .filter((part) => part.type !== "literal")
+        .map((part) => [part.type, part.value]),
+    );
+
+    return {
+      dateKey: `${values.year}-${values.month}-${values.day}`,
+      timeKey: `${values.hour}:${values.minute}`,
+    };
+  } catch {
+    return {
+      dateKey: getDateKey(date),
+      timeKey: getTimeKeyFromDate(date),
+    };
+  }
+}
+
 export function parseDateKey(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return new Date(year, month - 1, day);

@@ -2,7 +2,12 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { addDays, getDateKey } from "@/lib/date";
+import {
+  addDays,
+  getDateKey,
+  getDateTimeKeysInTimeZone,
+  parseDateKey,
+} from "@/lib/date";
 import {
   buildProviderPath,
   buildServicePath,
@@ -243,10 +248,14 @@ function toPublicScheduleHold(row: PublicScheduleHoldRow): BookingHoldRecord {
   };
 }
 
-export async function loadPublicSchedule(providerId: string, bookingWindowDays: number) {
+export async function loadPublicSchedule(
+  providerId: string,
+  bookingWindowDays: number,
+  timeZone?: string,
+) {
   const admin = createAdminClient();
-  const dateFrom = getDateKey(new Date());
-  const dateTo = getDateKey(addDays(new Date(), bookingWindowDays));
+  const dateFrom = getDateTimeKeysInTimeZone(new Date(), timeZone).dateKey;
+  const dateTo = getDateKey(addDays(parseDateKey(dateFrom), bookingWindowDays));
   const now = new Date().toISOString();
 
   const [bookingsResult, holdsResult] = await Promise.all([
@@ -450,7 +459,11 @@ export async function resolvePublicBookingUrl(options: {
   }
 
   const services = await getServicesForProvider(supabase, provider.id);
-  const schedule = await loadPublicSchedule(provider.id, provider.booking_window_days);
+  const schedule = await loadPublicSchedule(
+    provider.id,
+    provider.booking_window_days,
+    provider.timezone,
+  );
   let selectedService: PublicServiceRow | undefined;
 
   if (normalizedServiceSlug) {

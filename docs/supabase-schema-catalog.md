@@ -16,7 +16,7 @@ Source of truth:
   `app/api/public/[verticalSegment]/[providerSlug]/manage/[token]/route.ts`,
   `app/api/provider/bookings/[bookingId]/route.ts`,
   and `lib/supabase/bookings.ts`
-- Provider dashboard write DTOs: `app/api/provider/store/route.ts` and
+- Provider dashboard read/write DTOs: `app/api/provider/store/route.ts` and
   `lib/supabase/provider-store.ts`
 - Local fallback state: `components/booking/state/useModuleStore.ts`
 
@@ -288,6 +288,9 @@ Important constraints and indexes:
 - Exact active slot uniqueness also protects repeated full-day or appointment slots.
 - `(provider_id, idempotency_key)` is unique.
 - `manage_token_hash` and `confirmation_number` are unique.
+- `public.bookings` belongs to the `supabase_realtime` publication. Authenticated
+  provider dashboards receive only rows allowed by the existing owner RLS
+  policy, then reload their booking list through `GET /api/provider/store`.
 
 Usage example:
 
@@ -1447,6 +1450,16 @@ Provider dashboard reschedule example:
 
 The route uses the authenticated Supabase client. RLS restricts reads and
 updates to bookings owned by the signed-in provider.
+
+### Provider store response
+
+Source: `app/api/provider/store/route.ts`
+
+`GET /api/provider/store` authenticates the current provider and returns the
+database-backed `ModuleStore`. The dashboard uses its `bookings` array after
+Realtime notifications and on focus, visibility, online, and periodic fallback
+refreshes. Draft provider/service form state is intentionally preserved while
+the authoritative booking list is replaced.
 
 ### Provider store request body
 

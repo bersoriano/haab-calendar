@@ -65,6 +65,7 @@ export default async function PublicManageBookingPage({
       requestedPublicSlug={resolution.store.provider.publicSlug}
       manageBookingToken={token}
       initialPublicLanguage={publicLanguage}
+      providerTimeZone={resolution.meta.timezone}
     />
   );
 }

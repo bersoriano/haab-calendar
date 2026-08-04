@@ -67,7 +67,6 @@ const ghostButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white";
 
 const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
-const liveExamplePath = "/doctors/dr-maya-rivera";
 const liveExamplePaths = [
   "/doctors/dr-maya-rivera",
   "/spaces/riverside-padel-club",
@@ -77,6 +76,10 @@ const liveExamplePaths = [
 
 function localizedExamplePath(path: string, lang: "en" | "es") {
   return `${path}?lang=${lang}`;
+}
+
+function tryBookingPath(lang: "en" | "es") {
+  return `/try-booking?lang=${lang}`;
 }
 
 function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
@@ -401,12 +404,12 @@ export function StickyNav() {
         </nav>
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageToggle />
-          <Link
-            href={localizedExamplePath(liveExamplePath, lang)}
+          <a
+            href={tryBookingPath(lang)}
             className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] sm:inline-flex"
           >
             {t.nav.seeLivePage}
-          </Link>
+          </a>
           <StartButton className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.28)] transition hover:shadow-[0_14px_30px_rgba(26,115,232,0.34)] active:translate-y-px sm:px-6 sm:py-3">
             <span className="sm:hidden">{t.nav.createPageShort}</span>
             <span className="hidden sm:inline">{t.nav.createPageLong}</span>
@@ -435,12 +438,12 @@ export function StickyNav() {
                   {link.label}
                 </a>
               ))}
-              <Link
-                href={localizedExamplePath(liveExamplePath, lang)}
+              <a
+                href={tryBookingPath(lang)}
                 className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--ink)] transition hover:bg-white"
               >
                 {t.nav.seeLivePage}
-              </Link>
+              </a>
             </nav>
           </details>
         </div>
@@ -486,12 +489,12 @@ export function Hero() {
             </div>
           </div>
           <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <Link
-              href={localizedExamplePath(liveExamplePath, lang)}
+            <a
+              href={tryBookingPath(lang)}
               className={primaryButtonClass}
             >
               {t.hero.ctaPrimary}
-            </Link>
+            </a>
             <StartButton className={ghostButtonClass}>{t.hero.ctaSecondary}</StartButton>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
@@ -545,12 +548,12 @@ export function Hero() {
                 </div>
               ))}
             </div>
-            <Link
-              href={localizedExamplePath(liveExamplePath, lang)}
+            <a
+              href={tryBookingPath(lang)}
               className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--ink)] px-5 text-sm font-semibold !text-white transition hover:bg-[var(--primary)]"
             >
               {t.hero.previewCta}
-            </Link>
+            </a>
           </div>
         </div>
       </div>
@@ -974,7 +977,7 @@ export function Testimonials() {
 }
 
 export function EarlyAccessTeaser() {
-  const { t } = useLanguage();
+  const { lang, t } = useLanguage();
   return (
     <section id="early-access" className={sectionPadding}>
       <div className="mx-auto grid max-w-[1040px] overflow-hidden rounded-[36px] border border-[var(--line)] bg-white/85 shadow-[0_24px_64px_rgba(15,23,42,0.07)] lg:grid-cols-[1.05fr_0.95fr]">
@@ -992,12 +995,12 @@ export function EarlyAccessTeaser() {
             <StartButton className={primaryButtonClass}>
               {t.pricing.startFree}
             </StartButton>
-            <Link
-              href={liveExamplePath}
+            <a
+              href={tryBookingPath(lang)}
               className="inline-flex items-center justify-center rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-white"
             >
               {t.pricing.viewPricing}
-            </Link>
+            </a>
           </div>
         </div>
         <div className="border-t border-[var(--line)] bg-[linear-gradient(135deg,rgba(26,115,232,0.08),rgba(13,148,136,0.1))] p-8 sm:p-10 lg:border-l lg:border-t-0">
@@ -1034,12 +1037,12 @@ export function FinalCTA() {
           <StartButton className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--primary)] shadow-[0_18px_44px_rgba(15,23,42,0.18)] transition hover:bg-white/90">
             {t.finalCta.ctaPrimary}
           </StartButton>
-          <Link
-            href={localizedExamplePath(liveExamplePath, lang)}
+          <a
+            href={tryBookingPath(lang)}
             className="inline-flex items-center justify-center rounded-full border border-white/60 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-white/10"
           >
             {t.finalCta.ctaSecondary}
-          </Link>
+          </a>
         </div>
       </div>
     </section>
@@ -1084,9 +1087,9 @@ export function Footer() {
                 </a>
               </li>
               <li>
-                <Link href={localizedExamplePath(liveExamplePath, lang)} className="text-left hover:text-[var(--ink)]">
+                <a href={tryBookingPath(lang)} className="text-left hover:text-[var(--ink)]">
                   {t.footer.product.seeLivePage}
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

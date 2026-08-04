@@ -41,6 +41,7 @@ import type {
   SurfaceMode,
   VerticalId,
   WeekdayKey,
+  WeeklyAvailability,
 } from "@/lib/types";
 import {
   WEEKDAY_KEYS,
@@ -102,12 +103,13 @@ import {
 } from "@/lib/store";
 import {
   getBookingsForDate,
-  getAvailableSlots,
-  isDateAvailable,
+  getAvailableSlots as getAvailableSlotsAtTime,
+  isDateAvailable as isDateAvailableAtTime,
   isSingleOccurrence,
   isWeeklyOccurrence,
   getSpotsLeft,
 } from "@/lib/availability";
+import type { AvailabilityClock } from "@/lib/availability";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
 import {
   canExtendBookingHold,
@@ -135,6 +137,7 @@ import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
 import { localizePublicExampleContent } from "@/lib/public-content-i18n";
+import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   ActionButton,
   ActionLink,
@@ -167,6 +170,7 @@ type HaabBookingModuleProps = {
   // Seeds the visitor-owned language on a server-rendered public route, avoiding
   // an English/Spanish flash before browser preferences can be restored.
   initialPublicLanguage?: Lang;
+  providerTimeZone?: string;
   onLanguageChange?: (language: Lang) => void;
   onVerticalChange?: (vertical?: VerticalId) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
@@ -229,6 +233,7 @@ export function HaabBookingModule({
   onSetupPersisted,
   initialLanguage,
   initialPublicLanguage,
+  providerTimeZone,
   initialVerticalId,
   onLanguageChange,
   onVerticalChange,
@@ -246,7 +251,6 @@ export function HaabBookingModule({
     onBookingsChange,
   });
 
-  const [isMobileBrowser, setIsMobileBrowser] = useState(false);
   const [isDesktopColumns, setIsDesktopColumns] = useState(false);
   const [surface, setSurface] = useState<Surface>(
     surfaceMode === "public-only" ? "public" : initialSurface,
@@ -277,6 +281,7 @@ export function HaabBookingModule({
   const [cancellationError, setCancellationError] = useState<string | null>(null);
   const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
   const [bookingHoldNow, setBookingHoldNow] = useState(() => currentTimestamp());
+  const [availabilityNow, setAvailabilityNow] = useState(() => currentTimestamp());
   const [bookingHoldClockOffsetMs, setBookingHoldClockOffsetMs] = useState(0);
   const [isNetworkOnline, setIsNetworkOnline] = useState(true);
   const [isExtendingHold, setIsExtendingHold] = useState(false);
@@ -364,6 +369,132 @@ export function HaabBookingModule({
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
   const publicUrl =
     businessSlug && vertical ? buildProviderPath(vertical, businessSlug) : "/public";
+
+  const refreshProviderDashboardStore = useEffectEvent(async () => {
+    try {
+      const response = await fetch("/api/provider/store", {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        store?: ModuleStore;
+      };
+
+      if (response.ok && payload.store) {
+        actions.replaceIntegratedBookings(payload.store.bookings);
+      }
+    } catch {
+      // Realtime reconnects automatically and the fallback refresh runs again.
+    }
+  });
+
+  useEffect(() => {
+    if (!integratedMode || !persistAdminChanges) {
+      return;
+    }
+
+    let disposed = false;
+    let refreshInFlight = false;
+    let refreshQueued = false;
+
+    const refresh = async () => {
+      if (disposed) return;
+      if (refreshInFlight) {
+        refreshQueued = true;
+        return;
+      }
+
+      refreshInFlight = true;
+      await refreshProviderDashboardStore();
+      refreshInFlight = false;
+
+      if (refreshQueued && !disposed) {
+        refreshQueued = false;
+        void refresh();
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refresh();
+      }
+    };
+
+    const supabase = createBrowserSupabaseClient();
+    const channel = supabase
+      .channel("provider-bookings-dashboard")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => void refresh(),
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          void refresh();
+        }
+      });
+    const fallbackRefreshId = window.setInterval(() => void refresh(), 15_000);
+
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    void refresh();
+
+    return () => {
+      disposed = true;
+      window.clearInterval(fallbackRefreshId);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      void supabase.removeChannel(channel);
+    };
+  }, [integratedMode, persistAdminChanges]);
+
+  const availabilityClock: AvailabilityClock = {
+    now: new Date(availabilityNow),
+    timeZone: providerTimeZone,
+  };
+
+  function getAvailableSlots(
+    dateKey: string,
+    service: Service,
+    weeklyAvailability: WeeklyAvailability,
+    currentBookings: BookingRecord[],
+    ignoredBookingId?: string,
+    currentBookingHolds: BookingHoldRecord[] = [],
+    ignoredHoldId?: string,
+  ) {
+    return getAvailableSlotsAtTime(
+      dateKey,
+      service,
+      weeklyAvailability,
+      currentBookings,
+      ignoredBookingId,
+      currentBookingHolds,
+      ignoredHoldId,
+      availabilityClock,
+    );
+  }
+
+  function isDateAvailable(
+    dateKey: string,
+    service: Service,
+    weeklyAvailability: WeeklyAvailability,
+    currentBookings: BookingRecord[],
+    ignoredBookingId?: string,
+    currentBookingHolds: BookingHoldRecord[] = [],
+    ignoredHoldId?: string,
+  ) {
+    return isDateAvailableAtTime(
+      dateKey,
+      service,
+      weeklyAvailability,
+      currentBookings,
+      ignoredBookingId,
+      currentBookingHolds,
+      ignoredHoldId,
+      availabilityClock,
+    );
+  }
 
   useEffect(() => {
     if (!hydrated || surface !== "public") return;
@@ -525,6 +656,10 @@ export function HaabBookingModule({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key off service + its linked addresses
   }, [selectedService?.id, selectedService?.linkedAddress1, selectedService?.linkedAddress2, selectedService?.customAddress, provider.address1, provider.address2]);
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
+  const successfulManageUrl =
+    successfulBooking?.manageToken && vertical
+      ? buildManageUrl(businessSlug, successfulBooking.manageToken, vertical, lang)
+      : "";
   const localizedSuccessfulBooking = successfulBooking
     ? {
         ...successfulBooking,
@@ -592,14 +727,14 @@ export function HaabBookingModule({
       ? calendarServicePreference
       : (services[0]?.id ?? "");
   const publicShellClass = isDedicatedPublicPage
-    ? "w-full"
-    : "w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
+    ? "min-w-0 w-full"
+    : "min-w-0 w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
   const publicPrimaryPanelClass = isDedicatedPublicPage
-    ? "rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] xl:p-8"
-    : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-8";
+    ? "min-w-0 rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] xl:p-8"
+    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-8";
   const publicElevatedPanelClass = isDedicatedPublicPage
-    ? "rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
-    : "rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
+    ? "min-w-0 rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
+    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
   const isStickyHeaderActive =
     isStickyHeaderStuck && resolvedBookingFlow.step === 2;
   const stickyBarPanelClass = isDedicatedPublicPage
@@ -673,7 +808,7 @@ export function HaabBookingModule({
               aria-pressed={active}
               onClick={() => choosePublicLanguage(language)}
               className={cn(
-                "min-h-10 rounded-full px-4 text-sm font-semibold transition",
+                "min-h-9 rounded-full px-2.5 text-xs font-semibold transition sm:min-h-10 sm:px-4 sm:text-sm",
                 active
                   ? "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
                   : "text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]",
@@ -687,18 +822,33 @@ export function HaabBookingModule({
     );
   }
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(pointer: coarse)");
-    const syncMobileBrowser = () => setIsMobileBrowser(mediaQuery.matches);
-    const frameId = window.requestAnimationFrame(syncMobileBrowser);
+  function renderPublicBranding() {
+    if (!provider.businessName && !provider.logoImageUrl) {
+      return null;
+    }
 
-    mediaQuery.addEventListener("change", syncMobileBrowser);
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-      mediaQuery.removeEventListener("change", syncMobileBrowser);
-    };
-  }, []);
+    return (
+      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        {provider.logoImageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
+          <img
+            src={provider.logoImageUrl}
+            alt={
+              provider.businessName
+                ? `${provider.businessName} — ${t.publicFlow.providerLogoAlt}`
+                : eventOrganizerRole?.logoAlt ?? t.publicFlow.providerLogoAlt
+            }
+            className="h-12 w-28 shrink-0 object-contain sm:h-16 sm:w-48"
+          />
+        ) : null}
+        {provider.businessName ? (
+          <h1 className="min-w-0 break-words text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">
+            {provider.businessName}
+          </h1>
+        ) : null}
+      </div>
+    );
+  }
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(min-width: 1024px)");
@@ -783,6 +933,21 @@ export function HaabBookingModule({
       observer.disconnect();
     };
   }, [resolvedBookingFlow.step]);
+
+  useEffect(() => {
+    if (surface !== "public") {
+      return;
+    }
+
+    const refreshAvailabilityClock = () => setAvailabilityNow(currentTimestamp());
+    const intervalId = window.setInterval(refreshAvailabilityClock, 30_000);
+    document.addEventListener("visibilitychange", refreshAvailabilityClock);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshAvailabilityClock);
+    };
+  }, [surface]);
 
   useEffect(() => {
     if (bookingHolds.length === 0) {
@@ -916,7 +1081,7 @@ export function HaabBookingModule({
     };
   }, [calendarQrRequestKey, t.errors.qrGenerationFailed]);
 
-  const releaseSupabaseBookingHold = useCallback((holdId?: string, keepalive = false) => {
+  function releaseSupabaseBookingHold(holdId?: string, keepalive = false) {
     if (!holdId || !integratedMode || !isDedicatedPublicPage || !vertical) {
       return;
     }
@@ -930,11 +1095,15 @@ export function HaabBookingModule({
         keepalive,
       },
     ).catch(() => undefined);
-  }, [businessSlug, integratedMode, isDedicatedPublicPage, vertical]);
+  }
 
   const releaseExpiredBookingHold = useEffectEvent((holdId: string) => {
     actions.releaseBookingHold(holdId);
     releaseSupabaseBookingHold(holdId);
+  });
+
+  const releaseBookingHoldOnPageHide = useEffectEvent((holdId: string) => {
+    releaseSupabaseBookingHold(holdId, true);
   });
 
   async function refreshBookingHold(
@@ -1055,13 +1224,13 @@ export function HaabBookingModule({
     const holdId = bookingHold.id;
     const handlePageHide = (event: PageTransitionEvent) => {
       if (!event.persisted) {
-        releaseSupabaseBookingHold(holdId, true);
+        releaseBookingHoldOnPageHide(holdId);
       }
     };
 
     window.addEventListener("pagehide", handlePageHide);
     return () => window.removeEventListener("pagehide", handlePageHide);
-  }, [bookingHold, releaseSupabaseBookingHold, resolvedBookingFlow.step]);
+  }, [bookingHold, resolvedBookingFlow.step]);
 
   useEffect(() => {
     if (!bookingHoldSelectionKey || !bookingHold) {
@@ -3248,10 +3417,13 @@ export function HaabBookingModule({
           <p className="text-center text-base font-semibold text-[var(--ink)] sm:text-right">
             {formatMonthLabel(publicMonthAnchor, lang)}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="grid min-w-0 grid-cols-3 gap-1.5 sm:flex sm:items-center sm:gap-2">
             <ActionButton
               tone="ghost"
-              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
+              className={cn(
+                calendarNavPillClass,
+                "min-w-0 !px-2 !text-xs sm:flex-none sm:!px-4 sm:!text-sm",
+              )}
               disabled={!canGoToPreviousPublicMonth}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, -1))}
             >
@@ -3259,14 +3431,20 @@ export function HaabBookingModule({
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
+              className={cn(
+                calendarNavPillClass,
+                "min-w-0 !px-2 !text-xs sm:flex-none sm:!px-4 sm:!text-sm",
+              )}
               onClick={() => setPublicMonthAnchor(new Date())}
             >
               {t.publicFlow.today}
             </ActionButton>
             <ActionButton
               tone="ghost"
-              className={cn(calendarNavPillClass, "flex-1 sm:flex-none")}
+              className={cn(
+                calendarNavPillClass,
+                "min-w-0 !px-2 !text-xs sm:flex-none sm:!px-4 sm:!text-sm",
+              )}
               onClick={() => setPublicMonthAnchor((current) => shiftMonth(current, 1))}
             >
               {t.publicFlow.next}
@@ -3420,27 +3598,7 @@ export function HaabBookingModule({
     // Public-page branding shown above the selection. The logo stays beside
     // the page title, while the optional hero text overlays the banner image.
     const heroText = (provider.heroText?.trim() || provider.businessName || "").trim();
-    const publicPageTitle = provider.businessName || provider.logoImageUrl ? (
-      <div className="flex min-w-0 items-center gap-4">
-        {provider.logoImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
-          <img
-            src={provider.logoImageUrl}
-            alt={
-              provider.businessName
-                ? `${provider.businessName} — ${t.publicFlow.providerLogoAlt}`
-                : eventOrganizerRole?.logoAlt ?? t.publicFlow.providerLogoAlt
-            }
-            className="h-14 w-[10.5rem] shrink-0 object-contain sm:h-16 sm:w-48"
-          />
-        ) : null}
-        {provider.businessName ? (
-          <h1 className="min-w-0 text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">
-            {provider.businessName}
-          </h1>
-        ) : null}
-      </div>
-    ) : null;
+    const publicPageTitle = isDedicatedPublicPage ? null : renderPublicBranding();
     const headerBanner = publicPageTitle || provider.headerImageUrl ? (
       <div className="space-y-4">
         {publicPageTitle}
@@ -3746,7 +3904,11 @@ export function HaabBookingModule({
                           : "bg-[radial-gradient(circle_at_center,rgba(0,191,165,0.16),transparent_65%)]",
                       )}
                     />
-                    <div className="relative flex flex-col items-center text-center">
+                    <div
+                      className="relative flex flex-col items-center text-center"
+                      role="status"
+                      aria-live="polite"
+                    >
                       <span
                         aria-hidden="true"
                         className={cn(
@@ -3799,7 +3961,11 @@ export function HaabBookingModule({
                         {selectedService.name}
                       </p>
                       <h3 className="mt-1.5 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.33s_both]">
-                        {isSuccessfulBookingCancelled ? t.publicFlow.bookingCancelled : t.publicFlow.bookingConfirmed}
+                        {isSuccessfulBookingCancelled
+                          ? t.publicFlow.bookingCancelled
+                          : successfulBooking?.status === "rescheduled"
+                            ? t.publicFlow.bookingUpdated
+                            : t.publicFlow.bookingConfirmed}
                       </h3>
                     </div>
                   </div>
@@ -4705,31 +4871,56 @@ export function HaabBookingModule({
                   })()}
                 </div>
 
-                <div className="mt-6 lg:flex lg:justify-center">
-                  <ActionButton
-                    tone="primary"
-                    className={cn("w-full px-6 lg:w-auto lg:min-w-[180px]", publicPrimaryActionClass)}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => downloadBookingCalendarFile(successfulBooking)}
-                  >
-                    {t.publicFlow.addToCalendar}
-                  </ActionButton>
-                </div>
+                {!isSuccessfulBookingCancelled ? (
+                  <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-stretch">
+                    <div className={cn("flex flex-col justify-center", publicInsetCardClass)}>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                        {t.publicFlow.addToCalendar}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
+                        {copy.phrases.scanQrBody}
+                      </p>
+                      <ActionButton
+                        tone="primary"
+                        className={cn("mt-4 w-full px-6", publicPrimaryActionClass)}
+                        onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                      >
+                        {t.publicFlow.addToCalendar}
+                      </ActionButton>
+                    </div>
+                    <div className={cn("flex flex-col items-center text-center", publicInsetCardClass)}>
+                      <div className="flex aspect-square w-full max-w-[176px] items-center justify-center overflow-hidden rounded-2xl bg-white p-2 ring-1 ring-[var(--line)]">
+                        {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
+                          <div
+                            aria-label={copy.phrases.calendarQrLabel}
+                            className="h-full w-full bg-contain bg-center bg-no-repeat"
+                            role="img"
+                            style={{ backgroundImage: `url(${calendarQrCode.url})` }}
+                          />
+                        ) : (
+                          <p className="px-3 text-center text-xs leading-5 text-[var(--muted)]">
+                            {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.error
+                              ? calendarQrCode.error
+                              : t.manage.preparingQr}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-3">
-                  {!isMobileBrowser ? (
-                    <ActionButton
-                      tone="ghost"
-                      className={cn(
-                        "min-w-[150px]",
-                        isDedicatedPublicPage &&
-                          cn(publicPillButtonClass, publicGhostButtonClass),
-                      )}
-                      disabled={isSuccessfulBookingCancelled}
-                      onClick={() => setIsCalendarQrModalOpen(true)}
-                    >
-                      {t.publicFlow.showQrCode}
-                    </ActionButton>
-                  ) : null}
+                  <ActionButton
+                    tone="ghost"
+                    className={cn(
+                      "min-w-[150px]",
+                      isDedicatedPublicPage &&
+                        cn(publicPillButtonClass, publicGhostButtonClass),
+                    )}
+                    disabled={isSuccessfulBookingCancelled}
+                    onClick={() => setIsCalendarQrModalOpen(true)}
+                  >
+                    {t.publicFlow.showQrCode}
+                  </ActionButton>
                   {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
                     <ActionButton
                       tone="ghost"
@@ -4790,20 +4981,21 @@ export function HaabBookingModule({
                       <input
                         type="text"
                         readOnly
-                        value={
-                          vertical
-                            ? buildManageUrl(
-                                businessSlug,
-                                successfulBooking.manageToken,
-                                vertical,
-                                lang,
-                              )
-                            : ""
-                        }
+                        value={successfulManageUrl}
                         aria-label={t.publicFlow.managementUrlLabel}
                         onFocus={(event) => event.currentTarget.select()}
-                        className="flex-1 min-w-[260px] rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)]"
+                        className="w-full min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)] sm:min-w-[260px]"
                       />
+                      <ActionLink
+                        href={successfulManageUrl}
+                        tone="secondary"
+                        className={cn(
+                          isDedicatedPublicPage &&
+                            cn(publicPillButtonClass, publicGhostButtonClass),
+                        )}
+                      >
+                        {t.publicFlow.openPrivateLink}
+                      </ActionLink>
                       <ActionButton
                         tone="ghost"
                         className={cn(
@@ -5403,9 +5595,10 @@ export function HaabBookingModule({
   return (
     <>
       <section className={publicShellClass}>
-        {isDedicatedPublicPage ? (
-          <div className="flex justify-end px-5 pt-5 sm:px-8 sm:pt-8 xl:px-10 xl:pt-10">
-            {renderPublicLanguageChooser()}
+        {isDedicatedPublicPage && surface === "public" ? (
+          <div className="flex min-w-0 items-start justify-between gap-3 px-5 pt-5 sm:gap-5 sm:px-8 sm:pt-8 xl:px-10 xl:pt-10">
+            {renderPublicBranding()}
+            {renderPublicLanguageChooser("ml-auto shrink-0")}
           </div>
         ) : null}
         {!isDedicatedPublicPage ? (

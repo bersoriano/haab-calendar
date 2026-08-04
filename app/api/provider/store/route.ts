@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import {
   persistProviderStore,
   ProviderStoreWriteError,
@@ -31,6 +32,44 @@ function describeWriteCause(cause: unknown) {
   }
 
   return String(cause);
+}
+
+export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json(
+      { userMessage: "Sign in before loading your bookings." },
+      { status: 401 },
+    );
+  }
+
+  try {
+    const store = await getProviderDashboardStore(supabase, user.id);
+
+    if (!store) {
+      return NextResponse.json(
+        { userMessage: "Finish setting up your booking page first." },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({ store });
+  } catch (error) {
+    console.error("provider_store_load_failed", {
+      userId: user.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return NextResponse.json(
+      { userMessage: "Could not refresh your bookings." },
+      { status: 500 },
+    );
+  }
 }
 
 export async function PUT(request: NextRequest) {

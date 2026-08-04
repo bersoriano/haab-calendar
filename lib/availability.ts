@@ -1,4 +1,10 @@
-import { toMinutes, addMinutes, getWeekdayKey, isPastDate } from "./date";
+import {
+  addMinutes,
+  compareDateKeys,
+  getDateTimeKeysInTimeZone,
+  getWeekdayKey,
+  toMinutes,
+} from "./date";
 import type {
   BookingHoldRecord,
   BookingRecord,
@@ -6,6 +12,36 @@ import type {
   WeekdayKey,
   WeeklyAvailability,
 } from "./types";
+
+export type AvailabilityClock = {
+  now?: Date;
+  timeZone?: string;
+};
+
+function resolveAvailabilityClock(clock?: AvailabilityClock) {
+  const now = clock?.now ?? new Date();
+  const { dateKey, timeKey } = getDateTimeKeysInTimeZone(now, clock?.timeZone);
+
+  return {
+    dateKey,
+    timeMinutes: toMinutes(timeKey),
+  };
+}
+
+function isPastAvailabilityDate(dateKey: string, clock: ReturnType<typeof resolveAvailabilityClock>) {
+  return compareDateKeys(dateKey, clock.dateKey) < 0;
+}
+
+function hasSlotStarted(
+  dateKey: string,
+  startTime: string,
+  clock: ReturnType<typeof resolveAvailabilityClock>,
+) {
+  const dateComparison = compareDateKeys(dateKey, clock.dateKey);
+
+  return dateComparison < 0 ||
+    (dateComparison === 0 && toMinutes(startTime) <= clock.timeMinutes);
+}
 
 export function isActiveBooking(booking: BookingRecord) {
   return booking.status !== "cancelled";
@@ -97,7 +133,14 @@ export function getAvailableSlots(
   ignoredBookingId?: string,
   bookingHolds: BookingHoldRecord[] = [],
   ignoredHoldId?: string,
+  clockOptions?: AvailabilityClock,
 ) {
+  const effectiveClockOptions = {
+    ...clockOptions,
+    now: clockOptions?.now ?? new Date(),
+  };
+  const clock = resolveAvailabilityClock(effectiveClockOptions);
+
   // Single-occurrence events ignore weekly availability: the only bookable slot
   // is the fixed window on the event's own date, while spots remain.
   if (isSingleOccurrence(service)) {
@@ -105,7 +148,8 @@ export function getAvailableSlots(
       !service.occurrenceDate ||
       service.occurrenceDate !== dateKey ||
       !service.startTime ||
-      isPastDate(dateKey) ||
+      isPastAvailabilityDate(dateKey, clock) ||
+      hasSlotStarted(dateKey, service.startTime, clock) ||
       getSpotsLeft(
         service,
         dateKey,
@@ -126,7 +170,8 @@ export function getAvailableSlots(
     if (
       !service.startTime ||
       !weeklyMatchesDate(service, dateKey) ||
-      isPastDate(dateKey) ||
+      isPastAvailabilityDate(dateKey, clock) ||
+      hasSlotStarted(dateKey, service.startTime, clock) ||
       getSpotsLeft(
         service,
         dateKey,
@@ -145,7 +190,7 @@ export function getAvailableSlots(
     return [];
   }
 
-  if (isPastDate(dateKey)) {
+  if (isPastAvailabilityDate(dateKey, clock)) {
     return [];
   }
 
@@ -194,7 +239,12 @@ export function getAvailableSlots(
       return overlapExists(cursor, slotEnd, block.startTime, block.endTime);
     });
 
-    if (!blockedByBooking && !blockedByHold && !blockedByAvailability) {
+    if (
+      !hasSlotStarted(dateKey, cursor, clock) &&
+      !blockedByBooking &&
+      !blockedByHold &&
+      !blockedByAvailability
+    ) {
       slots.push(cursor);
     }
 
@@ -212,8 +262,15 @@ export function isDateAvailable(
   ignoredBookingId?: string,
   bookingHolds: BookingHoldRecord[] = [],
   ignoredHoldId?: string,
+  clockOptions?: AvailabilityClock,
 ) {
-  if (isPastDate(dateKey)) {
+  const effectiveClockOptions = {
+    ...clockOptions,
+    now: clockOptions?.now ?? new Date(),
+  };
+  const clock = resolveAvailabilityClock(effectiveClockOptions);
+
+  if (isPastAvailabilityDate(dateKey, clock)) {
     return false;
   }
 
@@ -223,6 +280,8 @@ export function isDateAvailable(
     return (
       Boolean(service.occurrenceDate) &&
       service.occurrenceDate === dateKey &&
+      Boolean(service.startTime) &&
+      !hasSlotStarted(dateKey, service.startTime ?? "", clock) &&
       getSpotsLeft(
         service,
         dateKey,
@@ -240,6 +299,7 @@ export function isDateAvailable(
     return (
       Boolean(service.startTime) &&
       weeklyMatchesDate(service, dateKey) &&
+      !hasSlotStarted(dateKey, service.startTime ?? "", clock) &&
       getSpotsLeft(
         service,
         dateKey,
@@ -281,6 +341,7 @@ export function isDateAvailable(
       ignoredBookingId,
       bookingHolds,
       ignoredHoldId,
+      effectiveClockOptions,
     ).length > 0;
   }
 

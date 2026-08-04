@@ -158,6 +158,73 @@ describe("getAvailableSlots — past date", () => {
   });
 });
 
+describe("getAvailableSlots — same-day slots", () => {
+  it("removes slots that have started and keeps the next future slot", () => {
+    const slots = getAvailableSlots(
+      "2026-05-29",
+      svc30,
+      baseAvailability,
+      [],
+      undefined,
+      [],
+      undefined,
+      { now: new Date("2026-05-29T10:15:00Z"), timeZone: "UTC" },
+    );
+
+    expect(slots).not.toContain("10:00");
+    expect(slots[0]).toBe("10:30");
+  });
+
+  it("does not offer a slot whose start minute is the current minute", () => {
+    const slots = getAvailableSlots(
+      "2026-05-29",
+      svc30,
+      baseAvailability,
+      [],
+      undefined,
+      [],
+      undefined,
+      { now: new Date("2026-05-29T10:30:00Z"), timeZone: "UTC" },
+    );
+
+    expect(slots).not.toContain("10:30");
+    expect(slots[0]).toBe("11:00");
+  });
+
+  it("compares against the provider timezone instead of the runtime timezone", () => {
+    const slots = getAvailableSlots(
+      "2026-05-29",
+      svc30,
+      baseAvailability,
+      [],
+      undefined,
+      [],
+      undefined,
+      {
+        now: new Date("2026-05-29T03:15:00Z"),
+        timeZone: "Asia/Bangkok",
+      },
+    );
+
+    expect(slots[0]).toBe("10:30");
+  });
+
+  it("makes today unavailable once every start time has elapsed", () => {
+    expect(
+      isDateAvailable(
+        "2026-05-29",
+        svc30,
+        baseAvailability,
+        [],
+        undefined,
+        [],
+        undefined,
+        { now: new Date("2026-05-29T16:45:00Z"), timeZone: "UTC" },
+      ),
+    ).toBe(false);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // getAvailableSlots — full-day service
 // ---------------------------------------------------------------------------
@@ -359,6 +426,41 @@ describe("getAvailableSlots (single occurrence)", () => {
     ];
     expect(getAvailableSlots(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toEqual([]);
   });
+
+  it("returns nothing after a same-day event has started", () => {
+    const sameDayService = {
+      ...svcSingle,
+      occurrenceDate: "2026-05-29",
+      startTime: "10:00",
+      endTime: "12:00",
+    };
+    const clock = { now: new Date("2026-05-29T10:15:00Z"), timeZone: "UTC" };
+
+    expect(
+      getAvailableSlots(
+        "2026-05-29",
+        sameDayService,
+        baseAvailability,
+        [],
+        undefined,
+        [],
+        undefined,
+        clock,
+      ),
+    ).toEqual([]);
+    expect(
+      isDateAvailable(
+        "2026-05-29",
+        sameDayService,
+        baseAvailability,
+        [],
+        undefined,
+        [],
+        undefined,
+        clock,
+      ),
+    ).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -415,5 +517,40 @@ describe("getAvailableSlots (weekly occurrence)", () => {
   it("returns nothing on a non-matching weekday", () => {
     useToday();
     expect(getAvailableSlots(MONDAY_KEY, svcWeeklyTue, baseAvailability, [])).toEqual([]);
+  });
+
+  it("returns nothing after a same-day weekly event has started", () => {
+    const sameDayService = {
+      ...svcWeeklyTue,
+      weekdays: ["friday" as const],
+      startTime: "10:00",
+      endTime: "11:00",
+    };
+    const clock = { now: new Date("2026-05-29T10:15:00Z"), timeZone: "UTC" };
+
+    expect(
+      getAvailableSlots(
+        "2026-05-29",
+        sameDayService,
+        baseAvailability,
+        [],
+        undefined,
+        [],
+        undefined,
+        clock,
+      ),
+    ).toEqual([]);
+    expect(
+      isDateAvailable(
+        "2026-05-29",
+        sameDayService,
+        baseAvailability,
+        [],
+        undefined,
+        [],
+        undefined,
+        clock,
+      ),
+    ).toBe(false);
   });
 });

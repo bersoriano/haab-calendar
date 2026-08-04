@@ -30,7 +30,7 @@ Make the provider experience simpler and better organized. Today the provider su
 
 `app/page.tsx` stops rendering its own account bar. It performs the auth check and passes `userEmail` and the `logout` server action into `HaabBookingModule` as props. The module renders **one** header:
 
-- **Left:** business name (falls back to full name, then "Booking workspace"); below it the muted public slug (e.g. `/public/demo`) with an inline ghost **Copy link** button.
+- **Left:** business name (falls back to full name, then "Booking workspace"); below it the muted canonical public slug (e.g. `/doctors/dr-maya-rivera`) with an inline ghost **Copy link** button.
 - **Right:** account email (muted, small) + **Sign out** (a `<form action={logout}>`).
 - **Below:** the tab navigation, full width.
 

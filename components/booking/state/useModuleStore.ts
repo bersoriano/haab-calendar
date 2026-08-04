@@ -48,6 +48,7 @@ export function useModuleStore(params: {
       standaloneBase?: ModuleStore,
     ) => void;
     releaseBookingHold: (holdId?: string) => void;
+    replaceIntegratedBookings: (nextBookings: BookingRecord[]) => void;
   };
 } {
   const { injectedConfig, initialLanguage, storageKey, onStoreChange, onBookingsChange } = params;
@@ -276,6 +277,14 @@ export function useModuleStore(params: {
     emitStoreChange(nextStore);
   }
 
+  function replaceIntegratedBookings(nextBookings: BookingRecord[]) {
+    if (!integratedMode) {
+      return;
+    }
+
+    setShadowBookings(sortBookings(normalizeBookings(nextBookings)));
+  }
+
   return {
     integratedMode,
     hydrated,
@@ -288,6 +297,7 @@ export function useModuleStore(params: {
       commitBookings,
       commitBookingHolds,
       releaseBookingHold,
+      replaceIntegratedBookings,
     },
   };
 }

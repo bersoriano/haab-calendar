@@ -12,7 +12,8 @@ import {
   addMinutes,
   compareDateKeys,
   getDateKey,
-  isPastDate,
+  getDateTimeKeysInTimeZone,
+  parseDateKey,
 } from "@/lib/date";
 import { formatCapacityLabel } from "@/lib/format";
 import { getEffectiveCost } from "@/lib/locations";
@@ -318,11 +319,18 @@ function validateDateWindow(provider: ProviderRow, dateKey: string) {
     throw new PublicBookingWriteError("Choose a valid booking date.", 400);
   }
 
-  if (isPastDate(dateKey)) {
+  const providerToday = getDateTimeKeysInTimeZone(
+    new Date(),
+    provider.timezone,
+  ).dateKey;
+
+  if (compareDateKeys(dateKey, providerToday) < 0) {
     throw new PublicBookingWriteError("Choose a future booking date.", 400);
   }
 
-  const maxDateKey = getDateKey(addDays(new Date(), provider.booking_window_days));
+  const maxDateKey = getDateKey(
+    addDays(parseDateKey(providerToday), provider.booking_window_days),
+  );
   if (compareDateKeys(dateKey, maxDateKey) > 0) {
     throw new PublicBookingWriteError(
       provider.vertical === "events"
@@ -368,6 +376,7 @@ function assertSlotAvailable(options: {
         ignoredBookingId,
         bookingHolds,
         ignoredHoldId,
+        { timeZone: provider.timezone },
       ).includes(time)
     ) {
       throw new PublicBookingWriteError(
@@ -387,6 +396,7 @@ function assertSlotAvailable(options: {
       ignoredBookingId,
       bookingHolds,
       ignoredHoldId,
+      { timeZone: provider.timezone },
     )
   ) {
     throw new PublicBookingWriteError(

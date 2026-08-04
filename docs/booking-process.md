@@ -48,6 +48,8 @@ Canonical public routes resolve the provider and optional service through `lib/p
 Availability is computed from:
 
 - the provider's booking window and weekly availability;
+- the provider's configured timezone and current local time; on the current
+  provider date, only slots whose start time is still in the future are shown;
 - service duration or occurrence settings;
 - active bookings (`confirmed` or `rescheduled`);
 - holds whose `expires_at` is later than the current server time;
@@ -155,13 +157,14 @@ The UI enters the success step only after the server returns a confirmed booking
 
 The success screen provides:
 
-- a booking summary;
-- an `.ics` calendar download;
-- a QR code containing the calendar event;
-- a private manage URL;
+- a clear confirmed, updated, or cancelled status;
+- a complete booking summary;
+- a one-tap `.ics` calendar download;
+- a scannable inline QR code containing the same calendar event, with an enlarged view;
+- a private manage URL that can be opened or copied directly;
 - actions to reschedule, cancel, or book another service.
 
-The manage URL contains the raw token. It should be treated like a password-reset link: anyone with the URL can manage that booking. The database stores only `manage_token_hash`.
+The ICS event also contains the private manage URL. The manage URL contains the raw token and should be treated like a password-reset link: anyone with the URL can manage that booking. The database stores only `manage_token_hash`.
 
 ## 7. Self-service reschedule and cancellation
 
@@ -183,6 +186,13 @@ Supported actions are:
 - `cancel`.
 
 Rescheduling repeats date-window, availability, overlap, and capacity validation while ignoring the booking's current slot. A conflict returns `409`. Cancellation changes status to `cancelled`, which no longer blocks availability. Both actions append a booking event.
+
+The authenticated provider dashboard subscribes to booking row changes through
+Supabase Realtime. Each notification triggers an authenticated reload of the
+provider store, so created, rescheduled, and cancelled bookings are reflected
+from the database rather than reconstructed from event payloads. Focus,
+visibility, online, and 15-second fallback refreshes cover interrupted Realtime
+connections without requiring a manual page reload.
 
 Booking status transitions are:
 
@@ -238,8 +248,10 @@ Local storage is never used as proof that an integrated public booking was confi
 | Manage API | `app/api/public/[verticalSegment]/[providerSlug]/manage/[token]/route.ts` |
 | Server booking rules | `lib/supabase/bookings.ts` |
 | Store modes | `components/booking/state/useModuleStore.ts` |
+| Provider refresh API | `app/api/provider/store/route.ts` |
 | Schema catalog | `docs/supabase-schema-catalog.md` |
 | Hold resilience migration | `supabase/migrations/20260804123315_make_booking_holds_resilient.sql` |
+| Provider booking Realtime migration | `supabase/migrations/20260804164334_stream_booking_changes_to_providers.sql` |
 
 ## 12. Verification checklist
 
@@ -261,3 +273,4 @@ Browser smoke-test at least one canonical public route on a mobile viewport:
 5. Verify the expired/abandoned slot can be held by another visitor.
 6. Complete a booking, download ICS, display QR, and open the manage link.
 7. Reschedule and cancel through the manage link.
+8. Keep the authenticated provider dashboard open in a second browser and verify each customer change appears without a manual refresh.

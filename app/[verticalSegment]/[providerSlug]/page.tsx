@@ -54,6 +54,7 @@ export default async function PublicProviderBookingPage({
       injectedConfig={resolution.store}
       requestedPublicSlug={resolution.store.provider.publicSlug}
       initialPublicLanguage={publicLanguage}
+      providerTimeZone={resolution.meta.timezone}
     />
   );
 }
