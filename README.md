@@ -9,7 +9,7 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 2. Provider Workspace
    Top navigation for `Dashboard`, `Bookings`, `Calendar`, `Services`, and `Settings`.
 3. Public Booking Flow
-   Step-by-step client wizard for service selection, date and time, My Details, review, success, and iCal export.
+   Step-by-step client wizard for service selection, date and time, a server-authoritative hold, customer details, confirmation, calendar export, and self-service management.
 4. Public Route
    Dedicated hierarchical booking URLs such as `/doctors/dr-maya-alvarez`
    and `/spaces/klcc-meeting-room/hourly-rental`.
@@ -22,6 +22,11 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 - Switches into integrated mode when provider, services, and availability are injected.
 - Keeps services and settings visible but read-only when configured by a parent app.
 - Lets provider and client reschedule or cancel bookings with instant updates.
+- Protects public selections with a visible ten-minute server hold, one optional five-minute grace extension, reconnect validation, and automatic expiry cleanup.
+
+## Booking Process
+
+See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-end lifecycle: availability, holds, offline/reconnect behavior, confirmation, ICS/QR output, manage links, rescheduling, cancellation, security boundaries, and verification.
 
 ## Routes
 
@@ -61,7 +66,12 @@ export default function Example() {
           fullName: "Dr. Maya Alvarez",
           businessName: "Haab Health Studio",
           email: "bookings@example.com",
+          phoneNumber1: "+1 555 010 0123",
+          phoneNumber2: "",
+          address1: "123 Market Street",
+          address2: "",
           publicSlug: "haab-health-studio",
+          language: "en",
         },
         services: [
           {
@@ -81,6 +91,7 @@ export default function Example() {
           friday: { enabled: true, startTime: "09:00", endTime: "17:00" },
           saturday: { enabled: false, startTime: "09:00", endTime: "17:00" },
         },
+        vertical: "healthcare",
       }}
     />
   );

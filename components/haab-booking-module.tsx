@@ -50,6 +50,7 @@ import {
   compactMetaTextClass,
   getWeekdayShortFormatter,
   BOOKING_HOLD_DURATION_MS,
+  BOOKING_HOLD_EXTENSION_MS,
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
 import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
@@ -108,7 +109,13 @@ import {
   getSpotsLeft,
 } from "@/lib/availability";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
-import { getBookingHoldSelectionKey } from "@/lib/holds";
+import {
+  canExtendBookingHold,
+  expireBookingHoldAtServerTime,
+  getBookingHoldRemainingMs,
+  getBookingHoldSelectionKey,
+  isBookingHoldWarning,
+} from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
 import {
   adminBarClass,
@@ -270,6 +277,10 @@ export function HaabBookingModule({
   const [cancellationError, setCancellationError] = useState<string | null>(null);
   const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
   const [bookingHoldNow, setBookingHoldNow] = useState(() => currentTimestamp());
+  const [bookingHoldClockOffsetMs, setBookingHoldClockOffsetMs] = useState(0);
+  const [isNetworkOnline, setIsNetworkOnline] = useState(true);
+  const [isExtendingHold, setIsExtendingHold] = useState(false);
+  const [holdExtensionMessage, setHoldExtensionMessage] = useState<string | null>(null);
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
   const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(new Date());
   const [calendarServicePreference, setCalendarServicePreference] = useState("");
@@ -557,18 +568,17 @@ export function HaabBookingModule({
   );
   const bookingHoldRemainingMs =
     bookingHold && bookingHold.selectionKey === bookingHoldSelectionKey
-      ? Math.max(0, BOOKING_HOLD_DURATION_MS - (bookingHoldNow - bookingHold.startedAt))
+      ? getBookingHoldRemainingMs(bookingHold, bookingHoldNow)
       : BOOKING_HOLD_DURATION_MS;
   const bookingHoldRemainingRatio = Math.max(
     0,
     Math.min(1, bookingHoldRemainingMs / BOOKING_HOLD_DURATION_MS),
   );
   const isBookingHoldExpired = hasActiveBookingHold && bookingHoldRemainingMs <= 0;
-  const shouldShowHoldWarningToast =
+  const shouldOfferHoldExtension =
     resolvedBookingFlow.step === 3 &&
     hasActiveBookingHold &&
-    !isBookingHoldExpired &&
-    bookingHoldRemainingMs <= 2 * 60 * 1000;
+    canExtendBookingHold(bookingHold, bookingHoldRemainingMs);
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
@@ -780,11 +790,11 @@ export function HaabBookingModule({
     }
 
     const intervalId = window.setInterval(() => {
-      setBookingHoldNow(currentTimestamp());
+      setBookingHoldNow(currentTimestamp() + bookingHoldClockOffsetMs);
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [bookingHolds.length]);
+  }, [bookingHolds.length, bookingHoldClockOffsetMs]);
 
   useEffect(() => {
     return () => {
@@ -906,7 +916,7 @@ export function HaabBookingModule({
     };
   }, [calendarQrRequestKey, t.errors.qrGenerationFailed]);
 
-  const releaseSupabaseBookingHold = useCallback((holdId?: string) => {
+  const releaseSupabaseBookingHold = useCallback((holdId?: string, keepalive = false) => {
     if (!holdId || !integratedMode || !isDedicatedPublicPage || !vertical) {
       return;
     }
@@ -917,6 +927,7 @@ export function HaabBookingModule({
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ holdId }),
+        keepalive,
       },
     ).catch(() => undefined);
   }, [businessSlug, integratedMode, isDedicatedPublicPage, vertical]);
@@ -926,13 +937,139 @@ export function HaabBookingModule({
     releaseSupabaseBookingHold(holdId);
   });
 
+  async function refreshBookingHold(
+    currentHold: BookingHold,
+    showRestoredMessage = false,
+  ) {
+    if (
+      currentHold.released ||
+      !integratedMode ||
+      !isDedicatedPublicPage ||
+      !vertical
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/holds?holdId=${encodeURIComponent(currentHold.id)}`,
+        { method: "GET", cache: "no-store" },
+      );
+      const payload = (await response.json().catch(() => ({}))) as {
+        active?: boolean;
+        hold?: BookingHoldRecord;
+        serverNow?: number;
+      };
+
+      if (!response.ok) {
+        return;
+      }
+
+      const serverNow = payload.serverNow ?? currentTimestamp();
+      setBookingHoldClockOffsetMs(serverNow - currentTimestamp());
+      setBookingHoldNow(serverNow);
+
+      if (!payload.active || !payload.hold) {
+        actions.releaseBookingHold(currentHold.id);
+        setBookingHold((value) =>
+          value?.id === currentHold.id
+            ? expireBookingHoldAtServerTime(value, serverNow)
+            : value,
+        );
+        setHoldExtensionMessage(null);
+        return;
+      }
+
+      const refreshedHold = payload.hold;
+      actions.commitBookingHolds(
+        [
+          ...activeStore.bookingHolds.filter((hold) => hold.id !== refreshedHold.id),
+          refreshedHold,
+        ],
+        activeStore,
+      );
+      setBookingHold((value) =>
+        value?.id === refreshedHold.id
+          ? {
+              ...value,
+              expiresAt: refreshedHold.expiresAt,
+              extensionCount: refreshedHold.extensionCount ?? value.extensionCount,
+              released: false,
+            }
+          : value,
+      );
+      if (showRestoredMessage) {
+        setHoldExtensionMessage(t.public.backOnline);
+      }
+    } catch {
+      // The local countdown remains authoritative to the last server expiry.
+      // A later online/visibility event retries this refresh.
+    }
+  }
+
+  const refreshBookingHoldFromServer = useEffectEvent(
+    async (showRestoredMessage = false) => {
+      const currentHold = bookingHold;
+      if (!currentHold) {
+        return;
+      }
+      await refreshBookingHold(currentHold, showRestoredMessage);
+    },
+  );
+
+  useEffect(() => {
+    const handleOffline = () => {
+      setIsNetworkOnline(false);
+      setHoldExtensionMessage(null);
+    };
+    const handleOnline = () => {
+      setIsNetworkOnline(true);
+      void refreshBookingHoldFromServer(true);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && navigator.onLine) {
+        void refreshBookingHoldFromServer();
+      }
+    };
+
+    const initialNetworkStateId = window.setTimeout(() => {
+      setIsNetworkOnline(navigator.onLine);
+    }, 0);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearTimeout(initialNetworkStateId);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!bookingHold || bookingHold.released || resolvedBookingFlow.step !== 3) {
+      return;
+    }
+
+    const holdId = bookingHold.id;
+    const handlePageHide = (event: PageTransitionEvent) => {
+      if (!event.persisted) {
+        releaseSupabaseBookingHold(holdId, true);
+      }
+    };
+
+    window.addEventListener("pagehide", handlePageHide);
+    return () => window.removeEventListener("pagehide", handlePageHide);
+  }, [bookingHold, releaseSupabaseBookingHold, resolvedBookingFlow.step]);
+
   useEffect(() => {
     if (!bookingHoldSelectionKey || !bookingHold) {
       return;
     }
 
     const intervalId = window.setInterval(() => {
-      const now = currentTimestamp();
+      const now = currentTimestamp() + bookingHoldClockOffsetMs;
 
       setBookingHoldNow(now);
 
@@ -945,7 +1082,99 @@ export function HaabBookingModule({
     }, 1000);
 
     return () => window.clearInterval(intervalId);
-  }, [bookingHoldSelectionKey, bookingHold]);
+  }, [bookingHoldSelectionKey, bookingHold, bookingHoldClockOffsetMs]);
+
+  async function extendCurrentBookingHold() {
+    if (
+      !bookingHold ||
+      bookingHold.released ||
+      !selectedService ||
+      isExtendingHold ||
+      !canExtendBookingHold(bookingHold, bookingHoldRemainingMs)
+    ) {
+      return;
+    }
+
+    if (integratedMode && !isNetworkOnline) {
+      setHoldExtensionMessage(null);
+      return;
+    }
+
+    setIsExtendingHold(true);
+    setHoldExtensionMessage(null);
+
+    try {
+      let updatedHold: BookingHoldRecord = {
+        ...(activeStore.bookingHolds.find((hold) => hold.id === bookingHold.id) ?? {}),
+        id: bookingHold.id,
+        serviceId: selectedService.id,
+        bookingType: selectedService.bookingType,
+        dateKey: bookingFlow.dateKey,
+        startTime: resolveBookingStartTime(selectedService, bookingFlow.time),
+        endTime: resolveBookingEndTime(selectedService, bookingFlow.time),
+        createdAt: new Date(bookingHold.startedAt).toISOString(),
+        expiresAt: bookingHold.expiresAt + BOOKING_HOLD_EXTENSION_MS,
+        extensionCount: 1,
+      };
+      let serverNow = currentTimestamp();
+
+      if (integratedMode && isDedicatedPublicPage && vertical) {
+        const response = await fetch(
+          `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/holds`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ holdId: bookingHold.id }),
+          },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          hold?: BookingHoldRecord;
+          serverNow?: number;
+        };
+
+        if (!response.ok || !payload.hold) {
+          if (response.status === 409) {
+            await refreshBookingHold(bookingHold);
+          } else {
+            setBookingError(t.errors.holdFailed);
+          }
+          return;
+        }
+
+        updatedHold = payload.hold;
+        serverNow = payload.serverNow ?? serverNow;
+        setBookingHoldClockOffsetMs(serverNow - currentTimestamp());
+      }
+
+      actions.commitBookingHolds(
+        [
+          ...activeStore.bookingHolds.filter((hold) => hold.id !== updatedHold.id),
+          updatedHold,
+        ],
+        activeStore,
+      );
+      setBookingHold((value) =>
+        value?.id === updatedHold.id
+          ? {
+              ...value,
+              expiresAt: updatedHold.expiresAt,
+              extensionCount: updatedHold.extensionCount ?? 1,
+              released: false,
+            }
+          : value,
+      );
+      setBookingHoldNow(serverNow);
+      setHoldExtensionMessage(t.public.holdExtended);
+      setBookingError(null);
+    } catch {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setIsNetworkOnline(false);
+      }
+      setBookingError(t.errors.holdFailed);
+    } finally {
+      setIsExtendingHold(false);
+    }
+  }
 
   function startFreshBooking(overrides?: Partial<BookingFlow>) {
     const base = createInitialBookingFlow(services);
@@ -961,11 +1190,13 @@ export function HaabBookingModule({
     }
 
     setBookingError(null);
+    setHoldExtensionMessage(null);
     setIsCalendarQrModalOpen(false);
     const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
     actions.releaseBookingHold(holdIdToRelease);
     releaseSupabaseBookingHold(holdIdToRelease);
     setBookingHold(null);
+    setBookingHoldClockOffsetMs(0);
     setBookingHoldNow(currentTimestamp());
     setBookingFlow({
       ...base,
@@ -1670,9 +1901,15 @@ export function HaabBookingModule({
       endTime: resolveBookingEndTime(latestService, time),
       createdAt: new Date(startedAt).toISOString(),
       expiresAt,
+      extensionCount: 0,
     };
+    let holdServerNow = startedAt;
 
     if (integratedMode && isDedicatedPublicPage && vertical) {
+      if (!isNetworkOnline) {
+        setBookingError(t.public.offlineBody);
+        return false;
+      }
       setIsCreatingHold(true);
       setBookingError(null);
 
@@ -1691,6 +1928,7 @@ export function HaabBookingModule({
         );
         const payload = (await response.json().catch(() => ({}))) as {
           hold?: BookingHoldRecord;
+          serverNow?: number;
           userMessage?: string;
         };
 
@@ -1702,7 +1940,12 @@ export function HaabBookingModule({
         }
 
         holdRecord = payload.hold;
+        holdServerNow = payload.serverNow ?? currentTimestamp();
+        setBookingHoldClockOffsetMs(holdServerNow - currentTimestamp());
       } catch {
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          setIsNetworkOnline(false);
+        }
         setBookingError(t.errors.holdFailed);
         return false;
       } finally {
@@ -1724,9 +1967,11 @@ export function HaabBookingModule({
       selectionKey: getBookingHoldSelectionKey(latestService, dateKey, time),
       startedAt: new Date(holdRecord.createdAt).getTime(),
       expiresAt: holdRecord.expiresAt,
+      extensionCount: holdRecord.extensionCount ?? 0,
       released: false,
     });
-    setBookingHoldNow(new Date(holdRecord.createdAt).getTime());
+    setBookingHoldNow(holdServerNow);
+    setHoldExtensionMessage(null);
     setBookingFlow((current) => ({
       ...current,
       serviceId: latestService.id,
@@ -1743,7 +1988,7 @@ export function HaabBookingModule({
     }
 
     setIsCalendarQrModalOpen(false);
-    const now = currentTimestamp();
+    const now = currentTimestamp() + bookingHoldClockOffsetMs;
     const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
     const validationService =
@@ -1752,6 +1997,16 @@ export function HaabBookingModule({
       ) ?? selectedService;
     const ignoredHoldId = bookingHold?.released ? undefined : bookingHold?.id;
     const validationHolds = pruneBookingHolds(validationStore.bookingHolds, now);
+
+    if (isBookingHoldExpired || bookingHold?.released) {
+      setBookingError(t.public.expiredBody);
+      return;
+    }
+
+    if (integratedMode && !isNetworkOnline) {
+      setBookingError(t.public.offlineBody);
+      return;
+    }
 
     if (!integratedMode && latestStandaloneStore) {
       actions.setStandaloneStore(latestStandaloneStore);
@@ -1894,6 +2149,19 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
+          if (
+            response.status === 409 &&
+            bookingHold &&
+            currentTimestamp() + bookingHoldClockOffsetMs >= bookingHold.expiresAt
+          ) {
+            actions.releaseBookingHold(bookingHold.id);
+            setBookingHold((value) =>
+              value?.id === bookingHold.id ? { ...value, released: true } : value,
+            );
+            setBookingHoldNow(bookingHold.expiresAt);
+            setBookingError(t.public.expiredBody);
+            return;
+          }
           setBookingError(
             response.status === 409 ? t.errors.selectionUnavailable : t.errors.confirmFailed,
           );
@@ -1913,7 +2181,9 @@ export function HaabBookingModule({
 
     actions.commitBookings([...validationStore.bookings, bookingToCommit], validationStore, nextHolds);
     setBookingError(null);
+    setHoldExtensionMessage(null);
     setBookingHold(null);
+    setBookingHoldClockOffsetMs(0);
     setBookingHoldNow(now);
     setBookingFlow((current) => ({
       ...current,
@@ -3376,7 +3646,9 @@ export function HaabBookingModule({
       actions.releaseBookingHold(holdIdToRelease);
       releaseSupabaseBookingHold(holdIdToRelease);
       setBookingHold(null);
+      setBookingHoldClockOffsetMs(0);
       setBookingHoldNow(currentTimestamp());
+      setHoldExtensionMessage(null);
       setBookingError(null);
       setBookingFlow((current) => ({ ...current, step: 2 }));
     };
@@ -3386,7 +3658,9 @@ export function HaabBookingModule({
       actions.releaseBookingHold(holdIdToRelease);
       releaseSupabaseBookingHold(holdIdToRelease);
       setBookingHold(null);
+      setBookingHoldClockOffsetMs(0);
       setBookingHoldNow(currentTimestamp());
+      setHoldExtensionMessage(null);
       setBookingError(null);
       setBookingFlow((current) => ({
         ...current,
@@ -3444,6 +3718,16 @@ export function HaabBookingModule({
                     remainingMs={bookingHoldRemainingMs}
                     remainingRatio={bookingHoldRemainingRatio}
                     helperDesktopHidden
+                    isOnline={!integratedMode || isNetworkOnline}
+                    canExtend={shouldOfferHoldExtension}
+                    isExtending={isExtendingHold}
+                    extensionUsed={
+                      isBookingHoldWarning(bookingHoldRemainingMs) &&
+                      (bookingHold?.extensionCount ?? 0) > 0
+                    }
+                    extensionMessage={holdExtensionMessage}
+                    onExtend={() => void extendCurrentBookingHold()}
+                    onChooseAnother={goBackToSelectionStep}
                     copy={copy}
                     lang={lang}
                   />
@@ -3615,10 +3899,17 @@ export function HaabBookingModule({
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
-                          disabled={isConfirmingBooking}
-                          onClick={confirmBooking}
+                          disabled={
+                            isConfirmingBooking ||
+                            (!isBookingHoldExpired && integratedMode && !isNetworkOnline)
+                          }
+                          onClick={isBookingHoldExpired ? goBackToSelectionStep : confirmBooking}
                         >
-                          {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
+                          {isBookingHoldExpired
+                            ? t.public.chooseAnotherTime
+                            : integratedMode && !isNetworkOnline
+                              ? t.public.onlineRequired
+                              : t.publicFlow.confirm}
                         </ActionButton>
                       </div>
                     </div>
@@ -4571,10 +4862,17 @@ export function HaabBookingModule({
                   <ActionButton
                     tone="primary"
                     className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
-                    disabled={isConfirmingBooking}
-                    onClick={confirmBooking}
+                    disabled={
+                      isConfirmingBooking ||
+                      (!isBookingHoldExpired && integratedMode && !isNetworkOnline)
+                    }
+                    onClick={isBookingHoldExpired ? goBackToSelectionStep : confirmBooking}
                   >
-                    {isBookingHoldExpired ? copy.phrases.tryBookingButton : t.publicFlow.confirm}
+                    {isBookingHoldExpired
+                      ? t.public.chooseAnotherTime
+                      : integratedMode && !isNetworkOnline
+                        ? t.public.onlineRequired
+                        : t.publicFlow.confirm}
                   </ActionButton>
                 </>
               )}
@@ -5208,24 +5506,6 @@ export function HaabBookingModule({
           renderPublicFlow()
         )}
       </section>
-
-      {shouldShowHoldWarningToast ? (
-        <div
-          role="status"
-          aria-live="polite"
-          className="fixed right-4 top-4 z-40 max-w-sm rounded-[28px] bg-white px-5 py-4 text-[#be123c] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_24px_60px_rgba(190,18,60,0.16)] ring-1 ring-[#fecdd3] sm:right-6 sm:top-6"
-        >
-          <p className="text-xs font-semibold uppercase tracking-[0.18em]">
-            {t.public.holdEndingSoon}
-          </p>
-          <p className="mt-1 text-sm font-semibold text-[var(--ink)]">
-            {t.public.holdEndingBody}
-          </p>
-          <p className="mt-1 text-sm leading-5">
-            {t.public.holdEndingCta}
-          </p>
-        </div>
-      ) : null}
 
       {renderCalendarQrModal()}
       {renderCancellationModal()}

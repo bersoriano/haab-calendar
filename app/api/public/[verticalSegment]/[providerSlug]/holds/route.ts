@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createPublicBookingHold,
+  extendPublicBookingHold,
+  getPublicBookingHoldStatus,
   PublicBookingWriteError,
   releasePublicBookingHold,
 } from "@/lib/supabase/bookings";
@@ -47,6 +49,66 @@ async function readBody(request: NextRequest) {
     return (await request.json()) as HoldBody;
   } catch {
     return null;
+  }
+}
+
+function writeHoldError(
+  error: unknown,
+  context: { action: string; providerSlug: string; holdId?: string },
+) {
+  if (error instanceof PublicBookingWriteError) {
+    return NextResponse.json(
+      { userMessage: error.userMessage },
+      { status: error.status },
+    );
+  }
+
+  console.error(`public_booking_hold_${context.action}_failed`, {
+    slug: context.providerSlug,
+    holdId: context.holdId,
+    error: error instanceof Error ? error.message : String(error),
+  });
+
+  return NextResponse.json(
+    { userMessage: "Could not update that hold." },
+    { status: 500 },
+  );
+}
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ verticalSegment: string; providerSlug: string }> },
+) {
+  const { verticalSegment, providerSlug } = await context.params;
+  const routeParams = readRouteParams(verticalSegment, providerSlug);
+
+  if (!routeParams) {
+    return NextResponse.json(
+      { userMessage: "This booking link is invalid." },
+      { status: 400 },
+    );
+  }
+
+  const holdId = readString(request.nextUrl.searchParams.get("holdId"));
+  if (!holdId) {
+    return NextResponse.json(
+      { userMessage: "Hold id is required." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await getPublicBookingHoldStatus(createAdminClient(), {
+      ...routeParams,
+      holdId,
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    return writeHoldError(error, {
+      action: "refresh",
+      providerSlug: routeParams.providerSlug,
+      holdId,
+    });
   }
 }
 
@@ -153,5 +215,43 @@ export async function DELETE(
       { userMessage: "Could not release that hold." },
       { status: 500 },
     );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ verticalSegment: string; providerSlug: string }> },
+) {
+  const { verticalSegment, providerSlug } = await context.params;
+  const routeParams = readRouteParams(verticalSegment, providerSlug);
+
+  if (!routeParams) {
+    return NextResponse.json(
+      { userMessage: "This booking link is invalid." },
+      { status: 400 },
+    );
+  }
+
+  const body = await readBody(request);
+  const holdId = readString(body?.holdId);
+  if (!body || !holdId) {
+    return NextResponse.json(
+      { userMessage: "Hold id is required." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await extendPublicBookingHold(createAdminClient(), {
+      ...routeParams,
+      holdId,
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    return writeHoldError(error, {
+      action: "extend",
+      providerSlug: routeParams.providerSlug,
+      holdId,
+    });
   }
 }

@@ -48,6 +48,18 @@ export type BookingDict = {
     holdEndingSoon: string;
     holdEndingBody: string;
     holdEndingCta: string;
+    stillInterestedTitle: string;
+    stillInterestedBody: string;
+    addFiveMinutes: string;
+    extendingHold: string;
+    holdExtended: string;
+    extensionUsed: string;
+    offlineTitle: string;
+    offlineBody: string;
+    backOnline: string;
+    expiredBody: string;
+    chooseAnotherTime: string;
+    onlineRequired: string;
     holdLabel: string;
     holdCancelled: string;
     holdSecured: string;
@@ -411,6 +423,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdEndingSoon: "Hold ending soon",
       holdEndingBody: "Your booking hold is ending soon.",
       holdEndingCta: "Confirm now, or the selected time may become available to someone else.",
+      stillInterestedTitle: "Still interested?",
+      stillInterestedBody: "Need a little longer on this page? Keep the slot for five more minutes.",
+      addFiveMinutes: "Add 5 minutes",
+      extendingHold: "Adding time…",
+      holdExtended: "Five minutes were added to your hold.",
+      extensionUsed: "The one-time five-minute extension has already been used.",
+      offlineTitle: "You’re offline",
+      offlineBody: "The timer keeps running. Reconnect before it expires to extend or confirm.",
+      backOnline: "Connection restored. Your hold was checked.",
+      expiredBody: "This slot is available to others again. Choose a new time to continue.",
+      chooseAnotherTime: "Choose another time",
+      onlineRequired: "Reconnect to confirm",
       holdLabel: "Booking hold",
       holdCancelled: "Booking cancelled",
       holdSecured: "Booking secured",
@@ -775,6 +799,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdEndingSoon: "Reserva por expirar",
       holdEndingBody: "Su reserva temporal está por vencer.",
       holdEndingCta: "Confirme ahora o el horario podría quedar disponible para otra persona.",
+      stillInterestedTitle: "¿Aún le interesa?",
+      stillInterestedBody: "¿Necesita un poco más de tiempo? Mantenga el horario durante cinco minutos más.",
+      addFiveMinutes: "Agregar 5 minutos",
+      extendingHold: "Agregando tiempo…",
+      holdExtended: "Agregamos cinco minutos a su reserva temporal.",
+      extensionUsed: "Ya utilizó la extensión única de cinco minutos.",
+      offlineTitle: "Está sin conexión",
+      offlineBody: "El tiempo sigue corriendo. Reconéctese antes de que venza para extender o confirmar.",
+      backOnline: "Se restableció la conexión y verificamos su reserva temporal.",
+      expiredBody: "Este horario vuelve a estar disponible para otras personas. Elija uno nuevo para continuar.",
+      chooseAnotherTime: "Elegir otro horario",
+      onlineRequired: "Reconéctese para confirmar",
       holdLabel: "Reserva temporal",
       holdCancelled: "Reserva cancelada",
       holdSecured: "Reserva asegurada",

@@ -1,390 +1,175 @@
 # Backend Implementation
 
-**Status:** first backend checkpoint implemented. This document explains the Supabase backend slice that currently exists in the repo.
+**Status:** current as of 2026-08-04. The Supabase backend supports provider administration, canonical public pages, server-authoritative booking writes, customer manage links, publication controls, capacity events, and resilient temporary holds.
 
-This is not the full production booking backend yet. The current work establishes the database foundation, security boundary, seed path, and first public read API. Public booking writes, server-side holds, booking confirmation, manage-link writes, admin persistence, and realtime availability are still future phases from `docs/superpowers/plans/2026-06-06-backend-implementation-plan.md`.
+For the customer lifecycle, start with `docs/booking-process.md`. This document summarizes the backend boundary and deployment contract.
 
-## What Exists Now
+## Architecture
 
-The backend work currently consists of these files:
+- Supabase Postgres is the durable source of provider, service, booking, hold, event, and publication data.
+- Supabase Auth identifies providers and the single super administrator.
+- RLS restricts authenticated admin access by provider ownership.
+- Public-safe views and a server resolver hydrate public pages.
+- Next.js Route Handlers own unauthenticated booking-critical writes.
+- The service-role key is server-only and must never use a `NEXT_PUBLIC_` variable.
+- Standalone/demo mode remains available through localStorage and does not claim cross-device protection.
 
-| File | Purpose |
-| --- | --- |
-| `supabase/config.toml` | Local Supabase project configuration created by `npx supabase init`. |
-| `supabase/migrations/20260607113603_schema_security_foundation.sql` | First database migration: schema, constraints, indexes, RLS, grants, private helpers, and public-safe views. |
-| `supabase/migrations/20260611150930_url_management_hierarchy.sql` | URL hierarchy migration: vertical-aware provider slugs, service slugs, premium custom slugs, and redirect history tables/views. |
-| `supabase/seed.sql` | Development seed for a demo provider and services once a matching Supabase Auth user exists. |
-| `app/api/public/providers/[slug]/route.ts` | Public DTO Route Handler for loading a provider booking page by slug without exposing private data. |
-| `BACKEND_RECOMMENDATIONS.md` | Updated source-of-truth backend design notes, including DTO boundaries and text service cost/capacity fields. |
-
-## Chosen Backend Shape
-
-The first slice follows this approach:
-
-- Supabase Postgres is the durable data store.
-- RLS protects provider-owned admin data.
-- Public reads go through a deliberate DTO boundary, not raw table payloads.
-- Public booking-critical writes will be built later through server-authoritative endpoints or private RPCs.
-- The existing React booking module still expects a `ModuleStore` shape, so public backend data is mapped back into that shape at the API boundary.
-
-For this checkpoint, public reads use a Next.js Route Handler:
-
-```txt
-GET /api/public/providers/[slug]
-```
-
-The route reads from public-safe database views and returns:
-
-```ts
-{
-  store: ModuleStore;
-  meta: {
-    timezone: string;
-    bookingWindowDays: number;
-  };
-}
-```
-
-The canonical hierarchical public routes now use the public resolver and pass the DTO into `HaabBookingModule` through `injectedConfig`. `/public/[slug]` remains only as a standalone local demo path because there are no production URLs to preserve yet.
-
-## Database Schema
-
-The migration creates five public tables.
+## Main schema
 
 ### `providers`
 
-Stores one provider profile and its weekly availability.
+Stores the provider profile, vertical, normalized public slug, preferred language, timezone, booking window, weekly availability, branding, contact details, setup state, and publication ownership.
 
-Important fields:
-
-- `owner_user_id` references `auth.users(id)` and is the root of admin ownership.
-- `full_name`, `business_name`, and `email` store provider profile data.
-- `vertical` scopes the provider into the public URL taxonomy.
-- `slug` is unique per vertical and used by public booking URLs.
-- `custom_slug` is a premium-only vanity slug input; the database normalizes it into `slug`.
-- `plan_tier` currently marks whether custom slugs are allowed.
-- `timezone` and `booking_window_days` support production-safe availability.
-- `availability` is JSONB because the app uses a fixed weekly schedule structure.
-- `setup_complete` controls whether a provider is visible through public-safe reads.
-
-Slug behavior:
-
-- If a provider has no explicit slug, the database generates one from `business_name`, then `full_name`, then `haab-calendar`.
-- Collisions get numeric suffixes such as `haab-demo-studio-2`.
-- Previous slugs are stored in `provider_slug_redirects` so old profile URLs can redirect permanently.
-- This preserves the current frontend fallback behavior where an empty `publicSlug` still produces a working public URL.
+Public routing requires a valid vertical/slug pair and a provider allowed to publish. Historical slugs are preserved in redirect tables.
 
 ### `services`
 
-Stores services offered by a provider.
+Stores the booking type, duration, occurrence rules, capacity configuration, display labels, pricing/location details, and service-specific public slug.
 
-Important fields:
-
-- `provider_id` links each service to a provider.
-- `slug` is generated from `name` and unique per provider.
-- `booking_type` is either `appointment` or `full-day`.
-- `duration_minutes` is required for appointments and must be null for full-day services.
-- `capacity` and `cost` are text fields, not numeric fields. The current app treats these as labels like `Max 4 players` and `Premium advisory session`, not enforced inventory or payment values.
-- `sort_order` supports future admin service ordering.
-- Previous service slugs are stored in `service_slug_redirects` so old service URLs can redirect permanently.
+`capacity` is display text. `max_spots` is enforced inventory for configured event occurrences.
 
 ### `bookings`
 
-Stores confirmed, rescheduled, and cancelled bookings.
+Stores private customer details and immutable display snapshots, including service, duration, price, capacity, location, structured details, and the consumed hold ID. Important operational fields include:
 
-Important fields:
+- `status` (`confirmed`, `rescheduled`, or `cancelled`);
+- `manage_token_hash` rather than the raw customer token;
+- `confirmation_number`;
+- `idempotency_key`;
+- timestamps and provider/service ownership.
 
-- `provider_id` scopes the booking to a provider.
-- `service_id` can become null if a service is deleted.
-- Snapshot fields preserve historical display:
-  - `service_name`
-  - `booking_type`
-  - `duration_minutes_snapshot`
-  - `cost_snapshot`
-  - `capacity_snapshot`
-- Client details are private:
-  - `client_name`
-  - `client_email`
-  - `client_phone`
-- `manage_token_hash` stores only the hashed manage token.
-- `confirmation_number` is unique.
-- `idempotency_key` prevents duplicate bookings from repeated confirmation requests.
-
-There is also a unique `(provider_id, idempotency_key)` index so the same confirmation request cannot create duplicate booking rows.
+Active booking constraints protect non-capacity appointment overlaps and exclusive day reservations. Event capacity is enforced by database triggers.
 
 ### `booking_holds`
 
-Stores temporary slot reservations.
+Stores the slot/date protected during customer data entry:
 
-Important fields:
+- provider and service IDs;
+- booking type, date, start, and end;
+- server-authoritative `expires_at`;
+- `extension_count`, constrained to zero or one;
+- shared-capacity mode for events.
 
-- `provider_id`, `service_id`, `date`, `start_time`, and `end_time` identify the held slot.
-- `booking_type` preserves the current full-day versus appointment behavior.
-- `expires_at` is server-authoritative.
-
-This table is created now, but public hold creation is not implemented yet. The next backend phase should add transaction-safe hold creation and cleanup.
+Non-capacity holds use exclusion/unique constraints. Event holds participate in the same database capacity calculation as active bookings.
 
 ### `booking_events`
 
-Stores booking history for support and audit trails.
+Stores support/audit history for booking creation, rescheduling, cancellation, and other system/customer/provider actions.
 
-Important fields:
+## Public read path
 
-- `booking_id` links to the booking.
-- `provider_id` makes provider-scoped queries cheap.
-- `actor_type` records `provider`, `customer`, or `system`.
-- `event_type` records actions like `created`, `rescheduled`, or `cancelled`.
-- `metadata` stores structured context.
+Canonical routes call `lib/public-booking-resolver.ts`. It reads public-safe provider/service fields plus an operational schedule projection containing no customer details.
 
-## Private Helpers
-
-The migration creates a private schema:
-
-```sql
-create schema if not exists private;
-```
-
-It contains helper functions:
-
-- `private.slugify(value text)` normalizes slugs.
-- `private.set_updated_at()` maintains `updated_at` timestamps.
-- `private.ensure_provider_slug()` generates and de-duplicates provider slugs.
-- `private.provider_owner(provider_id uuid)` checks whether the current authenticated user owns a provider.
-
-The private schema is not exposed as a public API surface. The owner helper is granted only to `authenticated` and `service_role`, and privileged helpers use explicit `search_path` settings.
-
-## Row Level Security
-
-RLS is enabled on every public table:
-
-- `providers`
-- `services`
-- `bookings`
-- `booking_holds`
-- `booking_events`
-
-Admin ownership is based on:
-
-```sql
-providers.owner_user_id = auth.uid()
-```
-
-The main rule is:
-
-- Providers can read and write only their own admin data.
-- Anonymous public clients cannot read raw bookings, holds, booking events, manage token hashes, or client contact details.
-- Public clients can only read public-safe provider and service data for providers where `setup_complete = true`.
-
-The migration also revokes broad table privileges and grants only the specific table or column access needed by each role.
-
-## Public-Safe Views
-
-The migration creates two public-safe views:
-
-### `public.public_providers`
-
-Exposes only:
-
-- `id`
-- `full_name`
-- `business_name`
-- `slug`
-- `timezone`
-- `booking_window_days`
-- `availability`
-
-It does not expose provider email.
-
-### `public.public_services`
-
-Exposes only service fields that are safe for public booking:
-
-- `id`
-- `provider_id`
-- `name`
-- `booking_type`
-- `duration_minutes`
-- `description`
-- `capacity`
-- `cost`
-- `notes`
-- `sort_order`
-
-Both views use `security_invoker = true` so they respect the underlying RLS policies.
-
-## Public Provider API
-
-The public route lives at:
-
-```txt
-app/api/public/providers/[slug]/route.ts
-```
-
-Request:
-
-```txt
-GET /api/public/providers/haab-demo-studio
-```
-
-Response shape:
+The resolver returns a frontend-compatible `ModuleStore`:
 
 ```ts
-{
-  store: {
-    provider: {
-      fullName: string;
-      businessName: string;
-      email: "";
-      publicSlug: string;
-    };
-    services: Service[];
-    availability: WeeklyAvailability;
-    bookings: [];
-    bookingHolds: [];
-    setupComplete: true;
-  };
-  meta: {
-    timezone: string;
-    bookingWindowDays: number;
-  };
-}
+type ModuleStore = {
+  provider: ProviderInfo;
+  services: Service[];
+  availability: WeeklyAvailability;
+  bookings: BookingRecord[];
+  bookingHolds: BookingHoldRecord[];
+  setupComplete: boolean;
+  vertical?: VerticalId;
+};
 ```
 
-The route deliberately returns empty `bookings` and `bookingHolds` arrays. Raw bookings and holds are private and should not be sent to unauthenticated public clients. Future availability endpoints can return computed availability without exposing raw private rows.
+Public schedule booking records have blank customer/contact fields. Public hold records contain only conflict-relevant slot data and expiry. Raw private tables are not exposed to the anonymous browser.
 
-Error responses include friendly `userMessage` fields. Internal lookup failures are logged with a generated `debugId`.
+## Public write routes
 
-## Development Seed
+| Route | Methods | Responsibility |
+| --- | --- | --- |
+| `/api/public/{vertical}/{provider}/holds` | `POST`, `GET`, `PATCH`, `DELETE` | Create, refresh, extend once, or release a hold. |
+| `/api/public/{vertical}/{provider}/bookings` | `POST` | Validate the hold and create a confirmed booking. |
+| `/api/public/{vertical}/{provider}/manage/{token}` | `GET`, `PATCH` | Load, reschedule, or cancel one booking using its private token. |
+| `/api/public/providers/{slug}` | `GET` | Compatibility public provider DTO. |
 
-The seed file creates:
+All public writes validate normalized vertical/slug parameters and body fields before calling `lib/supabase/bookings.ts` through the server-only admin client.
 
-- Provider: `Haab Demo Studio`
-- Slug: `haab-demo-studio`
-- Timezone: `Asia/Kuala_Lumpur`
-- Booking window: `60` days
-- Three demo services:
-  - `New Patient Consultation`
-  - `Court Rental`
-  - `Banquet Hall Exclusive`
+## Hold resilience
 
-The seed depends on an auth user:
+The initial hold lasts ten minutes. The API returns server time with the hold so the browser countdown does not treat its own clock as authority.
 
-```txt
-dev-provider@example.com
-```
+The final-two-minute warning can invoke `public.extend_public_booking_hold(provider_id, hold_id)`. The function is `SECURITY INVOKER`, executable only by `service_role`, and atomically adds five minutes while incrementing `extension_count`. Repeated or expired extensions return no row and become HTTP `409`.
 
-If that user does not exist in `auth.users`, the seed is a no-op. This avoids inserting provider rows with fake owner IDs.
+Expired rows are handled in two layers:
 
-## How To Run This Locally
+1. Every availability/confirmation path ignores or deletes `expires_at <= now()` rows, making the slot immediately usable.
+2. Supabase Cron runs `cleanup-expired-booking-holds` every minute for physical cleanup.
 
-The Supabase CLI is available through `npx`, so commands can be run without a global install:
+The cron job is installed with `cron.schedule`; code must not directly update `cron.job`.
+
+## Confirmation and manage-token boundary
+
+Confirmation re-resolves the provider/service, checks the date window, requires a matching unexpired hold, rechecks conflicts/capacity, builds trusted snapshots, hashes a newly generated manage token, inserts the booking, releases the hold, and records a booking event.
+
+Only the raw manage token returned in that successful response can reconstruct the customer manage URL. The database stores the SHA-256 hash. Manage lookup hashes the presented token and scopes the match to the public provider.
+
+Rescheduling repeats availability and capacity checks while ignoring the booking's current row. Cancellation makes the booking inactive. Both append booking events.
+
+## Provider administration
+
+Authenticated provider reads/writes use ownership derived from the Supabase user rather than client-supplied provider IDs. Provider-store persistence handles provider profile, services, availability, language, vertical, branding, and setup completion.
+
+The dedicated super-admin route can update publication state, but it cannot appoint additional super administrators. Publication policy and notifications are documented separately in the schema catalog and super-admin tests.
+
+## Security invariants
+
+- RLS is enabled on public-schema tables.
+- Provider policies combine the authenticated role with an ownership predicate.
+- Public clients do not receive the service-role key or direct table write access.
+- Public writes do not trust provider ownership, expiry, snapshots, status, or manage-token hashes supplied by the browser.
+- Views that must respect RLS use `security_invoker = true`.
+- Database functions use explicit `search_path` settings and narrowly granted execution.
+- The hold-extension function uses `SECURITY INVOKER`; it does not bypass RLS by definition.
+
+## Migration history
+
+Migration files in `supabase/migrations/` are part of the deployable application and must be committed. Important booking milestones include:
+
+| Migration | Purpose |
+| --- | --- |
+| `20260607113603_schema_security_foundation.sql` | Core tables, constraints, indexes, RLS, and safe views. |
+| `20260712092527_add_booking_details_payload.sql` | Structured details and schema metadata. |
+| `20260712162405_add_booking_hold_conflicts.sql` | Database hold conflict constraints. |
+| `20260712173119_add_provider_service_profile_fields.sql` | Public provider/service presentation fields. |
+| `20260803071013_enable_event_capacity_bookings.sql` | Shared event capacity for bookings and holds. |
+| `20260803071618_support_legacy_capacity_hold_confirmation.sql` | Compatibility for existing capacity bookings. |
+| `20260804123315_make_booking_holds_resilient.sql` | One-time extension plus scheduled expired-hold cleanup. |
+
+## Deployment
+
+Check migration alignment before deploying application code:
 
 ```bash
-npx supabase --version
+npx supabase migration list --linked
+npx supabase db push --linked --dry-run
+npx supabase db push --linked
 ```
 
-To apply the migration locally, Docker or another local Supabase database must be available:
+The dry run should list only migrations intentionally pending. After application:
 
 ```bash
-npx supabase start
-npx supabase migration up
+npx supabase migration list --linked
+npx supabase db lint --linked
 ```
 
-To reset and seed:
+Application gates:
 
 ```bash
-npx supabase db reset
-```
-
-Current local limitation:
-
-- Docker is not installed in this environment.
-- `npx supabase db lint --local` failed because no local database was listening at `127.0.0.1:54322`.
-- Database types have not been generated yet because a local or linked remote database is needed.
-
-## Verified Gates
-
-The code and docs added in this checkpoint passed:
-
-```bash
-npm run lint
-npm run test
 npx tsc --noEmit
+npm test
 npm run build
 git diff --check
 ```
 
-`npm run test` passed 136 Vitest tests.
+Local Supabase execution additionally requires Docker or Podman. Lack of a local container runtime does not justify skipping linked migration history and schema lint checks.
 
-## What This Does Not Do Yet
+## Related documentation
 
-This checkpoint does not yet implement:
-
-- Server-authoritative public booking writes.
-- Server-side hold creation.
-- Hold release.
-- Expired hold cleanup.
-- Booking confirmation transactions.
-- Manage-token hashing at booking creation.
-- Manage-link backend reads, cancellation, or reschedule.
-- Admin provider setup persistence.
-- Admin service create/edit/delete persistence.
-- Realtime or polling availability refresh.
-- Generated Supabase TypeScript database types.
-
-Those are the next phases in `docs/superpowers/plans/2026-06-06-backend-implementation-plan.md`.
-
-## Next Practical Step
-
-The next small backend step should be server-authoritative booking writes:
-
-1. Create server-side hold endpoints for canonical public routes.
-2. Confirm bookings through a transaction that validates the hold and slot.
-3. Store hashed manage tokens and return the raw token once.
-4. Keep the existing localStorage mode available for standalone demo mode.
-
-After that, move cancellation and reschedule to server-authoritative manage-token endpoints.
-
-## Provider language (i18n)
-
-The public booking page renders in the provider's preferred language (`en` by
-default, `es` supported), read from `public_providers.language`. The Settings →
-Language selector updates `provider.language`, and authenticated setup/admin
-saves send the normalized store through `PUT /api/provider/store`.
-
-During first-time setup, the provider must select a workflow vertical before
-authentication or setup can begin. The visitor's landing/login language and the
-selected vertical are both carried in the authentication return path. The
-language seeds `provider.language`, while the vertical determines the initial
-services, availability, terminology, and booking defaults. This seed applies
-only while setup is incomplete; a completed provider keeps the language and
-vertical loaded from persisted provider data. Resetting a standalone setup
-preserves the currently selected language but clears the workflow selection.
-
-The first-setup admin header mirrors the active vertical and offers a return to
-the landing workflow selector. It is presentation-only; the canonical values
-remain `ModuleStore.provider.language` and `ModuleStore.vertical` until publish,
-then `public.providers.language` and `public.providers.vertical`.
-
-`lib/supabase/provider-store.ts: upsertProvider` includes
-`language: provider.language` in both provider inserts and updates. The public
-read path then carries the value through `lib/public-booking-resolver.ts` into
-`ModuleStore.provider.language`. `app/api/public/providers/[slug]/route.ts`
-contains the parallel public mapper and must stay aligned.
-
-The schema contract lives in
-`supabase/migrations/20260625120000_add_provider_language.sql`: the column
-defaults to `en`, is constrained to `en` or `es`, and is exposed through the
-`public_providers` view. Source control proves that the migration exists, but
-not that it has been applied to every remote environment. Confirm remote
-migration history during deployment.
-
-For diagnosis only, the stored value can be inspected or changed directly:
-
-```sql
-select slug, language from public.providers where slug = '<provider-slug>';
-update public.providers set language = 'es' where slug = '<provider-slug>';
-```
-
-The current implementation status and remaining untranslated surfaces are
-tracked in `docs/booking-i18n-status.md`.
+- `docs/booking-process.md` — canonical customer booking lifecycle.
+- `docs/backend-offline-interaction.md` — boundary between standalone and integrated behavior.
+- `docs/supabase-schema-catalog.md` — table/type mapping catalog.
+- `docs/ARCHITECTURE.md` — code organization.
+- `docs/booking-i18n-status.md` — English/Spanish public-flow coverage.

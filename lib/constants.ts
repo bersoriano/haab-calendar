@@ -59,4 +59,6 @@ export const weekdayShortFormatter = getWeekdayShortFormatter("en");
 export const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
 export const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.1em]";
 export const BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000;
+export const BOOKING_HOLD_EXTENSION_MS = 5 * 60 * 1000;
+export const BOOKING_HOLD_WARNING_MS = 2 * 60 * 1000;
 export const DEFAULT_STORAGE_KEY = "haab-calendar-dev-clean";

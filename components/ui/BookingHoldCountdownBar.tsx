@@ -11,6 +11,13 @@ export function BookingHoldCountdownBar({
   remainingMs,
   remainingRatio,
   helperDesktopHidden,
+  isOnline = true,
+  canExtend = false,
+  isExtending = false,
+  extensionUsed = false,
+  extensionMessage,
+  onExtend,
+  onChooseAnother,
   copy = defaultCopy,
   lang = "en",
 }: {
@@ -20,6 +27,13 @@ export function BookingHoldCountdownBar({
   remainingMs: number;
   remainingRatio: number;
   helperDesktopHidden?: boolean;
+  isOnline?: boolean;
+  canExtend?: boolean;
+  isExtending?: boolean;
+  extensionUsed?: boolean;
+  extensionMessage?: string | null;
+  onExtend?: () => void;
+  onChooseAnother?: () => void;
   copy?: VerticalCopy;
   lang?: Lang;
 }) {
@@ -57,18 +71,19 @@ export function BookingHoldCountdownBar({
         : isConfirmed
           ? `Your ${copy.booking} is confirmed and the temporary hold is complete.`
           : isExpired
-            ? copy.phrases.serviceUnavailableBody
+            ? t.public.expiredBody
             : "Finish your details before the temporary hold expires."
       : isCancelled
         ? t.public.holdInactiveBody
         : isConfirmed
           ? t.public.holdConfirmedBody
           : isExpired
-            ? copy.phrases.serviceUnavailableBody
+            ? t.public.expiredBody
             : t.public.holdFinishBody;
 
   return (
-    <div
+    <section
+      aria-label={lang === "en" ? `${copy.Booking} hold countdown` : t.public.holdRemaining}
       className={cn(
         "overflow-hidden px-0 py-0 transition-colors duration-300",
         isCancelled || isUrgent || isExpired
@@ -80,7 +95,16 @@ export function BookingHoldCountdownBar({
               : "text-[var(--ink)]",
       )}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      {!isOnline && !isConfirmed && !isCancelled ? (
+        <div
+          role="status"
+          className="mb-4 rounded-2xl border border-[#fcd34d] bg-[#fffbeb] px-4 py-3 text-[#92400e]"
+        >
+          <p className="font-semibold">{t.public.offlineTitle}</p>
+          <p className="mt-1 text-sm leading-5">{t.public.offlineBody}</p>
+        </div>
+      ) : null}
+      <div className="flex items-center justify-between gap-4">
         <div>
           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
             {lang === "en" ? `${copy.Booking} hold` : t.public.holdLabel}
@@ -92,16 +116,22 @@ export function BookingHoldCountdownBar({
           ) : null}
         </div>
         {!isConfirmed && !isCancelled ? (
-          <p
+          <div
+            role="timer"
+            aria-label={`${t.public.holdRemaining}: ${isExpired ? t.public.expired : formatCountdown(remainingMs)}`}
             className={cn(
-              "font-semibold tabular-nums",
+              "shrink-0 rounded-2xl px-4 py-2 text-center font-semibold tabular-nums ring-1 transition-colors",
               isExpired
-                ? "text-[0.8125rem] uppercase tracking-[0.12em]"
-                : "text-2xl tracking-[-0.04em]",
+                ? "bg-[#fff1f2] text-[0.8125rem] uppercase tracking-[0.12em] ring-[#fecdd3]"
+                : isUrgent
+                  ? "bg-[#fff1f2] text-3xl tracking-[-0.05em] ring-[#fecdd3] sm:text-4xl"
+                  : isWarning
+                    ? "bg-[#fffbeb] text-3xl tracking-[-0.05em] ring-[#fde68a] sm:text-4xl"
+                    : "bg-white/80 text-3xl tracking-[-0.05em] ring-black/5 sm:text-4xl",
             )}
           >
             {isExpired ? t.public.expired : formatCountdown(remainingMs)}
-          </p>
+          </div>
         ) : null}
       </div>
       <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
@@ -131,6 +161,45 @@ export function BookingHoldCountdownBar({
       >
         {helperText}
       </p>
-    </div>
+      {!isConfirmed && !isCancelled && isUrgent && !isExpired ? (
+        <div
+          aria-live="polite"
+          className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff7f8] px-4 py-4 text-[var(--ink)]"
+        >
+          <p className="font-semibold">{t.public.stillInterestedTitle}</p>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+            {canExtend || isExtending
+              ? t.public.stillInterestedBody
+              : extensionUsed
+                ? t.public.extensionUsed
+                : t.public.holdEndingCta}
+          </p>
+          {canExtend || isExtending ? (
+            <button
+              type="button"
+              disabled={!isOnline || isExtending}
+              onClick={onExtend}
+              className="mt-3 min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isExtending ? t.public.extendingHold : t.public.addFiveMinutes}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {extensionMessage ? (
+        <p role="status" aria-live="polite" className="mt-3 text-sm font-semibold text-[var(--accent-strong)]">
+          {extensionMessage}
+        </p>
+      ) : null}
+      {isExpired && onChooseAnother ? (
+        <button
+          type="button"
+          onClick={onChooseAnother}
+          className="mt-4 min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          {t.public.chooseAnotherTime}
+        </button>
+      ) : null}
+    </section>
   );
 }

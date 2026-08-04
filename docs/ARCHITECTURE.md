@@ -1,8 +1,8 @@
 # Core Architecture
 
-**Status:** current as of 2026-05-29. Documents how the codebase is organized after the monolith decomposition (Phases 0/1/3/4).
+**Status:** current as of 2026-08-04. Documents the main code organization and reuse seams.
 
-**Scope:** code/module organization and the reuse seams. For *behavior* (data model, booking lifecycle, availability rules, hold mechanism, concurrency, invariants) see `SYSTEM_REFERENCE.md`. For the decomposition roadmap and what's deferred see `docs/superpowers/plans/2026-05-29-monolith-decomposition-plan.md`.
+**Scope:** code/module organization and reuse seams. For the current public lifecycle, server boundaries, hold behavior, and failure states, see `docs/booking-process.md`. `SYSTEM_REFERENCE.md` contains deeper engine and local-mode details.
 
 ---
 
@@ -10,7 +10,7 @@
 
 This repo is the **parent/base** for future child projects. Children customize but must keep receiving upstream updates from this repo. The enabling rule: **core stays untouched by children; customization happens only through defined seams** (config injection, theming, and — later — component slots and feature flags). Decomposition exists to make that possible: reusable pieces must be importable independently, not welded into one component.
 
-The engine started as a single ~5,218-line client component. It has been split into layers so that:
+The engine started as a single large client component. It has been split into layers so that:
 - pure logic is testable and importable piece-by-piece,
 - presentation is reusable and themable,
 - persistence is isolated behind one swappable seam,
@@ -30,10 +30,10 @@ lib/                              # pure, framework-agnostic — NO React
   format.ts                       # time/date/duration labels, status & type tones
   store.ts                        # createEmptyStore, normalize*, pruneBookingHolds, sortBookings
   availability.ts                 # getAvailableSlots, isDateAvailable, overlapExists, *ForDate
-  holds.ts                        # getBookingHoldSelectionKey
+  holds.ts                        # hold selection, countdown, warning, and expiry helpers
   ics.ts                          # buildIcsContent, escapeIcsText
   booking-tokens.ts               # manage-token gen, lookup, URL builder, backfill
-  __tests__/                      # Vitest characterization tests (118) for the above
+  __tests__/                      # Vitest characterization tests for the above
 
 config/
   templates.ts                    # QUICK_START_TEMPLATES — per-child seed data
@@ -47,12 +47,16 @@ components/
     state/
       useModuleStore.ts           # persistence seam: hydrate/persist/multi-tab sync,
                                   #   activeStore derivation, commit actions, integratedMode
-  haab-booking-module.tsx         # orchestrator + remaining feature render/state (~4,232 lines)
+  haab-booking-module.tsx         # orchestrator + remaining feature render/state
 
 app/                              # Next.js routes (thin — just mount the module with props)
   page.tsx                        # adaptive surface (admin + public)
   public/[slug]/page.tsx          # public-only booking flow
   public/[slug]/manage/[token]/page.tsx  # manage existing booking via token
+  api/public/[verticalSegment]/[providerSlug]/
+    holds/route.ts                # create, refresh, extend, and release public holds
+    bookings/route.ts             # server-authoritative confirmation
+    manage/[token]/route.ts       # public self-service lookup/reschedule/cancel
 ```
 
 **Dependency direction:** `lib` → `lib` only (never imports React or `components`). `config` → `lib/types`. `components/ui` → `lib`. `components/booking` → `lib`. The monolith → everything below it. Routes → the monolith. This acyclic shape is what makes pieces independently importable.
@@ -78,33 +82,34 @@ Planned seams (Phase 5/6, not yet built): component **slot/override** props on t
 
 `useModuleStore({ injectedConfig, storageKey, onStoreChange, onBookingsChange })` owns all data state and returns `{ integratedMode, hydrated, store, actions }`. `actions` exposes `commitBookings`, `commitBookingHolds`, `releaseBookingHold`, `updateStandaloneStore`, `setStandaloneStore`, `readStandaloneStoreSnapshot`, `persistStandaloneStore`. The component's handlers call these; they never touch storage directly.
 
-This is the **single intended swap point for the Supabase migration** (`BACKEND_RECOMMENDATIONS.md`): replace the hook's internals (localStorage read/write/sync) with a network-backed, offline-first sync layer while keeping the same `{ store, actions }` contract. The offline-first invariant holds — the local store stays the read path; see `SYSTEM_REFERENCE.md` §8–§10.
+The hook remains the persistence boundary for standalone/demo state and the integrated module's in-memory shadow state. Canonical public routes now use Supabase-backed Route Handlers for booking-critical writes; they do not replace the standalone localStorage path.
 
 Two persistence modes both flow through the hook:
-- **standalone** (default; all three live routes) — store in `localStorage[storageKey]`, multi-tab sync via the `storage` event.
-- **integrated** (`injectedConfig` present) — store comes from config + `shadowBookings`/`shadowBookingHolds`; changes emit via callbacks; no localStorage writes. Canonical hierarchical public routes use this mode, and it remains the embedding/child reuse path — **keep it intact**.
+- **standalone** — store in `localStorage[storageKey]`, with multi-tab sync through the `storage` event.
+- **integrated** (`injectedConfig` present) — initial public data comes from the route resolver, while public holds/bookings/manage mutations are accepted by server Route Handlers and mirrored into `shadowBookings`/`shadowBookingHolds` after success. Canonical hierarchical public routes use this mode.
 
 ---
 
 ## 5. Testing
 
-`npm run test` (Vitest). 118 characterization tests under `lib/__tests__/` lock the behavior of the pure logic (`date`, `store`, `availability`, `ics`, `format`). They assert *current* behavior, not idealized correctness — treat a failure as "you changed behavior," then decide if that was intended.
+`npm run test` runs Vitest coverage across pure booking logic and selected render-level components. Tests assert current behavior; treat failures as a behavior change that must be understood, not merely updated.
 
-**Coverage gap:** React state/render flows (booking wizard, admin surfaces, modals) are **not** unit-tested. Verify those with a build + a live functional smoke on a canonical public route such as `/doctors/<slug>` (book → confirm → reschedule → cancel → hold expiry) and the admin route. `npm run build` + `npm run lint` are the other gates.
+The full orchestrated browser lifecycle is not covered by unit tests. Verify it with a production build and a live mobile smoke test on a canonical route: hold → offline/reconnect → warning/extend → confirm → ICS/QR → reschedule → cancel → expiry/release. See `docs/booking-process.md` §12.
 
 ---
 
 ## 6. Current state & what's next
 
-**Done (merged):** Phases 0/1/3/4 — `lib`/`config`/`components/ui` extraction, the `useModuleStore` hook, and the test net. Monolith 5,218 → 4,232 lines, behavior-preserving.
+**Done (merged):** Phases 0/1/3/4 — `lib`/`config`/`components/ui` extraction, the `useModuleStore` hook, and the test net. Canonical public routes also connect the shared module to Supabase-backed reads and booking-critical Route Handlers.
 
-**Deferred (Phase 5/6):** carving the remaining feature code out of `components/haab-booking-module.tsx` — the public booking flow (`renderPublicFlow` ~1,000 lines), admin surfaces, setup wizard, and modals — into feature components + headless hooks, then reducing the module to a thin orchestrator with a documented public API barrel. Rationale for deferral: high effort/risk, low marginal value toward the reuse goal (already met by the foundation), and best done incrementally during future feature work. Do each sub-step with its own reviewed step-plan + functional smoke.
+**Deferred (Phase 5/6):** carving the remaining feature code out of `components/haab-booking-module.tsx` — the public booking flow, admin surfaces, setup wizard, and modals — into feature components + headless hooks, then reducing the module to a thin orchestrator with a documented public API barrel. Do each sub-step with its own reviewed step-plan and functional smoke test.
 
 ---
 
 ## 7. Related docs
 
 - `SYSTEM_REFERENCE.md` — engine behavior, data model, rules, invariants (the ground truth for *what it does*).
+- `docs/booking-process.md` — current end-to-end public booking lifecycle and server boundaries.
 - `docs/superpowers/plans/2026-05-29-monolith-decomposition-plan.md` — full phased roadmap.
 - `docs/superpowers/plans/2026-06-06-backend-implementation-plan.md` — phased Supabase backend implementation plan.
 - `BACKEND_RECOMMENDATIONS.md` — Supabase migration target (slots into the `useModuleStore` seam).

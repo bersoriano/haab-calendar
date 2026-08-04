@@ -148,4 +148,34 @@ describe("shared booking components", () => {
       "Your appointment is confirmed and the temporary hold is complete.",
     );
   });
+
+  it("renders the warning action and offline recovery guidance in both languages", () => {
+    const english = renderToStaticMarkup(
+      <BookingHoldCountdownBar
+        isExpired={false}
+        remainingMs={90_000}
+        remainingRatio={0.15}
+        canExtend
+        isOnline={false}
+        copy={getVerticalCopy("professional", "en")}
+        lang="en"
+      />,
+    );
+    const spanish = renderToStaticMarkup(
+      <BookingHoldCountdownBar
+        isExpired={false}
+        remainingMs={90_000}
+        remainingRatio={0.15}
+        canExtend
+        copy={getVerticalCopy("professional", "es")}
+        lang="es"
+      />,
+    );
+
+    expect(english).toContain("Still interested?");
+    expect(english).toContain("You’re offline");
+    expect(english).toContain("Add 5 minutes");
+    expect(spanish).toContain("¿Aún le interesa?");
+    expect(spanish).toContain("Agregar 5 minutos");
+  });
 });

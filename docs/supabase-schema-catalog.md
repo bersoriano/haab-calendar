@@ -391,13 +391,17 @@ confirmation.
 | `start_time` | `time` | `BookingHoldRecord.startTime` | Appointment only. |
 | `end_time` | `time` | `BookingHoldRecord.endTime` | Appointment only. |
 | `expires_at` | `timestamptz` | `BookingHoldRecord.expiresAt` | DB uses timestamp; app record uses epoch ms. |
+| `allows_shared_capacity` | `boolean` | server-only capacity mode | True for event services with `max_spots`; maintained by trigger. |
+| `extension_count` | `smallint` | `BookingHoldRecord.extensionCount` | `0` or `1`; prevents repeated grace extensions. |
 | `created_at` | `timestamptz` | `BookingHoldRecord.createdAt` | Insert timestamp. |
 
 Important constraints and indexes:
 
-- Appointment holds cannot overlap for the same provider, date, and time range.
-- Full-day holds are unique for the same provider and date.
-- Expired holds are pruned before availability checks.
+- Non-capacity appointment holds cannot overlap for the same provider, date, and time range.
+- Non-capacity full-day holds are unique for the same provider and date.
+- Event services with `max_spots` share the occurrence until confirmed bookings plus active holds reach capacity; advisory transaction locks serialize the count check.
+- Availability checks ignore expired rows immediately. Supabase Cron physically deletes expired rows every minute.
+- `public.extend_public_booking_hold(uuid, uuid)` atomically grants one five-minute extension and is executable only by `service_role`.
 
 Usage example:
 
@@ -858,6 +862,7 @@ export type BookingHoldRecord = {
   endTime?: string;
   createdAt: string;
   expiresAt: number;
+  extensionCount?: number;
 };
 ```
 
@@ -866,8 +871,11 @@ Supabase usage:
 - Maps to `public.booking_holds`.
 - App uses `expiresAt` as epoch milliseconds.
 - Database uses `expires_at timestamptz`.
+- Database uses `extension_count smallint` to enforce a single five-minute grace extension.
 - Integrated public pages keep `ModuleStore.bookingHolds` in memory while the
   server row protects the selected slot across visitors.
+- Public hold status is rechecked after reconnect/visibility restoration, and
+  a Supabase Cron job removes expired rows every minute as physical cleanup.
 
 ### `ModuleStore`
 

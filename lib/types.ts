@@ -111,6 +111,7 @@ export type BookingHoldRecord = {
   endTime?: string;
   createdAt: string;
   expiresAt: number;
+  extensionCount?: number;
 };
 
 export type ModuleStore = {
@@ -174,6 +175,7 @@ export type BookingHold = {
   selectionKey: string;
   startedAt: number;
   expiresAt: number;
+  extensionCount: number;
   released: boolean;
 };
 

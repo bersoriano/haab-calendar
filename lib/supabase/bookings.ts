@@ -126,6 +126,7 @@ type BookingHoldRow = {
   start_time: string | null;
   end_time: string | null;
   expires_at: string;
+  extension_count?: number;
   created_at: string;
 };
 
@@ -161,6 +162,8 @@ export type ReleasePublicBookingHoldInput = {
   providerSlug: string;
   holdId: string;
 };
+
+export type PublicBookingHoldLookupInput = ReleasePublicBookingHoldInput;
 
 export type ManageBookingInput = {
   vertical: VerticalId;
@@ -299,6 +302,7 @@ function toBookingHoldRecord(row: BookingHoldRow): BookingHoldRecord {
     endTime: toTimeKey(row.end_time),
     createdAt: row.created_at,
     expiresAt: new Date(row.expires_at).getTime(),
+    extensionCount: row.extension_count ?? 0,
   };
 }
 
@@ -497,7 +501,7 @@ async function deleteExpiredHolds(supabase: SupabaseClient, providerId: string) 
     .from("booking_holds")
     .delete()
     .eq("provider_id", providerId)
-    .lt("expires_at", new Date().toISOString());
+    .lte("expires_at", new Date().toISOString());
 
   if (error) {
     throw new PublicBookingWriteError("Could not refresh booking holds.", 500, error);
@@ -701,7 +705,59 @@ export async function createPublicBookingHold(
     throw new PublicBookingWriteError("Could not hold that slot.", 500, error);
   }
 
-  return { hold: toBookingHoldRecord(data) };
+  return { hold: toBookingHoldRecord(data), serverNow: Date.now() };
+}
+
+export async function getPublicBookingHoldStatus(
+  supabase: SupabaseClient,
+  input: PublicBookingHoldLookupInput,
+) {
+  const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
+  await deleteExpiredHolds(supabase, provider.id);
+
+  const { data, error } = await supabase
+    .from("booking_holds")
+    .select(BOOKING_HOLD_SELECT)
+    .eq("provider_id", provider.id)
+    .eq("id", input.holdId)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle<BookingHoldRow>();
+
+  if (error) {
+    throw new PublicBookingWriteError("Could not refresh that hold.", 500, error);
+  }
+
+  return {
+    active: Boolean(data),
+    hold: data ? toBookingHoldRecord(data) : undefined,
+    serverNow: Date.now(),
+  };
+}
+
+export async function extendPublicBookingHold(
+  supabase: SupabaseClient,
+  input: PublicBookingHoldLookupInput,
+) {
+  const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
+  const { data: rawData, error } = await supabase.rpc("extend_public_booking_hold", {
+      p_provider_id: provider.id,
+      p_hold_id: input.holdId,
+    });
+
+  if (error) {
+    throw new PublicBookingWriteError("Could not extend that hold.", 500, error);
+  }
+
+  const data = rawData as BookingHoldRow[] | null;
+  const hold = data?.[0];
+  if (!hold) {
+    throw new PublicBookingWriteError(
+      "That temporary hold expired or was already extended. Choose the slot again.",
+      409,
+    );
+  }
+
+  return { hold: toBookingHoldRecord(hold), serverNow: Date.now() };
 }
 
 export async function releasePublicBookingHold(

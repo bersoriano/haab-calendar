@@ -1,296 +1,104 @@
 # Backend and Offline Interaction
 
-**Status:** current as of the first Supabase backend checkpoint.
+**Status:** current as of 2026-08-04.
 
-This document explains the design reasoning behind the backend work and how it relates to the existing offline/localStorage functionality. It is written as an implementation rationale, not a replacement for `docs/backend-implementation.md`.
+Haab Calendar deliberately keeps standalone local behavior separate from production booking authority. This document defines that boundary. See `docs/booking-process.md` for the complete customer lifecycle.
 
-## Short Answer
+## Two operating modes
 
-The offline code was not removed.
+### Standalone/demo mode
 
-The current backend work was built as a parallel foundation:
+When `HaabBookingModule` is mounted without a complete `injectedConfig`, `useModuleStore` uses browser localStorage.
 
-- The existing app still runs through `HaabBookingModule`.
-- The existing app still uses `components/booking/state/useModuleStore.ts`.
-- Standalone mode still reads from and writes to `localStorage`.
-- The new Supabase files do not replace the local store yet.
-- The public resolver can now hydrate canonical hierarchical URLs from the backend DTO, while `/public/[slug]` remains a standalone local demo route when no backend is configured.
+It supports:
 
-The intent is to migrate gradually, not to switch the app from offline to online in one risky step.
+- provider, service, and availability setup;
+- local bookings and holds;
+- hold pruning by local epoch time;
+- cross-tab synchronization through the browser `storage` event;
+- local reschedule/cancel and manage-token behavior.
 
-## Why The Backend Was Built This Way
+This mode is useful for development, demos, and embedding. It coordinates tabs sharing the same origin and browser profile, but it cannot prevent conflicts between separate devices.
 
-The current product already works as a local-first booking engine. That matters because the booking module has a lot of behavior tied to a single `ModuleStore` shape:
+### Integrated public mode
 
-- provider profile
-- services
-- weekly availability
-- bookings
-- booking holds
-- setup state
+Canonical `/{vertical}/{providerSlug}` routes resolve provider data from Supabase and inject a `ModuleStore` into the same UI.
 
-The safest backend path is to preserve that shape at the UI boundary. That is why the first public backend route returns a `ModuleStore`-compatible DTO instead of pushing raw database rows into the React component.
+In this mode:
 
-The backend was designed around three principles:
+- Supabase rows are authoritative for public bookings and holds;
+- public booking-critical writes go through Next.js Route Handlers;
+- server responses are mirrored into the module's shadow state;
+- localStorage is not proof of a confirmed booking;
+- database constraints/triggers decide conflicts and capacity;
+- the server `expires_at` timestamp controls hold validity.
 
-1. Keep the existing offline behavior intact.
-2. Add durable backend primitives without scattering Supabase calls through the UI.
-3. Move one capability at a time from local-only to server-backed.
+## Why the UI still uses `ModuleStore`
 
-## Existing Offline Flow
+Keeping one frontend shape prevents database column names and Supabase coupling from spreading across components. `lib/public-booking-resolver.ts` translates public-safe rows into the existing domain types.
 
-Offline behavior is still centered on:
+The integrated store may contain operational schedule projections, but it does not contain public customer details. Private booking lookup requires provider authentication or the customer's manage token.
 
-```txt
-components/booking/state/useModuleStore.ts
-```
+## What survives a lost connection
 
-In standalone mode, `useModuleStore` still does the following:
+While the page remains open, React keeps the current selection and entered details. The countdown continues from the last server-synchronized expiry.
 
-- starts with an empty local store
-- hydrates from `localStorage`
-- normalizes stored data
-- backfills missing manage tokens
-- persists store changes back to `localStorage`
-- listens for cross-tab `storage` events
-- commits booking changes locally
-- commits booking hold changes locally
-- releases local booking holds
+Offline behavior is intentionally conservative:
 
-That is the code path the current root route and public route still use.
+- the customer cannot extend the hold;
+- the customer cannot confirm;
+- the UI does not claim success;
+- reconnecting checks the hold before enabling actions again.
 
-Current routes still mount the module directly:
+If the hold expired while offline, reconnect changes the flow to the expired state. If the browser or device closes, the server row expires independently.
 
-```txt
-app/page.tsx
-app/public/[slug]/page.tsx
-app/public/[slug]/manage/[token]/page.tsx
-```
+This is recovery of an in-progress screen, not an offline booking queue. Haab does not enqueue a public confirmation and promise to submit it later because availability may change before connectivity returns.
 
-The canonical hierarchical public routes resolve provider/service slugs first and pass the Supabase DTO into the module. `/public/[slug]` still passes `requestedPublicSlug` into the module when the backend is unavailable, preserving the standalone local demo path without resolving old production URLs.
+## Abandonment
 
-## Existing Integrated Mode
+Explicit back/change/start-over actions release the active hold locally and on the server. A real page exit sends a best-effort keepalive release request.
 
-The module also already has an integrated mode.
+The release request is an optimization. It can fail when the device is offline or the process is terminated. Availability remains correct because all server reads and capacity checks ignore `expires_at <= now()`, and a scheduled cleanup removes expired rows physically.
 
-Integrated mode activates when `injectedConfig` includes:
+## Server/client reconciliation
 
-- provider
-- services
-- availability
+For integrated public bookings, the server wins for:
 
-In that mode:
+- whether a hold is active;
+- the hold expiry and extension count;
+- whether a slot conflicts;
+- whether an event has remaining capacity;
+- whether confirmation succeeded;
+- the stored booking status after reschedule/cancel.
 
-- the module does not hydrate from `localStorage`
-- provider, service, and availability data come from the parent route/app
-- bookings and holds are kept in shadow state inside the module
-- changes can bubble out through callbacks
+The client may preserve unsent form fields for convenience, but it must replace operational booking/hold state with the server response.
 
-This existing integrated mode is the intended bridge to Supabase.
+## Privacy boundary
 
-The backend route was shaped so it can eventually feed this mode:
+Standalone localStorage contains only data created in that browser. Integrated data is shared and therefore follows stricter rules:
 
-```ts
-<HaabBookingModule injectedConfig={response.store} />
-```
+- no raw customer booking list on a public page;
+- no direct public write grants to booking/hold tables;
+- no manage-token hashes in browser responses;
+- no service-role key in client code;
+- customer access to an existing booking requires the raw private manage token.
 
-That is why the backend returns frontend-friendly names like `fullName`, `businessName`, `publicSlug`, and `bookingType` instead of exposing raw database column names like `full_name`, `business_name`, `slug`, and `booking_type`.
+## Development rules
 
-## New Backend Flow
+When changing the public flow:
 
-The new backend work adds a public read route:
+1. Preserve standalone mode unless the request explicitly removes it.
+2. Do not fall back to local confirmation when an integrated server write fails.
+3. Keep database-to-domain mapping in server/resolver modules.
+4. Treat browser timers as display state, never as expiry authority.
+5. Exercise offline, reconnect, background resume, abandonment, expiry, and conflict behavior.
 
-```txt
-GET /api/public/providers/[slug]
-```
+## Verification
 
-That route:
+Run the automated checks from `docs/booking-process.md` and smoke-test both modes:
 
-1. Receives a public slug.
-2. Reads from public-safe Supabase views.
-3. Maps provider and services into the existing `ModuleStore` shape.
-4. Returns empty `bookings` and `bookingHolds` arrays.
-5. Includes metadata for timezone and booking window.
-
-It deliberately does not expose:
-
-- provider email
-- raw bookings
-- raw holds
-- client names
-- client emails
-- client phone numbers
-- manage token hashes
-- booking events
-
-This keeps public reads useful without making private operational data public.
-
-## Public Route Migration Note
-
-Canonical hierarchical public routes now consume the public resolver and backend DTO when the backend is available. The standalone `/public/[slug]` route intentionally remains local/demo-only.
-
-Moving the remaining public booking-write flows from local state to Supabase affects:
-
-- loading states
-- not-found states
-- fetch-failed states
-- local demo behavior
-- how setup data appears on the public page
-- how existing localStorage demo data is treated
-
-Those are UI and product behavior changes, not just backend foundation work.
-
-The first checkpoint intentionally stopped before that line. It created the backend contract first, then verified the app still builds and the offline behavior is untouched.
-
-## How The Two Modes Should Coexist
-
-The intended coexistence model is:
-
-| Scenario | Data Source | Notes |
-| --- | --- | --- |
-| Local demo / offline prototype | `localStorage` through `useModuleStore` standalone mode | Current behavior remains available. |
-| Public production booking page | Supabase public DTO passed into `HaabBookingModule` integrated mode | Implemented for canonical hierarchical provider/service URLs. |
-| Provider admin production app | Supabase authenticated reads/writes protected by RLS | Later phase. |
-| Public booking writes | Server-authoritative endpoints or private RPCs | Later phase; never direct public table inserts. |
-
-This keeps offline functionality useful while the production backend is added incrementally.
-
-## Why Backend Reads Return A `ModuleStore`
-
-Returning `ModuleStore` is intentional.
-
-The booking UI already knows how to render and validate from this shape:
-
-```ts
-type ModuleStore = {
-  provider: ProviderInfo;
-  services: Service[];
-  availability: WeeklyAvailability;
-  bookings: BookingRecord[];
-  bookingHolds: BookingHoldRecord[];
-  setupComplete: boolean;
-};
-```
-
-If the API returned raw database rows, every UI caller would need to know how to translate backend fields. That would spread backend coupling across the app.
-
-Instead, the translation happens once in:
-
-```txt
-app/api/public/providers/[slug]/route.ts
-```
-
-That route maps:
-
-| Database | Frontend |
-| --- | --- |
-| `full_name` | `fullName` |
-| `business_name` | `businessName` |
-| `slug` | `publicSlug` |
-| `booking_type` | `bookingType` |
-| `duration_minutes` | `durationMinutes` |
-
-This preserves the existing component contract.
-
-## Why Public Reads Exclude Bookings And Holds
-
-The offline app stores bookings and holds in the same local `ModuleStore`, but the backend cannot expose those same arrays publicly.
-
-In localStorage mode, all data belongs to the current browser session. There is no privacy boundary because the data is already local.
-
-In backend mode, bookings and holds are shared server data. Raw rows can include private client details or reveal availability patterns. That is why the first public DTO returns:
-
-```ts
-bookings: []
-bookingHolds: []
-```
-
-Future public availability should come from computed availability endpoints, not raw booking or hold rows.
-
-## What Happens To Holds Later
-
-Today, offline holds are local:
-
-- a hold is created in the browser
-- it has a local expiry timer
-- it blocks the local booking flow
-- it can be released locally
-
-That works offline, but it cannot prevent two different devices from booking the same slot.
-
-The planned backend hold flow is:
-
-1. The client asks the server to hold a slot.
-2. The server re-checks availability.
-3. The server takes a transaction-safe slot lock or equivalent protection.
-4. The server creates a `booking_holds` row with `expires_at`.
-5. The UI countdown uses the server expiry.
-6. If the hold fails, the UI refreshes availability.
-
-That will replace public production hold authority, but the local hold code can remain for local demo/offline mode.
-
-## What Happens To Booking Confirmation Later
-
-Today, offline confirmation writes a booking into the local store.
-
-The planned backend confirmation flow is:
-
-1. The client submits details with a valid `hold_id`.
-2. The server verifies the hold is unexpired and matches the slot.
-3. The server checks there is no confirmed booking conflict.
-4. The server creates a booking row with snapshot fields.
-5. The server stores only a hashed manage token.
-6. The server records a booking event.
-7. The server returns the confirmed booking DTO.
-
-The public UI should only show a confirmed booking after this server transaction succeeds.
-
-For local demo mode, local confirmation can still exist as a separate mode.
-
-## What Should Not Happen
-
-The migration should avoid these mistakes:
-
-- Do not delete `useModuleStore`.
-- Do not remove localStorage standalone mode.
-- Do not make public booking pages directly select raw `bookings` or `booking_holds`.
-- Do not expose `manage_token_hash` to the browser.
-- Do not make the UI depend on raw Supabase table column names.
-- Do not optimistically show a server-backed booking as confirmed before the server commits it.
-- Do not mix local demo state and production backend state without a clear configuration switch.
-
-## Current Verification
-
-After adding the backend foundation, these checks passed:
-
-```bash
-npm run lint
-npm run test
-npx tsc --noEmit
-npm run build
-git diff --check
-```
-
-The existing Vitest suite still passes 136 tests, which is a useful signal that the pure offline booking logic was not disturbed.
-
-## Current Blockers
-
-The database migration has not been applied locally in this environment because:
-
-- Docker is not installed.
-- No local Supabase database is running at `127.0.0.1:54322`.
-- Supabase database types require either a running local database or a linked remote project.
-
-The schema is written and ready, but it still needs to be applied and tested against a real Supabase database.
-
-## Recommended Next Step
-
-The next step should be small and reversible:
-
-1. Keep localStorage standalone mode as-is.
-2. Continue replacing booking-critical public writes with server-authoritative endpoints.
-3. Pass the returned `store` into `HaabBookingModule` with `injectedConfig`.
-4. Add clear loading, not-found, and fetch-failed states.
-5. Keep local demo/offline mode behind a deliberate switch.
-
-That step will prove the backend read model can power the public booking UI without removing the offline functionality.
+- standalone local booking with refresh and cross-tab behavior;
+- canonical integrated booking with server hold and confirmation;
+- offline/online transition during details;
+- expired hold returning to availability;
+- manage-link reschedule and cancellation.

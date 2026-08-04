@@ -1,10 +1,10 @@
 # Haab Calendar — System Reference
 
-**Purpose:** A single, factual reference for how this booking module behaves today. Written so a human can build a mental model in one read and an LLM can use it as ground truth when designing the API, the Supabase migration, or any new feature that touches persistence.
+**Purpose:** A detailed reference for the booking engine's data model, availability rules, and standalone behavior. For the current end-to-end public flow and Supabase server lifecycle, use `docs/booking-process.md` as the canonical reference.
 
-**Source of truth:** the booking engine, now split across `components/haab-booking-module.tsx` (orchestrator + feature render/state, ~4,232 lines), `lib/*` (pure domain logic + types + constants), `config/*` (seed data), `components/ui/*` (presentational primitives), and `components/booking/state/useModuleStore.ts` (persistence). See `docs/ARCHITECTURE.md` for the module layout. When this document and the code disagree, the code wins — please open a PR to fix this document.
+**Source of truth:** the booking engine, now split across `components/haab-booking-module.tsx` (orchestrator + feature render/state), `lib/*` (pure domain logic + types + constants), `config/*` (seed data), `components/ui/*` (presentational primitives), and `components/booking/state/useModuleStore.ts` (persistence). See `docs/ARCHITECTURE.md` for the module layout. When this document and the code disagree, the code wins — please open a PR to fix this document.
 
-**Note (2026-05-29):** the engine was decomposed out of its original single 5,218-line component. **Behavior is unchanged** — every rule, lifecycle, and invariant in this document still holds; only the file organization changed. Where this doc cites the monolith, the logic may now live in `lib/`.
+**Status note (2026-08-04):** the original local engine has since gained canonical Supabase-backed public routes, server-authoritative holds and writes, customer manage links, event capacity, and resilient hold recovery. Sections explicitly labeled planned or future are historical design context; `docs/booking-process.md` records shipped public behavior.
 
 **Scope of this document:** the booking engine itself. Visual styling, individual screen layouts, and per-surface UI choices are out of scope and live in `UX_RECOMMENDATIONS.md` / `liquid-glass-style-guide.md`.
 
@@ -12,25 +12,25 @@
 
 ## 1. The Mental Model in One Paragraph
 
-Haab Calendar is a self-contained booking engine that ships as one React client component. It powers **two distinct products** — a public booking experience for clients and an admin experience for the provider — backed by a shared engine. It runs in two interchangeable persistence modes (browser-local or parent-controlled) and presents two surfaces (provider admin and public booking). A provider configures services and a weekly availability window; clients pick a service and either an appointment slot or a full-day reservation; a 10-minute hold reserves the slot while the client fills out details; on confirmation the hold becomes a booking. Bookings can be rescheduled or cancelled. Today everything is stored locally in the browser. Tomorrow the same engine will be backed by Supabase. The path forward is **offline-first**: the local store is always the read path, the server is a sync target.
+Haab Calendar powers **two distinct products** — a public booking experience for customers and an admin experience for providers — through a shared engine. Standalone mode persists a complete demo workflow in browser localStorage. Canonical public routes run in integrated mode: Supabase is authoritative for holds, confirmation, rescheduling, cancellation, publication, and cross-device conflicts, while the client keeps only the state needed to render the active flow.
 
 **Two cross-cutting splits structure this document.** Read both before designing the API:
 
 - **Public product vs. Admin product** (§ 4) — what each audience can do, what data each can see, what auth each needs.
-- **Offline (today) vs. Online (planned)** (§ 8 vs § 9, § 10 split) — how persistence and concurrency work in each world.
+- **Standalone vs. integrated** — local demo persistence and production server authority are deliberately separate.
 
 ---
 
-## 1.5. Implementation Status (Verified 2026-05-29)
+## 1.5. Implementation Status (Verified 2026-08-04)
 
-The doc deliberately documents the **engine as it should be designed**, which sometimes runs ahead of what's shipped. Use this table to know which parts you can grep for in the codebase today vs which parts are spec'd in `docs/superpowers/specs/` and the recommendation docs.
+This table distinguishes the current product from historical design material elsewhere in this document.
 
 | Feature                                                          | Status today                                                                                          |
 |------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
 | Standalone localStorage persistence (read/write/multi-tab sync)  | ✅ Shipped — `components/booking/state/useModuleStore.ts`, key `haab-calendar-dev-clean`               |
 | Integrated mode (`injectedConfig` + callbacks)                   | ✅ Shipped — used by canonical hierarchical public routes and preserved for embedding/child reuse       |
 | Adaptive surface (`/`) and public-only surfaces                  | ✅ Shipped — canonical `/{vertical}/{providerSlug}` plus standalone demo `/public/[slug]`               |
-| 4-step booking flow with 10-min hold                             | ✅ Shipped                                                                                             |
+| 4-step booking flow with server-authoritative 10-min hold        | ✅ Shipped — one optional 5-minute grace extension, reconnect checks, immediate logical expiry, and scheduled cleanup |
 | Reschedule and cancel from admin and from in-session success screen | ✅ Shipped                                                                                          |
 | `BookingRecord.manageToken` field                                | ✅ Shipped — `lib/types.ts`                                                                            |
 | `lib/booking-tokens.ts` (token gen, lookup, URL builder, backfill) | ✅ Shipped — `lib/booking-tokens.ts`                                                                 |
@@ -38,13 +38,13 @@ The doc deliberately documents the **engine as it should be designed**, which so
 | `manageBookingToken` prop on the module + lookup state machine   | ✅ Shipped                                                                                             |
 | Mobile-first public booking flow                                 | ✅ Shipped (2026-05-29)                                                                                |
 | Core decomposition (`lib/`, `config/`, `components/ui/`, `useModuleStore`) | ✅ Shipped (2026-05-29) — see `docs/ARCHITECTURE.md`. Feature components/orchestrator (Phase 5/6) deferred. |
-| Test framework                                                   | ✅ Vitest — 136 characterization tests in `lib/__tests__/` (`npm run test`). React render flows untested. |
+| Test framework                                                   | ✅ Vitest — domain and component coverage under `lib/__tests__/` and `components/**/__tests__/` (`npm test`) |
 | Inline error on reschedule slot conflict                         | ✅ Shipped — folded into the manage-booking work                                                       |
-| Supabase backend, network sync, online concurrency               | ❌ Not built yet — see `BACKEND_RECOMMENDATIONS.md`. The `useModuleStore` hook is the intended swap point. |
-| Provider auth                                                    | ❌ Not built — admin surface is unauthenticated, gated only by URL                                     |
+| Supabase backend and online booking concurrency                  | ✅ Shipped for canonical public routes — Route Handlers and database constraints own booking-critical writes |
+| Provider auth                                                    | ✅ Shipped — provider dashboard data is scoped to the authenticated owner                              |
 | Email / SMS notifications, payments                              | ❌ Out of scope                                                                                        |
 
-When the doc says **"planned"** below, it means there is a written spec or recommendation for it but no code yet. When the doc speaks in the present tense without that word, it describes shipped behaviour.
+Sections explicitly marked historical describe earlier architecture proposals. Current public behavior is defined in `docs/booking-process.md`.
 
 ---
 
@@ -81,7 +81,8 @@ type Service = {
   bookingType: "appointment" | "full-day";
   durationMinutes?: number;  // required for "appointment", ignored for "full-day"
   description: string;
-  capacity?: string;      // human-readable string ("Max 4 players"), NOT enforced
+  capacity?: string;      // human-readable label
+  maxSpots?: number;      // enforced shared capacity for event services
   cost?: string;          // human-readable string, NOT enforced
   notes?: string;
 };
@@ -110,8 +111,7 @@ type BookingRecord = {
   status: "confirmed" | "rescheduled" | "cancelled";
   createdAt: string;          // ISO 8601
   updatedAt: string;          // ISO 8601
-  // Planned addition (manage-booking feature):
-  // manageToken: string;     // 22-char base64url, unique per booking
+  manageToken: string;    // raw token exists only in the customer's active response/session
 };
 
 type BookingHoldRecord = {
@@ -123,6 +123,7 @@ type BookingHoldRecord = {
   endTime?: string;       // undefined for "full-day"
   createdAt: string;      // ISO 8601
   expiresAt: number;      // epoch ms — DO NOT use ISO here; the prune logic compares numbers
+  extensionCount?: number; // 0 or 1; integrated holds allow one grace extension
 };
 ```
 
@@ -161,7 +162,7 @@ In integrated mode, the parent application is the source of truth for provider/s
 
 The surface mode never changes after mount.
 
-**Note on internal naming:** the code's `Surface` type is `"management" | "public"` (line 19 of the module). This document uses **"admin"** as a friendlier synonym for `"management"` because that's what users would call it. When grepping the code, search for `surface === "management"`.
+**Note on internal naming:** the code's `Surface` type is `"management" | "public"`. This document uses **"admin"** as a friendlier synonym for `"management"` because that's what users would call it. When grepping the code, search for `surface === "management"`.
 
 ---
 
@@ -177,8 +178,7 @@ The same React component renders two products with different audiences, differen
 | Surface mode (§ 3b)          | `public-only`, or the `public` half of `adaptive`          | The `management` half of `adaptive`                           |
 | Routes (today)               | `/{vertical}/{providerSlug}`, `/{vertical}/{providerSlug}/{serviceSlug}`, `/{vertical}/{providerSlug}/manage/{token}` | `/` (adaptive — admin tabs) |
 | Tabs / screens               | Booking flow (steps 1–4) + success/manage screen           | Setup wizard, Dashboard, Bookings, Calendar, Services, Settings |
-| Auth (today)                 | None — anyone with the URL                                 | None — anyone with the URL (intentional gap until Supabase)   |
-| Auth (planned)               | None for browsing; manage token for editing own booking    | Provider login required                                       |
+| Auth (today)                 | None for browsing; private manage token for editing own booking | Provider login required                                   |
 | Data the user should see     | Provider info, services, availability, own booking         | All bookings, all holds, all services, full availability      |
 | Data the user must NOT see   | Other clients' contact info, internal notes, full booking list | n/a (admin sees everything for this provider)              |
 
@@ -192,11 +192,11 @@ What each product can do today (✓ exposed, ✗ not allowed, – engine support
 | View calendar of available slots                   |   ✓   |   ✓   |
 | Create a hold                                      |   ✓   |   –   |
 | Create a booking from a hold                       |   ✓   |   –   |
-| See own booking on success screen (same session)   |   ✓ (until tab closes) | ✓ (sees all) |
-| View own booking after page reload / navigation     |   ✗ today; ✓ (via manage token, planned) | ✓ (sees all) |
+| See own booking on success screen                  |   ✓   | ✓ (sees all) |
+| View own booking after page reload / navigation    |   ✓ via private manage URL | ✓ (sees all) |
 | View other clients' bookings                       |   ✗   |   ✓   |
-| Reschedule a booking                               |   ✓ same-session only today; ✓ (via manage token, planned) | ✓ (any) |
-| Cancel a booking                                   |   ✓ same-session only today; ✓ (via manage token, planned) | ✓ (any) |
+| Reschedule a booking                               |   ✓ via success screen or manage URL | ✓ (any) |
+| Cancel a booking                                   |   ✓ via success screen or manage URL | ✓ (any) |
 | Edit a booking's client info                       |   ✗   |   –   |
 | Run the setup wizard                               |   ✗   |   ✓   |
 | Create / edit / delete services                    |   ✗   |   ✓   |
@@ -206,13 +206,13 @@ What each product can do today (✓ exposed, ✗ not allowed, – engine support
 | Get a publishable booking URL                      |   ✗   |   ✓ (Settings tab) |
 | Search / filter bookings                           |   ✗   |   ✓   |
 
-**Why "same-session only today":** the public success screen is gated on `bookingFlow.successBookingId`, which is in-memory React state. Reschedule/cancel buttons live there. The moment the user navigates or reloads, the buttons are unreachable. The manage-token feature exists precisely to give the public a permanent re-entry point — but that re-entry point is **planned, not yet shipped**.
+The raw manage token is returned to the customer after confirmation and embedded in the private manage URL. The database stores only its hash. Reloading or reopening that URL performs a server lookup and restores the customer's self-service controls without requiring an account.
 
 ### 4c. Why this matters for the API
 
 A single set of endpoints that does not respect the split will leak admin data to public callers. The classic failure mode: the public booking page needs to know which slots are taken, so the API helpfully returns `GET /bookings` — and now the entire client list is on the wire. The right shape is two products with two endpoint surfaces sharing one database.
 
-Recommended minimum endpoint shape (sketch — fully specified during the Supabase migration design):
+Current endpoint responsibilities, shown in product-neutral form:
 
 **Public product (no auth required for reads; manage token required for writes against an existing booking)**
 
@@ -349,9 +349,9 @@ Given `(dateKey, service, availability, bookings, bookingHolds)`:
 
 Slots are always aligned to `service.durationMinutes` from `daySchedule.startTime`. There is **no smaller granularity**: a 60-min service offered 9:00–17:00 produces slots at 9:00, 10:00, …, 16:00 (last possible). The slot spacing equals the duration. This means changing a service's duration silently changes the slot grid for all future days.
 
-### Capacity is informational
+### Capacity labels and enforced event inventory
 
-`Service.capacity` and `BookingRecord.capacitySnapshot` are **free-form strings** ("Max 4 players", "Fits up to 100 guests"). They are displayed to users but the engine does **not** enforce them. One booking on `(service, date, time)` blocks the slot regardless of capacity. If the API needs real capacity (multi-attendee per slot), it will require a schema change — flagging now because LLMs reading this might assume otherwise.
+`Service.capacity` and `BookingRecord.capacitySnapshot` remain human-readable labels. For services in the events vertical with numeric `maxSpots`, the integrated backend additionally enforces shared occurrence capacity. Database triggers count active bookings and unexpired holds; non-event and legacy services retain exclusive slot/day behavior.
 
 ---
 
@@ -368,17 +368,21 @@ BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000   // 10 minutes
 | User advances from step 2 → step 3    | New `BookingHoldRecord` written to store; `expiresAt = now + 10min`                |
 | User advances from step 3 → step 4    | On successful `confirmBooking`, hold is removed from store                         |
 | User goes back from step 3 to step 2 | Existing hold is **released** (removed from store)                                  |
+| User accepts “Still interested?”      | Server atomically adds five minutes; this can happen only once per hold             |
+| Browser truly leaves the page         | A `pagehide` keepalive request releases the server hold when possible                |
+| Browser reconnects or returns visible | Client re-reads the hold and server time; an expired hold becomes expired immediately |
 | Per-second client timer fires          | If `now >= hold.expiresAt`, hold is removed and `bookingHold.released = true`      |
 | Any read of holds                     | `pruneBookingHolds` filters out anything with `expiresAt <= now` before use        |
+| Database cleanup job runs             | Supabase Cron deletes all expired rows every minute                                 |
 
-`pruneBookingHolds` runs everywhere holds are consumed (slot computation, validation, render). Even if the timer doesn't fire (tab backgrounded, browser asleep), the next read filters expired holds out. Persistence is best-effort cleanup; correctness comes from prune-on-read.
+`pruneBookingHolds` runs everywhere holds are consumed (slot computation, validation, render). Integrated availability and confirmation queries also require `expires_at > now()`, and hold creation deletes stale rows before checking database conflict constraints. Even if a browser timer is throttled or the visitor is offline, the database timestamp frees the slot for the next visitor without waiting for client cleanup. Supabase Cron is a physical-storage backstop, not the source of availability correctness.
 
 ### Hold record vs. hold UI state
 
 There are **two** hold concepts in the code:
 
-- `BookingHoldRecord` — persisted in `store.bookingHolds`, observable by everyone (including other tabs via the `storage` event). This is the authoritative reservation.
-- `bookingHold: BookingHold` — local React state on the public flow side, holds `{id, selectionKey, startedAt, expiresAt, released}` for the in-flight UI countdown. This is just the user's "I am currently holding this slot" pointer.
+- `BookingHoldRecord` — persisted in local mode and mirrored from the Supabase row in integrated mode. The server row and its `expires_at` value are authoritative online.
+- `bookingHold: BookingHold` — local React state on the public flow side, holds `{id, selectionKey, startedAt, expiresAt, extensionCount, released}` for the in-flight UI countdown. This is just the user's "I am currently holding this slot" pointer.
 
 The two share the same `id`. The record is the source of truth; the UI state is convenience.
 
@@ -386,9 +390,9 @@ The two share the same `id`. The record is the source of truth; the UI state is 
 
 In the current localStorage world, holds created in tab A are observable in tab B via the `storage` event. The listener at `~line 1366` re-hydrates the in-memory store on any cross-tab write. Tab B will not let the user select a slot that tab A is holding. This works because they share the same `localStorage`.
 
-### Cross-device hold visibility (online — future)
+### Cross-device hold visibility (online)
 
-Cross-device hold visibility requires the server. The Supabase plan (`BACKEND_RECOMMENDATIONS.md`) puts holds in their own table with `expires_at` and uses a Realtime subscription so device B sees device A's hold within seconds. A scheduled DELETE (cron / edge function) cleans expired rows. Until that lands, two devices can race and both create overlapping bookings; the last write wins because there is no server-side uniqueness check.
+Integrated public pages create holds through the server route. Supabase exclusion/unique constraints prevent overlapping non-capacity holds, event capacity triggers count only unexpired holds, and public schedule reads expose only rows with `expires_at > now()`. The countdown uses the returned server time to avoid treating the browser clock as authority.
 
 ---
 
@@ -436,9 +440,9 @@ The `storage` event in browsers fires only in *other* tabs (not the writer's own
 
 ---
 
-## 9. Persistence Path — Online (Planned Behaviour)
+## 9. Persistence Path — Online (Historical Design Notes)
 
-Plan as documented in `BACKEND_RECOMMENDATIONS.md`. Not yet implemented. This section is the spec for the API to follow so it slots into the existing engine without disturbing the offline path.
+This section records the earlier synchronization proposal from `BACKEND_RECOMMENDATIONS.md`; it is not the current public booking implementation. Canonical public routes now use request/response server authority and do not queue offline booking confirmation. See `docs/booking-process.md` and `docs/backend-offline-interaction.md` for shipped behavior.
 
 ### Hard requirements driven by the offline-first principle
 
@@ -512,18 +516,18 @@ The only concurrency is between browser tabs in the same browser, sharing one `l
 - **Write:** localStorage is single-process (per browser). Tab A's write is atomic from the perspective of tab B, which observes it via the `storage` event.
 - **No locks.** The `commitBookings` re-validation is the only protection against double-booking. If two tabs independently pass validation in the same JavaScript turn, they will both write — but in practice the JS event loop and localStorage's synchronous semantics make this nearly impossible across tabs (each tab's commit is one synchronous block).
 
-### Online (future)
+### Online (current integrated behavior)
 
-Concurrency widens dramatically — multiple devices, no shared lock, network latency between read and write.
+Concurrency spans multiple devices and is enforced by the database-backed public write path.
 
-- **Holds become the lock.** A hold exclusively reserves a slot during the user's data-entry phase. Active-hold uniqueness cannot rely on a normal partial unique index with `now()` because that predicate is volatile; use a transaction-scoped slot lock (for example, advisory locks keyed by provider/service/date/time) or another active-hold representation that can be uniquely constrained.
-- **Confirm becomes a server transaction.** "Convert this hold into a booking" is one DB transaction that validates the hold is unexpired and the slot is still free, then upserts the booking and deletes the hold.
-- **Reschedule needs the same treatment.** It is "create a new hold at the new slot, convert it, release the old slot" as a server transaction. The reschedule conflict fix in the manage-booking spec catches the *client-side* race; the server must catch it too.
+- **Holds reserve availability.** Exclusive appointment/full-day constraints and advisory-locked shared event capacity prevent incompatible active holds.
+- **Confirmation is server-authoritative.** The server validates the unexpired hold, inserts the booking under database conflict/capacity protection, then consumes the hold.
+- **Reschedule is server-authoritative.** The manage endpoint revalidates the requested destination and returns `409` when it is no longer available.
 - **Cancellation is idempotent.** Setting `status = cancelled` twice is fine; the second one is a no-op.
 
 ### Reconciliation policy
 
-When the local store and the server disagree (likely scenarios: client made a change offline, server has a newer change for the same booking), the conservative default is **server wins** for everything except cancellation and except changes the local user just made within the last few seconds. Cancellation should always win regardless of clock skew (you cannot un-cancel a booking your client believes is cancelled). Detailed reconciliation rules are deferred to the Supabase migration design.
+For integrated routes, the server wins for hold validity, expiry, conflicts, capacity, confirmation, and manage-link mutations. The UI may retain unsent form text during a reconnect, but it never treats an offline confirmation as queued or successful.
 
 ---
 
@@ -544,16 +548,16 @@ If `/public/[slug]` is hit with a slug that doesn't match the local store's `pro
 
 ---
 
-## 12. Things That Look Like Features But Aren't
+## 12. Product Boundaries
 
-When designing the API, do not assume any of these exist:
+These boundaries apply to the current product:
 
-- **Authentication.** There is no provider login. Anyone with the URL can access the admin in `adaptive` mode. The `provider.email` field is just a contact field, not a login. Auth is part of the Supabase migration scope, not shipped today.
-- **Multi-tenancy.** One deployment serves one provider. The data model has no `provider_id` because there is only one provider per browser. Multi-tenancy comes from the Supabase migration where `provider_id` becomes a column.
-- **Capacity enforcement.** See § 6. Capacity is a string, not a count.
+- **Authentication.** Canonical provider administration requires Supabase Auth. Public visitors need no account; a private manage token authorizes access to one booking.
+- **Multi-tenancy.** Supabase rows are provider-scoped and authenticated administration is restricted by ownership. Standalone local mode remains one provider per browser store.
+- **Capacity enforcement.** `Service.capacity` is display text. Event services with numeric `maxSpots` enforce capacity across active bookings and unexpired holds.
 - **Cost enforcement.** Cost is a string, not a number, and no payments are processed. The cost field is informational text shown on confirmations.
 - **Email/SMS notifications.** Nothing is sent. The success screen offers a `.ics` download and a QR code, period.
-- **Timezones.** All dates and times are in the browser's local timezone. There is no timezone field anywhere. This is a known limitation (`UX_RECOMMENDATIONS.md` § 1.5).
+- **Timezones.** Integrated providers store a timezone and booking-window metadata. The domain store still represents selected dates as local `YYYY-MM-DD` keys and times as `HH:MM`, so timezone conversion belongs at the server/data boundary.
 - **Past-date editing.** Slots and dates in the past are not bookable, but a past booking can still be cancelled or "rescheduled" (the modal will not stop you, even though the result is nonsensical).
 - **Pagination.** All bookings load in one go. Fine at thousands; will need pagination at tens of thousands.
 - **Soft-delete.** Cancellation flips a status flag — the row is still there. There is no hard-delete operation.
@@ -567,13 +571,14 @@ The ones that have actually been thought through. Listed so the API does not reg
 ### Hold races
 
 - **Same-tab race:** impossible in the single-threaded JS event loop.
-- **Cross-tab race (today):** mitigated by `readStandaloneStoreSnapshot()` re-validation on commit, plus the `storage` event broadcasting writes between tabs.
-- **Cross-device race (future):** must be solved server-side. Holds need a unique constraint on `(service_id, date, start_time)` for non-expired holds. The atomic "confirm-as-transaction" prevents double-booking even when two clients raced past their local validation.
+- **Cross-tab standalone race:** mitigated by `readStandaloneStoreSnapshot()` re-validation on commit, plus the `storage` event broadcasting writes between tabs.
+- **Cross-device integrated race:** protected by database exclusion/unique constraints for exclusive slots and advisory-locked capacity triggers for shared events. Confirmation still revalidates the hold and availability on the server.
 
 ### Hold expiry mid-flow
 
-- Timer fires per second; on expiry, the hold record is removed and `bookingHold.released = true`.
-- If the user clicks Confirm after expiry: `ignoredHoldId` is set to `undefined` (because `released === true`), the validation re-checks availability without ignoring this user's hold, and either succeeds (the slot is still free) or fails with a "no longer available" error. There is no auto-renewal.
+- The visible timer updates every second, but server time and `expires_at` decide validity.
+- Integrated confirmation requires the matching hold to remain active; an expired hold cannot be bypassed even if the slot is otherwise still free.
+- During the final two minutes, the visitor may accept one server-enforced five-minute grace extension. There is no repeated auto-renewal.
 
 ### Past dates
 
@@ -618,9 +623,9 @@ The ones that have actually been thought through. Listed so the API does not reg
 
 - The live provider slug is `publicSlug || slugify(businessName || fullName || "haab-calendar")`. A provider who has never customised the slug still gets a working canonical public link. The backend should preserve this fallback or generate the slug server-side when the field is empty.
 
-### Reschedule modal silent-fail on stale slot (today)
+### Reschedule conflict after selection
 
-- `confirmReschedule` (line 2467) early-returns silently when the chosen slot is no longer in `getAvailableSlots`. The modal stays open with no error, leaving the user confused. The manage-booking spec includes the fix (an inline error on `RescheduleState.error`); until that ships, this is a known UX bug an API designer should be aware of because the API layer will see the same race.
+- The manage UI shows an inline error when the selected destination becomes unavailable. Integrated mode also relies on the server `409` response because another device can win the slot after it was rendered.
 
 ---
 
