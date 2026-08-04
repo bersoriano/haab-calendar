@@ -400,6 +400,15 @@ function isExclusionViolation(error: unknown) {
   return isPlainRecord(error) && error.code === "23P01";
 }
 
+function isCapacityViolation(error: unknown) {
+  return (
+    isPlainRecord(error) &&
+    error.code === "23514" &&
+    typeof error.message === "string" &&
+    error.message.includes("Event capacity is full")
+  );
+}
+
 async function getPublishedProvider(
   supabase: SupabaseClient,
   vertical: VerticalId,
@@ -679,9 +688,11 @@ export async function createPublicBookingHold(
     .single<BookingHoldRow>();
 
   if (error) {
-    if (isUniqueViolation(error) || isExclusionViolation(error)) {
+    if (isUniqueViolation(error) || isExclusionViolation(error) || isCapacityViolation(error)) {
       throw new PublicBookingWriteError(
-        "That time is currently being held. Choose another slot.",
+        isCapacityViolation(error)
+          ? "That event just reached capacity. Choose another date."
+          : "That time is currently being held. Choose another slot.",
         409,
         error,
       );
@@ -803,14 +814,17 @@ export async function confirmPublicBooking(
       details_schema_key: detailsSchemaKey,
       details_schema_version: detailsSchemaVersion,
       service_snapshot: serviceSnapshot,
+      hold_id_snapshot: input.holdId ?? null,
     })
     .select(BOOKING_SELECT)
     .single<BookingRow>();
 
   if (error) {
-    if (isUniqueViolation(error)) {
+    if (isUniqueViolation(error) || isCapacityViolation(error)) {
       throw new PublicBookingWriteError(
-        "That time was just booked. Choose another slot.",
+        isCapacityViolation(error)
+          ? "That event just reached capacity. Choose another date."
+          : "That time was just booked. Choose another slot.",
         409,
         error,
       );

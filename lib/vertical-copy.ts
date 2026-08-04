@@ -171,7 +171,7 @@ export const defaultCopy: VerticalCopy = {
       "Review the live booking details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed booking details remain visible here.",
-    aboutServiceTitle: "About the Service",
+    aboutServiceTitle: "About this service",
     serviceDetailsTitle: "Service details",
 
     upcomingTitle: "Upcoming bookings",
@@ -403,7 +403,7 @@ export const healthcareCopy: VerticalCopy = {
       "Review the live appointment details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed appointment details remain visible here.",
-    aboutServiceTitle: "About the Medical service",
+    aboutServiceTitle: "About this medical service",
     serviceDetailsTitle: "Medical service details",
 
     upcomingTitle: "Upcoming appointments",
@@ -636,7 +636,7 @@ export const eventsCopy: VerticalCopy = {
       "Review your registration details here before confirming.",
     bookingSummaryBodySuccess:
       "Your confirmed registration details remain visible here.",
-    aboutServiceTitle: "About the Event",
+    aboutServiceTitle: "About this event",
     serviceDetailsTitle: "Event details",
 
     upcomingTitle: "Upcoming registrations",
@@ -872,7 +872,7 @@ export const spacesCopy: VerticalCopy = {
       "Review the live reservation details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed reservation details remain visible here.",
-    aboutServiceTitle: "About the Space",
+    aboutServiceTitle: "About this space",
     serviceDetailsTitle: "Space details",
 
     upcomingTitle: "Upcoming reservations",
@@ -1103,7 +1103,7 @@ export const professionalCopy: VerticalCopy = {
       "Review the live session details here before confirming.",
     bookingSummaryBodySuccess:
       "The confirmed session details remain visible here.",
-    aboutServiceTitle: "About the Service",
+    aboutServiceTitle: "About this service",
     serviceDetailsTitle: "Service details",
 
     upcomingTitle: "Upcoming sessions",

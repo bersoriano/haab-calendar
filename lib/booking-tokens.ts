@@ -1,5 +1,5 @@
 import { buildManagePath } from "@/lib/public-url";
-import type { VerticalId } from "@/lib/types";
+import type { Lang, VerticalId } from "@/lib/types";
 
 type BookingLike = {
   id: string;
@@ -52,8 +52,14 @@ export function backfillManageTokens<B extends BookingLike, S extends StoreLike<
   return { changed: true, store: { ...store, bookings } };
 }
 
-export function buildManageUrl(slug: string, token: string, vertical: VerticalId): string {
+export function buildManageUrl(
+  slug: string,
+  token: string,
+  vertical: VerticalId,
+  lang?: Lang,
+): string {
   const origin = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
+  const languageQuery = lang ? `?lang=${encodeURIComponent(lang)}` : "";
 
-  return `${origin}${buildManagePath(vertical, slug, token)}`;
+  return `${origin}${buildManagePath(vertical, slug, token)}${languageQuery}`;
 }

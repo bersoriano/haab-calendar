@@ -12,6 +12,12 @@ import { translations, type Dict, type Lang } from "./translations";
 
 export const LANDING_LANGUAGE_STORAGE_KEY = "haab-lang";
 
+function updateLanguageInCurrentUrl(lang: Lang) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", lang);
+  window.history.replaceState(window.history.state, "", url);
+}
+
 type LanguageContextValue = {
   lang: Lang;
   setLang: (lang: Lang) => void;
@@ -58,11 +64,16 @@ export function LanguageProvider({
   const setLang = useCallback((next: Lang) => {
     setIsReady(true);
     setLangState(next);
+    updateLanguageInCurrentUrl(next);
   }, []);
   const toggle = useCallback(
     () => {
       setIsReady(true);
-      setLangState((prev) => (prev === "es" ? "en" : "es"));
+      setLangState((prev) => {
+        const next = prev === "es" ? "en" : "es";
+        updateLanguageInCurrentUrl(next);
+        return next;
+      });
     },
     [],
   );

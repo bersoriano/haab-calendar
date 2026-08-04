@@ -5,15 +5,25 @@ import {
   resolvePublicBookingUrl,
 } from "@/lib/public-booking-resolver";
 import { normalizeUrlSlugSegment } from "@/lib/public-url";
+import {
+  parsePublicLanguage,
+  withPublicLanguage,
+} from "@/lib/public-language";
 
 export const dynamic = "force-dynamic";
 
 export default async function PublicProviderBookingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ verticalSegment: string; providerSlug: string }>;
+  searchParams: Promise<{ lang?: string }>;
 }) {
-  const { verticalSegment, providerSlug } = await params;
+  const [{ verticalSegment, providerSlug }, query] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const publicLanguage = parsePublicLanguage(query.lang);
   let resolution: Awaited<ReturnType<typeof resolvePublicBookingUrl>>;
 
   try {
@@ -26,6 +36,7 @@ export default async function PublicProviderBookingPage({
     return (
       <PublicBookingPageShell
         requestedPublicSlug={normalizeUrlSlugSegment(providerSlug)}
+        initialPublicLanguage={publicLanguage}
       />
     );
   }
@@ -35,13 +46,14 @@ export default async function PublicProviderBookingPage({
   }
 
   if (resolution.status === "redirect") {
-    permanentRedirect(resolution.location);
+    permanentRedirect(withPublicLanguage(resolution.location, publicLanguage));
   }
 
   return (
     <PublicBookingPageShell
       injectedConfig={resolution.store}
       requestedPublicSlug={resolution.store.provider.publicSlug}
+      initialPublicLanguage={publicLanguage}
     />
   );
 }

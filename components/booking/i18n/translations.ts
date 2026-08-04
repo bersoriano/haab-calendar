@@ -11,6 +11,30 @@ export type BookingDict = {
     saved: string;
     required: string;
   };
+  language: {
+    chooseLanguage: string;
+    english: string;
+    spanish: string;
+    switchToEnglish: string;
+    switchToSpanish: string;
+  };
+  errors: {
+    qrGenerationFailed: string;
+    selectionUnavailable: string;
+    selectTimeFirst: string;
+    holdFailed: string;
+    confirmFailed: string;
+    rescheduleSlotUnavailable: string;
+    rescheduleDateUnavailable: string;
+    rescheduleFailed: string;
+    cancelFailed: string;
+  };
+  notFound: {
+    eyebrow: string;
+    title: string;
+    body: string;
+    goHome: string;
+  };
   public: {
     yourName: string;
     email: string;
@@ -85,14 +109,7 @@ export type BookingDict = {
     finishBeforeHoldExpires: string;
     back: string;
     confirm: string;
-    cancel: string;
-    update: string;
     pickDateAndTime: string;
-    typeDateTimeInstead: string;
-    describeDateTime: string;
-    describeDate: string;
-    nlPlaceholderDateTime: string;
-    nlPlaceholderDate: string;
     chooseLocation: string;
     // Details fields
     fullName: string;
@@ -133,7 +150,6 @@ export type BookingDict = {
     notEnteredYet: string;
     none: string;
     changeDateTime: string;
-    newDateTime: string;
     // Success step
     appointmentDetails: string;
     customerDetails: string;
@@ -155,6 +171,9 @@ export type BookingDict = {
     statusCancelled: string;
     statusUpdated: string;
     statusConfirmed: string;
+    providerLogoAlt: string;
+    headerBannerAlt: string;
+    managementUrlLabel: string;
   };
   admin: {
     // Dashboard
@@ -303,6 +322,7 @@ export type BookingDict = {
     featureCustomizable: string;
     featureNoCard: string;
     featureReady: string;
+    getStarted: string;
   };
   providerForm: {
     fullName: string;
@@ -351,7 +371,32 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       loading: "Loading…",
       saving: "Saving...",
       saved: "Saved.",
-      required: "Required",
+    required: "Required",
+    },
+    language: {
+      chooseLanguage: "Choose language",
+      english: "English",
+      spanish: "Español",
+      switchToEnglish: "Switch to English",
+      switchToSpanish: "Cambiar a español",
+    },
+    errors: {
+      qrGenerationFailed: "We couldn't generate the calendar QR code. Please try again.",
+      selectionUnavailable:
+        "That selection is no longer available. Go back and choose another date or time.",
+      selectTimeFirst: "Choose a time before continuing.",
+      holdFailed: "We couldn't protect that selection. Please choose it again.",
+      confirmFailed: "We couldn't confirm your booking. Please try again.",
+      rescheduleSlotUnavailable: "That time is no longer available. Choose another time.",
+      rescheduleDateUnavailable: "That date is no longer available. Choose another day.",
+      rescheduleFailed: "We couldn't reschedule your booking. Please try again.",
+      cancelFailed: "We couldn't cancel your booking. Please try again.",
+    },
+    notFound: {
+      eyebrow: "404 · Page not found",
+      title: "This booking page doesn't exist",
+      body: "The link may be incorrect, or this booking page is not available right now.",
+      goHome: "Go to Haab Calendar",
     },
     public: {
       yourName: "Your name",
@@ -404,13 +449,13 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       noDateSelectedYet: "No date selected yet",
       selected: "Selected",
       dateNotSet: "Date not set",
-      selectADay: "Select a Day",
-      selectADate: "Select a Date",
-      selectATime: "Select a Time",
-      fullDay: "Full Day",
-      continueToMyDetails: "Continue to My Details",
+      selectADay: "Choose a day",
+      selectADate: "Choose a date",
+      selectATime: "Choose a time",
+      fullDay: "Full day",
+      continueToMyDetails: "Continue to your details",
       reserveMySpot: "Reserve my spot",
-      myDetails: "My Details",
+      myDetails: "Your details",
       pickDateAndTimeHelper: "Pick a date from the calendar and time slot below to continue.",
       pickTimeHelper: "Pick a time slot to continue.",
       clickToEnterDetails: "Click the button to enter your details.",
@@ -424,14 +469,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       finishBeforeHoldExpires: "Finish your details before the temporary hold expires.",
       back: "Back",
       confirm: "Confirm",
-      cancel: "Cancel",
-      update: "Update",
       pickDateAndTime: "Pick a date and time",
-      typeDateTimeInstead: "Type a date and time instead",
-      describeDateTime: "Describe a date and time",
-      describeDate: "Describe a date",
-      nlPlaceholderDateTime: "e.g. \"next Monday at 2 PM\"",
-      nlPlaceholderDate: "e.g. \"next Friday\"",
       chooseLocation: "Choose a location",
       fullName: "Full name",
       namePlaceholder: "Jamie Rivera",
@@ -470,9 +508,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       notEnteredYet: "Not entered yet",
       none: "None",
       changeDateTime: "Change date/time",
-      newDateTime: "New date/time",
-      appointmentDetails: "Appointment Details",
-      customerDetails: "Customer Details",
+      appointmentDetails: "Appointment details",
+      customerDetails: "Customer details",
       addToCalendar: "Add to calendar",
       showQrCode: "Show QR code",
       reschedule: "Reschedule",
@@ -484,7 +521,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       saveThisLinkBody:
         "Save this link or use the calendar attachment — anyone with the link can manage this booking.",
       progressLabel: "Booking progress",
-      dateAndTime: "Date & Time",
+      dateAndTime: "Date and time",
       completedPrefix: "Completed: ",
       currentStepPrefix: "Current step: ",
       upcomingPrefix: "Upcoming: ",
@@ -492,6 +529,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       statusCancelled: "Cancelled",
       statusUpdated: "Updated",
       statusConfirmed: "Confirmed",
+      providerLogoAlt: "Provider logo",
+      headerBannerAlt: "Booking page banner",
+      managementUrlLabel: "Booking management link",
     },
     admin: {
       upcoming7Days: "Upcoming (7 days)",
@@ -636,7 +676,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintFull: "Both organizer phone slots are already taken — this phone will stay with this event only.",
       logoAlt: "Organizer logo",
       bookingPageUnavailableBody:
-        "The link may be wrong, or this organizer hasn't finished setting up their registration page yet. Head back home to start the setup wizard.",
+        "The link may be incorrect, or this organizer's registration page is not available right now.",
     },
     welcome: {
       badge: "Welcome to Haab",
@@ -645,6 +685,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       featureCustomizable: "Fully customizable later",
       featureNoCard: "No credit card required",
       featureReady: "Ready to share in minutes",
+      getStarted: "Get started",
     },
     providerForm: {
       fullName: "Full name",
@@ -692,6 +733,34 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       saving: "Guardando...",
       saved: "Guardado.",
       required: "Obligatorio",
+    },
+    language: {
+      chooseLanguage: "Elegir idioma",
+      english: "English",
+      spanish: "Español",
+      switchToEnglish: "Switch to English",
+      switchToSpanish: "Cambiar a español",
+    },
+    errors: {
+      qrGenerationFailed:
+        "No pudimos generar el código QR del calendario. Inténtelo de nuevo.",
+      selectionUnavailable:
+        "Esa opción ya no está disponible. Regrese y elija otra fecha u horario.",
+      selectTimeFirst: "Elija un horario antes de continuar.",
+      holdFailed: "No pudimos proteger esa opción. Vuelva a seleccionarla.",
+      confirmFailed: "No pudimos confirmar su reserva. Inténtelo de nuevo.",
+      rescheduleSlotUnavailable:
+        "Ese horario ya no está disponible. Elija otro horario.",
+      rescheduleDateUnavailable:
+        "Esa fecha ya no está disponible. Elija otro día.",
+      rescheduleFailed: "No pudimos reagendar su reserva. Inténtelo de nuevo.",
+      cancelFailed: "No pudimos cancelar su reserva. Inténtelo de nuevo.",
+    },
+    notFound: {
+      eyebrow: "404 · Página no encontrada",
+      title: "Esta página de reservas no existe",
+      body: "El enlace puede ser incorrecto o la página de reservas no está disponible en este momento.",
+      goHome: "Ir a Haab Calendar",
     },
     public: {
       yourName: "Su nombre",
@@ -766,14 +835,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Complete sus datos antes de que expire la reservación temporal.",
       back: "Atrás",
       confirm: "Confirmar",
-      cancel: "Cancelar",
-      update: "Actualizar",
       pickDateAndTime: "Elija una fecha y un horario",
-      typeDateTimeInstead: "Escriba una fecha y un horario",
-      describeDateTime: "Describa una fecha y un horario",
-      describeDate: "Describa una fecha",
-      nlPlaceholderDateTime: "p. ej. \"el próximo lunes a las 2 PM\"",
-      nlPlaceholderDate: "p. ej. \"el próximo viernes\"",
       chooseLocation: "Elija una ubicación",
       fullName: "Nombre completo",
       namePlaceholder: "Juan Pérez",
@@ -813,7 +875,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       notEnteredYet: "Aún no ingresado",
       none: "Ninguna",
       changeDateTime: "Cambiar fecha/horario",
-      newDateTime: "Nueva fecha/horario",
       appointmentDetails: "Detalles de la cita",
       customerDetails: "Datos del cliente",
       addToCalendar: "Agregar al calendario",
@@ -835,6 +896,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       statusCancelled: "Cancelada",
       statusUpdated: "Actualizada",
       statusConfirmed: "Confirmada",
+      providerLogoAlt: "Logotipo del proveedor",
+      headerBannerAlt: "Banner de la página de reservas",
+      managementUrlLabel: "Enlace para gestionar la reserva",
     },
     admin: {
       upcoming7Days: "Próximos (7 días)",
@@ -979,7 +1043,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       phoneHintFull: "Ambos campos de teléfono del organizador ya están ocupados — este teléfono solo se guardará con este evento.",
       logoAlt: "Logotipo del organizador",
       bookingPageUnavailableBody:
-        "El enlace puede ser incorrecto o este organizador aún no ha terminado de configurar su página de registro. Vuelva al inicio para comenzar el asistente de configuración.",
+        "El enlace puede ser incorrecto o la página de registro de este organizador no está disponible en este momento.",
     },
     welcome: {
       badge: "Bienvenido a Haab",
@@ -988,6 +1052,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       featureCustomizable: "Totalmente personalizable después",
       featureNoCard: "Sin tarjeta de crédito",
       featureReady: "Listo para compartir en minutos",
+      getStarted: "Comenzar",
     },
     providerForm: {
       fullName: "Nombre completo",

@@ -38,6 +38,16 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
   Standalone local demo booking URL. Production-style public URLs should use
   the hierarchical routes above.
 
+## Public Examples
+
+Seed four published examples with `npm run seed:examples`. The command is
+idempotent and uses a dedicated non-login owner account.
+
+- Health: `/doctors/dr-maya-rivera`
+- Spaces: `/spaces/riverside-padel-club`
+- Professional services: `/professionals/northstar-strategy`
+- Events with capacity: `/events/makers-workshop`
+
 ## Reuse
 
 ```tsx

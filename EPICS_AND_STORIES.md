@@ -187,7 +187,6 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 - [ ] The public calendar respects this setting — dates beyond the window are disabled
 - [ ] The default booking window is 1 month
 - [ ] The setting is stored in the `providers` table (new `booking_window_days` integer column)
-- [ ] Natural language input rejects dates beyond the booking window with a clear message
 
 ### 4.5 — Timezone display (P1)
 
@@ -230,16 +229,6 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 - [ ] If the service has notes, an expandable "More details" section is available
 - [ ] Full-day services show "Full day" instead of a duration
 - [ ] Services with no cost show "Free" or omit the cost field
-
-### 4.9 — Natural language input discoverability (P2)
-
-**As a** client **I want** to discover the natural language date input **so that** I can book faster.
-
-**Acceptance Criteria:**
-- [ ] The natural language input has animated placeholder text cycling through 3 examples every 3 seconds: "next Monday at 2pm", "tomorrow morning", "May 15 at 3:30"
-- [ ] The input is positioned prominently above the calendar grid
-- [ ] A subtle label reads "Type a date or pick from the calendar"
-- [ ] The cycling animation pauses when the input is focused
 
 ---
 
@@ -414,7 +403,6 @@ Priorities: **P0** (must-have for launch), **P1** (important, next iteration), *
 - [ ] All ghost-tone action buttons have `aria-label` with context (e.g., "Cancel booking for [client name] on [date]")
 - [ ] Search inputs have `aria-label="Search bookings"`
 - [ ] Filter selects have associated `<label>` elements or `aria-label`
-- [ ] The natural language date input has `aria-label="Type a date in natural language"`
 
 ### 7.3 — ARIA live regions (P0)
 

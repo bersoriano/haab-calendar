@@ -1,5 +1,5 @@
 import { addDays, getDateKey, parseDateKey } from "./date";
-import type { BookingRecord, ProviderInfo } from "./types";
+import type { BookingRecord, Lang, ProviderInfo } from "./types";
 
 export function escapeIcsText(value: string) {
   return value.replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
@@ -9,11 +9,30 @@ export function buildIcsContent(
   booking: BookingRecord,
   provider: ProviderInfo,
   manageUrl: string,
+  lang: Lang = "en",
 ) {
+  const labels =
+    lang === "es"
+      ? {
+          client: "Cliente",
+          phone: "Teléfono",
+          notes: "Notas",
+          notAvailable: "No aplica",
+          manage: "Gestionar esta reserva",
+          productLanguage: "ES",
+        }
+      : {
+          client: "Client",
+          phone: "Phone",
+          notes: "Notes",
+          notAvailable: "N/A",
+          manage: "Manage this booking",
+          productLanguage: "EN",
+        };
   const safeSummary = escapeIcsText(booking.serviceName);
-  const baseDescription = `Client: ${booking.clientName}\nPhone: ${booking.clientPhone}\nNotes: ${booking.notes || "N/A"}`;
+  const baseDescription = `${labels.client}: ${booking.clientName}\n${labels.phone}: ${booking.clientPhone}\n${labels.notes}: ${booking.notes || labels.notAvailable}`;
   const safeDescription = escapeIcsText(
-    manageUrl ? `${baseDescription}\nManage this booking: ${manageUrl}` : baseDescription,
+    manageUrl ? `${baseDescription}\n${labels.manage}: ${manageUrl}` : baseDescription,
   );
   const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
   const eventId = `${booking.id}@haab-calendar.local`;
@@ -25,7 +44,7 @@ export function buildIcsContent(
     return [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Haab Calendar//Booking Module//EN",
+      `PRODID:-//Haab Calendar//Booking Module//${labels.productLanguage}`,
       "BEGIN:VEVENT",
       `UID:${eventId}`,
       `DTSTAMP:${stamp}`,
@@ -46,7 +65,7 @@ export function buildIcsContent(
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Haab Calendar//Booking Module//EN",
+    `PRODID:-//Haab Calendar//Booking Module//${labels.productLanguage}`,
     "BEGIN:VEVENT",
     `UID:${eventId}`,
     `DTSTAMP:${stamp}`,

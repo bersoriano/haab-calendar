@@ -1,6 +1,6 @@
 # Internationalization (i18n) — Current Status
 
-> **Last audited:** 2026-07-23 on `main`.
+> **Last audited:** 2026-08-04.
 >
 > The booking application and marketing landing page keep separate dictionaries
 > and persistence owners, but first-time onboarding deliberately bridges the
@@ -29,7 +29,7 @@ The two language systems have different owners and defaults:
 | --- | --- | --- | --- |
 | Marketing landing page | Visitor | Spanish | `localStorage` key `haab-lang` |
 | Provider/admin application | Provider configuration, seeded from the visitor during first setup | Selected visitor language for first setup; English fallback | `public.providers.language` |
-| Public booking and manage pages | Provider configuration | English | Read through `public_providers.language` |
+| Public booking and manage pages | Visitor, with provider language as fallback | Provider language, then English | `?lang=en|es` plus `localStorage` key `haab-lang` |
 | Login, signup, and confirmation | Visitor | Spanish | `lang` query/form value plus `haab-lang` synchronization |
 
 The booking copy uses formal Mexican Spanish (`usted`). English remains the
@@ -45,8 +45,9 @@ login language and the language inside `next`. The login client also synchronize
 For a provider who has not completed setup, that explicit return language seeds
 `ModuleStore.provider.language`, including over an incomplete local draft. The
 same value therefore drives the setup wizard and becomes provider-owned when
-setup is published. A completed provider's persisted language wins instead and
-is not overwritten by a visitor preference.
+setup is published. A completed provider's persisted language remains the admin
+language and the initial public fallback. Public visitors can switch languages
+without changing provider settings.
 
 ### First-time onboarding contract
 
@@ -69,9 +70,9 @@ setup changes must preserve it:
 6. The first-setup admin header displays the localized selected workflow and a
    localized action for returning to workflow selection. It is admin-only and
    disappears after setup is complete.
-7. Publishing transfers ownership to persisted provider configuration. Later
-   admin and public renders use `public.providers.language` and the provider's
-   stored vertical; visitor preference no longer overrides a completed provider.
+7. Publishing transfers admin-language ownership to persisted provider
+   configuration. Public pages use it as a fallback, then allow each visitor to
+   switch language through `haab-lang` or an explicit `lang` query.
 
 Primary implementation touchpoints:
 
@@ -149,10 +150,10 @@ environment; deployment verification must check remote migration history.
 
 | Area | Current state |
 | --- | --- |
-| Public provider and service pages | Localized |
+| Public provider and service pages | Localized with an EN/ES visitor switcher and shareable `lang` query |
 | Public calendar and booking flow | Localized |
-| Booking confirmation | Localized |
-| Manage, cancel, and reschedule flows | Localized |
+| Booking confirmation | Localized, including QR and bilingual ICS content |
+| Manage, cancel, and reschedule flows | Localized; confirmation manage links preserve the selected language |
 | Booking hold warning | Localized, including shared countdown states |
 | Provider dashboard and bookings list | Localized |
 | Admin calendar | Localized |
@@ -165,6 +166,9 @@ environment; deployment verification must check remote migration history.
 | Marketing landing page | Localized, including home integration panels, vertical cards, and the required workflow-selection CTA/subtitle |
 | Login, signup, and confirmation results | Localized and language-preserving across Supabase Auth redirects; event return paths use Organizer / Organizador login copy |
 | Landing → authentication → setup → admin continuity | Selected language seeds incomplete setup, persists on publish, and stays synchronized with Settings |
+| Four public example pages | Authored service names, descriptions, specialties, capacities, notes, locations, and hero copy localized in English and Spanish |
+| Public error and 404 states | Localized with the same visitor language selector |
+| Vertical setup presets | English and Spanish presets seed matching public service content |
 
 Phase 1 supplied the public booking infrastructure. Phase 2 subsequently added
 the `admin`, `setup`, `welcome`, and `providerForm` dictionaries and wired most
@@ -177,32 +181,26 @@ that the admin application remains English is no longer accurate.
 
 ### Booking and provider application
 
-- Client-side natural-language parsing, setup validation, provider-save,
-  booking, reschedule, and cancellation errors still contain English fallbacks
-  in `components/haab-booking-module.tsx`.
-- Booking/provider API validation, persistence, and fallback error messages are
-  English-only. A client dictionary cannot translate raw server messages
-  reliably; these need stable error codes or localized server output.
+- Provider/admin-only setup and persistence errors can still receive raw English
+  server messages. Public hold, confirmation, reschedule, cancellation, QR, and
+  availability failures are normalized to the active public language before
+  rendering.
 - Upload-route error details can still arrive as raw English server messages,
   although the image uploader's own labels, validation, and fallback error are
   localized.
 
 ### Landing and authentication
 
-- `config/verticals.ts` stores English preset labels, descriptions, seeded
-  service content, and hints. Landing cards no longer render these fields
-  directly, but applying a preset still seeds English provider-authored content.
-  Its translation policy must be explicit.
 - The Supabase-hosted confirmation email template is external to the application
   dictionary and is not selected by the visitor's `lang` value.
 - Metadata in `app/layout.tsx` is English-only.
 
 ### Exported and provider-authored content
 
-- `lib/ics.ts` exports English labels (`Client`, `Phone`, `Notes`, and manage-link
-  instructions) and an English product identifier.
 - Provider-authored service names, descriptions, notes, and hero text are stored
-  in one language only. There is no localized content model or fallback chain.
+  in one language only unless the content belongs to a built-in example or
+  localized setup preset. The interface does not machine-translate arbitrary
+  provider-authored content.
 - Booking email/SMS notification templates are not part of the current i18n
   dictionaries.
 

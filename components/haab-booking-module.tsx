@@ -1,6 +1,5 @@
 "use client";
 
-import { parse as parseNaturalLanguage, type ParsedResult } from "chrono-node";
 import Link from "next/link";
 import QRCode from "qrcode";
 import {
@@ -70,8 +69,6 @@ import {
   clampDateKey,
   compareMonthAnchors,
   todayKey,
-  isPastDate,
-  getTimeKeyFromDate,
   getTimeWindowDurationMinutes,
   isValidTimeWindow,
 } from "@/lib/date";
@@ -126,9 +123,11 @@ import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
-import { VERTICALS } from "@/config/verticals";
+import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
+import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import {
   ActionButton,
   ActionLink,
@@ -137,7 +136,6 @@ import {
   PublicProgressIndicator,
   SectionTitle,
   SummaryField,
-  SummaryStatusTitle,
   ToneBadge,
 } from "@/components/ui";
 
@@ -159,16 +157,15 @@ type HaabBookingModuleProps = {
   // Seeds an incomplete setup store from the visitor's landing/login choice.
   // Completed providers continue to use their persisted provider language.
   initialLanguage?: Lang;
+  // Seeds the visitor-owned language on a server-rendered public route, avoiding
+  // an English/Spanish flash before browser preferences can be restored.
+  initialPublicLanguage?: Lang;
   onLanguageChange?: (language: Lang) => void;
   onVerticalChange?: (vertical?: VerticalId) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
   initialVerticalId?: VerticalId;
 };
-
-function hasExplicitTime(result: ParsedResult) {
-  return result.start.isCertain("hour");
-}
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
   if (minutes >= 60 && minutes % 60 === 0) {
@@ -224,6 +221,7 @@ export function HaabBookingModule({
   persistAdminChanges = false,
   onSetupPersisted,
   initialLanguage,
+  initialPublicLanguage,
   initialVerticalId,
   onLanguageChange,
   onVerticalChange,
@@ -270,17 +268,6 @@ export function HaabBookingModule({
   const [isCreatingHold, setIsCreatingHold] = useState(false);
   const [isMutatingBooking, setIsMutatingBooking] = useState(false);
   const [cancellationError, setCancellationError] = useState<string | null>(null);
-  const [naturalLanguageBookingInput, setNaturalLanguageBookingInput] = useState("");
-  const [naturalLanguageBookingError, setNaturalLanguageBookingError] = useState<string | null>(
-    null,
-  );
-  const [isNaturalLanguageBookingFocused, setIsNaturalLanguageBookingFocused] = useState(false);
-  const [isNLBookingOpen, setIsNLBookingOpen] = useState(false);
-  const [isNLChangeDateOpen, setIsNLChangeDateOpen] = useState(false);
-  const [
-    wasBookingUpdatedWithNaturalLanguage,
-    setWasBookingUpdatedWithNaturalLanguage,
-  ] = useState(false);
   const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
   const [bookingHoldNow, setBookingHoldNow] = useState(() => currentTimestamp());
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
@@ -336,14 +323,26 @@ export function HaabBookingModule({
     url: string;
   } | null>(null);
 
-  const provider = activeStore.provider;
-  const services = activeStore.services;
+  const storedProvider = activeStore.provider;
+  const storedServices = activeStore.services;
+  const configuredLanguage = storedProvider.language ?? "en";
+  const [publicLanguage, setPublicLanguage] = useState<Lang>(
+    initialPublicLanguage ?? configuredLanguage,
+  );
+  const lang = surface === "public" ? publicLanguage : configuredLanguage;
+  const localizedPublicContent = localizePublicExampleContent(
+    storedProvider,
+    storedServices,
+    lang,
+  );
+  const provider = surface === "public" ? localizedPublicContent.provider : storedProvider;
+  const services =
+    surface === "public" ? localizedPublicContent.services : storedServices;
   const bookings = activeStore.bookings;
   const bookingHolds = activeStore.bookingHolds;
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
   const vertical = activeStore.vertical;
-  const lang = provider.language ?? "en";
   const copy = getVerticalCopy(vertical, lang);
   const t = bookingTranslations[lang];
   const healthcareRole = vertical === "healthcare" ? t.healthcareRole : null;
@@ -354,6 +353,44 @@ export function HaabBookingModule({
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
   const publicUrl =
     businessSlug && vertical ? buildProviderPath(vertical, businessSlug) : "/public";
+
+  useEffect(() => {
+    if (!hydrated || surface !== "public") return;
+
+    const queryLanguage = new URLSearchParams(window.location.search).get("lang");
+    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
+    const preferredLanguage =
+      queryLanguage === "en" || queryLanguage === "es"
+        ? queryLanguage
+        : savedLanguage === "en" || savedLanguage === "es"
+          ? savedLanguage
+          : configuredLanguage;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore the visitor's explicit public-language preference after hydration
+    setPublicLanguage(preferredLanguage);
+  }, [configuredLanguage, hydrated, surface]);
+
+  useEffect(() => {
+    if (!hydrated || surface !== "public") return;
+    document.documentElement.lang = lang;
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
+  }, [hydrated, lang, surface]);
+
+  function choosePublicLanguage(nextLanguage: Lang) {
+    setPublicLanguage(nextLanguage);
+    setBookingError(null);
+    setCancellationError(null);
+    setRescheduleState((current) =>
+      current ? { ...current, error: undefined } : current,
+    );
+    setCalendarQrCode(null);
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", nextLanguage);
+    window.history.replaceState(window.history.state, "", url);
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, nextLanguage);
+  }
 
   // Default a fresh (untouched) service draft to the vertical's occurrence mode:
   // events start single-occurrence, every other vertical stays periodic.
@@ -385,6 +422,10 @@ export function HaabBookingModule({
   const commitManagedBooking = useEffectEvent((booking: BookingRecord) => {
     actions.commitBookings([booking], activeStore);
   });
+
+  const findLocalManagedBooking = useEffectEvent((token: string) =>
+    findBookingByToken({ bookings }, token),
+  );
 
   useEffect(() => {
     if (!manageBookingToken || !hydrated) {
@@ -423,14 +464,14 @@ export function HaabBookingModule({
       };
     }
 
-    const booking = findBookingByToken({ bookings }, manageBookingToken);
+    const booking = findLocalManagedBooking(manageBookingToken);
     if (booking) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: useEffectEvent escapes Effect reactivity per React 19 docs
       onManageBookingFound(booking);
     } else {
       onManageBookingMissing();
     }
-  }, [manageBookingToken, hydrated, bookings, integratedMode, isDedicatedPublicPage, vertical, businessSlug]);
+  }, [manageBookingToken, hydrated, integratedMode, isDedicatedPublicPage, vertical, businessSlug]);
 
   const resolvedBookingFlow = {
     ...bookingFlow,
@@ -473,7 +514,35 @@ export function HaabBookingModule({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key off service + its linked addresses
   }, [selectedService?.id, selectedService?.linkedAddress1, selectedService?.linkedAddress2, selectedService?.customAddress, provider.address1, provider.address2]);
   const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
+  const localizedSuccessfulBooking = successfulBooking
+    ? {
+        ...successfulBooking,
+        serviceName:
+          services.find((service) => service.id === successfulBooking.serviceId)?.name ??
+          successfulBooking.serviceName,
+      }
+    : undefined;
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
+  const calendarQrRequestKey = successfulBooking && vertical
+    ? JSON.stringify([
+        successfulBooking.id,
+        successfulBooking.updatedAt,
+        successfulBooking.status,
+        localizedSuccessfulBooking?.serviceName,
+        successfulBooking.bookingType,
+        successfulBooking.dateKey,
+        successfulBooking.startTime,
+        successfulBooking.endTime,
+        successfulBooking.clientName,
+        successfulBooking.clientPhone,
+        successfulBooking.notes,
+        successfulBooking.manageToken,
+        provider.email,
+        businessSlug,
+        vertical,
+        lang,
+      ])
+    : "";
   const bookingHoldSelectionKey =
     selectedService &&
     resolvedBookingFlow.step === 3 &&
@@ -500,8 +569,6 @@ export function HaabBookingModule({
     hasActiveBookingHold &&
     !isBookingHoldExpired &&
     bookingHoldRemainingMs <= 2 * 60 * 1000;
-  const shouldDimManualBookingPanels =
-    isNaturalLanguageBookingFocused && naturalLanguageBookingInput.trim().length > 0;
   const isSetupOpen = !integratedMode && !activeStore.setupComplete;
   const publicRouteReady =
     !requestedPublicSlug || requestedPublicSlug === businessSlug;
@@ -567,6 +634,48 @@ export function HaabBookingModule({
   const publicTextareaClass = isDedicatedPublicPage
     ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
+
+  function renderPublicLanguageChooser(className = "") {
+    if (surface !== "public") return null;
+
+    return (
+      <div
+        role="group"
+        aria-label={t.language.chooseLanguage}
+        className={cn(
+          "inline-flex rounded-full border border-white/80 bg-white/70 p-1 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
+          className,
+        )}
+      >
+        {(["en", "es"] as const).map((language) => {
+          const active = lang === language;
+          const label = language === "en" ? t.language.english : t.language.spanish;
+          const actionLabel =
+            language === "en"
+              ? t.language.switchToEnglish
+              : t.language.switchToSpanish;
+
+          return (
+            <button
+              key={language}
+              type="button"
+              aria-label={actionLabel}
+              aria-pressed={active}
+              onClick={() => choosePublicLanguage(language)}
+              className={cn(
+                "min-h-10 rounded-full px-4 text-sm font-semibold transition",
+                active
+                  ? "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
+                  : "text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]",
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(pointer: coarse)");
@@ -741,27 +850,38 @@ export function HaabBookingModule({
     preselectFirstAvailableDate();
   }, [isDesktopColumns, resolvedBookingFlow.step, selectedService?.id]);
 
-  useEffect(() => {
+  const getCalendarQrRequest = useEffectEvent(() => {
     if (!successfulBooking || successfulBooking.status === "cancelled" || !vertical) {
+      return null;
+    }
+
+    return {
+      bookingId: successfulBooking.id,
+      content: buildIcsContent(
+        localizedSuccessfulBooking ?? successfulBooking,
+        provider,
+        buildManageUrl(businessSlug, successfulBooking.manageToken, vertical, lang),
+        lang,
+      ),
+    };
+  });
+
+  useEffect(() => {
+    const request = getCalendarQrRequest();
+
+    if (!request) {
       return;
     }
 
     let cancelled = false;
-    const bookingId = successfulBooking.id;
+    const { bookingId } = request;
 
-    QRCode.toDataURL(
-      buildIcsContent(
-        successfulBooking,
-        provider,
-        buildManageUrl(businessSlug, successfulBooking.manageToken, vertical),
-      ),
-      {
-        errorCorrectionLevel: "M",
-        margin: 2,
-        scale: 8,
-        width: 400,
-      },
-    )
+    QRCode.toDataURL(request.content, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      scale: 8,
+      width: 400,
+    })
       .then((url) => {
         if (cancelled) {
           return;
@@ -776,7 +896,7 @@ export function HaabBookingModule({
 
         setCalendarQrCode({
           bookingId,
-          error: "Unable to generate the calendar QR code.",
+          error: t.errors.qrGenerationFailed,
           url: "",
         });
       });
@@ -784,7 +904,7 @@ export function HaabBookingModule({
     return () => {
       cancelled = true;
     };
-  }, [businessSlug, provider, successfulBooking, vertical]);
+  }, [calendarQrRequestKey, t.errors.qrGenerationFailed]);
 
   const releaseSupabaseBookingHold = useCallback((holdId?: string) => {
     if (!holdId || !integratedMode || !isDedicatedPublicPage || !vertical) {
@@ -841,11 +961,6 @@ export function HaabBookingModule({
     }
 
     setBookingError(null);
-    setNaturalLanguageBookingInput("");
-    setNaturalLanguageBookingError(null);
-    setIsNaturalLanguageBookingFocused(false);
-    setIsNLBookingOpen(false);
-    setWasBookingUpdatedWithNaturalLanguage(false);
     setIsCalendarQrModalOpen(false);
     const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
     actions.releaseBookingHold(holdIdToRelease);
@@ -868,9 +983,15 @@ export function HaabBookingModule({
     const blob = new Blob(
       [
         buildIcsContent(
-          booking,
+          {
+            ...booking,
+            serviceName:
+              services.find((service) => service.id === booking.serviceId)?.name ??
+              booking.serviceName,
+          },
           provider,
-          vertical ? buildManageUrl(businessSlug, booking.manageToken, vertical) : "",
+          vertical ? buildManageUrl(businessSlug, booking.manageToken, vertical, lang) : "",
+          lang,
         ),
       ],
       { type: "text/calendar;charset=utf-8" },
@@ -894,145 +1015,6 @@ export function HaabBookingModule({
     startTransition(() => {
       setSurface("public");
     });
-  }
-
-  async function continueWithNaturalLanguageBooking() {
-    if (!selectedService || isCreatingHold) {
-      return;
-    }
-
-    const isUpdatingExistingSelection = resolvedBookingFlow.step === 3;
-    const input = naturalLanguageBookingInput.trim();
-
-    if (!input) {
-      setNaturalLanguageBookingError(
-        selectedService.bookingType === "appointment"
-          ? "Enter a request like \"next Monday at 2 PM\" first."
-          : "Enter a request like \"next Friday\" first.",
-      );
-      return;
-    }
-
-    const parsed = parseNaturalLanguage(input, new Date(), {
-      forwardDate: true,
-    })[0];
-
-    if (!parsed) {
-      setNaturalLanguageBookingError(
-        selectedService.bookingType === "appointment"
-          ? "I couldn't understand that request. Try something like \"next Monday at 2 PM\"."
-          : "I couldn't understand that request. Try something like \"next Friday\".",
-      );
-      return;
-    }
-
-    const parsedDate = parsed.start.date();
-    const dateKey = getDateKey(parsedDate);
-
-    if (isPastDate(dateKey)) {
-      setNaturalLanguageBookingError(
-        "That request resolves to a past date. Try a future date instead.",
-      );
-      return;
-    }
-
-    setPublicMonthAnchor(parsedDate);
-    setBookingError(null);
-    setNaturalLanguageBookingError(null);
-
-    if (selectedService.bookingType === "appointment") {
-      if (!hasExplicitTime(parsed)) {
-        if (!isUpdatingExistingSelection) {
-          setBookingFlow((current) => ({
-            ...current,
-            dateKey,
-            time: "",
-          }));
-        }
-        setNaturalLanguageBookingError(
-          "Appointments need a time. Try something like \"next Monday at 2 PM\".",
-        );
-        return;
-      }
-
-      const requestedTime = getTimeKeyFromDate(parsedDate);
-      const availableSlots = getAvailableSlots(
-        dateKey,
-        selectedService,
-        availability,
-        bookings,
-        undefined,
-        activeBookingHolds,
-        bookingHold?.released ? undefined : bookingHold?.id,
-      );
-
-      if (availableSlots.length === 0) {
-        if (!isUpdatingExistingSelection) {
-          setBookingFlow((current) => ({
-            ...current,
-            dateKey,
-            time: "",
-          }));
-        }
-        setNaturalLanguageBookingError(
-          `No appointment slots are available on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
-        );
-        return;
-      }
-
-      if (!availableSlots.includes(requestedTime)) {
-        if (!isUpdatingExistingSelection) {
-          setBookingFlow((current) => ({
-            ...current,
-            dateKey,
-            time: "",
-          }));
-        }
-        setNaturalLanguageBookingError(
-          `No slot starts at ${formatTimeLabel(requestedTime)} on ${formatDateLabel(dateKey)}. Use another phrase or pick from the available times below.`,
-        );
-        return;
-      }
-
-      const didBeginDetails = await beginClientDetailsStep(dateKey, requestedTime);
-
-      if (didBeginDetails && isUpdatingExistingSelection) {
-        setWasBookingUpdatedWithNaturalLanguage(true);
-        setIsNLChangeDateOpen(false);
-      }
-
-      return;
-    }
-
-    if (
-      !isDateAvailable(
-        dateKey,
-        selectedService,
-        availability,
-        bookings,
-        undefined,
-        activeBookingHolds,
-        bookingHold?.released ? undefined : bookingHold?.id,
-      )
-    ) {
-      if (!isUpdatingExistingSelection) {
-        setBookingFlow((current) => ({
-          ...current,
-          dateKey,
-          time: "",
-        }));
-      }
-      setNaturalLanguageBookingError(
-        `That day is unavailable on ${formatDateLabel(dateKey)}. Try another phrase or use the calendar below.`,
-      );
-      return;
-    }
-
-    const didBeginDetails = await beginClientDetailsStep(dateKey, "");
-
-    if (didBeginDetails && isUpdatingExistingSelection) {
-      setWasBookingUpdatedWithNaturalLanguage(true);
-    }
   }
 
   function resetServiceEditor() {
@@ -1440,7 +1422,7 @@ export function HaabBookingModule({
       return;
     }
 
-    const preset = VERTICALS.find((item) => item.id === id);
+    const preset = getVerticalPreset(id, lang);
     if (!preset) {
       return;
     }
@@ -1658,9 +1640,7 @@ export function HaabBookingModule({
         currentHolds,
       ).includes(time)
     ) {
-      setBookingError(
-        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
-      );
+      setBookingError(t.errors.selectionUnavailable);
       return false;
     }
 
@@ -1675,9 +1655,7 @@ export function HaabBookingModule({
         currentHolds,
       )
     ) {
-      setBookingError(
-        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
-      );
+      setBookingError(t.errors.selectionUnavailable);
       return false;
     }
 
@@ -1717,13 +1695,15 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.hold) {
-          setBookingError(payload.userMessage ?? "Could not hold that slot.");
+          setBookingError(
+            response.status === 409 ? t.errors.selectionUnavailable : t.errors.holdFailed,
+          );
           return false;
         }
 
         holdRecord = payload.hold;
       } catch {
-        setBookingError("Could not hold that slot. Please try again.");
+        setBookingError(t.errors.holdFailed);
         return false;
       } finally {
         setIsCreatingHold(false);
@@ -1788,7 +1768,7 @@ export function HaabBookingModule({
     }
 
     if (validationService.bookingType === "appointment" && !bookingFlow.time) {
-      setBookingError("Select a time slot before continuing.");
+      setBookingError(t.errors.selectTimeFirst);
       return;
     }
 
@@ -1813,9 +1793,7 @@ export function HaabBookingModule({
         ignoredHoldId,
       ).includes(bookingFlow.time)
     ) {
-      setBookingError(
-        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
-      );
+      setBookingError(t.errors.selectionUnavailable);
       return;
     }
 
@@ -1831,9 +1809,7 @@ export function HaabBookingModule({
         ignoredHoldId,
       )
     ) {
-      setBookingError(
-        "The time you picked is not available anymore. Please go back and pick a new Date/Time.",
-      );
+      setBookingError(t.errors.selectionUnavailable);
       return;
     }
 
@@ -1918,13 +1894,15 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
-          setBookingError(payload.userMessage ?? "Could not confirm this booking.");
+          setBookingError(
+            response.status === 409 ? t.errors.selectionUnavailable : t.errors.confirmFailed,
+          );
           return;
         }
 
         bookingToCommit = payload.booking;
       } catch {
-        setBookingError("Could not confirm this booking. Please try again.");
+        setBookingError(t.errors.confirmFailed);
         return;
       } finally {
         setIsConfirmingBooking(false);
@@ -2027,7 +2005,7 @@ export function HaabBookingModule({
       if (!nextSlots.includes(rescheduleState.time)) {
         setRescheduleState((current) =>
           current
-            ? { ...current, error: "That slot is no longer available — please pick another time." }
+            ? { ...current, error: t.errors.rescheduleSlotUnavailable }
             : current,
         );
         return;
@@ -2044,7 +2022,7 @@ export function HaabBookingModule({
     ) {
       setRescheduleState((current) =>
         current
-          ? { ...current, error: "That date is no longer available — please pick another day." }
+          ? { ...current, error: t.errors.rescheduleDateUnavailable }
           : current,
       );
       return;
@@ -2089,7 +2067,12 @@ export function HaabBookingModule({
             current
               ? {
                   ...current,
-                  error: payload.userMessage ?? "Could not reschedule that booking.",
+                  error:
+                    response.status === 409
+                      ? service.bookingType === "appointment"
+                        ? t.errors.rescheduleSlotUnavailable
+                        : t.errors.rescheduleDateUnavailable
+                      : t.errors.rescheduleFailed,
                 }
               : current,
           );
@@ -2103,7 +2086,7 @@ export function HaabBookingModule({
       } catch {
         setRescheduleState((current) =>
           current
-            ? { ...current, error: "Could not reschedule that booking. Please try again." }
+            ? { ...current, error: t.errors.rescheduleFailed }
             : current,
         );
         return;
@@ -2161,7 +2144,7 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
-          setCancellationError(payload.userMessage ?? "Could not cancel that booking.");
+          setCancellationError(t.errors.cancelFailed);
           return;
         }
 
@@ -2170,7 +2153,7 @@ export function HaabBookingModule({
           manageToken: payload.booking.manageToken || booking.manageToken || manageToken || "",
         };
       } catch {
-        setCancellationError("Could not cancel that booking. Please try again.");
+        setCancellationError(t.errors.cancelFailed);
         return;
       } finally {
         setIsMutatingBooking(false);
@@ -2198,7 +2181,7 @@ export function HaabBookingModule({
     }
     try {
       await navigator.clipboard.writeText(
-        buildManageUrl(businessSlug, successfulBooking.manageToken, vertical),
+        buildManageUrl(businessSlug, successfulBooking.manageToken, vertical, lang),
       );
       setCopiedManageLink(true);
       window.setTimeout(() => setCopiedManageLink(false), 1600);
@@ -2276,7 +2259,11 @@ export function HaabBookingModule({
           </div>
 
           <div className="mt-12 sm:mt-16">
-            <VerticalPicker verticals={VERTICALS} onSelect={applyVertical} />
+            <VerticalPicker
+              verticals={getVerticals(lang)}
+              onSelect={applyVertical}
+              actionLabel={t.welcome.getStarted}
+            />
           </div>
 
           <div className="mt-12 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-[var(--muted)]">
@@ -2865,7 +2852,7 @@ export function HaabBookingModule({
         onEdit={beginEditingService}
         onRemove={removeService}
         disabled={isSavingAdmin}
-        hints={VERTICALS.find((item) => item.id === vertical)?.hints}
+        hints={getVerticalPreset(vertical, lang)?.hints}
         copy={copy}
         provider={provider}
         vertical={vertical}
@@ -3064,7 +3051,6 @@ export function HaabBookingModule({
                     type="button"
                     disabled={!selectedService || !available}
                     onClick={() => {
-                      setNaturalLanguageBookingError(null);
                       setBookingError(null);
                       const previousDateKey = bookingFlow.dateKey;
                       setBookingFlow((current) => ({
@@ -3172,8 +3158,8 @@ export function HaabBookingModule({
             src={provider.logoImageUrl}
             alt={
               provider.businessName
-                ? `${provider.businessName} logo`
-                : eventOrganizerRole?.logoAlt ?? "Provider logo"
+                ? `${provider.businessName} — ${t.publicFlow.providerLogoAlt}`
+                : eventOrganizerRole?.logoAlt ?? t.publicFlow.providerLogoAlt
             }
             className="h-14 w-[10.5rem] shrink-0 object-contain sm:h-16 sm:w-48"
           />
@@ -3193,7 +3179,11 @@ export function HaabBookingModule({
             {/* eslint-disable-next-line @next/next/no-img-element -- remote Blob URL */}
             <img
               src={provider.headerImageUrl}
-              alt={provider.businessName ? `${provider.businessName} banner` : "Banner"}
+              alt={
+                provider.businessName
+                  ? `${provider.businessName} — ${t.publicFlow.headerBannerAlt}`
+                  : t.publicFlow.headerBannerAlt
+              }
               className="aspect-[3/1] w-full object-cover"
             />
             {heroText ? (
@@ -3239,7 +3229,14 @@ export function HaabBookingModule({
         : "";
     const singleSpotsLeft =
       selectionIsSingle && selectedService
-        ? getSpotsLeft(selectedService, selectedService.occurrenceDate ?? "", bookings)
+        ? getSpotsLeft(
+            selectedService,
+            selectedService.occurrenceDate ?? "",
+            bookings,
+            undefined,
+            activeBookingHolds,
+            bookingHold?.released ? undefined : bookingHold?.id,
+          )
         : Infinity;
     const singleIsFull = selectionIsSingle && singleSpotsLeft <= 0;
     const singleWindowLabel =
@@ -3260,7 +3257,14 @@ export function HaabBookingModule({
     // Remaining spots for the chosen date on weekly/periodic (calendar) events.
     const selectionDateSpotsLeft =
       selectedService && bookingFlow.dateKey && !selectionIsSingle
-        ? getSpotsLeft(selectedService, bookingFlow.dateKey, bookings)
+        ? getSpotsLeft(
+            selectedService,
+            bookingFlow.dateKey,
+            bookings,
+            undefined,
+            activeBookingHolds,
+            bookingHold?.released ? undefined : bookingHold?.id,
+          )
         : Infinity;
     const selectionDateSpotsLabel = Number.isFinite(selectionDateSpotsLeft)
       ? `${Math.max(0, selectionDateSpotsLeft)} ${copy.phrases.spotsLeftSuffix}`
@@ -3374,10 +3378,6 @@ export function HaabBookingModule({
       setBookingHold(null);
       setBookingHoldNow(currentTimestamp());
       setBookingError(null);
-      setWasBookingUpdatedWithNaturalLanguage(false);
-      setIsNLBookingOpen(false);
-      setNaturalLanguageBookingInput("");
-      setNaturalLanguageBookingError(null);
       setBookingFlow((current) => ({ ...current, step: 2 }));
     };
 
@@ -3388,10 +3388,6 @@ export function HaabBookingModule({
       setBookingHold(null);
       setBookingHoldNow(currentTimestamp());
       setBookingError(null);
-      setWasBookingUpdatedWithNaturalLanguage(false);
-      setIsNLBookingOpen(false);
-      setNaturalLanguageBookingInput("");
-      setNaturalLanguageBookingError(null);
       setBookingFlow((current) => ({
         ...current,
         step: 1,
@@ -3667,8 +3663,6 @@ export function HaabBookingModule({
                   key={service.id}
                   type="button"
                   onClick={() => {
-                    setNaturalLanguageBookingInput("");
-                    setNaturalLanguageBookingError(null);
                     setBookingFlow((current) => ({
                       ...current,
                       serviceId: service.id,
@@ -3821,8 +3815,6 @@ export function HaabBookingModule({
               className={cn(
                 "order-1 lg:order-none",
                 publicPrimaryPanelClass,
-                isPublicSelectionStep && "transition-opacity duration-200",
-                isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
                 isDesktopColumns && isPublicDetailsStep && publicPrimaryPanelHeight
@@ -3862,95 +3854,6 @@ export function HaabBookingModule({
                   <SectionTitle
                     title={t.publicFlow.pickDateAndTime}
                   />
-                  <div className="mt-4">
-                    {!isNLBookingOpen ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsNLBookingOpen(true);
-                          setNaturalLanguageBookingError(null);
-                        }}
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
-                      >
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          className="h-3.5 w-3.5"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                        {t.publicFlow.typeDateTimeInstead}
-                      </button>
-                    ) : (
-                      <div className="space-y-3 rounded-[24px] border border-[var(--line)] bg-[var(--surface-soft)] p-4">
-                        <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
-                          <span>
-                            {selectedService.bookingType === "appointment"
-                              ? t.publicFlow.describeDateTime
-                              : t.publicFlow.describeDate}
-                          </span>
-                          <input
-                            type="text"
-                            value={naturalLanguageBookingInput}
-                            autoFocus
-                            onChange={(event) => {
-                              setNaturalLanguageBookingInput(event.target.value);
-                              setNaturalLanguageBookingError(null);
-                            }}
-                            onFocus={() => setIsNaturalLanguageBookingFocused(true)}
-                            onBlur={() => setIsNaturalLanguageBookingFocused(false)}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                continueWithNaturalLanguageBooking();
-                              }
-                            }}
-                            placeholder={
-                              selectedService.bookingType === "appointment"
-                                ? t.publicFlow.nlPlaceholderDateTime
-                                : t.publicFlow.nlPlaceholderDate
-                            }
-                            className={publicFieldClass}
-                          />
-                        </label>
-                        <div className="flex flex-wrap gap-2">
-                          <ActionButton
-                            tone="primary"
-                            className={cn("flex-1", publicPrimaryActionClass)}
-                            disabled={isCreatingHold}
-                            onClick={continueWithNaturalLanguageBooking}
-                          >
-                            {isCreatingHold ? t.common.loading : t.publicFlow.continueToMyDetails}
-                          </ActionButton>
-                          <ActionButton
-                            tone="ghost"
-                            className={
-                              isDedicatedPublicPage
-                                ? cn(publicPillButtonClass, publicGhostButtonClass)
-                                : undefined
-                            }
-                            onClick={() => {
-                              setIsNLBookingOpen(false);
-                              setNaturalLanguageBookingInput("");
-                              setNaturalLanguageBookingError(null);
-                            }}
-                          >
-                            {t.publicFlow.cancel}
-                          </ActionButton>
-                        </div>
-                        {naturalLanguageBookingError ? (
-                          <div className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                            {naturalLanguageBookingError}
-                          </div>
-                        ) : null}
-                      </div>
-                    )}
-                  </div>
                   <div className="mt-6">{renderPublicCalendar()}</div>
                 </>
               ) : isPublicDetailsStep ? (
@@ -4138,8 +4041,6 @@ export function HaabBookingModule({
                   bookingFlow.dateKey &&
                   "flex flex-col overflow-hidden",
                 isPublicDetailsStep && "flex min-h-full flex-col",
-                isPublicSelectionStep && "transition-opacity duration-200",
-                isPublicSelectionStep && shouldDimManualBookingPanels && "opacity-50",
               )}
               style={
                 isDesktopColumns &&
@@ -4230,7 +4131,6 @@ export function HaabBookingModule({
                                   key={slot}
                                   type="button"
                                   onClick={() => {
-                                    setNaturalLanguageBookingError(null);
                                     updateBookingFlow("time", slot);
                                   }}
                                   className={cn(
@@ -4307,13 +4207,7 @@ export function HaabBookingModule({
               ) : (
                 <>
                   <SectionTitle
-                    title={
-                      isPublicDetailsStep && wasBookingUpdatedWithNaturalLanguage ? (
-                        <SummaryStatusTitle status="updated" lang={lang} />
-                      ) : (
-                        copy.bookingSummary
-                      )
-                    }
+                    title={copy.bookingSummary}
                     body={copy.phrases.bookingSummaryBodyReview}
                   />
                   <div className={cn("mt-6 flex-1", publicInsetCardClass)}>
@@ -4357,78 +4251,13 @@ export function HaabBookingModule({
                     </dl>
                     {isPublicDetailsStep && !selectionIsSingle ? (
                       <div className="mt-4 border-t border-[var(--line)] pt-4">
-                        {!isNLChangeDateOpen ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setIsNLChangeDateOpen(true);
-                              setNaturalLanguageBookingInput("");
-                              setNaturalLanguageBookingError(null);
-                            }}
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
-                          >
-                            <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                            </svg>
-                            {t.publicFlow.changeDateTime}
-                          </button>
-                        ) : (
-                          <div className="space-y-3">
-                            <label className="grid gap-1.5 text-xs font-medium text-[var(--muted)]">
-                              {t.publicFlow.newDateTime}
-                              <input
-                                type="text"
-                                value={naturalLanguageBookingInput}
-                                autoFocus
-                                onChange={(event) => {
-                                  setNaturalLanguageBookingInput(event.target.value);
-                                  setNaturalLanguageBookingError(null);
-                                }}
-                                onFocus={() => setIsNaturalLanguageBookingFocused(true)}
-                                onBlur={() => setIsNaturalLanguageBookingFocused(false)}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter") {
-                                    event.preventDefault();
-                                    continueWithNaturalLanguageBooking();
-                                  }
-                                }}
-                                placeholder={
-                                  selectedService.bookingType === "appointment"
-                                    ? t.publicFlow.nlPlaceholderDateTime
-                                    : t.publicFlow.nlPlaceholderDate
-                                }
-                                className={publicFieldClass}
-                              />
-                            </label>
-                            <div className="flex gap-2">
-                              <ActionButton
-                                tone="primary"
-                                className={cn("flex-1", publicPrimaryActionClass)}
-                                disabled={isCreatingHold}
-                                onClick={continueWithNaturalLanguageBooking}
-                              >
-                                {isCreatingHold ? t.common.loading : t.publicFlow.update}
-                              </ActionButton>
-                              <ActionButton
-                                tone="ghost"
-                                className={isDedicatedPublicPage ? cn(publicPillButtonClass, publicGhostButtonClass) : undefined}
-                                onClick={() => {
-                                  setIsNLChangeDateOpen(false);
-                                  setNaturalLanguageBookingInput("");
-                                  setNaturalLanguageBookingError(null);
-                                }}
-                              >
-                                {t.publicFlow.cancel}
-                              </ActionButton>
-                            </div>
-                            {naturalLanguageBookingError ? (
-                              <div className="rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-                                {naturalLanguageBookingError}
-                              </div>
-                            ) : null}
-                          </div>
-                        )}
+                        <button
+                          type="button"
+                          onClick={goBackToSelectionStep}
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--accent)] hover:underline"
+                        >
+                          {t.publicFlow.changeDateTime}
+                        </button>
                       </div>
                     ) : null}
                   </div>
@@ -4672,10 +4501,15 @@ export function HaabBookingModule({
                         readOnly
                         value={
                           vertical
-                            ? buildManageUrl(businessSlug, successfulBooking.manageToken, vertical)
+                            ? buildManageUrl(
+                                businessSlug,
+                                successfulBooking.manageToken,
+                                vertical,
+                                lang,
+                              )
                             : ""
                         }
-                        aria-label={`${copy.Booking} management URL`}
+                        aria-label={t.publicFlow.managementUrlLabel}
                         onFocus={(event) => event.currentTarget.select()}
                         className="flex-1 min-w-[260px] rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)]"
                       />
@@ -4837,7 +4671,10 @@ export function HaabBookingModule({
         >
           <SectionTitle
             eyebrow={copy.cancelBooking}
-            title={booking.serviceName}
+            title={
+              services.find((service) => service.id === booking.serviceId)?.name ??
+              booking.serviceName
+            }
             body={`${booking.clientName} · ${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(
               booking.startTime,
               booking.endTime,
@@ -4923,7 +4760,7 @@ export function HaabBookingModule({
         >
           <SectionTitle
             eyebrow={copy.rescheduleBooking}
-            title={booking.serviceName}
+            title={service.name}
             body={`${booking.clientName} · ${
               service.bookingType === "appointment" ? t.manage.chooseNewSlot : t.manage.chooseNewDay
             }`}
@@ -5177,6 +5014,7 @@ export function HaabBookingModule({
   if (manageBookingToken && manageLookupState === "pending") {
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")} aria-busy="true">
+        <div className="mb-6 flex justify-end">{renderPublicLanguageChooser()}</div>
         <SectionTitle eyebrow={copy.manageBooking} title={copy.phrases.loadingBookingTitle} />
       </section>
     );
@@ -5186,6 +5024,7 @@ export function HaabBookingModule({
     const contactEmail = provider.email?.trim();
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")} role="alert">
+        <div className="mb-6 flex justify-end">{renderPublicLanguageChooser()}</div>
         <SectionTitle
           eyebrow={copy.manageBooking}
           title={copy.phrases.bookingNotFoundTitle}
@@ -5228,26 +5067,22 @@ export function HaabBookingModule({
   ) {
     return (
       <section className={cn(publicShellClass, "p-6 sm:p-8")}>
+        <div className="flex justify-end">{renderPublicLanguageChooser()}</div>
         <div className="flex flex-col items-center gap-4 py-10 text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-            404 · Page not found
+            {t.notFound.eyebrow}
           </p>
           <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)]">
-            This booking page doesn&apos;t exist
+            {t.notFound.title}
           </h3>
           <p className="max-w-md text-sm leading-6 text-[var(--muted)]">
-            {eventOrganizerRole?.bookingPageUnavailableBody ?? (
-              <>
-                The link may be wrong, or this booking page isn&apos;t available yet.
-                Head back home to start the setup wizard.
-              </>
-            )}
+            {eventOrganizerRole?.bookingPageUnavailableBody ?? t.notFound.body}
           </p>
           <Link
             href="/"
             className="mt-2 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
           >
-            Go home
+            {t.notFound.goHome}
           </Link>
         </div>
       </section>
@@ -5270,6 +5105,11 @@ export function HaabBookingModule({
   return (
     <>
       <section className={publicShellClass}>
+        {isDedicatedPublicPage ? (
+          <div className="flex justify-end px-5 pt-5 sm:px-8 sm:pt-8 xl:px-10 xl:pt-10">
+            {renderPublicLanguageChooser()}
+          </div>
+        ) : null}
         {!isDedicatedPublicPage ? (
           <div className="border-b border-[var(--line)] p-5 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-Haab Calendar is a well-structured booking module with solid foundations: dual-mode architecture, natural language date parsing, booking holds for concurrency, and a clean visual language. However, there are meaningful UX improvements across the public booking flow, provider management, accessibility, mobile experience, and feedback mechanisms that would elevate the product significantly.
+Haab Calendar is a well-structured booking module with solid foundations: dual-mode architecture, booking holds for concurrency, and a clean visual language. However, there are meaningful UX improvements across the public booking flow, provider management, accessibility, mobile experience, and feedback mechanisms that would elevate the product significantly.
 
 Recommendations are organized by priority: **Critical** (high user impact, likely causing drop-off), **Important** (noticeable friction), and **Nice-to-Have** (polish).
 
@@ -44,11 +44,7 @@ Users have no urgency signals or context about availability.
 
 ### Nice-to-Have
 
-**1.8 - Natural language input could be more discoverable**
-The natural language date parsing (chrono-node) is a great feature but may go unnoticed by most users.
-- **Recommendation:** Add placeholder text cycling through examples: "Try: 'next Monday at 2pm', 'tomorrow morning', 'May 15 at 3:30'". Show the input as a prominent search-style bar above the calendar.
-
-**1.9 - No service comparison or details view**
+**1.8 - No service comparison or details view**
 When multiple services are available, users see only name and description. For services with different durations and costs, a side-by-side or expanded view would help.
 - **Recommendation:** Show duration, cost, and capacity directly on service cards. Add an expandable "More details" section for notes.
 

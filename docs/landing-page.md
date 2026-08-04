@@ -10,8 +10,8 @@
 - **One job of this page:** get a provider to start creating their booking page.
 - **Primary CTA (used everywhere):** `Create your booking page` → scrolls to the required workflow selector. Setup/authentication starts only after the provider chooses a vertical.
 - **Secondary CTA:** `See a live booking page` → opens a demo public flow on the canonical route, for example `/doctors/<demo-slug>`.
-- **Tone:** confident, concrete, calm. Sell outcomes (filled calendar, fewer no-shows, zero back-and-forth), not features.
-- **Proof posture:** the product has real, specific differentiators (offline-first, natural-language booking, slot holds, no-login self-service). Lead with those instead of inventing metrics.
+- **Tone:** confident, concrete, calm. Describe working product behavior without implying scale, integrations, or outcomes that are not yet proven.
+- **Proof posture:** Haab is in early access. Lead with the working differentiators: zero client accounts, server-backed 10-minute holds, three booking modes, industry-aware language, and no-login self-service.
 
 ---
 
@@ -33,38 +33,37 @@
 
 **Purpose:** state the value proposition in one breath and drive the primary action.
 
-**Eyebrow:** Booking pages for people who hate booking software
+**Eyebrow:** Public booking for real-world schedules
 
 **Headline (pick one, A/B later):**
-- A: **Your booking page, live in minutes — not your whole afternoon.**
-- B: **Take bookings on a page that just works — online, offline, and on every phone.**
+- A: **One booking link. Zero client accounts.**
+- B: **Appointments, full days, and capacity-based tickets — in one booking flow.**
 
 **Subheadline:**
-Haab Calendar gives you a clean, shareable booking page where clients pick a real open slot, hold it, and confirm — with calendar files, reminders-ready confirmations, and self-service rescheduling. No accounts for your clients. No double-bookings. No back-and-forth.
+Haab Calendar is an early-access platform for appointments, full-day reservations, and capacity-based tickets. Clients see live availability, receive a 10-minute hold while they finish, and get a private link to reschedule or cancel — without creating an account.
 
 **Primary CTA:** `Create your booking page`
 **Secondary CTA:** `See a live booking page →`
 
-**Under-CTA microcopy:** Free to set up · No credit card · Your first service takes about 2 minutes.
+**Under-CTA microcopy:** Early access · Core booking flows are live · The product is still evolving.
 
 **Hero visual (note for implementer):** show the actual public booking flow on a phone frame beside a desktop frame — calendar with real open dates highlighted, a held time slot, and the confirmation screen with QR code. Use the app's real UI, not stock art.
 
-**Trust strip (directly below hero):** small row — `Works offline` · `No client logins` · `Appointments & full-day` · `Add-to-calendar built in`. (Swap for customer logos once available — `[PLACEHOLDER: logos]`.)
+**Trust strip (directly below hero):** small row — `No client accounts` · `Protected 10-minute holds` · `Appointments, full-day & tickets` · `Self-service reschedule & cancel`.
 
-**Conversion notes:** value prop visible without scrolling; one dominant button; secondary CTA lets skeptics self-serve proof; specificity ("about 2 minutes") beats vague claims.
+**Conversion notes:** value prop visible without scrolling; one dominant button; secondary CTA opens a real public example rather than setup.
 
 ---
 
-## 3. Social Proof Bar
+## 3. Early-Access Proof Bar
 
-**Purpose:** reduce risk immediately after the hero.
+**Purpose:** reduce risk without inventing customer traction.
 
-**Copy options (use what's true):**
-- Logo wall: `[PLACEHOLDER: 5–8 customer or industry logos]`
-- Stat row (only with real data): `[PLACEHOLDER: e.g. "12,000 bookings confirmed"] · [PLACEHOLDER: "98% slots held without conflict"] · [PLACEHOLDER: "Set up in under 5 minutes"]`
-- If no proof yet: replace with a single founder/credibility line — `[PLACEHOLDER: "Built by people who ran a clinic front desk for 6 years."]`
+**Copy:** `0 client accounts required` · `10-minute soft hold` · `3 booking modes`.
 
-**Conversion notes:** never fake numbers; if empty, use an honest credibility statement rather than placeholder logos.
+**Stage note:** The core public flow works today. More integrations and administration tools are still being built.
+
+**Conversion notes:** these are product facts, not customer metrics. Replace them with audited traction only when real data exists.
 
 ---
 
@@ -72,18 +71,18 @@ Haab Calendar gives you a clean, shareable booking page where clients pick a rea
 
 **Purpose:** make the visitor feel the pain the product removes.
 
-**Section heading:** Booking shouldn't cost you a job's worth of admin.
+**Section heading:** Booking gets messy when every change becomes a conversation.
 
-**Body:** Most providers run scheduling out of DMs, a phone, and a shared calendar held together by hope. Clients ask "what've you got Thursday?", you screenshot your week, they pick a slot that's already gone, you redo it. Someone double-books. A no-show eats an hour you can't refill.
+**Body:** Sharing availability through messages, calendar screenshots, and manual updates works until two people want the same time or a client needs to reschedule. Haab turns that process into one public link with clear booking rules.
 
 **Pain bullets:**
-- Endless back-and-forth just to land one appointment.
+- Back-and-forth just to land one appointment.
 - Double-bookings because two people grabbed the "same" open slot.
-- No-shows from bookings nobody added to a calendar.
+- Confirmations that never reach the client's calendar.
 - Reschedules and cancellations that all land back on you.
-- Tools that die the moment the wifi does.
+- Class and event capacity that still gets counted by hand.
 
-**Transition line:** Haab Calendar closes every one of those gaps.
+**Transition line:** Haab replaces that coordination with live availability and self-service.
 
 **Conversion notes:** mirror the reader's real Tuesday; specific, not abstract; each pain maps to a feature later.
 
@@ -93,16 +92,16 @@ Haab Calendar gives you a clean, shareable booking page where clients pick a rea
 
 **Purpose:** show how fast value arrives. Keep to three steps.
 
-**Section heading:** From zero to a shareable booking page in three steps.
+**Section heading:** Publish one page, then let clients handle the routine.
 
 **Step 1 — Add what you offer.**
-Pick a template (consult, court rental, strategy session, full-day venue, day office) or start blank. Set duration, capacity, price, and your weekly hours. Done in minutes.
+Choose healthcare, spaces, professional services, or events. Then set services, duration, capacity, price, and weekly availability.
 
 **Step 2 — Share one link.**
 You get a clean public booking page at your own address. Drop it in your bio, your emails, a QR code on the door. Clients book themselves.
 
-**Step 3 — Let it run.**
-Clients pick a genuinely open slot, the system holds it while they finish, and they get an add-to-calendar file plus a self-service link to reschedule or cancel. Your calendar fills itself.
+**Step 3 — Keep changes out of your inbox.**
+Clients choose live availability, receive a 10-minute hold, and confirm. Afterward, their private link lets them reschedule or cancel on their own.
 
 **CTA after steps:** `Create your booking page`
 
@@ -114,25 +113,23 @@ Clients pick a genuinely open slot, the system holds it while they finish, and t
 
 **Purpose:** convert capabilities into outcomes. Lead each with the benefit, name the feature second.
 
-**Section heading:** Everything a booking page needs — and nothing it doesn't.
+**Section heading:** The core booking flow, designed as one system.
 
 **Feature cards:**
 
-1. **Only real open slots show.** Availability is computed live from your hours and existing bookings, so clients can only pick times that are actually free. *(Real-time availability engine.)*
+1. **Availability reflects bookings and active holds.** Haab computes options from working hours, confirmed bookings, and unexpired holds before showing a time as available. *(Live availability.)*
 
-2. **No more double-bookings.** The instant a client selects a time, it's held for them for 10 minutes with a visible countdown. Two people can't grab the same slot. *(Booking holds.)*
+2. **Every selection gets a 10-minute soft hold.** A visible countdown shows the remaining time, while server-side conflict protection rejects competing confirmations within Haab. *(Booking holds.)*
 
-3. **Book by typing it.** Clients can type "next Monday at 2pm" or "tomorrow morning" and the page understands it. *(Natural-language scheduling.)*
+3. **Confirmations that stick.** Every booking produces an add-to-calendar file and a QR code to scan straight onto a phone — so it lands in a calendar, not a forgotten inbox. *(Calendar export + QR.)*
 
-4. **Confirmations that stick.** Every booking produces an add-to-calendar file and a QR code to scan straight onto a phone — so it lands in a calendar, not a forgotten inbox. *(Calendar export + QR.)*
+4. **Clients manage themselves.** Each booking comes with a private link to reschedule or cancel — no account, no login, no message to you. *(Token-based self-service.)*
 
-5. **Clients manage themselves.** Each booking comes with a private link to reschedule or cancel — no account, no login, no message to you. *(Token-based self-service.)*
+5. **Appointments or whole days.** Offer 30-minute slots or full-day reservations — courts, venues, offices — from the same page. *(Appointment & full-day modes.)*
 
-6. **Appointments or whole days.** Sell 30-minute slots or full-day reservations — courts, venues, offices — from the same page. *(Appointment & full-day modes.)*
+6. **Capacity-based event registrations.** Confirmed bookings and active holds count against an event's capacity. Online payment is not included yet. *(Tickets and capacity.)*
 
-7. **It works when the internet doesn't.** The page keeps running offline and syncs when you're back online, so a dead signal never costs you a booking. *(Offline-first architecture.)*
-
-8. **Looks right on every phone.** The booking flow is built mobile-first — big tap targets, a sticky confirm button, a calendar that's actually usable with a thumb. *(Mobile-optimized public flow.)*
+7. **Industry-aware language.** Healthcare, spaces, professional services, and events each use appropriate names for clients and booking actions. *(Vertical-specific copy.)*
 
 **Conversion notes:** benefit headline bold, feature name in italics/caption; icons optional; 2-col desktop / 1-col mobile; don't exceed 8 cards.
 
@@ -142,22 +139,17 @@ Clients pick a genuinely open slot, the system holds it while they finish, and t
 
 **Purpose:** give the 2–3 strongest, least-common features room to breathe with a visual each.
 
-**Block A — Holds that kill double-booking.**
-Heading: The slot is theirs the moment they tap it.
-Body: A 10-minute hold with a live countdown locks the time while the client enters their details. Green to amber to red, an expiry warning, and a graceful release if they walk away. No other booker can take a held slot. Conflicts simply can't happen.
+**Block A — Protected booking holds.**
+Heading: The slot stays protected while they finish.
+Body: A 10-minute hold reserves the selection while the client enters details. The countdown shows remaining time, expired holds are released, and server checks protect the same availability again before confirmation.
 Visual: the countdown bar mid-flow on mobile.
 
-**Block B — Natural-language booking.**
-Heading: They book the way they think.
-Body: "Next Friday." "Tomorrow at 3:30." "May 15 morning." The page parses plain language into a real, available slot — then confirms it back so there's no ambiguity. Fewer fields, faster bookings, less drop-off.
-Visual: the type-a-date input resolving to a confirmed slot.
+**Block B — No-account self-service.**
+Heading: They can reschedule or cancel without creating an account.
+Body: Every confirmation carries a private management link. Clients can return later to change the date or cancel; Haab updates the booking and recalculates availability.
+Visual: confirmation screen and the private management page.
 
-**Block C — Offline-first.**
-Heading: A booking tool that doesn't need perfect wifi.
-Body: Haab Calendar runs locally first and treats the network as a sync target, not a lifeline. Take bookings at a court with one bar of signal, in a basement clinic, at a venue with flaky guest wifi — and let it catch up when you're back online.
-Visual: subtle "offline → synced" state indicator.
-
-**Conversion notes:** alternate image/text sides; these are the "why us, not Calendly" blocks — keep them concrete.
+**Conversion notes:** alternate image/text sides and keep every statement directly testable in a live example.
 
 ---
 
@@ -207,11 +199,11 @@ Visual: subtle "offline → synced" state indicator.
 - **Do my clients need an account?** No. They pick a slot, enter their details, and they're booked. No signups, no passwords.
 - **How are double-bookings prevented?** Selecting a slot holds it for 10 minutes with a live countdown. Availability is computed live, so taken and held times never show as open.
 - **Can clients reschedule or cancel themselves?** Yes — every booking includes a private management link to reschedule or cancel, with no login.
-- **Does it work without internet?** Yes. Haab Calendar runs offline-first and syncs when you reconnect.
+- **Can I take ticket registrations?** Yes. Events support capacity-based registrations. Payment processing is not included yet.
 - **Can I sell full-day bookings, not just appointments?** Yes — appointments and full-day reservations live on the same page.
-- **Will bookings land in my calendar?** Every confirmation includes an add-to-calendar file and a scannable QR code.
-- **How long does setup take?** Your first service takes about two minutes. `[PLACEHOLDER: confirm/adjust]`
-- **What does it cost?** `[PLACEHOLDER: pricing answer — keep honest and simple.]`
+- **Can bookings be added to a calendar?** Every confirmation includes an ICS file and QR code. Two-way calendar sync is not claimed yet.
+- **What is available today?** Public pages, holds, confirmations, event capacity, and self-service management are live. Haab remains in early access.
+- **What does it cost?** Haab is free during the current early-access period. Paid plans and limits are not finalized.
 
 **Conversion notes:** answer the *real* hesitations (client friction, double-booking, cost); keep answers short; put a soft CTA below.
 
@@ -221,26 +213,24 @@ Visual: subtle "offline → synced" state indicator.
 
 **Purpose:** borrow trust with specifics.
 
-**Heading:** Providers who stopped chasing bookings.
+**Heading:** What you can verify in the live examples.
 
-**Format:** 2–3 short quotes, each with name, role, business type, and one concrete outcome.
+**Format:** verifiable product behaviors until real customer evidence exists.
 
-- `[PLACEHOLDER: "Cut my front-desk back-and-forth to basically zero." — Name, Clinic owner]`
-- `[PLACEHOLDER: "No double-booked courts since we switched." — Name, Padel club manager]`
-- `[PLACEHOLDER: "Clients reschedule themselves now. I just show up." — Name, Advisor]`
+- A client can book without creating an account.
+- An active hold reduces availability before confirmation.
+- Every confirmation includes a private reschedule/cancel route.
 
-**Conversion notes:** specific outcome > generic praise; include a face/photo slot; never fabricate — leave as placeholders until real quotes exist.
+**Conversion notes:** do not style these as customer quotes or imply measured outcomes.
 
 ---
 
-## 12. Pricing Teaser (optional — include only if pricing exists)
+## 12. Early-Access Teaser
 
-**Purpose:** set expectation and route to detail without derailing the page.
+**Purpose:** state the current stage and limits clearly.
 
-**Heading:** Simple pricing. `[PLACEHOLDER]`
-**Body:** `[PLACEHOLDER: one-line pricing summary + "See full pricing →" link.]`
-
-**Conversion notes:** if pricing isn't ready, omit this section entirely rather than show a placeholder; an empty pricing block kills trust.
+**Heading:** Use the core booking flow while we keep building.
+**Body:** Haab is in early access. Public pages, holds, confirmations, capacity, and self-service work today. Pricing and some integrations are still being defined.
 
 ---
 
@@ -248,8 +238,8 @@ Visual: subtle "offline → synced" state indicator.
 
 **Purpose:** last, strongest push for visitors who scrolled the whole way.
 
-**Heading:** Give your clients one link. Get your calendar back.
-**Subhead:** Set up your first service in about two minutes — free, no credit card.
+**Heading:** Give clients one link — and a way to manage their own booking.
+**Subhead:** Create an early-access page for appointments, full-day reservations, or capacity-based events. Clients do not need an account.
 **Primary CTA:** `Create your booking page`
 **Secondary CTA:** `See a live booking page →`
 
@@ -279,12 +269,12 @@ Visual: subtle "offline → synced" state indicator.
 4. Problem / agitation
 5. How it works (3 steps) → CTA
 6. Core features
-7. Differentiator spotlight (holds · natural language · offline)
+7. Differentiator spotlight (holds · no-account self-service)
 8. Use cases / templates → CTA
 9. Mobile section
 10. FAQ / objections
 11. Testimonials
-12. Pricing teaser (optional)
+12. Early-access teaser
 13. Final CTA band
 14. Footer
 

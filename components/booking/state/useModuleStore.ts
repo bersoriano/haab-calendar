@@ -4,6 +4,7 @@ import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from 
 import { backfillManageTokens } from "@/lib/booking-tokens";
 import {
   normalizeAvailability,
+  normalizeBookingHolds,
   normalizeBookings,
   normalizeProvider,
   normalizeServices,
@@ -65,7 +66,9 @@ export function useModuleStore(params: {
   const [shadowBookings, setShadowBookings] = useState<BookingRecord[]>(() =>
     normalizeBookings(injectedConfig?.bookings),
   );
-  const [shadowBookingHolds, setShadowBookingHolds] = useState<BookingHoldRecord[]>([]);
+  const [shadowBookingHolds, setShadowBookingHolds] = useState<BookingHoldRecord[]>(() =>
+    normalizeBookingHolds(injectedConfig?.bookingHolds),
+  );
   const [shadowConfig, setShadowConfig] = useState<ModuleStore | null>(null);
 
   // Hydrate from localStorage

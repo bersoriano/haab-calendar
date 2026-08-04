@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import {
   isPublicUrlBackendUnavailable,
+  loadPublicSchedule,
   PUBLIC_PROVIDER_SELECT,
   PUBLIC_SERVICE_SELECT,
 } from "@/lib/public-booking-resolver";
@@ -180,8 +181,13 @@ export async function GET(
       throw servicesError;
     }
 
+    const schedule = await loadPublicSchedule(provider.id, provider.booking_window_days);
+
     return Response.json({
-      store: toPublicStore(provider, services ?? []),
+      store: {
+        ...toPublicStore(provider, services ?? []),
+        ...schedule,
+      },
       meta: {
         timezone: provider.timezone,
         bookingWindowDays: provider.booking_window_days,

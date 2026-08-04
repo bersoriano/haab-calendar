@@ -184,3 +184,24 @@ describe("buildIcsContent — SUMMARY escaping", () => {
     expect(ics).toContain("SUMMARY:Design\\, Review");
   });
 });
+
+describe("buildIcsContent — Spanish confirmation export", () => {
+  const ics = buildIcsContent(
+    makeAppointmentBooking({
+      serviceName: "Consulta de seguimiento",
+      notes: "Traer resultados",
+    }),
+    provider,
+    "https://example.com/manage/tok_abc?lang=es",
+    "es",
+  );
+
+  it("localizes attendee details and the manage instruction", () => {
+    expect(ics).toContain("SUMMARY:Consulta de seguimiento");
+    expect(ics).toContain("Cliente: Bob Smith");
+    expect(ics).toContain("Teléfono: 555-1234");
+    expect(ics).toContain("Notas: Traer resultados");
+    expect(ics).toContain("Gestionar esta reserva:");
+    expect(ics).toContain("Booking Module//ES");
+  });
+});

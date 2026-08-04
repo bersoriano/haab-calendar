@@ -186,7 +186,6 @@ The public booking flow is already functional. Strategic improvements should foc
 - Scarcity indicators, such as "2 left" or "Few times left today".
 - Richer service details, including description, location, duration, price, requirements, and cancellation policy.
 - Better unavailable-state messaging when dates have no slots.
-- Optional natural-language entry point, such as "I need a consult next Tuesday afternoon".
 - Trust cues near confirmation: cancellation policy, reminder note, secure confirmation copy.
 
 ### Product Requirements

@@ -7,7 +7,7 @@ describe("AdminHero", () => {
   it("shows the admin booking-system hero text", () => {
     const html = renderToStaticMarkup(<AdminHero />);
 
-    expect(html).toContain("Haab Calendar - The most powerful booking system");
+    expect(html).toContain("Haab Calendar — booking operations in one workspace");
     expect(html).toContain("<h1");
   });
 });

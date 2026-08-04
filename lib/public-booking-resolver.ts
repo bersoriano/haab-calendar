@@ -1,6 +1,8 @@
 import "server-only";
 
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { addDays, getDateKey } from "@/lib/date";
 import {
   buildProviderPath,
   buildServicePath,
@@ -11,6 +13,8 @@ import {
   validateServiceSlug,
 } from "@/lib/public-url";
 import type {
+  BookingHoldRecord,
+  BookingRecord,
   LocationKey,
   ModuleStore,
   Service,
@@ -85,6 +89,30 @@ type ServiceRedirectRow = {
   service_id: string;
   slug: string;
   current_slug: string;
+};
+
+type PublicScheduleBookingRow = {
+  id: string;
+  service_id: string | null;
+  service_name: string;
+  booking_type: "appointment" | "full-day";
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  status: "confirmed" | "rescheduled";
+  created_at: string;
+  updated_at: string;
+};
+
+type PublicScheduleHoldRow = {
+  id: string;
+  service_id: string;
+  booking_type: "appointment" | "full-day";
+  date: string;
+  start_time: string | null;
+  end_time: string | null;
+  created_at: string;
+  expires_at: string;
 };
 
 export type PublicBookingResolved = {
@@ -178,6 +206,82 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
     bookingHolds: [],
     setupComplete: true,
     vertical: provider.vertical,
+  };
+}
+
+function toPublicScheduleBooking(row: PublicScheduleBookingRow): BookingRecord {
+  return {
+    id: row.id,
+    serviceId: row.service_id ?? "",
+    serviceName: row.service_name,
+    bookingType: row.booking_type,
+    dateKey: row.date,
+    startTime: row.start_time?.slice(0, 5),
+    endTime: row.end_time?.slice(0, 5),
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    notes: "",
+    cost: "",
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    manageToken: "",
+  };
+}
+
+function toPublicScheduleHold(row: PublicScheduleHoldRow): BookingHoldRecord {
+  return {
+    id: row.id,
+    serviceId: row.service_id,
+    bookingType: row.booking_type,
+    dateKey: row.date,
+    startTime: row.start_time?.slice(0, 5),
+    endTime: row.end_time?.slice(0, 5),
+    createdAt: row.created_at,
+    expiresAt: new Date(row.expires_at).getTime(),
+  };
+}
+
+export async function loadPublicSchedule(providerId: string, bookingWindowDays: number) {
+  const admin = createAdminClient();
+  const dateFrom = getDateKey(new Date());
+  const dateTo = getDateKey(addDays(new Date(), bookingWindowDays));
+  const now = new Date().toISOString();
+
+  const [bookingsResult, holdsResult] = await Promise.all([
+    admin
+      .from("bookings")
+      .select(
+        "id, service_id, service_name, booking_type, date, start_time, end_time, status, created_at, updated_at",
+      )
+      .eq("provider_id", providerId)
+      .gte("date", dateFrom)
+      .lte("date", dateTo)
+      .in("status", ["confirmed", "rescheduled"])
+      .returns<PublicScheduleBookingRow[]>(),
+    admin
+      .from("booking_holds")
+      .select(
+        "id, service_id, booking_type, date, start_time, end_time, created_at, expires_at",
+      )
+      .eq("provider_id", providerId)
+      .gte("date", dateFrom)
+      .lte("date", dateTo)
+      .gt("expires_at", now)
+      .returns<PublicScheduleHoldRow[]>(),
+  ]);
+
+  if (bookingsResult.error || holdsResult.error) {
+    throw new PublicUrlLookupError(
+      "Could not load current public availability.",
+      bookingsResult.error ?? holdsResult.error,
+    );
+  }
+
+  return {
+    bookings: (bookingsResult.data ?? []).map(toPublicScheduleBooking),
+    bookingHolds: (holdsResult.data ?? []).map(toPublicScheduleHold),
   };
 }
 
@@ -277,6 +381,7 @@ async function getServiceRedirect(
 function buildResolvedResult(options: {
   provider: PublicProviderRow;
   services: PublicServiceRow[];
+  schedule: Awaited<ReturnType<typeof loadPublicSchedule>>;
   selectedService?: PublicServiceRow;
 }) {
   const canonicalPath = options.selectedService
@@ -285,7 +390,10 @@ function buildResolvedResult(options: {
 
   return {
     status: "resolved",
-    store: toModuleStore(options.provider, options.services),
+    store: {
+      ...toModuleStore(options.provider, options.services),
+      ...options.schedule,
+    },
     meta: {
       timezone: options.provider.timezone,
       bookingWindowDays: options.provider.booking_window_days,
@@ -342,6 +450,7 @@ export async function resolvePublicBookingUrl(options: {
   }
 
   const services = await getServicesForProvider(supabase, provider.id);
+  const schedule = await loadPublicSchedule(provider.id, provider.booking_window_days);
   let selectedService: PublicServiceRow | undefined;
 
   if (normalizedServiceSlug) {
@@ -363,7 +472,7 @@ export async function resolvePublicBookingUrl(options: {
     }
   }
 
-  const resolved = buildResolvedResult({ provider, services, selectedService });
+  const resolved = buildResolvedResult({ provider, services, schedule, selectedService });
 
   if (needsCanonicalRedirect) {
     return {

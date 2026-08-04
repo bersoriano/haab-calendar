@@ -1,11 +1,12 @@
 import { HaabBookingModule } from "@/components/haab-booking-module";
-import type { InjectedConfig } from "@/lib/types";
+import type { InjectedConfig, Lang } from "@/lib/types";
 
 type PublicBookingPageShellProps = {
   injectedConfig?: Partial<InjectedConfig>;
   requestedPublicSlug: string;
   requestedServiceSlug?: string;
   manageBookingToken?: string;
+  initialPublicLanguage?: Lang;
 };
 
 export function PublicBookingPageShell({
@@ -13,6 +14,7 @@ export function PublicBookingPageShell({
   requestedPublicSlug,
   requestedServiceSlug,
   manageBookingToken,
+  initialPublicLanguage,
 }: PublicBookingPageShellProps) {
   return (
     <main className="relative isolate min-h-screen overflow-x-clip bg-[#eef2f5]">
@@ -35,9 +37,9 @@ export function PublicBookingPageShell({
           requestedServiceSlug={requestedServiceSlug}
           surfaceMode="public-only"
           manageBookingToken={manageBookingToken}
+          initialPublicLanguage={initialPublicLanguage}
         />
       </div>
     </main>
   );
 }
-

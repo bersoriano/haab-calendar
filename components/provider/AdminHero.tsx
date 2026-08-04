@@ -1,4 +1,4 @@
-const ADMIN_HERO_TEXT = "Haab Calendar - The most powerful booking system";
+const ADMIN_HERO_TEXT = "Haab Calendar — booking operations in one workspace";
 
 export function AdminHero() {
   return (

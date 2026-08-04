@@ -1,4 +1,4 @@
-import type { ServiceDraft, VerticalId, WeeklyAvailability } from "../lib/types";
+import type { Lang, ServiceDraft, VerticalId, WeeklyAvailability } from "../lib/types";
 
 export interface VerticalHints {
   serviceName: string;
@@ -291,3 +291,135 @@ export const VERTICALS: Vertical[] = [
     },
   },
 ];
+
+const SPANISH_VERTICAL_CONTENT: Record<
+  VerticalId,
+  Pick<Vertical, "label" | "tagline" | "description" | "hints"> & {
+    services: Array<Pick<ServiceDraft, "name" | "description" | "medicalSpecialty" | "capacity" | "cost">>;
+  }
+> = {
+  healthcare: {
+    label: "Salud",
+    tagline: "Para médicos y especialistas",
+    description: "Consultas y seguimientos con horario durante la semana.",
+    services: [
+      {
+        name: "Consulta para pacientes nuevos",
+        description: "Una primera consulta enfocada en antecedentes, objetivos y próximos pasos.",
+        medicalSpecialty: "",
+        capacity: "1 paciente",
+        cost: "$120",
+      },
+      {
+        name: "Consulta de seguimiento",
+        description: "Una consulta breve para revisar avances y ajustar la atención.",
+        medicalSpecialty: "",
+        capacity: "1 paciente",
+        cost: "$60",
+      },
+    ],
+    hints: {
+      serviceName: "Revisión anual",
+      description: "Qué incluye esta consulta.",
+      medicalSpecialty: "Medicina familiar",
+      capacity: "1 paciente",
+      cost: "$120 / consulta",
+    },
+  },
+  spaces: {
+    label: "Espacios",
+    tagline: "Para canchas, recintos y oficinas compartidas",
+    description: "Reservas por hora y de día completo, disponibles todos los días.",
+    services: [
+      {
+        name: "Renta de cancha o espacio",
+        description: "Reserve por hora para entrenamientos, partidos o uso privado.",
+        capacity: "Hasta 4 personas",
+        cost: "$40 / hora",
+      },
+      {
+        name: "Recinto de día completo",
+        description: "Reserva exclusiva de día completo para eventos y funciones privadas.",
+        capacity: "Hasta 100 invitados",
+        cost: "Paquete de día completo",
+      },
+    ],
+    hints: {
+      serviceName: "Renta de cancha",
+      description: "Qué incluye la reserva.",
+      capacity: "Hasta 4 personas",
+      cost: "$40 / hora",
+    },
+  },
+  professional: {
+    label: "Servicios profesionales",
+    tagline: "Para asesores, contadores y consultores",
+    description: "Sesiones de estrategia y consultas breves durante la semana.",
+    services: [
+      {
+        name: "Sesión de estrategia",
+        description: "Planificación estructurada de objetivos, prioridades y acciones.",
+        capacity: "1 cliente",
+        cost: "$200",
+      },
+      {
+        name: "Consulta breve",
+        description: "Una sesión corta para resolver una pregunta específica.",
+        capacity: "1 cliente",
+        cost: "$90",
+      },
+    ],
+    hints: {
+      serviceName: "Sesión de estrategia",
+      description: "Qué incluye esta sesión.",
+      capacity: "1 cliente",
+      cost: "$200 / sesión",
+    },
+  },
+  events: {
+    label: "Eventos",
+    tagline: "Para carreras, talleres, clases y encuentros",
+    description: "Registros únicos y recurrentes con horarios, ubicaciones y cupo real.",
+    services: [
+      {
+        name: "Entrada general",
+        description: "Un boleto individual para asistir a la sesión.",
+        capacity: "Hasta 50 participantes",
+        cost: "$25 / boleto",
+      },
+      {
+        name: "Pase de día completo",
+        description: "Acceso durante todo el día a cada sesión y actividad.",
+        capacity: "Hasta 200 participantes",
+        cost: "Pase de día completo",
+      },
+    ],
+    hints: {
+      serviceName: "Carrera, taller o clase",
+      description: "Qué pueden esperar los asistentes, dónde llegar y qué está incluido.",
+      capacity: "Hasta 50 participantes",
+      cost: "$25 / boleto",
+    },
+  },
+};
+
+export function getVerticals(lang: Lang = "en"): Vertical[] {
+  if (lang !== "es") return VERTICALS;
+
+  return VERTICALS.map((vertical) => {
+    const localized = SPANISH_VERTICAL_CONTENT[vertical.id];
+    return {
+      ...vertical,
+      ...localized,
+      services: vertical.services.map((service, index) => ({
+        ...service,
+        ...localized.services[index],
+      })),
+    };
+  });
+}
+
+export function getVerticalPreset(id?: VerticalId, lang: Lang = "en") {
+  if (!id) return undefined;
+  return getVerticals(lang).find((vertical) => vertical.id === id);
+}

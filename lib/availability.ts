@@ -55,6 +55,8 @@ export function getSpotsLeft(
   dateKey: string,
   bookings: BookingRecord[],
   ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
 ) {
   if (typeof service.maxSpots !== "number" || !Number.isFinite(service.maxSpots)) {
     return Infinity;
@@ -67,8 +69,14 @@ export function getSpotsLeft(
       booking.id !== ignoredBookingId &&
       isActiveBooking(booking),
   ).length;
+  const held = bookingHolds.filter(
+    (hold) =>
+      hold.serviceId === service.id &&
+      hold.dateKey === dateKey &&
+      hold.id !== ignoredHoldId,
+  ).length;
 
-  return service.maxSpots - taken;
+  return service.maxSpots - taken - held;
 }
 
 export function getBookingHoldsForDate(
@@ -98,7 +106,14 @@ export function getAvailableSlots(
       service.occurrenceDate !== dateKey ||
       !service.startTime ||
       isPastDate(dateKey) ||
-      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0
+      getSpotsLeft(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) <= 0
     ) {
       return [];
     }
@@ -112,7 +127,14 @@ export function getAvailableSlots(
       !service.startTime ||
       !weeklyMatchesDate(service, dateKey) ||
       isPastDate(dateKey) ||
-      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0
+      getSpotsLeft(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) <= 0
     ) {
       return [];
     }
@@ -201,7 +223,14 @@ export function isDateAvailable(
     return (
       Boolean(service.occurrenceDate) &&
       service.occurrenceDate === dateKey &&
-      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) > 0
+      getSpotsLeft(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) > 0
     );
   }
 
@@ -211,12 +240,28 @@ export function isDateAvailable(
     return (
       Boolean(service.startTime) &&
       weeklyMatchesDate(service, dateKey) &&
-      getSpotsLeft(service, dateKey, bookings, ignoredBookingId) > 0
+      getSpotsLeft(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) > 0
     );
   }
 
   // Periodic events still respect their per-date capacity cap.
-  if (getSpotsLeft(service, dateKey, bookings, ignoredBookingId) <= 0) {
+  if (
+    getSpotsLeft(
+      service,
+      dateKey,
+      bookings,
+      ignoredBookingId,
+      bookingHolds,
+      ignoredHoldId,
+    ) <= 0
+  ) {
     return false;
   }
 

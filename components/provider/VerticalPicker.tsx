@@ -25,9 +25,11 @@ const ACCENT_GRADIENTS: Record<VerticalId, string> = {
 export function VerticalPicker({
   verticals,
   onSelect,
+  actionLabel,
 }: {
   verticals: Vertical[];
   onSelect: (id: VerticalId) => void;
+  actionLabel: string;
 }) {
   return (
     <div className="grid w-full gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -84,7 +86,7 @@ export function VerticalPicker({
               </span>
             </div>
             <span className="relative mt-auto flex items-center gap-1.5 pt-1 text-sm font-semibold text-[var(--ink)] transition-transform duration-300 group-hover:translate-x-1">
-              Get started
+              {actionLabel}
               <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
                 <path
                   d="M5 12h14M13 6l6 6-6 6"

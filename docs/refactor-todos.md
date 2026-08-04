@@ -30,12 +30,12 @@ Each render function currently lives inside `HaabBookingModule` and closes over 
 
 - [ ] **5a — Public booking flow** (highest value for child projects; also largest/riskiest)
   - Extract `renderPublicCalendar` → `components/booking/public/PublicCalendar.tsx`.
-  - Sub-split `renderPublicFlow` (~1,000 lines) → `PublicBookingFlow.tsx` composing `SlotList.tsx` + `BookingSummary.tsx` (+ the success/manage screen, the natural-language input panel, the sticky bottom action bar already added in the mobile work).
-  - Move booking-flow state + handlers into `components/booking/hooks/useBookingFlow.ts`: `bookingFlow`/`setBookingFlow`, `startFreshBooking`, `launchPublicFlow`, `beginClientDetailsStep`, `confirmBooking`, `updateBookingFlow`, `continueWithNaturalLanguageBooking` (+ the chrono-node `hasExplicitTime` helper, or move that to `lib/nl.ts` — see gap below).
+  - Sub-split `renderPublicFlow` (~1,000 lines) → `PublicBookingFlow.tsx` composing `SlotList.tsx` + `BookingSummary.tsx` (+ the success/manage screen and the sticky bottom action bar already added in the mobile work).
+  - Move booking-flow state + handlers into `components/booking/hooks/useBookingFlow.ts`: `bookingFlow`/`setBookingFlow`, `startFreshBooking`, `launchPublicFlow`, `beginClientDetailsStep`, `confirmBooking`, and `updateBookingFlow`.
   - Move hold lifecycle into `components/booking/hooks/useBookingHolds.ts`: `bookingHold`/`setBookingHold`, `bookingHoldNow`, the per-second ticker effect, `releaseExpiredBookingHold`, hold-selection-key wiring. It consumes `useModuleStore` actions (`commitBookingHolds`, `releaseBookingHold`).
-  - **Context/risk:** `confirmBooking` and `beginClientDetailsStep` do read-modify-write via `actions.readStandaloneStoreSnapshot()` + `actions.commitBookings/commitBookingHolds` — preserve that re-validate-against-latest-snapshot pattern exactly (it's the double-booking guard, `SYSTEM_REFERENCE.md` §5/§8). NL parsing uses `chrono-node`.
+  - **Context/risk:** `confirmBooking` and `beginClientDetailsStep` do read-modify-write via `actions.readStandaloneStoreSnapshot()` + `actions.commitBookings/commitBookingHolds` — preserve that re-validate-against-latest-snapshot pattern exactly (it's the double-booking guard, `SYSTEM_REFERENCE.md` §5/§8).
   - **New tests unlocked:** once `useBookingFlow`/`useBookingHolds` are isolated, add hook tests (React Testing Library `renderHook`) for the step transitions + hold expiry — this closes part of the render-flow coverage gap.
-  - **Verify:** full public smoke (book/confirm/reschedule/cancel/hold-expiry/NL input) + mobile viewport (the recently-hardened mobile flow must stay intact).
+  - **Verify:** full public smoke (book/confirm/reschedule/cancel/hold-expiry) + mobile viewport (the recently-hardened mobile flow must stay intact).
 
 - [ ] **5b — Modals**
   - `renderCancellationModal` → `components/booking/public/CancellationModal.tsx`.
@@ -83,7 +83,6 @@ This is what actually unblocks child projects. The foundation makes reuse *possi
 
 - [ ] **Import-boundary lint rule** — ESLint rule (e.g. `eslint-plugin-boundaries` or `no-restricted-imports`) forbidding `lib/**` from importing `components/**`/React, so the acyclic architecture can't silently regress. Cheap, high leverage.
 - [ ] **`lib/index.ts` barrel** — children currently import deep paths (`@/lib/availability`); a barrel gives a cleaner public contract.
-- [ ] **`lib/nl.ts`** — move the `chrono-node` natural-language straggler (`hasExplicitTime` + parse usage) out of the monolith into a pure module (pairs with 5a).
 - [ ] **Type dedup** — `lib/booking-tokens.ts` defines its own `BookingLike`/`StoreLike`; align with `lib/types` now that types are centralized.
 - [ ] **`integratedMode` integration smoke** — canonical public routes now exercise it; add a dedicated smoke/test so child extraction cannot regress it.
 - [ ] **Component/integration tests** — RTL/Playwright for the booking wizard + admin flows to close the render-flow coverage gap that unit tests don't cover.
