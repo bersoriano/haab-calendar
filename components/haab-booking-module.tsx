@@ -176,6 +176,9 @@ type HaabBookingModuleProps = {
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
   initialVerticalId?: VerticalId;
+  // Page name captured on the landing page before setup opened. Applied with the
+  // vertical preset so step 1 starts already filled in.
+  initialBusinessName?: string;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -235,6 +238,7 @@ export function HaabBookingModule({
   initialPublicLanguage,
   providerTimeZone,
   initialVerticalId,
+  initialBusinessName,
   onLanguageChange,
   onVerticalChange,
 }: HaabBookingModuleProps) {
@@ -1849,8 +1853,13 @@ export function HaabBookingModule({
     appliedInitialVerticalRef.current = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     applyVertical(initialVerticalId);
+    // The name chosen on the landing page also seeds the public slug, so the
+    // link previewed there is the link setup starts with.
+    if (initialBusinessName?.trim()) {
+      updateProvider("businessName", initialBusinessName.trim());
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated, initialVerticalId, integratedMode]);
+  }, [hydrated, initialBusinessName, initialVerticalId, integratedMode]);
 
   function updateSetupBookingLength(value: string) {
     if (integratedMode) {

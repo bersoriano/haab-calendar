@@ -22,7 +22,7 @@ function parseVertical(value?: string): LandingVertical | undefined {
 }
 
 type HomePageProps = {
-  searchParams: Promise<{ lang?: string; vertical?: string }>;
+  searchParams: Promise<{ lang?: string; vertical?: string; name?: string }>;
 };
 
 function parseLanguage(value?: string): Lang | undefined {
@@ -30,7 +30,7 @@ function parseLanguage(value?: string): Lang | undefined {
 }
 
 export default async function Home({ searchParams }: HomePageProps) {
-  const { lang, vertical } = await searchParams;
+  const { lang, vertical, name } = await searchParams;
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -75,6 +75,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       isSuperAdmin={isSuperAdmin}
       initialLanguage={parseLanguage(lang)}
       initialVertical={parseVertical(vertical)}
+      initialPageName={name}
       dashboardStore={dashboardStore}
       publicationStatus={publicationStatus}
     />

@@ -11,9 +11,9 @@ export const translations = {
         useCases: "Casos de uso",
         faq: "Preguntas",
       },
-      seeLivePage: "Ver una página real",
+      seeLivePage: "Verlo en vivo",
       createPageShort: "Crear página",
-      createPageLong: "Crea tu página de reservas",
+      createPageLong: "Crear mi página",
       openMenu: "Abrir menú",
     },
     home: {
@@ -96,10 +96,29 @@ export const translations = {
         "Apartado de 10 minutos",
         "Sin cuenta para el cliente",
       ],
-      ctaPrimary: "Probar una reserva real →",
-      ctaSecondary: "Crear mi página",
-      fineprint: "Sin cuenta para el cliente · Citas, días completos y registros con cupo.",
-      previewCaption: "Esta es la página pública real de Dra. Maya Rivera. Tócala: es interactiva.",
+      ctaPrimary: "Crear mi página →",
+      ctaSecondary: "Verlo funcionar en 15 segundos",
+      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
+      previewCaption: "La página real de Dra. Maya Rivera. Tócala: está en vivo.",
+    },
+    startDialog: {
+      eyebrow: "Gratis · 20 segundos",
+      title: "Reserva tu enlace.",
+      stepVertical: "¿Qué reservas?",
+      stepName: "Nombra tu página",
+      namePlaceholder: "Consultorio Rivera",
+      submit: "Quiero este enlace →",
+      submitDisabled: "Elige qué reservas",
+      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta. Tus clientes nunca se registran.",
+      close: "Cerrar",
+    },
+    demoDialog: {
+      title: "Resérvalo tú. 15 segundos.",
+      steps: ["Elige un servicio", "Elige un horario", "Mira arrancar el apartado de 10 minutos"],
+      frameTitle: "Página pública de reservas de Dra. Maya Rivera",
+      disclaimer: "Página real, apartado real. Sin cuenta y sin instalar nada.",
+      openFull: "Abrir página completa ↗",
+      close: "Cerrar",
     },
     heroPreview: {
       ariaLabel: "Vista previa interactiva de una página pública de reservas",
@@ -125,8 +144,8 @@ export const translations = {
     },
     liveExamples: {
       eyebrow: "Producto real, no una maqueta",
-      title: "Elige un ejemplo y completa el flujo como cliente.",
-      body: "Estas páginas son públicas y funcionales. Abre una, consulta disponibilidad real y comprueba el apartado, la confirmación y el autoservicio.",
+      title: "Abre una. Resérvala como lo haría un cliente.",
+      body: "Cuatro páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
       liveBadge: "En vivo",
       items: [
         {
@@ -191,51 +210,51 @@ export const translations = {
     },
     how: {
       eyebrow: "Cómo funciona",
-      title: "Publica una página y deja que tus clientes resuelvan lo rutinario.",
+      title: "Publica una vez. Deja de contestar mensajes de reservas.",
       stepLabel: "Paso",
       steps: [
         {
-          title: "Agrega lo que ofreces.",
-          body: "Elige salud, espacios, servicios profesionales o eventos. Después ajusta servicios, duración, capacidad, precio y disponibilidad semanal.",
+          title: "Nombra tu página.",
+          body: "Elige qué reservas. Servicios, horarios y precios llegan puestos: cambia lo que quieras.",
         },
         {
-          title: "Comparte un solo enlace.",
-          body: "Obtienes una página pública de reservas limpia con tu propia dirección. Ponla en tu bio, tus correos, un código QR en la puerta. Los clientes se agendan solos.",
+          title: "Comparte un enlace.",
+          body: "Tu propia dirección, lista para tu bio, tus correos y un código QR en la puerta.",
         },
         {
-          title: "Saca los cambios de tu bandeja de entrada.",
-          body: "Los clientes eligen disponibilidad real, reciben un apartado de 10 minutos y confirman. Después usan su enlace privado para reagendar o cancelar por su cuenta.",
+          title: "Silencio.",
+          body: "Tus clientes reservan, apartan, confirman y reagendan solos. Nada llega a tu bandeja.",
         },
       ],
-      cta: "Crea tu página de reservas",
+      cta: "Crear mi página",
     },
     features: {
       eyebrow: "Por qué se siente diferente",
-      title: "Cinco decisiones que eliminan el trabajo rutinario.",
+      title: "Cinco decisiones que borran el trabajo repetitivo.",
       items: [
         {
-          title: "Cero cuentas para tus clientes.",
-          body: "Eligen, ingresan sus datos y confirman. No necesitan registro, contraseña ni iniciar sesión.",
+          title: "Tus clientes nunca se registran.",
+          body: "Eligen, escriben sus datos, listo. Sin cuenta, sin contraseña, sin nada que recordar.",
           tag: "Menos fricción",
         },
         {
-          title: "Cada selección recibe un apartado de 10 minutos.",
-          body: "La cuenta regresiva hace visible el tiempo restante y la protección del servidor rechaza confirmaciones que entren en conflicto dentro del flujo de Haab.",
+          title: "Cada selección se aparta 10 minutos.",
+          body: "Una cuenta regresiva visible protege el horario. Dos personas van por el mismo lugar: el servidor confirma a una y rechaza a la otra.",
           tag: "Protección contra conflictos",
         },
         {
-          title: "Tres modos en una sola página.",
-          body: "Combina citas por horario, reservas de día completo y registros con cupo sin cambiar de producto.",
-          tag: "Citas, días y boletos",
+          title: "Citas, días completos y boletos.",
+          body: "Una página hace las tres. Sin un segundo producto para tu evento o tu renta.",
+          tag: "Tres modos, una página",
         },
         {
           title: "Habla como tu sector.",
-          body: "Pacientes, huéspedes, clientes o asistentes ven términos y confirmaciones adecuados para lo que están reservando.",
+          body: "Pacientes, huéspedes, clientes o asistentes: cada etiqueta y confirmación calza con lo que vendes.",
           tag: "Lenguaje específico",
         },
         {
-          title: "Los clientes gestionan sus cambios.",
-          body: "Cada confirmación incluye un enlace privado para reagendar o cancelar sin cuenta y sin volver a escribirte.",
+          title: "Ellos arreglan sus cambios.",
+          body: "Un enlace privado en cada confirmación reagenda o cancela. Sin ti.",
           tag: "Autoservicio privado",
         },
       ],
@@ -269,9 +288,9 @@ export const translations = {
     },
     useCases: {
       eyebrow: "Casos de uso",
-      title: "Una página, moldeada a tu negocio.",
+      title: "Elige qué reservas. Tu página llega lista.",
       body:
-        "Selecciona un flujo a continuación para comenzar con los servicios, la disponibilidad y la configuración de reservas adecuados.",
+        "Servicios, horarios y reglas ya vienen puestos para tu giro. Cambia lo que quieras.",
       cards: [
         {
           title: "Salud — médicos y especialistas",
@@ -291,8 +310,8 @@ export const translations = {
         },
       ],
       note:
-        "Elige el flujo más parecido a tu negocio. Podrás ajustar sus servicios y disponibilidad durante la configuración.",
-      cta: "Crea tu página de reservas",
+        "Gana el más parecido. Todo se edita en la configuración.",
+      cta: "Crear mi página",
     },
     mobile: {
       eyebrow: "Hecho primero para el teléfono",
@@ -305,35 +324,35 @@ export const translations = {
       items: [
         {
           q: "¿Mis clientes necesitan una cuenta?",
-          a: "No. Eligen un horario, ingresan sus datos y quedan reservados. Sin registros, sin contraseñas.",
+          a: "Nunca. Eligen un horario, escriben sus datos, listo. Sin registro, sin contraseña.",
         },
         {
           q: "¿Cómo se evitan las reservas duplicadas?",
-          a: "Dentro de Haab, elegir un horario crea un apartado de 10 minutos. Las reservas y apartados se validan de nuevo en el servidor antes de confirmar, y los conflictos se rechazan.",
+          a: "Elegir un horario lo aparta 10 minutos. Al confirmar, el servidor vuelve a revisar reservas y apartados, y rechaza al perdedor de cualquier empate.",
         },
         {
           q: "¿Los clientes pueden reagendar o cancelar solos?",
-          a: "Sí — cada reserva incluye un enlace privado de administración para reagendar o cancelar, sin inicio de sesión.",
+          a: "Sí. Cada confirmación trae un enlace privado para reagendar o cancelar. Sin iniciar sesión y sin escribirte.",
         },
         {
-          q: "¿Puedo aceptar registros con boleto para una clase o evento?",
-          a: "Sí. Los eventos admiten registros con cupo y Haab cuenta los lugares confirmados y apartados. El procesamiento de pagos todavía no está incluido.",
+          q: "¿Qué funciona hoy?",
+          a: "Páginas públicas, disponibilidad en vivo, apartados, confirmaciones, cupo de eventos y enlaces de autoservicio. Haab está en acceso anticipado: pagos y sincronización con calendarios externos todavía no.",
         },
         {
-          q: "¿Puedo ofrecer reservas de día completo, no solo citas?",
-          a: "Sí — las citas y las reservas de día completo viven en la misma página.",
+          q: "¿Puedo aceptar registros para una clase o evento?",
+          a: "Sí. Los eventos descuentan lugares confirmados y apartados de tu cupo. El cobro todavía no está incluido.",
+        },
+        {
+          q: "¿Reservas de día completo, no solo citas?",
+          a: "Sí. Citas, días completos y registros comparten una misma página.",
         },
         {
           q: "¿Las reservas se pueden agregar a un calendario?",
-          a: "Sí. Cada confirmación incluye un archivo ICS y un código QR. Haab todavía no promete sincronización bidireccional con calendarios externos.",
-        },
-        {
-          q: "¿Qué está disponible hoy?",
-          a: "Las páginas públicas, disponibilidad, apartados, confirmaciones, cupo de eventos y enlaces para reagendar o cancelar ya funcionan. Haab sigue en acceso anticipado.",
+          a: "Sí. Cada confirmación incluye archivo de calendario y código QR. La sincronización bidireccional con calendarios externos aún no está disponible.",
         },
         {
           q: "¿Cuánto cuesta?",
-          a: "Haab es gratis durante el acceso anticipado actual. Los planes y límites de pago todavía no están definidos.",
+          a: "Nada durante el acceso anticipado. Los planes de pago no están definidos.",
         },
       ],
     },
@@ -373,19 +392,19 @@ export const translations = {
       ],
     },
     finalCta: {
-      title: "Dales un enlace y una forma de administrar su propia reserva.",
-      body: "Crea una página de acceso anticipado para citas, reservas de día completo o eventos con cupo. Tus clientes no necesitan una cuenta.",
-      ctaPrimary: "Crea tu página de reservas",
-      ctaSecondary: "Ver una página de reservas en vivo →",
+      title: "Un enlace. Después, silencio.",
+      body: "Nombra tu página y compártela hoy. Tus clientes nunca crean una cuenta.",
+      ctaPrimary: "Crear mi página →",
+      ctaSecondary: "Verlo funcionar en 15 segundos",
     },
     footer: {
-      tagline: "Reservas en acceso anticipado con disponibilidad protegida y sin cuentas para clientes.",
+      tagline: "Un enlace de reservas. Disponibilidad protegida. Sin cuentas para tus clientes.",
       productHeading: "Producto",
       product: {
         how: "Cómo funciona",
         features: "Funciones",
         useCases: "Casos de uso",
-        seeLivePage: "Ver una página real",
+        seeLivePage: "Verlo en vivo",
       },
       companyHeading: "Empresa",
       company: {
@@ -399,7 +418,7 @@ export const translations = {
         terms: "Términos",
       },
       copyright: "© 2026 Haab Calendar. Software de reservas en acceso anticipado.",
-      createLink: "Crea tu página de reservas →",
+      createLink: "Crear mi página →",
     },
     visuals: {
       weekdays: ["D", "L", "M", "M", "J", "V", "S"],
@@ -461,9 +480,9 @@ export const translations = {
         useCases: "Use cases",
         faq: "FAQ",
       },
-      seeLivePage: "See a live page",
+      seeLivePage: "See it live",
       createPageShort: "Create page",
-      createPageLong: "Create your booking page",
+      createPageLong: "Create your page",
       openMenu: "Open menu",
     },
     home: {
@@ -546,10 +565,29 @@ export const translations = {
         "10-minute hold",
         "No client account",
       ],
-      ctaPrimary: "Try a real booking →",
-      ctaSecondary: "Create your page",
-      fineprint: "No client account · Appointments, full days, and capacity-based registration.",
-      previewCaption: "This is Dr. Maya Rivera's real public page. Touch it — it's interactive.",
+      ctaPrimary: "Create your page →",
+      ctaSecondary: "See it working in 15 seconds",
+      fineprint: "Free while in early access. No card.",
+      previewCaption: "Dr. Maya Rivera's real page. Touch it — it's live.",
+    },
+    startDialog: {
+      eyebrow: "Free · 20 seconds",
+      title: "Claim your booking link.",
+      stepVertical: "What do you book?",
+      stepName: "Name your page",
+      namePlaceholder: "Rivera Family Medicine",
+      submit: "Claim this link →",
+      submitDisabled: "Pick what you book",
+      fineprint: "Free while in early access. No card. Your clients never sign up.",
+      close: "Close",
+    },
+    demoDialog: {
+      title: "Book it yourself. 15 seconds.",
+      steps: ["Pick a service", "Pick a time", "Watch the 10-minute hold start"],
+      frameTitle: "Live public booking page for Dr. Maya Rivera",
+      disclaimer: "Real page, real hold. No account, nothing to install.",
+      openFull: "Open full page ↗",
+      close: "Close",
     },
     heroPreview: {
       ariaLabel: "Interactive preview of a public booking page",
@@ -575,8 +613,8 @@ export const translations = {
     },
     liveExamples: {
       eyebrow: "Real product, not a mockup",
-      title: "Choose an example and complete the flow as a client.",
-      body: "These pages are public and functional. Open one, check real availability, and verify the hold, confirmation, and self-service flow yourself.",
+      title: "Open one. Book it like a client would.",
+      body: "Four public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
       liveBadge: "Live",
       items: [
         {
@@ -641,51 +679,51 @@ export const translations = {
     },
     how: {
       eyebrow: "How it works",
-      title: "Publish one page, then let clients handle the routine.",
+      title: "Publish once. Stop answering booking messages.",
       stepLabel: "Step",
       steps: [
         {
-          title: "Add what you offer.",
-          body: "Choose healthcare, spaces, professional services, or events. Then set your services, duration, capacity, price, and weekly availability.",
+          title: "Name your page.",
+          body: "Pick what you book. Your services, hours, and prices arrive pre-filled — change what you want.",
         },
         {
           title: "Share one link.",
-          body: "You get a clean public booking page at your own address. Drop it in your bio, your emails, a QR code on the door. Clients book themselves.",
+          body: "Your own address, ready for your bio, your emails, a QR code on the door.",
         },
         {
-          title: "Keep changes out of your inbox.",
-          body: "Clients choose live availability, receive a 10-minute hold, and confirm. Afterward, their private link lets them reschedule or cancel on their own.",
+          title: "Go quiet.",
+          body: "Clients book, hold, confirm, and reschedule themselves. Nothing lands in your inbox.",
         },
       ],
-      cta: "Create your booking page",
+      cta: "Create your page",
     },
     features: {
       eyebrow: "Why it feels different",
-      title: "Five decisions that remove routine booking work.",
+      title: "Five decisions that delete the busywork.",
       items: [
         {
-          title: "Zero accounts for your clients.",
-          body: "They choose, enter their details, and confirm. No signup, password, or login is required.",
+          title: "Your clients never sign up.",
+          body: "Pick, fill in, confirmed. No account, no password, nothing to remember.",
           tag: "Less friction",
         },
         {
-          title: "Every selection gets a 10-minute soft hold.",
-          body: "The countdown makes the remaining time clear, while server-side conflict protection rejects competing confirmations within Haab's booking flow.",
+          title: "Every pick is held for 10 minutes.",
+          body: "A visible countdown protects the time. Two people reach for the same slot; the server confirms one and turns the other away.",
           tag: "Conflict protection",
         },
         {
-          title: "Three modes on one page.",
-          body: "Combine timed appointments, full-day reservations, and capacity-based registration without changing products.",
-          tag: "Appointments, days, and tickets",
+          title: "Appointments, full days, and tickets.",
+          body: "One page runs all three. No second product for your event or your rental.",
+          tag: "Three modes, one page",
         },
         {
-          title: "It speaks your industry's language.",
-          body: "Patients, guests, clients, or attendees see terms and confirmations shaped around what they are booking.",
+          title: "It speaks your industry.",
+          body: "Patients, guests, clients, or attendees — every label and confirmation matches what you actually sell.",
           tag: "Industry-specific language",
         },
         {
-          title: "Clients manage their own changes.",
-          body: "Every confirmation includes a private link to reschedule or cancel without an account or another message to you.",
+          title: "They fix their own changes.",
+          body: "A private link on every confirmation reschedules or cancels. Without you.",
           tag: "Private self-service",
         },
       ],
@@ -719,9 +757,9 @@ export const translations = {
     },
     useCases: {
       eyebrow: "Use cases",
-      title: "One page, shaped to your business.",
+      title: "Pick what you book. Your page arrives filled in.",
       body:
-        "Select a workflow below to start with the right services, availability, and booking settings.",
+        "Services, hours, and booking rules come pre-set for your line of work. Change anything you like.",
       cards: [
         {
           title: "Healthcare — doctors & specialists",
@@ -741,8 +779,8 @@ export const translations = {
         },
       ],
       note:
-        "Choose the workflow closest to your business. You can adjust its services and availability during setup.",
-      cta: "Create your booking page",
+        "Closest match wins. Everything is editable during setup.",
+      cta: "Create your page",
     },
     mobile: {
       eyebrow: "Built phone-first",
@@ -755,35 +793,35 @@ export const translations = {
       items: [
         {
           q: "Do my clients need an account?",
-          a: "No. They pick a slot, enter their details, and they're booked. No signups, no passwords.",
+          a: "Never. They pick a time, enter their details, done. No signup, no password.",
         },
         {
           q: "How are double-bookings prevented?",
-          a: "Within Haab, selecting a time creates a 10-minute hold. Bookings and holds are checked again on the server before confirmation, and conflicting writes are rejected.",
+          a: "Picking a time holds it for 10 minutes. The server re-checks bookings and holds at confirmation and rejects the loser of any race.",
         },
         {
           q: "Can clients reschedule or cancel themselves?",
-          a: "Yes — every booking includes a private management link to reschedule or cancel, with no login.",
+          a: "Yes. Every confirmation carries a private link to reschedule or cancel. No login, no message to you.",
         },
         {
-          q: "Can I take ticket registrations for a class or event?",
-          a: "Yes. Events support capacity-based registrations, and Haab counts confirmed and held spots. Payment processing is not included yet.",
+          q: "What works today?",
+          a: "Public pages, live availability, holds, confirmations, event capacity, and self-service links. Haab is in early access — payments and external calendar sync are not in yet.",
         },
         {
-          q: "Can I offer full-day bookings, not just appointments?",
-          a: "Yes — appointments and full-day reservations live on the same page.",
+          q: "Can I take registrations for a class or event?",
+          a: "Yes. Events count confirmed and held spots against your capacity. Payment processing is not included yet.",
+        },
+        {
+          q: "Full-day bookings, not just appointments?",
+          a: "Yes. Appointments, full days, and registrations share one page.",
         },
         {
           q: "Can bookings be added to a calendar?",
-          a: "Yes. Every confirmation includes an ICS calendar file and a scannable QR code. Haab does not yet promise two-way external calendar sync.",
-        },
-        {
-          q: "What is available today?",
-          a: "Public pages, availability, holds, confirmations, event capacity, and self-service reschedule or cancel links are working now. Haab remains in early access.",
+          a: "Yes. Every confirmation includes a calendar file and a QR code. Two-way sync with external calendars is not available yet.",
         },
         {
           q: "What does it cost?",
-          a: "Haab is free during the current early-access period. Paid plans and limits have not been finalized.",
+          a: "Nothing during early access. Paid plans are not final.",
         },
       ],
     },
@@ -823,19 +861,19 @@ export const translations = {
       ],
     },
     finalCta: {
-      title: "Give clients one link — and a way to manage their own booking.",
-      body: "Create an early-access page for appointments, full-day reservations, or capacity-based events. Your clients do not need an account.",
-      ctaPrimary: "Create your booking page",
-      ctaSecondary: "See a live booking page →",
+      title: "One link. Then silence.",
+      body: "Name your page and share it today. Your clients never create an account.",
+      ctaPrimary: "Create your page →",
+      ctaSecondary: "See it working in 15 seconds",
     },
     footer: {
-      tagline: "Early-access booking pages with protected availability and no client accounts.",
+      tagline: "One booking link. Protected availability. No client accounts.",
       productHeading: "Product",
       product: {
         how: "How it works",
         features: "Features",
         useCases: "Use cases",
-        seeLivePage: "See a live page",
+        seeLivePage: "See it live",
       },
       companyHeading: "Company",
       company: {
@@ -849,7 +887,7 @@ export const translations = {
         terms: "Terms",
       },
       copyright: "© 2026 Haab Calendar. Early-access booking software.",
-      createLink: "Create your booking page →",
+      createLink: "Create your page →",
     },
     visuals: {
       weekdays: ["S", "M", "T", "W", "T", "F", "S"],

@@ -24,6 +24,14 @@ import type { PublicationStatus } from "@/lib/supabase/publication";
 
 type View = "home" | "app";
 
+/** Page name captured on the landing page, before any account exists. */
+const MAX_PAGE_NAME_LENGTH = 60;
+
+function normalizePageName(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.slice(0, MAX_PAGE_NAME_LENGTH) : undefined;
+}
+
 type HomeExperienceProps = {
   loggedIn: boolean;
   /** True when the signed-in user has finished provider setup. */
@@ -31,6 +39,8 @@ type HomeExperienceProps = {
   email?: string;
   /** Pre-selected vertical, e.g. after returning from login via ?vertical=. */
   initialVertical?: LandingVertical;
+  /** Page name chosen on the landing page, carried through login via ?name=. */
+  initialPageName?: string;
   /** Visitor language carried explicitly through the authentication return URL. */
   initialLanguage?: LandingLang;
   /** Supabase-backed provider data for configured users. */
@@ -66,6 +76,7 @@ function HomeExperienceInner({
   configured,
   email,
   initialVertical,
+  initialPageName,
   dashboardStore,
   publicationStatus,
   isSuperAdmin,
@@ -85,9 +96,15 @@ function HomeExperienceInner({
   const [selectedVertical, setSelectedVertical] = useState<
     VerticalId | undefined
   >(startInApp ? initialVertical : undefined);
+  // Prefills the setup wizard so the page the visitor named on the landing page
+  // is already there when setup opens.
+  const [pageName, setPageName] = useState<string | undefined>(() =>
+    startInApp ? normalizePageName(initialPageName) : undefined,
+  );
 
-  function openApp(vertical?: VerticalId) {
+  function openApp(vertical?: VerticalId, nextPageName?: string) {
     setSelectedVertical(vertical);
+    setPageName(normalizePageName(nextPageName));
     setView("app");
   }
 
@@ -107,7 +124,7 @@ function HomeExperienceInner({
     setSelectedVertical(vertical);
   }
 
-  // Generic "create your page" CTA.
+  // "Create your page" for someone who already has one: straight to the app.
   function onStart() {
     if (effectiveConfigured) {
       openApp();
@@ -120,12 +137,21 @@ function HomeExperienceInner({
     });
   }
 
-  function onSelectVertical(vertical: LandingVertical) {
+  // Landing first step complete: workflow chosen, page optionally named. Signed
+  // in, setup opens right away; otherwise both survive the login round-trip.
+  function onSelectVertical(vertical: LandingVertical, nextPageName?: string) {
     if (loggedIn) {
-      openApp(vertical);
+      openApp(vertical, nextPageName);
       return;
     }
-    router.push(loginHref(`/?vertical=${vertical}`, lang));
+
+    const named = normalizePageName(nextPageName);
+    // encodeURIComponent, not URLSearchParams: "+" for a space survives one
+    // round-trip but not every parser, and this string is shown back to the user.
+    const query = named
+      ? `vertical=${vertical}&name=${encodeURIComponent(named)}`
+      : `vertical=${vertical}`;
+    router.push(loginHref(`/?${query}`, lang));
   }
 
   if (view === "app") {
@@ -179,6 +205,7 @@ function HomeExperienceInner({
             }}
             initialLanguage={effectiveConfigured ? undefined : lang}
             initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
+            initialBusinessName={effectiveConfigured ? undefined : pageName}
             onLanguageChange={setLang}
             onVerticalChange={handleVerticalChange}
           />
@@ -193,7 +220,9 @@ function HomeExperienceInner({
         isSuperAdmin={isSuperAdmin}
         publicationStatus={publicationStatus}
       />
-      <LandingActionsProvider actions={{ onStart, onSelectVertical }}>
+      <LandingActionsProvider
+        actions={{ onStart, onSelectVertical, hasPage: effectiveConfigured }}
+      >
         <LandingPage
           afterHero={
             effectiveConfigured ? (

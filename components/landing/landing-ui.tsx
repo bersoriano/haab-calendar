@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { LanguageToggle, useLanguage } from "./language-provider";
+import { LiveDemoDialog } from "./live-demo-dialog";
+import { StartPageDialog } from "./start-page-dialog";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
 // `VerticalId`s in config/verticals.ts and to the UseCases card variants below.
@@ -18,13 +20,58 @@ export type LandingVertical = Extract<
 // landing components stay renderable in isolation.
 type LandingActions = {
   onStart: () => void;
-  onSelectVertical: (vertical: LandingVertical) => void;
+  onSelectVertical: (vertical: LandingVertical, pageName?: string) => void;
+  /** True once the visitor already has a booking page: CTAs go to it directly. */
+  hasPage?: boolean;
 };
 
 const LandingActionsContext = createContext<LandingActions>({
   onStart: () => {},
   onSelectVertical: () => {},
 });
+
+// Landing-owned dialogs: the progressive "create your page" first step and the
+// embedded live demo. Kept in context so every CTA on the page can open them.
+type LandingDialogs = {
+  openStart: () => void;
+  openDemo: () => void;
+};
+
+const LandingDialogsContext = createContext<LandingDialogs>({
+  openStart: () => {},
+  openDemo: () => {},
+});
+
+function useLandingDialogs() {
+  return useContext(LandingDialogsContext);
+}
+
+function LandingDialogsProvider({ children }: { children: ReactNode }) {
+  const { onSelectVertical, onStart, hasPage } = useLandingActions();
+  const [startOpen, setStartOpen] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
+
+  return (
+    <LandingDialogsContext.Provider
+      value={{
+        // Someone who already has a page does not need to name one again.
+        openStart: () => (hasPage ? onStart() : setStartOpen(true)),
+        openDemo: () => setDemoOpen(true),
+      }}
+    >
+      {children}
+      <StartPageDialog
+        open={startOpen}
+        onClose={() => setStartOpen(false)}
+        onSubmit={(vertical, pageName) => {
+          setStartOpen(false);
+          onSelectVertical(vertical, pageName);
+        }}
+      />
+      <LiveDemoDialog open={demoOpen} onClose={() => setDemoOpen(false)} />
+    </LandingDialogsContext.Provider>
+  );
+}
 
 export function LandingActionsProvider({
   actions,
@@ -44,8 +91,8 @@ function useLandingActions() {
   return useContext(LandingActionsContext);
 }
 
-// Generic CTA button. For unconfigured users, the host scrolls to the required
-// workflow selector; setup starts only after a vertical card is chosen.
+// Primary CTA everywhere on the page. Opens the lightweight first step (pick a
+// workflow, name the page) instead of dropping the visitor into setup.
 function StartButton({
   className,
   children,
@@ -53,9 +100,25 @@ function StartButton({
   className: string;
   children: ReactNode;
 }) {
-  const { onStart } = useLandingActions();
+  const { openStart } = useLandingDialogs();
   return (
-    <button type="button" onClick={onStart} className={className}>
+    <button type="button" onClick={openStart} className={className}>
+      {children}
+    </button>
+  );
+}
+
+// Secondary CTA: opens the real public page inline, no account, no navigation.
+function DemoButton({
+  className,
+  children,
+}: {
+  className: string;
+  children: ReactNode;
+}) {
+  const { openDemo } = useLandingDialogs();
+  return (
+    <button type="button" onClick={openDemo} className={className}>
       {children}
     </button>
   );
@@ -454,7 +517,7 @@ export function StickyNav() {
 }
 
 export function Hero() {
-  const { lang, t } = useLanguage();
+  const { t } = useLanguage();
   return (
     <section className="relative overflow-hidden border-b border-[var(--line)] bg-[linear-gradient(145deg,#f5f7fb_0%,#edf4ff_54%,#e9f8f5_100%)]">
       <div className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(26,115,232,0.16),transparent_68%)]" />
@@ -499,10 +562,11 @@ export function Hero() {
             ))}
           </ul>
           <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <a href={tryBookingPath(lang)} className={primaryButtonClass}>
-              {t.hero.ctaPrimary}
-            </a>
-            <StartButton className={ghostButtonClass}>{t.hero.ctaSecondary}</StartButton>
+            <StartButton className={primaryButtonClass}>{t.hero.ctaPrimary}</StartButton>
+            <DemoButton className={ghostButtonClass}>
+              <span className="haab-live-dot mr-2 h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
+              {t.hero.ctaSecondary}
+            </DemoButton>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
         </div>
@@ -971,7 +1035,7 @@ export function EarlyAccessTeaser() {
 }
 
 export function FinalCTA() {
-  const { lang, t } = useLanguage();
+  const { t } = useLanguage();
   return (
     <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(26,115,232,0.95),rgba(79,142,241,0.92))]" />
@@ -987,12 +1051,9 @@ export function FinalCTA() {
           <StartButton className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--primary)] shadow-[0_18px_44px_rgba(15,23,42,0.18)] transition hover:bg-white/90">
             {t.finalCta.ctaPrimary}
           </StartButton>
-          <a
-            href={tryBookingPath(lang)}
-            className="inline-flex items-center justify-center rounded-full border border-white/60 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-white/10"
-          >
+          <DemoButton className="inline-flex items-center justify-center rounded-full border border-white/60 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-white/10">
             {t.finalCta.ctaSecondary}
-          </a>
+          </DemoButton>
         </div>
       </div>
     </section>
@@ -1099,7 +1160,7 @@ export function Footer() {
 // panel there, depending on auth/configuration state.
 export function LandingPage({ afterHero }: { afterHero?: ReactNode }) {
   return (
-    <>
+    <LandingDialogsProvider>
       <StickyNav />
       <main className="flex-1">
         <Hero />
@@ -1111,6 +1172,6 @@ export function LandingPage({ afterHero }: { afterHero?: ReactNode }) {
         <FinalCTA />
       </main>
       <Footer />
-    </>
+    </LandingDialogsProvider>
   );
 }
