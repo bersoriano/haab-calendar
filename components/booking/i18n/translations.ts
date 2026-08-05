@@ -113,6 +113,13 @@ export type BookingDict = {
     pickDateFullDayHelper: string;
     dayFreeHelper: string;
     dayUnavailablePickAnother: string;
+    // Returned-to-time-selection notices
+    holdExpiredNoticeTitle: string;
+    holdExpiredNoticeBody: string;
+    conflictNoticeTitle: string;
+    conflictNoticeBody: string;
+    holdingSlot: string;
+    tapTimeHint: string;
     // Section titles & misc actions
     bookingCancelled: string;
     bookingConfirmed: string;
@@ -488,6 +495,12 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       pickDateFullDayHelper: "Pick a date to reserve the full day.",
       dayFreeHelper: "This day is free. Click the button to enter your details.",
       dayUnavailablePickAnother: "This day isn't available. Pick another date.",
+      holdExpiredNoticeTitle: "Your 10-minute hold ran out",
+      holdExpiredNoticeBody: "The time was released. Pick another one — it's held again straight away.",
+      conflictNoticeTitle: "Someone confirmed that time first",
+      conflictNoticeBody: "Nothing was booked. Pick another time to continue.",
+      holdingSlot: "Holding your time…",
+      tapTimeHint: "Tap a time — it's held for 10 minutes.",
       bookingCancelled: "Booking Cancelled",
       bookingConfirmed: "Booking Confirmed",
       bookingUpdated: "Booking Updated",
@@ -867,6 +880,12 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       pickDateFullDayHelper: "Elija una fecha para reservar el día completo.",
       dayFreeHelper: "Este día está libre. Haga clic en el botón para ingresar sus datos.",
       dayUnavailablePickAnother: "Este día no está disponible. Elija otra fecha.",
+      holdExpiredNoticeTitle: "Su apartado de 10 minutos venció",
+      holdExpiredNoticeBody: "El horario se liberó. Elija otro: se aparta de nuevo al instante.",
+      conflictNoticeTitle: "Alguien confirmó ese horario primero",
+      conflictNoticeBody: "No se reservó nada. Elija otro horario para continuar.",
+      holdingSlot: "Apartando su horario…",
+      tapTimeHint: "Toque un horario: se aparta por 10 minutos.",
       bookingCancelled: "Reserva cancelada",
       bookingConfirmed: "Reserva confirmada",
       bookingUpdated: "Reserva actualizada",

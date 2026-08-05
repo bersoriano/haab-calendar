@@ -6,10 +6,13 @@ export function PublicProgressIndicator({
   currentStep,
   isDedicatedPublicPage,
   lang = "en",
+  compact = false,
 }: {
   currentStep: 2 | 3 | 4;
   isDedicatedPublicPage: boolean;
   lang?: Lang;
+  /** Slim single-line form, so progress stays on screen once the header sticks. */
+  compact?: boolean;
 }) {
   const t = bookingTranslations[lang];
   const steps = [
@@ -17,6 +20,52 @@ export function PublicProgressIndicator({
     { key: 3 as const, label: t.publicFlow.myDetails },
     { key: 4 as const, label: t.publicFlow.confirm },
   ];
+
+  if (compact) {
+    const activeIndex = steps.findIndex((step) => step.key === currentStep);
+    const current = steps[activeIndex] ?? steps[0];
+
+    return (
+      <nav aria-label={t.publicFlow.progressLabel} className="flex items-center gap-3">
+        <ol className="flex items-center gap-1.5" role="list">
+          {steps.map((step, index) => {
+            const done = currentStep === 4 || step.key < currentStep;
+            const isCurrent = step.key === currentStep;
+
+            return (
+              <li
+                key={step.key}
+                aria-current={isCurrent ? "step" : undefined}
+                className={cn(
+                  "h-1.5 rounded-full transition-all duration-300",
+                  isCurrent ? "w-7 bg-[var(--primary)]" : "w-4",
+                  !isCurrent && done && "bg-[var(--primary)] opacity-55",
+                  !isCurrent &&
+                    !done &&
+                    (isDedicatedPublicPage ? "bg-[rgba(193,198,214,0.6)]" : "bg-[var(--line)]"),
+                )}
+              >
+                <span className="sr-only">
+                  {done
+                    ? t.publicFlow.completedPrefix
+                    : isCurrent
+                      ? t.publicFlow.currentStepPrefix
+                      : t.publicFlow.upcomingPrefix}
+                  {steps[index].label}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+        <span className="truncate text-[0.8125rem] font-semibold text-[var(--ink)]">
+          {current.label}
+        </span>
+        <span className="ml-auto shrink-0 text-[0.6875rem] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] tabular-nums">
+          {Math.max(1, activeIndex + 1)}/{steps.length}
+        </span>
+      </nav>
+    );
+  }
 
   return (
     <nav aria-label={t.publicFlow.progressLabel}>

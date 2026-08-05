@@ -120,6 +120,12 @@ import {
 } from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
 import {
+  bookingFlowReducer,
+  createBookingFlowState,
+  type BookingFlowEvent,
+  type BookingFlowNotice,
+} from "@/lib/booking-flow-machine";
+import {
   adminBarClass,
   adminChoiceQuietClass,
   adminFieldClass,
@@ -279,8 +285,13 @@ export function HaabBookingModule({
     createInitialBookingFlow(initialServices, requestedInitialServiceId),
   );
   const [bookingError, setBookingError] = useState<string | null>(null);
+  // Why the visitor was last sent back to time selection (expired hold, or a
+  // slot someone else confirmed first). Rendered as a banner on step 2.
+  const [flowNotice, setFlowNotice] = useState<BookingFlowNotice>(null);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
   const [isCreatingHold, setIsCreatingHold] = useState(false);
+  // The slot currently being held server-side, so its card can show progress.
+  const [pendingHoldTime, setPendingHoldTime] = useState<string | null>(null);
   const [isMutatingBooking, setIsMutatingBooking] = useState(false);
   const [cancellationError, setCancellationError] = useState<string | null>(null);
   const [bookingHold, setBookingHold] = useState<BookingHold | null>(null);
@@ -1236,6 +1247,27 @@ export function HaabBookingModule({
     return () => window.removeEventListener("pagehide", handlePageHide);
   }, [bookingHold, resolvedBookingFlow.step]);
 
+  // Being bounced back to the slots is only useful if the reason is on screen —
+  // on a phone the banner sits below the fold otherwise.
+  const flowNoticeRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!flowNotice || typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      flowNoticeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [flowNotice]);
+
+  // Read through a ref so the 1s ticker below never has to restart just because
+  // the step or a handler identity changed.
+  const onHoldExpiredRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    onHoldExpiredRef.current = () => {
+      if (resolvedBookingFlow.step === 3) {
+        returnToTimeSelection("HOLD_EXPIRED");
+      }
+    };
+  });
+
   useEffect(() => {
     if (!bookingHoldSelectionKey || !bookingHold) {
       return;
@@ -1251,6 +1283,9 @@ export function HaabBookingModule({
         setBookingHold((current) =>
           current?.id === bookingHold.id ? { ...current, released: true } : current,
         );
+        // Details step with a dead hold is a dead end: send them back to the
+        // slots, where one tap starts a fresh hold.
+        onHoldExpiredRef.current();
       }
     }, 1000);
 
@@ -2002,6 +2037,32 @@ export function HaabBookingModule({
     onVerticalChange?.(undefined);
   }
 
+  // Every public-flow step change goes through the machine in
+  // lib/booking-flow-machine.ts, so the rules about what survives a transition
+  // (the service, the date) live in one tested place instead of at each call site.
+  function dispatchBookingFlow(event: BookingFlowEvent) {
+    setBookingFlow((current) => {
+      const next = bookingFlowReducer(createBookingFlowState(current), event);
+      setFlowNotice(next.notice);
+      return next.flow;
+    });
+  }
+
+  // Expired hold or a slot lost to someone else: release locally, then hand the
+  // visitor back to time selection with the reason on screen.
+  function returnToTimeSelection(reason: "HOLD_EXPIRED" | "SELECTION_CONFLICT") {
+    const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
+    actions.releaseBookingHold(holdIdToRelease);
+    releaseSupabaseBookingHold(holdIdToRelease);
+    setBookingHold(null);
+    setBookingHoldClockOffsetMs(0);
+    setBookingHoldNow(currentTimestamp());
+    setHoldExtensionMessage(null);
+    setBookingError(null);
+    setPendingHoldTime(null);
+    dispatchBookingFlow({ type: reason });
+  }
+
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
     setBookingFlow((current) => {
       const next = { ...current, [key]: value };
@@ -2150,14 +2211,28 @@ export function HaabBookingModule({
     });
     setBookingHoldNow(holdServerNow);
     setHoldExtensionMessage(null);
-    setBookingFlow((current) => ({
-      ...current,
+    dispatchBookingFlow({
+      type: "HOLD_CREATED",
       serviceId: latestService.id,
       dateKey,
       time,
-      step: 3,
-    }));
+    });
     return true;
+  }
+
+  // Tapping a slot is the commitment: the hold is created on the server right
+  // then, and the visitor lands on the details form with the countdown running.
+  // One tap instead of tap-then-continue, and no slot sits "selected" unheld.
+  function selectTimeSlot(slot: string) {
+    if (isCreatingHold) {
+      return;
+    }
+
+    setPendingHoldTime(slot);
+    dispatchBookingFlow({ type: "SELECT_TIME", time: slot });
+    void beginClientDetailsStep(bookingFlow.dateKey, slot).finally(() => {
+      setPendingHoldTime(null);
+    });
   }
 
   async function confirmBooking() {
@@ -2177,7 +2252,7 @@ export function HaabBookingModule({
     const validationHolds = pruneBookingHolds(validationStore.bookingHolds, now);
 
     if (isBookingHoldExpired || bookingHold?.released) {
-      setBookingError(t.public.expiredBody);
+      returnToTimeSelection("HOLD_EXPIRED");
       return;
     }
 
@@ -2226,7 +2301,7 @@ export function HaabBookingModule({
         ignoredHoldId,
       ).includes(bookingFlow.time)
     ) {
-      setBookingError(t.errors.selectionUnavailable);
+      returnToTimeSelection("SELECTION_CONFLICT");
       return;
     }
 
@@ -2242,7 +2317,7 @@ export function HaabBookingModule({
         ignoredHoldId,
       )
     ) {
-      setBookingError(t.errors.selectionUnavailable);
+      returnToTimeSelection("SELECTION_CONFLICT");
       return;
     }
 
@@ -2327,22 +2402,17 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
-          if (
-            response.status === 409 &&
-            bookingHold &&
-            currentTimestamp() + bookingHoldClockOffsetMs >= bookingHold.expiresAt
-          ) {
-            actions.releaseBookingHold(bookingHold.id);
-            setBookingHold((value) =>
-              value?.id === bookingHold.id ? { ...value, released: true } : value,
-            );
-            setBookingHoldNow(bookingHold.expiresAt);
-            setBookingError(t.public.expiredBody);
+          // The server re-checks bookings and holds before it writes. A 409 means
+          // the selection is gone, so keep nobody on a details form for a slot
+          // that no longer exists — return to the slots with the reason shown.
+          if (response.status === 409) {
+            const holdRanOut =
+              bookingHold &&
+              currentTimestamp() + bookingHoldClockOffsetMs >= bookingHold.expiresAt;
+            returnToTimeSelection(holdRanOut ? "HOLD_EXPIRED" : "SELECTION_CONFLICT");
             return;
           }
-          setBookingError(
-            response.status === 409 ? t.errors.selectionUnavailable : t.errors.confirmFailed,
-          );
+          setBookingError(t.errors.confirmFailed);
           return;
         }
 
@@ -3510,11 +3580,7 @@ export function HaabBookingModule({
                     onClick={() => {
                       setBookingError(null);
                       const previousDateKey = bookingFlow.dateKey;
-                      setBookingFlow((current) => ({
-                        ...current,
-                        dateKey,
-                        time: "",
-                      }));
+                      dispatchBookingFlow({ type: "SELECT_DATE", dateKey });
                       if (
                         !hasScrolledToSlotsRef.current &&
                         !previousDateKey &&
@@ -3808,7 +3874,10 @@ export function HaabBookingModule({
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    const goBackToSelectionStep = () => {
+    // Both back paths release the hold first; the machine decides what survives
+    // (BACK from details keeps the service and the date, BACK from the calendar
+    // is the only place the service is dropped).
+    const releaseHoldForNavigation = () => {
       const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
       actions.releaseBookingHold(holdIdToRelease);
       releaseSupabaseBookingHold(holdIdToRelease);
@@ -3817,25 +3886,17 @@ export function HaabBookingModule({
       setBookingHoldNow(currentTimestamp());
       setHoldExtensionMessage(null);
       setBookingError(null);
-      setBookingFlow((current) => ({ ...current, step: 2 }));
+      setPendingHoldTime(null);
+    };
+
+    const goBackToSelectionStep = () => {
+      releaseHoldForNavigation();
+      dispatchBookingFlow({ type: "BACK" });
     };
 
     const goBackToServiceChoice = () => {
-      const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
-      actions.releaseBookingHold(holdIdToRelease);
-      releaseSupabaseBookingHold(holdIdToRelease);
-      setBookingHold(null);
-      setBookingHoldClockOffsetMs(0);
-      setBookingHoldNow(currentTimestamp());
-      setHoldExtensionMessage(null);
-      setBookingError(null);
-      setBookingFlow((current) => ({
-        ...current,
-        step: 1,
-        serviceId: "",
-        dateKey: "",
-        time: "",
-      }));
+      releaseHoldForNavigation();
+      dispatchBookingFlow({ type: "RESTART" });
     };
 
     return (
@@ -3859,6 +3920,8 @@ export function HaabBookingModule({
                   "pb-6 before:opacity-100 sm:pb-8 xl:pb-10",
               )}
             >
+            {/* Progress never leaves the screen: the full indicator collapses into
+                a slim bar once the header sticks, instead of disappearing. */}
             <div className={cn("relative z-10", stickyBarPanelClass)}>
               <div
                 aria-hidden={collapseProgressIndicator ? true : undefined}
@@ -3878,6 +3941,16 @@ export function HaabBookingModule({
                   </div>
                 </div>
               </div>
+              {collapseProgressIndicator ? (
+                <div className="px-5 py-3 sm:px-7">
+                  <PublicProgressIndicator
+                    compact
+                    currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
+                    isDedicatedPublicPage={isDedicatedPublicPage}
+                    lang={lang}
+                  />
+                </div>
+              ) : null}
               {isPublicDetailsStep ? (
                 <div className="px-5 pb-5 sm:px-7 sm:pb-6">
                   <BookingHoldCountdownBar
@@ -4551,6 +4624,27 @@ export function HaabBookingModule({
                       {selectedService.description}
                     </p>
                   ) : null}
+                  {/* Why the visitor is back on this step: an expired hold, or a
+                      slot someone else confirmed first. */}
+                  {flowNotice ? (
+                    <div
+                      ref={flowNoticeRef}
+                      role="status"
+                      aria-live="polite"
+                      className="mt-5 rounded-[22px] border border-[#fcd34d] bg-[#fffbeb] px-4 py-3.5 text-[#92400e]"
+                    >
+                      <p className="text-[0.9375rem] font-semibold">
+                        {flowNotice === "hold-expired"
+                          ? t.publicFlow.holdExpiredNoticeTitle
+                          : t.publicFlow.conflictNoticeTitle}
+                      </p>
+                      <p className="mt-1 text-sm leading-5">
+                        {flowNotice === "hold-expired"
+                          ? t.publicFlow.holdExpiredNoticeBody
+                          : t.publicFlow.conflictNoticeBody}
+                      </p>
+                    </div>
+                  ) : null}
                   {selectionIsSingle ? (
                     <div className="mt-6 space-y-4">
                       <div className={publicInsetCardClass}>
@@ -4591,16 +4685,19 @@ export function HaabBookingModule({
                                 selectedService.durationMinutes ?? 30,
                               );
                               const isSelected = bookingFlow.time === slot;
+                              const isHolding = pendingHoldTime === slot;
 
                               return (
                                 <button
                                   key={slot}
                                   type="button"
-                                  onClick={() => {
-                                    updateBookingFlow("time", slot);
-                                  }}
+                                  disabled={isCreatingHold && !isHolding}
+                                  aria-busy={isHolding || undefined}
+                                  onClick={() => selectTimeSlot(slot)}
                                   className={cn(
-                                    "relative flex w-full items-start justify-between gap-4 rounded-[24px] px-5 py-4 text-left transition",
+                                    // Column on phones so the time never wraps
+                                    // mid-label in a two-up grid.
+                                    "relative flex min-h-16 w-full flex-col items-start gap-1 rounded-[24px] px-4 py-4 text-left transition disabled:opacity-60 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-5",
                                     isDedicatedPublicPage
                                       ? publicQuietChoiceClass
                                       : "border border-[var(--line)] bg-[var(--surface-soft)]",
@@ -4622,13 +4719,13 @@ export function HaabBookingModule({
                                         : "bg-transparent",
                                     )}
                                   />
-                                  <div className="pl-4">
-                                    <p className="text-base font-semibold text-[var(--ink)]">
+                                  <div className="pl-3 sm:pl-4">
+                                    <p className="whitespace-nowrap text-lg font-semibold text-[var(--ink)] sm:text-base">
                                       {formatTimeLabel(slot, lang)}
                                     </p>
                                     <p
                                       className={cn(
-                                        "mt-1 text-[var(--muted)]",
+                                        "mt-1 whitespace-nowrap text-[var(--muted)]",
                                         compactMetaTextClass,
                                       )}
                                     >
@@ -4637,11 +4734,15 @@ export function HaabBookingModule({
                                   </div>
                                   <span
                                     className={cn(
-                                      "pt-1 text-[var(--action-teal-deep)]",
+                                      "pl-3 text-[var(--action-teal-deep)] sm:pl-0 sm:pt-1",
                                       compactMetaTextClass,
                                     )}
                                   >
-                                    {isSelected ? t.publicFlow.selected : t.publicFlow.open}
+                                    {isHolding
+                                      ? t.publicFlow.holdingSlot
+                                      : isSelected
+                                        ? t.publicFlow.selected
+                                        : t.publicFlow.open}
                                   </span>
                                 </button>
                               );
@@ -5039,14 +5140,23 @@ export function HaabBookingModule({
               )}
             >
               {isPublicSelectionStep ? (
-                <ActionButton
-                  tone="primary"
-                  className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
-                  disabled={!step2CanContinue || isCreatingHold}
-                  onClick={advanceToDetailsStep}
-                >
-                  {isCreatingHold ? t.common.loading : step2ButtonLabel}
-                </ActionButton>
+                // With slots, the tap on a time *is* the action — a second
+                // "continue" button could never enable, so it becomes a hint and
+                // gives the slots back their space on a phone.
+                step2IsAppointment && !selectionIsSingle ? (
+                  <p className="flex-1 px-2 py-2 text-center text-[0.9375rem] font-medium leading-5 text-[var(--muted)]">
+                    {isCreatingHold ? t.publicFlow.holdingSlot : t.publicFlow.tapTimeHint}
+                  </p>
+                ) : (
+                  <ActionButton
+                    tone="primary"
+                    className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
+                    disabled={!step2CanContinue || isCreatingHold}
+                    onClick={advanceToDetailsStep}
+                  >
+                    {isCreatingHold ? t.common.loading : step2ButtonLabel}
+                  </ActionButton>
+                )
               ) : (
                 <>
                   <ActionButton

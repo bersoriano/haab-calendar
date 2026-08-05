@@ -15,6 +15,7 @@ import {
   getDateTimeKeysInTimeZone,
   parseDateKey,
 } from "@/lib/date";
+import { BOOKING_HOLD_DURATION_MS } from "@/lib/constants";
 import { formatCapacityLabel } from "@/lib/format";
 import { getEffectiveCost } from "@/lib/locations";
 import { getPublicVerticalSegment } from "@/lib/public-url";
@@ -685,7 +686,9 @@ export async function createPublicBookingHold(
 
   const startTime = service.bookingType === "appointment" ? input.time : undefined;
   const endTime = getBookingEndTime(service, input.time);
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  // Same constant the client counts down from, so the visible timer and the
+  // server's expiry can never drift apart.
+  const expiresAt = new Date(Date.now() + BOOKING_HOLD_DURATION_MS).toISOString();
 
   const { data, error } = await supabase
     .from("booking_holds")
