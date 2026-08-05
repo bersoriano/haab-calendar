@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { createContext, useContext, type ReactNode } from "react";
 import type { VerticalId } from "@/lib/types";
+import { HeroBookingPreview } from "./hero-preview";
 import { LanguageToggle, useLanguage } from "./language-provider";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
@@ -458,103 +459,52 @@ export function Hero() {
     <section className="relative overflow-hidden border-b border-[var(--line)] bg-[linear-gradient(145deg,#f5f7fb_0%,#edf4ff_54%,#e9f8f5_100%)]">
       <div className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(26,115,232,0.16),transparent_68%)]" />
       <div className="pointer-events-none absolute -bottom-56 left-1/3 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(13,148,136,0.12),transparent_68%)]" />
-      <div className="relative mx-auto grid max-w-[1280px] gap-10 px-5 py-8 sm:px-8 sm:py-16 lg:grid-cols-[1.04fr_0.96fr] lg:items-center lg:gap-14 lg:py-18">
-        <div>
-          <p className="hidden items-center gap-2 rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)] sm:inline-flex">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#dc2626]" />
+      {/* On phones the preview slots between the headline and the supporting
+          copy so the running hold is on screen without scrolling. On large
+          screens it moves into its own column beside the full text block. */}
+      <div className="relative mx-auto grid max-w-[1280px] gap-5 px-5 pb-8 pt-5 sm:gap-6 sm:px-8 sm:py-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-x-14 lg:gap-y-6 lg:py-18">
+        <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
+          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] sm:text-xs">
+            <span className="haab-live-dot h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
             {t.hero.badge}
           </p>
-          <h1 className="max-w-3xl text-balance text-[2.35rem] font-semibold leading-[1.05] tracking-[-0.045em] text-[var(--ink)] sm:mt-5 sm:text-5xl lg:text-[3.65rem] lg:leading-[1.02]">
+          <h1 className="mt-3 max-w-3xl text-balance text-[2.1rem] font-semibold leading-[1.05] tracking-[-0.045em] text-[var(--ink)] sm:mt-5 sm:text-5xl lg:text-[3.65rem] lg:leading-[1.02]">
             {t.hero.title}
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)] sm:mt-5 sm:text-lg sm:leading-8">
+        </div>
+
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center lg:pl-2">
+          <HeroBookingPreview className="mx-auto w-full max-w-[440px] lg:max-w-none" />
+          <p className="mt-3 text-center text-xs text-[var(--muted)] lg:text-left">
+            {t.hero.previewCaption}
+          </p>
+        </div>
+
+        <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
+          <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
             {t.hero.body}
           </p>
-          <div className="mt-5 rounded-[24px] border border-white/80 bg-white/72 p-4 shadow-[0_18px_46px_rgba(15,23,42,0.06)] backdrop-blur-md sm:mt-6 sm:p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-              {t.hero.solutionEyebrow}
-            </p>
-            <p className="mt-2 text-base font-semibold text-[var(--ink)] sm:text-lg">
-              {t.hero.solutionTitle}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 sm:mt-4 sm:grid sm:grid-cols-3">
-              {t.hero.solutionSteps.map((step, index) => (
-                <div key={step} className="flex items-center gap-2 text-xs font-medium text-[var(--ink)] sm:text-sm">
-                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--teal-soft)] text-[11px] font-bold text-[var(--teal)]">
-                    {index + 1}
-                  </span>
-                  <span>{step}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ul className="mt-4 flex flex-wrap gap-2 sm:mt-6 sm:gap-2.5">
+            {t.hero.proofs.map((proof) => (
+              <li
+                key={proof}
+                className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[0_10px_26px_rgba(15,23,42,0.05)] backdrop-blur-md sm:text-sm"
+              >
+                <span
+                  aria-hidden="true"
+                  className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]"
+                />
+                {proof}
+              </li>
+            ))}
+          </ul>
           <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <a
-              href={tryBookingPath(lang)}
-              className={primaryButtonClass}
-            >
+            <a href={tryBookingPath(lang)} className={primaryButtonClass}>
               {t.hero.ctaPrimary}
             </a>
             <StartButton className={ghostButtonClass}>{t.hero.ctaSecondary}</StartButton>
           </div>
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            {t.hero.fineprint}
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-[30px] border border-white/90 bg-white/88 shadow-[0_30px_80px_rgba(15,23,42,0.14)] backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-[var(--line)] px-5 py-4">
-            <div className="flex items-center gap-2" aria-hidden="true">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#f87171]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#fbbf24]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#34d399]" />
-            </div>
-            <span className="rounded-full bg-[var(--teal-soft)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
-              {t.hero.previewBadge}
-            </span>
-          </div>
-          <div className="p-6 sm:p-7">
-            <p className="font-mono text-xs text-[var(--muted)]">
-              haab.app/doctors/dr-maya-rivera
-            </p>
-            <div className="mt-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-                  {t.hero.previewEyebrow}
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">
-                  {t.hero.previewTitle}
-                </h2>
-                <p className="mt-1 text-sm text-[var(--muted)]">{t.hero.previewSubtitle}</p>
-              </div>
-              <BrandGlyph label="+" tone="teal" />
-            </div>
-            <div className="mt-6 rounded-[22px] border border-[var(--line)] bg-[var(--surface-soft)] p-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-[var(--ink)]">{t.hero.previewService}</p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">{t.hero.previewServiceMeta}</p>
-                </div>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--primary)]">
-                  {t.hero.previewAvailability}
-                </span>
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {t.hero.previewProofs.map((proof, index) => (
-                <div key={proof} className="rounded-2xl border border-[var(--line)] bg-white p-3">
-                  <span className="text-xs font-bold text-[var(--teal)]">0{index + 1}</span>
-                  <p className="mt-1 text-xs font-semibold leading-5 text-[var(--ink)]">{proof}</p>
-                </div>
-              ))}
-            </div>
-            <a
-              href={tryBookingPath(lang)}
-              className="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-full bg-[var(--ink)] px-5 text-sm font-semibold !text-white transition hover:bg-[var(--primary)]"
-            >
-              {t.hero.previewCta}
-            </a>
-          </div>
+          <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
         </div>
       </div>
     </section>

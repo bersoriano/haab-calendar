@@ -117,6 +117,42 @@ code {
   }
 }
 
+/* Hero preview: "this is live" pulse and the moment a slot gets taken. */
+@keyframes haab-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.7);
+  }
+}
+
+@keyframes haab-slot-taken {
+  0% {
+    background-color: rgba(225, 29, 72, 0.16);
+    transform: scale(1);
+  }
+  45% {
+    background-color: rgba(225, 29, 72, 0.16);
+    transform: scale(0.96);
+  }
+  100% {
+    background-color: transparent;
+    transform: scale(1);
+  }
+}
+
+.haab-live-dot {
+  animation: haab-live-pulse 1.8s ease-in-out infinite;
+}
+
+.haab-slot-taken {
+  animation: haab-slot-taken 0.9s ease-out 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
