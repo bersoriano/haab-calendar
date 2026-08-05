@@ -4,8 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   cancelManagedBooking,
   getManagedBooking,
+  MANAGED_CLIENT_NOTE_MAX_LENGTH,
   PublicBookingWriteError,
   rescheduleManagedBooking,
+  updateManagedBookingNote,
 } from "@/lib/supabase/bookings";
 import {
   normalizeUrlSlugSegment,
@@ -20,6 +22,7 @@ type ManageBody = {
   action?: unknown;
   dateKey?: unknown;
   time?: unknown;
+  note?: unknown;
 };
 
 function readString(value: unknown) {
@@ -138,6 +141,31 @@ export async function PATCH(
         ...routeParams,
         dateKey,
         time: readOptionalString(body.time),
+      });
+
+      return NextResponse.json(result);
+    }
+
+    if (action === "note") {
+      if (typeof body.note !== "string") {
+        return NextResponse.json(
+          { userMessage: "Write a note before saving." },
+          { status: 400 },
+        );
+      }
+
+      if (body.note.length > MANAGED_CLIENT_NOTE_MAX_LENGTH) {
+        return NextResponse.json(
+          {
+            userMessage: `Keep the note under ${MANAGED_CLIENT_NOTE_MAX_LENGTH} characters.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      const result = await updateManagedBookingNote(createAdminClient(), {
+        ...routeParams,
+        note: body.note,
       });
 
       return NextResponse.json(result);

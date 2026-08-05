@@ -18,6 +18,8 @@ export function BookingHoldCountdownBar({
   extensionMessage,
   onExtend,
   onChooseAnother,
+  onRetryHold,
+  isRetryingHold = false,
   copy = defaultCopy,
   lang = "en",
 }: {
@@ -34,12 +36,16 @@ export function BookingHoldCountdownBar({
   extensionMessage?: string | null;
   onExtend?: () => void;
   onChooseAnother?: () => void;
+  /** One tap to take the same slot again after the hold ran out. */
+  onRetryHold?: () => void;
+  isRetryingHold?: boolean;
   copy?: VerticalCopy;
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang];
   const isUrgent = remainingMs <= 2 * 60 * 1000 || isExpired;
   const isWarning = !isUrgent && remainingMs <= 5 * 60 * 1000;
+  const isRunning = !isConfirmed && !isCancelled && !isExpired;
   const remainingPercent = Math.max(0, Math.min(100, remainingRatio * 100));
   const displayedRemainingPercent = isExpired
     ? 100
@@ -105,7 +111,7 @@ export function BookingHoldCountdownBar({
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
             {lang === "en" ? `${copy.Booking} hold` : t.public.holdLabel}
           </p>
@@ -114,20 +120,26 @@ export function BookingHoldCountdownBar({
               {statusLabel}
             </p>
           ) : null}
+          {/* What the hold actually means, said plainly, while it is running. */}
+          {isRunning ? (
+            <p className="mt-1 hidden text-[0.9375rem] font-semibold tracking-[-0.01em] text-[var(--ink)] sm:block">
+              {t.public.holdMeaningTitle}
+            </p>
+          ) : null}
         </div>
         {!isConfirmed && !isCancelled ? (
           <div
             role="timer"
             aria-label={`${t.public.holdRemaining}: ${isExpired ? t.public.expired : formatCountdown(remainingMs)}`}
             className={cn(
-              "shrink-0 rounded-2xl px-4 py-2 text-center font-semibold tabular-nums ring-1 transition-colors",
+              "shrink-0 rounded-[26px] px-5 py-3 text-center font-semibold tabular-nums ring-1 transition-colors",
               isExpired
-                ? "bg-[#fff1f2] text-[0.8125rem] uppercase tracking-[0.12em] ring-[#fecdd3]"
+                ? "bg-[#fff1f2] px-4 py-2 text-[0.8125rem] uppercase tracking-[0.12em] ring-[#fecdd3]"
                 : isUrgent
-                  ? "bg-[#fff1f2] text-3xl tracking-[-0.05em] ring-[#fecdd3] sm:text-4xl"
+                  ? "bg-[#fff1f2] text-4xl tracking-[-0.05em] ring-[#fecdd3] sm:text-5xl"
                   : isWarning
-                    ? "bg-[#fffbeb] text-3xl tracking-[-0.05em] ring-[#fde68a] sm:text-4xl"
-                    : "bg-white/80 text-3xl tracking-[-0.05em] ring-black/5 sm:text-4xl",
+                    ? "bg-[#fffbeb] text-4xl tracking-[-0.05em] ring-[#fde68a] sm:text-5xl"
+                    : "bg-white/85 text-4xl tracking-[-0.05em] ring-black/5 sm:text-5xl",
             )}
           >
             {isExpired ? t.public.expired : formatCountdown(remainingMs)}
@@ -161,6 +173,13 @@ export function BookingHoldCountdownBar({
       >
         {helperText}
       </p>
+      {/* No button here: the step's action bar already carries "Change", and two
+          controls for one action read as two different outcomes. */}
+      {isRunning ? (
+        <p className="mt-3 text-sm leading-5 text-[var(--muted)]">
+          {t.public.holdMeaningBody} {t.public.holdDetailsSafe}
+        </p>
+      ) : null}
       {!isConfirmed && !isCancelled && isUrgent && !isExpired ? (
         <div
           aria-live="polite"
@@ -191,14 +210,41 @@ export function BookingHoldCountdownBar({
           {extensionMessage}
         </p>
       ) : null}
-      {isExpired && onChooseAnother ? (
-        <button
-          type="button"
-          onClick={onChooseAnother}
-          className="mt-4 min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+      {/* Expiry is a dead end unless getting back in is one tap. */}
+      {isExpired && !isConfirmed && !isCancelled ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="mt-4 rounded-[24px] border border-[#fecdd3] bg-[#fff7f8] px-4 py-4 text-[var(--ink)]"
         >
-          {t.public.chooseAnotherTime}
-        </button>
+          <p className="text-base font-semibold tracking-[-0.01em]">
+            {t.public.holdExpiredTitle}
+          </p>
+          <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+            {t.public.holdExpiredRecoveryBody}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {onRetryHold ? (
+              <button
+                type="button"
+                disabled={isRetryingHold || !isOnline}
+                onClick={onRetryHold}
+                className="min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isRetryingHold ? t.public.holdingAgain : t.public.holdAgain}
+              </button>
+            ) : null}
+            {onChooseAnother ? (
+              <button
+                type="button"
+                onClick={onChooseAnother}
+                className="min-h-11 rounded-full bg-white px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.5)] transition hover:bg-[var(--surface-soft)]"
+              >
+                {t.public.chooseAnotherTime}
+              </button>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </section>
   );

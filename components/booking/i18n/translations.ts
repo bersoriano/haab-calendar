@@ -68,6 +68,15 @@ export type BookingDict = {
     holdConfirmedBody: string;
     holdFinishBody: string;
     expired: string;
+    // Soft-hold explanation + expiry recovery
+    holdMeaningTitle: string;
+    holdMeaningBody: string;
+    holdChangeTime: string;
+    holdDetailsSafe: string;
+    holdExpiredTitle: string;
+    holdExpiredRecoveryBody: string;
+    holdAgain: string;
+    holdingAgain: string;
   };
   manage: {
     title: string;
@@ -89,6 +98,28 @@ export type BookingDict = {
     newDayFreeReplaceHelper: string;
     saveNewTime: string;
     contactProvider: string;
+    // Private management page
+    yourBookingTitle: string;
+    privateLinkTrust: string;
+    statusConfirmedBody: string;
+    statusRescheduledBody: string;
+    statusCancelledBody: string;
+    manageActionsTitle: string;
+    rescheduleOneTap: string;
+    cancelBooking: string;
+    reschedulingTitle: string;
+    reschedulingBody: string;
+    keepCurrentTime: string;
+    currentlyBooked: string;
+    noteTitle: string;
+    noteBody: string;
+    notePlaceholder: string;
+    saveNote: string;
+    savingNote: string;
+    noteSaved: string;
+    noteFailed: string;
+    noteOnRecord: string;
+    editNote: string;
   };
   publicFlow: {
     // Calendar
@@ -127,7 +158,6 @@ export type BookingDict = {
     chooseAnother: string;
     selectedDate: string;
     finishBeforeHoldExpires: string;
-    back: string;
     confirm: string;
     pickDateAndTime: string;
     chooseLocation: string;
@@ -195,6 +225,17 @@ export type BookingDict = {
     providerLogoAlt: string;
     headerBannerAlt: string;
     managementUrlLabel: string;
+    // Premium receipt
+    receiptTitle: string;
+    receiptReference: string;
+    receiptIssued: string;
+    downloadIcs: string;
+    scanToAdd: string;
+    saveThisLinkTitle: string;
+    saveThisLinkTagline: string;
+    // Coming back to time selection with a part-filled form
+    detailsKeptNoticeTitle: string;
+    detailsKeptNoticeBody: string;
   };
   admin: {
     // Dashboard
@@ -452,6 +493,16 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdConfirmedBody: "Your booking is confirmed and the temporary hold is complete.",
       holdFinishBody: "Finish your details before the temporary hold expires.",
       expired: "Expired",
+      holdMeaningTitle: "This time is yours for the next 10 minutes",
+      holdMeaningBody:
+        "Nobody else can book it while the timer runs. Nothing is charged and nothing is final until you confirm.",
+      holdChangeTime: "Change",
+      holdDetailsSafe: "Anything you have typed is kept.",
+      holdExpiredTitle: "The hold ran out",
+      holdExpiredRecoveryBody:
+        "Your details are saved. Take this time again in one tap — or pick another if someone got there first.",
+      holdAgain: "Hold this time again",
+      holdingAgain: "Holding it again…",
     },
     manage: {
       title: "Manage your booking",
@@ -473,6 +524,29 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       newDayFreeReplaceHelper: "This new day is free and will replace the original full-day reservation as soon as you confirm.",
       saveNewTime: "Save new time",
       contactProvider: "Contact provider",
+      yourBookingTitle: "Your booking",
+      privateLinkTrust:
+        "You opened this page with your private link. No account, no password — keep the link and you can come back anytime.",
+      statusConfirmedBody: "You are booked in. Nothing else to do before the day.",
+      statusRescheduledBody: "Moved to a new time. This is the time that counts now.",
+      statusCancelledBody: "This booking was cancelled. The time was released to other people.",
+      manageActionsTitle: "Change this booking",
+      rescheduleOneTap: "Pick a new time",
+      cancelBooking: "Cancel booking",
+      reschedulingTitle: "Choosing a new time",
+      reschedulingBody:
+        "Pick any highlighted day and time. Your current booking stays exactly as it is until the new time is saved.",
+      keepCurrentTime: "Keep current time",
+      currentlyBooked: "Booked now",
+      noteTitle: "Note for the provider",
+      noteBody: "Optional. Anything they should know before your visit — they see it with your booking.",
+      notePlaceholder: "Running late, parking questions, anything else…",
+      saveNote: "Save note",
+      savingNote: "Saving…",
+      noteSaved: "Note sent to the provider.",
+      noteFailed: "Could not save that note. Try again.",
+      noteOnRecord: "Your note",
+      editNote: "Edit note",
     },
     publicFlow: {
       previous: "Previous",
@@ -507,7 +581,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       chooseAnother: "Choose another",
       selectedDate: "Selected Date",
       finishBeforeHoldExpires: "Finish your details before the temporary hold expires.",
-      back: "Back",
       confirm: "Confirm",
       pickDateAndTime: "Pick a date and time",
       chooseLocation: "Choose a location",
@@ -573,6 +646,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Provider logo",
       headerBannerAlt: "Booking page banner",
       managementUrlLabel: "Booking management link",
+      receiptTitle: "Booking receipt",
+      receiptReference: "Reference",
+      receiptIssued: "Issued",
+      downloadIcs: "Download .ics file",
+      scanToAdd: "Scan to add it to the phone in your hand",
+      saveThisLinkTitle: "Save this link",
+      saveThisLinkTagline:
+        "Save this link – you can reschedule or cancel anytime without an account",
+      detailsKeptNoticeTitle: "Your details are saved",
+      detailsKeptNoticeBody:
+        "Pick a new time — everything you already typed is still filled in.",
     },
     admin: {
       upcoming7Days: "Upcoming (7 days)",
@@ -836,6 +920,16 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdConfirmedBody: "Su reserva está confirmada y la retención temporal ha finalizado.",
       holdFinishBody: "Complete sus datos antes de que expire la reserva temporal.",
       expired: "Vencida",
+      holdMeaningTitle: "Este horario es suyo durante los próximos 10 minutos",
+      holdMeaningBody:
+        "Nadie más puede reservarlo mientras corre el tiempo. No se cobra nada y nada queda en firme hasta que usted confirme.",
+      holdChangeTime: "Cambiar",
+      holdDetailsSafe: "Lo que ya escribió se conserva.",
+      holdExpiredTitle: "Se agotó la reserva temporal",
+      holdExpiredRecoveryBody:
+        "Sus datos están guardados. Vuelva a apartar este horario con un toque, o elija otro si alguien se adelantó.",
+      holdAgain: "Apartar este horario otra vez",
+      holdingAgain: "Apartándolo de nuevo…",
     },
     manage: {
       title: "Gestione su reserva",
@@ -857,6 +951,29 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       newDayFreeReplaceHelper: "Este nuevo día está libre y reemplazará la reservación original de día completo en cuanto confirme.",
       saveNewTime: "Guardar nuevo horario",
       contactProvider: "Contactar al proveedor",
+      yourBookingTitle: "Su reserva",
+      privateLinkTrust:
+        "Abrió esta página con su enlace privado. Sin cuenta ni contraseña: guarde el enlace y podrá volver cuando quiera.",
+      statusConfirmedBody: "Su lugar está reservado. No hay nada más que hacer antes del día.",
+      statusRescheduledBody: "Se movió a un nuevo horario. Este es el horario que vale ahora.",
+      statusCancelledBody: "Esta reserva fue cancelada. El horario quedó libre para otras personas.",
+      manageActionsTitle: "Modificar esta reserva",
+      rescheduleOneTap: "Elegir un nuevo horario",
+      cancelBooking: "Cancelar la reserva",
+      reschedulingTitle: "Eligiendo un nuevo horario",
+      reschedulingBody:
+        "Elija cualquier día y horario resaltado. Su reserva actual se mantiene tal cual hasta que se guarde el nuevo horario.",
+      keepCurrentTime: "Conservar el horario actual",
+      currentlyBooked: "Reservado ahora",
+      noteTitle: "Nota para el proveedor",
+      noteBody: "Opcional. Algo que deba saber antes de su visita: lo verá junto a su reserva.",
+      notePlaceholder: "Llegaré tarde, dudas de estacionamiento, lo que sea…",
+      saveNote: "Guardar nota",
+      savingNote: "Guardando…",
+      noteSaved: "Nota enviada al proveedor.",
+      noteFailed: "No se pudo guardar esa nota. Inténtelo de nuevo.",
+      noteOnRecord: "Su nota",
+      editNote: "Editar nota",
     },
     publicFlow: {
       previous: "Anterior",
@@ -893,7 +1010,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       selectedDate: "Fecha seleccionada",
       finishBeforeHoldExpires:
         "Complete sus datos antes de que expire la reservación temporal.",
-      back: "Atrás",
       confirm: "Confirmar",
       pickDateAndTime: "Elija una fecha y un horario",
       chooseLocation: "Elija una ubicación",
@@ -960,6 +1076,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Logotipo del proveedor",
       headerBannerAlt: "Banner de la página de reservas",
       managementUrlLabel: "Enlace para gestionar la reserva",
+      receiptTitle: "Comprobante de reserva",
+      receiptReference: "Referencia",
+      receiptIssued: "Emitido",
+      downloadIcs: "Descargar archivo .ics",
+      scanToAdd: "Escanee para agregarlo al teléfono que tiene en la mano",
+      saveThisLinkTitle: "Guarde este enlace",
+      saveThisLinkTagline:
+        "Guarde este enlace: puede reagendar o cancelar cuando quiera, sin crear una cuenta",
+      detailsKeptNoticeTitle: "Sus datos están guardados",
+      detailsKeptNoticeBody:
+        "Elija un nuevo horario: todo lo que ya escribió sigue completo.",
     },
     admin: {
       upcoming7Days: "Próximos (7 días)",

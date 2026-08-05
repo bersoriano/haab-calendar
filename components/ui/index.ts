@@ -7,4 +7,6 @@ export { SummaryField } from "@/components/ui/SummaryField";
 export { SummaryStatusTitle } from "@/components/ui/SummaryStatusTitle";
 export { PublicProgressIndicator } from "@/components/ui/PublicProgressIndicator";
 export { BookingHoldCountdownBar } from "@/components/ui/BookingHoldCountdownBar";
+export { BookingStatusPill } from "@/components/ui/BookingStatusPill";
+export { PrivateLinkCard } from "@/components/ui/PrivateLinkCard";
 export { EmptyState } from "@/components/ui/EmptyState";

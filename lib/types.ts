@@ -93,6 +93,8 @@ export type BookingRecord = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
+  /** Left by the client from the private management link, after booking. */
+  clientNote?: string;
   capacitySnapshot?: string;
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)

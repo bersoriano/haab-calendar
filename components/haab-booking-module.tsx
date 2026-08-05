@@ -148,12 +148,18 @@ import {
   ActionButton,
   ActionLink,
   BookingHoldCountdownBar,
+  BookingStatusPill,
   EmptyState,
+  PrivateLinkCard,
   PublicProgressIndicator,
   SectionTitle,
   SummaryField,
   ToneBadge,
 } from "@/components/ui";
+import {
+  ManageBookingPanel,
+  type ManageNoteStatus,
+} from "@/components/booking/ManageBookingPanel";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -318,6 +324,12 @@ export function HaabBookingModule({
   const [manageLookupState, setManageLookupState] = useState<ManageLookupState>(
     manageBookingToken ? "pending" : "idle",
   );
+  // Rescheduling from the private link re-enters the real availability flow for
+  // the same service, instead of opening a second, smaller calendar.
+  const [isManageRescheduling, setIsManageRescheduling] = useState(false);
+  const [clientNoteDraft, setClientNoteDraft] = useState("");
+  const [isSavingClientNote, setIsSavingClientNote] = useState(false);
+  const [clientNoteStatus, setClientNoteStatus] = useState<ManageNoteStatus>("idle");
   const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
   const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
@@ -569,6 +581,8 @@ export function HaabBookingModule({
       successBookingId: booking.id,
       serviceId: booking.serviceId,
     }));
+    setClientNoteDraft(booking.clientNote ?? "");
+    setClientNoteStatus("idle");
     setManageLookupState("found");
   });
 
@@ -684,6 +698,12 @@ export function HaabBookingModule({
       }
     : undefined;
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
+  // The private-link page: a found booking, shown as its own screen rather than
+  // as the confirmation receipt the booker just came from.
+  const isManageView = Boolean(manageBookingToken) && manageLookupState === "found";
+  // While moving an existing booking, its own slot must read as free.
+  const flowIgnoredBookingId =
+    isManageView && isManageRescheduling ? successfulBooking?.id : undefined;
   const calendarQrRequestKey = successfulBooking && vertical
     ? JSON.stringify([
         successfulBooking.id,
@@ -1257,17 +1277,6 @@ export function HaabBookingModule({
     });
   }, [flowNotice]);
 
-  // Read through a ref so the 1s ticker below never has to restart just because
-  // the step or a handler identity changed.
-  const onHoldExpiredRef = useRef<() => void>(() => {});
-  useEffect(() => {
-    onHoldExpiredRef.current = () => {
-      if (resolvedBookingFlow.step === 3) {
-        returnToTimeSelection("HOLD_EXPIRED");
-      }
-    };
-  });
-
   useEffect(() => {
     if (!bookingHoldSelectionKey || !bookingHold) {
       return;
@@ -1283,9 +1292,9 @@ export function HaabBookingModule({
         setBookingHold((current) =>
           current?.id === bookingHold.id ? { ...current, released: true } : current,
         );
-        // Details step with a dead hold is a dead end: send them back to the
-        // slots, where one tap starts a fresh hold.
-        onHoldExpiredRef.current();
+        // The visitor stays on the details step with everything they typed still
+        // on screen. Expiry only changes what the buttons do: one tap takes the
+        // same slot again, and the calendar is one tap further.
       }
     }, 1000);
 
@@ -1381,6 +1390,38 @@ export function HaabBookingModule({
       setBookingError(t.errors.holdFailed);
     } finally {
       setIsExtendingHold(false);
+    }
+  }
+
+  // One tap out of an expired hold: take the same slot again, without touching
+  // anything the visitor already typed. Only when the slot is genuinely gone do
+  // we send them back to the calendar, and then with the reason on screen.
+  async function retryExpiredBookingHold() {
+    if (isCreatingHold || !selectedService || !bookingFlow.dateKey) {
+      return;
+    }
+
+    if (integratedMode && !isNetworkOnline) {
+      setBookingError(t.public.offlineBody);
+      return;
+    }
+
+    const expiredHoldId = bookingHold?.id;
+    // `beginClientDetailsStep` replaces the hold on success; the expired one is
+    // already released, so it only needs dropping from the local store.
+    const outcome = await beginClientDetailsStep(bookingFlow.dateKey, bookingFlow.time);
+
+    if (outcome === "held") {
+      if (expiredHoldId) {
+        actions.releaseBookingHold(expiredHoldId);
+      }
+      return;
+    }
+
+    // A failed request leaves the expired panel up so the same tap can be tried
+    // again. Only a genuinely lost slot sends the visitor back to the calendar.
+    if (outcome === "unavailable") {
+      returnToTimeSelection("SELECTION_CONFLICT");
     }
   }
 
@@ -2079,13 +2120,23 @@ export function HaabBookingModule({
     });
   }
 
-  async function beginClientDetailsStep(dateKey = bookingFlow.dateKey, time = bookingFlow.time) {
+  /**
+   * Creates the server hold for the current selection and opens the details
+   * step. The three outcomes are worth telling apart: `unavailable` means the
+   * slot is genuinely gone (send the visitor back to the calendar), `failed`
+   * means the request did not land (leave them where they are so they can
+   * retry).
+   */
+  async function beginClientDetailsStep(
+    dateKey = bookingFlow.dateKey,
+    time = bookingFlow.time,
+  ): Promise<"held" | "unavailable" | "failed"> {
     if (!selectedService || !dateKey) {
-      return false;
+      return "failed";
     }
 
     if (selectedService.bookingType === "appointment" && !time) {
-      return false;
+      return "failed";
     }
 
     const now = currentTimestamp();
@@ -2106,12 +2157,12 @@ export function HaabBookingModule({
         latestService,
         baseStore.availability,
         baseStore.bookings,
-        undefined,
+        flowIgnoredBookingId,
         currentHolds,
       ).includes(time)
     ) {
       setBookingError(t.errors.selectionUnavailable);
-      return false;
+      return "unavailable";
     }
 
     if (
@@ -2121,12 +2172,12 @@ export function HaabBookingModule({
         latestService,
         baseStore.availability,
         baseStore.bookings,
-        undefined,
+        flowIgnoredBookingId,
         currentHolds,
       )
     ) {
       setBookingError(t.errors.selectionUnavailable);
-      return false;
+      return "unavailable";
     }
 
     const startedAt = now;
@@ -2147,7 +2198,7 @@ export function HaabBookingModule({
     if (integratedMode && isDedicatedPublicPage && vertical) {
       if (!isNetworkOnline) {
         setBookingError(t.public.offlineBody);
-        return false;
+        return "failed";
       }
       setIsCreatingHold(true);
       setBookingError(null);
@@ -2175,7 +2226,7 @@ export function HaabBookingModule({
           setBookingError(
             response.status === 409 ? t.errors.selectionUnavailable : t.errors.holdFailed,
           );
-          return false;
+          return response.status === 409 ? "unavailable" : "failed";
         }
 
         holdRecord = payload.hold;
@@ -2186,7 +2237,7 @@ export function HaabBookingModule({
           setIsNetworkOnline(false);
         }
         setBookingError(t.errors.holdFailed);
-        return false;
+        return "failed";
       } finally {
         setIsCreatingHold(false);
       }
@@ -2217,14 +2268,26 @@ export function HaabBookingModule({
       dateKey,
       time,
     });
-    return true;
+    return "held";
   }
 
   // Tapping a slot is the commitment: the hold is created on the server right
   // then, and the visitor lands on the details form with the countdown running.
   // One tap instead of tap-then-continue, and no slot sits "selected" unheld.
   function selectTimeSlot(slot: string) {
-    if (isCreatingHold) {
+    if (isCreatingHold || isMutatingBooking) {
+      return;
+    }
+
+    // Moving an existing booking needs no hold: the slot is written straight
+    // away, so one tap on a time is the whole reschedule.
+    if (isManageRescheduling && successfulBooking) {
+      dispatchBookingFlow({ type: "SELECT_TIME", time: slot });
+      void confirmReschedule({
+        bookingId: successfulBooking.id,
+        dateKey: bookingFlow.dateKey,
+        time: slot,
+      });
       return;
     }
 
@@ -2483,15 +2546,113 @@ export function HaabBookingModule({
     setCancellationId(bookingId);
   }
 
-  async function confirmReschedule() {
-    if (!rescheduleState || isMutatingBooking) {
+  // Rescheduling from the private link drops the visitor into the same
+  // date-and-time step the original booking came from, with the service already
+  // chosen. The existing booking is untouched until a new slot is saved.
+  function startManageReschedule() {
+    if (!successfulBooking || successfulBooking.status === "cancelled") {
       return;
     }
+
+    setBookingError(null);
+    setFlowNotice(null);
+    setPublicMonthAnchor(parseDateKey(successfulBooking.dateKey));
+    setBookingFlow((current) => ({
+      ...current,
+      step: 2,
+      serviceId: successfulBooking.serviceId,
+      dateKey: successfulBooking.dateKey,
+      time: "",
+    }));
+    setIsManageRescheduling(true);
+  }
+
+  function cancelManageReschedule() {
+    setIsManageRescheduling(false);
+    setBookingError(null);
+    setFlowNotice(null);
+    setBookingFlow((current) => ({ ...current, step: 4 }));
+  }
+
+  async function saveClientNote() {
+    if (!successfulBooking || isSavingClientNote) {
+      return;
+    }
+
+    const note = clientNoteDraft.trim().slice(0, 500);
+    setIsSavingClientNote(true);
+    setClientNoteStatus("idle");
+
+    try {
+      let bookingToCommit: BookingRecord = {
+        ...successfulBooking,
+        clientNote: note,
+        updatedAt: new Date().toISOString(),
+      };
+      const manageToken = getManageTokenForBooking(successfulBooking);
+
+      if (integratedMode && isDedicatedPublicPage && vertical && manageToken) {
+        const response = await fetch(
+          `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/manage/${encodeURIComponent(manageToken)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "note", note }),
+          },
+        );
+        const payload = (await response.json().catch(() => ({}))) as {
+          booking?: BookingRecord;
+        };
+
+        if (!response.ok || !payload.booking) {
+          setClientNoteStatus("failed");
+          return;
+        }
+
+        bookingToCommit = {
+          ...payload.booking,
+          manageToken: payload.booking.manageToken || manageToken,
+        };
+      }
+
+      commitBookingMutation(activeStore, bookingToCommit);
+      setClientNoteDraft(bookingToCommit.clientNote ?? note);
+      setClientNoteStatus("saved");
+    } catch {
+      setClientNoteStatus("failed");
+    } finally {
+      setIsSavingClientNote(false);
+    }
+  }
+
+  /**
+   * Saves a new date/time for an existing booking. `target` is passed when the
+   * move came from the private link's availability flow, which has no modal to
+   * put an error message in — those go to the flow's own error banner.
+   */
+  async function confirmReschedule(target?: {
+    bookingId: string;
+    dateKey: string;
+    time: string;
+  }) {
+    const request = target ?? rescheduleState;
+
+    if (!request || isMutatingBooking) {
+      return;
+    }
+
+    const reportRescheduleError = (message: string) => {
+      if (target) {
+        setBookingError(message);
+        return;
+      }
+      setRescheduleState((current) => (current ? { ...current, error: message } : current));
+    };
 
     const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const validationStore = latestStandaloneStore ?? activeStore;
     const booking = validationStore.bookings.find(
-      (candidate) => candidate.id === rescheduleState.bookingId,
+      (candidate) => candidate.id === request.bookingId,
     );
     const service = validationStore.services.find(
       (candidate) => candidate.id === booking?.serviceId,
@@ -2505,14 +2666,14 @@ export function HaabBookingModule({
       return;
     }
 
-    if (!rescheduleState.dateKey) {
+    if (!request.dateKey) {
       return;
     }
 
     if (service.bookingType === "appointment") {
       const validationHolds = pruneBookingHolds(validationStore.bookingHolds);
       const nextSlots = getAvailableSlots(
-        rescheduleState.dateKey,
+        request.dateKey,
         service,
         validationStore.availability,
         validationStore.bookings,
@@ -2520,17 +2681,13 @@ export function HaabBookingModule({
         validationHolds,
       );
 
-      if (!nextSlots.includes(rescheduleState.time)) {
-        setRescheduleState((current) =>
-          current
-            ? { ...current, error: t.errors.rescheduleSlotUnavailable }
-            : current,
-        );
+      if (!nextSlots.includes(request.time)) {
+        reportRescheduleError(t.errors.rescheduleSlotUnavailable);
         return;
       }
     } else if (
       !isDateAvailable(
-        rescheduleState.dateKey,
+        request.dateKey,
         service,
         validationStore.availability,
         validationStore.bookings,
@@ -2538,19 +2695,15 @@ export function HaabBookingModule({
         pruneBookingHolds(validationStore.bookingHolds),
       )
     ) {
-      setRescheduleState((current) =>
-        current
-          ? { ...current, error: t.errors.rescheduleDateUnavailable }
-          : current,
-      );
+      reportRescheduleError(t.errors.rescheduleDateUnavailable);
       return;
     }
 
     let bookingToCommit: BookingRecord = {
       ...booking,
-      dateKey: rescheduleState.dateKey,
-      startTime: resolveBookingStartTime(service, rescheduleState.time),
-      endTime: resolveBookingEndTime(service, rescheduleState.time),
+      dateKey: request.dateKey,
+      startTime: resolveBookingStartTime(service, request.time),
+      endTime: resolveBookingEndTime(service, request.time),
       status: "rescheduled",
       updatedAt: new Date().toISOString(),
     };
@@ -2563,7 +2716,11 @@ export function HaabBookingModule({
           : `/api/provider/bookings/${encodeURIComponent(booking.id)}`;
 
       setIsMutatingBooking(true);
-      setRescheduleState((current) => (current ? { ...current, error: undefined } : current));
+      if (target) {
+        setBookingError(null);
+      } else {
+        setRescheduleState((current) => (current ? { ...current, error: undefined } : current));
+      }
 
       try {
         const response = await fetch(endpoint, {
@@ -2571,8 +2728,8 @@ export function HaabBookingModule({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "reschedule",
-            dateKey: rescheduleState.dateKey,
-            time: rescheduleState.time || undefined,
+            dateKey: request.dateKey,
+            time: request.time || undefined,
           }),
         });
         const payload = (await response.json().catch(() => ({}))) as {
@@ -2581,18 +2738,12 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
-          setRescheduleState((current) =>
-            current
-              ? {
-                  ...current,
-                  error:
-                    response.status === 409
-                      ? service.bookingType === "appointment"
-                        ? t.errors.rescheduleSlotUnavailable
-                        : t.errors.rescheduleDateUnavailable
-                      : t.errors.rescheduleFailed,
-                }
-              : current,
+          reportRescheduleError(
+            response.status === 409
+              ? service.bookingType === "appointment"
+                ? t.errors.rescheduleSlotUnavailable
+                : t.errors.rescheduleDateUnavailable
+              : t.errors.rescheduleFailed,
           );
           return;
         }
@@ -2602,11 +2753,7 @@ export function HaabBookingModule({
           manageToken: payload.booking.manageToken || booking.manageToken || manageToken || "",
         };
       } catch {
-        setRescheduleState((current) =>
-          current
-            ? { ...current, error: t.errors.rescheduleFailed }
-            : current,
-        );
+        reportRescheduleError(t.errors.rescheduleFailed);
         return;
       } finally {
         setIsMutatingBooking(false);
@@ -2614,6 +2761,22 @@ export function HaabBookingModule({
     }
 
     commitBookingMutation(validationStore, bookingToCommit);
+
+    if (target) {
+      // Straight back to the management page, now showing the new time.
+      setIsManageRescheduling(false);
+      setBookingError(null);
+      setFlowNotice(null);
+      setBookingFlow((current) => ({
+        ...current,
+        step: 4,
+        successBookingId: bookingToCommit.id,
+        dateKey: bookingToCommit.dateKey,
+        time: bookingToCommit.startTime ?? "",
+      }));
+      return;
+    }
+
     setRescheduleState(null);
   }
 
@@ -2742,7 +2905,7 @@ export function HaabBookingModule({
           selectedService,
           availability,
           bookings,
-          undefined,
+          flowIgnoredBookingId,
           activeBookingHolds,
           bookingHold?.released ? undefined : bookingHold?.id,
         )
@@ -3564,7 +3727,7 @@ export function HaabBookingModule({
                       selectedService,
                       availability,
                       bookings,
-                      undefined,
+                      flowIgnoredBookingId,
                       activeBookingHolds,
                       bookingHold?.released ? undefined : bookingHold?.id,
                     )
@@ -3712,6 +3875,14 @@ export function HaabBookingModule({
     const selectionIsSingle = Boolean(
       selectedService && isSingleOccurrence(selectedService),
     );
+    // Changing the time from the details step keeps the form; saying so is what
+    // makes people willing to do it.
+    const hasPartialClientDetails = Boolean(
+      bookingFlow.clientName.trim() ||
+        bookingFlow.clientEmail.trim() ||
+        bookingFlow.clientPhone.trim() ||
+        bookingFlow.notes.trim(),
+    );
     const selectionIsEvent = vertical === "events";
     // Per-location pricing: the service's locations + the effective price/address
     // for the current selection.
@@ -3764,7 +3935,7 @@ export function HaabBookingModule({
             selectedService,
             bookingFlow.dateKey,
             bookings,
-            undefined,
+            flowIgnoredBookingId,
             activeBookingHolds,
             bookingHold?.released ? undefined : bookingHold?.id,
           )
@@ -3787,7 +3958,7 @@ export function HaabBookingModule({
         selectedService!,
         availability,
         bookings,
-        undefined,
+        flowIgnoredBookingId,
         activeBookingHolds,
         bookingHold?.released ? undefined : bookingHold?.id,
       );
@@ -3822,22 +3993,37 @@ export function HaabBookingModule({
           : step2DateAvailableForFullDay
             ? t.publicFlow.dayFreeHelper
             : t.publicFlow.dayUnavailablePickAnother;
-    const step2ButtonLabel = selectionIsSingle
-      ? singleIsFull
-        ? copy.phrases.fullyBookedLabel
-        : copy.bookVerb === "register"
-          ? t.publicFlow.reserveMySpot
-          : t.publicFlow.continueToMyDetails
-      : step2IsAppointment
-        ? !step2DateChosen
-          ? t.publicFlow.selectADate
-          : !step2TimeChosen
-            ? t.publicFlow.selectATime
+    const step2ButtonLabel = isManageRescheduling
+      ? isMutatingBooking
+        ? t.common.loading
+        : t.manage.saveNewTime
+      : selectionIsSingle
+        ? singleIsFull
+          ? copy.phrases.fullyBookedLabel
+          : copy.bookVerb === "register"
+            ? t.publicFlow.reserveMySpot
             : t.publicFlow.continueToMyDetails
-        : copy.bookFullDay;
+        : step2IsAppointment
+          ? !step2DateChosen
+            ? t.publicFlow.selectADate
+            : !step2TimeChosen
+              ? t.publicFlow.selectATime
+              : t.publicFlow.continueToMyDetails
+          : copy.bookFullDay;
 
     const advanceToDetailsStep = () => {
       if (!step2CanContinue || isCreatingHold) {
+        return;
+      }
+
+      // Full-day / single-occurrence reschedules commit on this button, the way
+      // appointment reschedules commit on the slot tap.
+      if (isManageRescheduling && successfulBooking) {
+        void confirmReschedule({
+          bookingId: successfulBooking.id,
+          dateKey: bookingFlow.dateKey,
+          time: bookingFlow.time,
+        });
         return;
       }
 
@@ -3967,7 +4153,6 @@ export function HaabBookingModule({
                     }
                     extensionMessage={holdExtensionMessage}
                     onExtend={() => void extendCurrentBookingHold()}
-                    onChooseAnother={goBackToSelectionStep}
                     copy={copy}
                     lang={lang}
                   />
@@ -4056,16 +4241,60 @@ export function HaabBookingModule({
               {isPublicSelectionStep ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
+                  {/* Rescheduling keeps the service fixed, so the step explains
+                      what is being moved and what happens if they change their
+                      mind — the current booking is never touched until save. */}
+                  {isManageRescheduling && successfulBooking ? (
+                    <div className="px-5 pt-4 sm:px-7 sm:pt-5">
+                      <div className="rounded-[22px] border border-[rgba(26,115,232,0.18)] bg-[rgba(26,115,232,0.06)] px-4 py-3.5">
+                        <p className="text-[0.9375rem] font-semibold text-[var(--ink)]">
+                          {t.manage.reschedulingTitle}
+                        </p>
+                        <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+                          {t.manage.reschedulingBody}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-[var(--accent-strong)]">
+                          {t.manage.currentlyBooked}:{" "}
+                          {formatDateLabel(successfulBooking.dateKey, lang)} ·{" "}
+                          {formatTimeRange(
+                            successfulBooking.startTime,
+                            successfulBooking.endTime,
+                            lang,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  ) : null}
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
                     <div
                       className={cn(
                         "flex flex-col gap-4",
-                        hasMultipleServices
+                        hasMultipleServices || isManageRescheduling
                           ? "lg:flex-row lg:items-center lg:gap-4"
                           : "lg:flex-row lg:items-center lg:justify-between",
                       )}
                     >
-                      {hasMultipleServices ? (
+                      {isManageRescheduling ? (
+                        <div className="lg:flex lg:flex-1 lg:justify-start">
+                          <button
+                            type="button"
+                            onClick={cancelManageReschedule}
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[rgba(248,249,250,0.78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-white hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                          >
+                            <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
+                              <path
+                                d="M15 6l-6 6 6 6"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                fill="none"
+                              />
+                            </svg>
+                            {t.manage.keepCurrentTime}
+                          </button>
+                        </div>
+                      ) : hasMultipleServices ? (
                         <div className="lg:flex lg:flex-1 lg:justify-start">
                           <button
                             type="button"
@@ -4127,10 +4356,10 @@ export function HaabBookingModule({
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
                     <div className="hidden w-full flex-wrap items-center justify-between gap-4 lg:flex">
+                      {/* Expiry is already explained in the panel above; the row
+                          only needs to carry the two ways out. */}
                       <p className="min-w-0 flex-1 text-[0.9375rem] leading-6 text-[var(--muted)]">
-                        {isBookingHoldExpired
-                          ? copy.phrases.serviceUnavailableBody
-                          : t.publicFlow.finishBeforeHoldExpires}
+                        {isBookingHoldExpired ? "" : t.publicFlow.finishBeforeHoldExpires}
                       </p>
                       <div className="flex flex-wrap items-center justify-end gap-3">
                         <ActionButton
@@ -4142,21 +4371,28 @@ export function HaabBookingModule({
                           )}
                           onClick={goBackToSelectionStep}
                         >
-                          {t.publicFlow.back}
+                          {isBookingHoldExpired ? t.public.chooseAnotherTime : t.public.holdChangeTime}
                         </ActionButton>
                         <ActionButton
                           tone="primary"
                           className={cn("min-w-[150px] px-6 !text-[0.9375rem]", publicPrimaryActionClass)}
                           disabled={
                             isConfirmingBooking ||
-                            (!isBookingHoldExpired && integratedMode && !isNetworkOnline)
+                            isCreatingHold ||
+                            (integratedMode && !isNetworkOnline)
                           }
-                          onClick={isBookingHoldExpired ? goBackToSelectionStep : confirmBooking}
+                          onClick={
+                            isBookingHoldExpired
+                              ? () => void retryExpiredBookingHold()
+                              : confirmBooking
+                          }
                         >
-                          {isBookingHoldExpired
-                            ? t.public.chooseAnotherTime
-                            : integratedMode && !isNetworkOnline
-                              ? t.public.onlineRequired
+                          {integratedMode && !isNetworkOnline
+                            ? t.public.onlineRequired
+                            : isBookingHoldExpired
+                              ? isCreatingHold
+                                ? t.public.holdingAgain
+                                : t.public.holdAgain
                               : t.publicFlow.confirm}
                         </ActionButton>
                       </div>
@@ -4645,6 +4881,19 @@ export function HaabBookingModule({
                       </p>
                     </div>
                   ) : null}
+                  {hasPartialClientDetails && !isManageRescheduling ? (
+                    <div
+                      role="status"
+                      className="mt-5 rounded-[22px] border border-[rgba(0,191,165,0.28)] bg-[rgba(104,250,221,0.14)] px-4 py-3.5 text-[var(--ink)]"
+                    >
+                      <p className="text-[0.9375rem] font-semibold">
+                        {t.publicFlow.detailsKeptNoticeTitle}
+                      </p>
+                      <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
+                        {t.publicFlow.detailsKeptNoticeBody}
+                      </p>
+                    </div>
+                  ) : null}
                   {selectionIsSingle ? (
                     <div className="mt-6 space-y-4">
                       <div className={publicInsetCardClass}>
@@ -4760,7 +5009,7 @@ export function HaabBookingModule({
                             selectedService,
                             availability,
                             bookings,
-                            undefined,
+                            flowIgnoredBookingId,
                             activeBookingHolds,
                             bookingHold?.released ? undefined : bookingHold?.id,
                           )
@@ -4840,7 +5089,41 @@ export function HaabBookingModule({
                   "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both]",
                 )}
               >
-                <SectionTitle title={copy.bookingSummary} />
+                {/* A receipt, not a summary: who it is from, what it is worth,
+                    and a reference the client can quote — laid out like
+                    something worth keeping. */}
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+                      {t.publicFlow.receiptTitle}
+                    </p>
+                    <p className="mt-1.5 text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                      {provider.businessName || provider.fullName || copy.bookingPage}
+                    </p>
+                  </div>
+                  <BookingStatusPill status={successfulBooking.status} lang={lang} />
+                </div>
+                <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
+                  <div>
+                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {t.publicFlow.receiptReference}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold uppercase text-[var(--ink)] [font-family:var(--font-plex-mono)]">
+                      {successfulBooking.id.slice(-10)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+                      {t.publicFlow.receiptIssued}
+                    </dt>
+                    <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
+                      {formatDateLabel(
+                        getDateKey(new Date(successfulBooking.createdAt)),
+                        lang,
+                      )}
+                    </dd>
+                  </div>
+                </dl>
                 <div className={cn("mt-6", publicInsetCardClass)}>
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
                     <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
@@ -4982,7 +5265,15 @@ export function HaabBookingModule({
                 </div>
 
                 {!isSuccessfulBookingCancelled ? (
-                  <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-stretch">
+                  <>
+                  {/* Perforation. The receipt reads as a ticket you tear off:
+                      details above, what to do with them below. */}
+                  <div className="relative mt-6 h-6" aria-hidden="true">
+                    <span className="absolute inset-x-0 top-1/2 border-t border-dashed border-[rgba(15,23,42,0.16)]" />
+                    <span className="absolute left-0 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(15,23,42,0.06)]" />
+                    <span className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 translate-x-1/2 rounded-full bg-[rgba(15,23,42,0.06)]" />
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-stretch">
                     <div className={cn("flex flex-col justify-center", publicInsetCardClass)}>
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
                         {t.publicFlow.addToCalendar}
@@ -4995,7 +5286,7 @@ export function HaabBookingModule({
                         className={cn("mt-4 w-full px-6", publicPrimaryActionClass)}
                         onClick={() => downloadBookingCalendarFile(successfulBooking)}
                       >
-                        {t.publicFlow.addToCalendar}
+                        {t.publicFlow.downloadIcs}
                       </ActionButton>
                     </div>
                     <div className={cn("flex flex-col items-center text-center", publicInsetCardClass)}>
@@ -5015,8 +5306,12 @@ export function HaabBookingModule({
                           </p>
                         )}
                       </div>
+                      <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
+                        {t.publicFlow.scanToAdd}
+                      </p>
                     </div>
                   </div>
+                  </>
                 ) : null}
                 <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-3">
                   <ActionButton
@@ -5082,48 +5377,16 @@ export function HaabBookingModule({
                     </ActionButton>
                   )}
                 </div>
-                {successfulBooking.manageToken ? (
-                  <div className="mt-5 flex flex-col gap-2 border-t border-[var(--line)] pt-5">
-                    <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                      {t.publicFlow.manageBookingAnytime}
-                    </label>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={successfulManageUrl}
-                        aria-label={t.publicFlow.managementUrlLabel}
-                        onFocus={(event) => event.currentTarget.select()}
-                        className="w-full min-w-0 flex-1 rounded-2xl border border-[var(--line)] bg-white px-4 py-2 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)] sm:min-w-[260px]"
-                      />
-                      <ActionLink
-                        href={successfulManageUrl}
-                        tone="secondary"
-                        className={cn(
-                          isDedicatedPublicPage &&
-                            cn(publicPillButtonClass, publicGhostButtonClass),
-                        )}
-                      >
-                        {t.publicFlow.openPrivateLink}
-                      </ActionLink>
-                      <ActionButton
-                        tone="ghost"
-                        className={cn(
-                          isDedicatedPublicPage &&
-                            cn(publicPillButtonClass, publicGhostButtonClass),
-                        )}
-                        onClick={copyManageLink}
-                      >
-                        {copiedManageLink ? t.publicFlow.copied : t.publicFlow.copyLink}
-                      </ActionButton>
-                      <span className="sr-only" aria-live="polite">
-                        {copiedManageLink ? t.publicFlow.manageLinkCopied : ""}
-                      </span>
-                    </div>
-                    <p className="text-xs leading-5 text-[var(--muted)]">
-                      {t.publicFlow.saveThisLinkBody}
-                    </p>
-                  </div>
+                {/* The client leaves this page with one thing that matters: the
+                    link that gets them back in without an account. */}
+                {successfulBooking.manageToken && successfulManageUrl ? (
+                  <PrivateLinkCard
+                    className="mt-5"
+                    url={successfulManageUrl}
+                    lang={lang}
+                    copied={copiedManageLink}
+                    onCopy={() => void copyManageLink()}
+                  />
                 ) : null}
               </div>
             ) : null}
@@ -5168,21 +5431,28 @@ export function HaabBookingModule({
                     )}
                     onClick={goBackToSelectionStep}
                   >
-                    {t.publicFlow.back}
+                    {isBookingHoldExpired ? t.public.chooseAnotherTime : t.public.holdChangeTime}
                   </ActionButton>
                   <ActionButton
                     tone="primary"
                     className={cn("min-h-12 flex-1", publicPrimaryActionClass)}
                     disabled={
                       isConfirmingBooking ||
-                      (!isBookingHoldExpired && integratedMode && !isNetworkOnline)
+                      isCreatingHold ||
+                      (integratedMode && !isNetworkOnline)
                     }
-                    onClick={isBookingHoldExpired ? goBackToSelectionStep : confirmBooking}
+                    onClick={
+                      isBookingHoldExpired
+                        ? () => void retryExpiredBookingHold()
+                        : confirmBooking
+                    }
                   >
-                    {isBookingHoldExpired
-                      ? t.public.chooseAnotherTime
-                      : integratedMode && !isNetworkOnline
-                        ? t.public.onlineRequired
+                    {integratedMode && !isNetworkOnline
+                      ? t.public.onlineRequired
+                      : isBookingHoldExpired
+                        ? isCreatingHold
+                          ? t.public.holdingAgain
+                          : t.public.holdAgain
                         : t.publicFlow.confirm}
                   </ActionButton>
                 </>
@@ -5192,6 +5462,88 @@ export function HaabBookingModule({
         ) : null}
 
       </div>
+    );
+  }
+
+  /**
+   * The private management link's own screen. Deliberately not the confirmation
+   * receipt: someone opening this weeks later wants status and controls, not the
+   * celebration they already saw.
+   */
+  function renderManageBooking() {
+    if (!successfulBooking) {
+      return null;
+    }
+
+    const service = services.find(
+      (candidate) => candidate.id === successfulBooking.serviceId,
+    );
+    const addresses = successfulBooking.location
+      ? [successfulBooking.location]
+      : [
+          service?.linkedAddress1 ? provider.address1 : "",
+          service?.linkedAddress2 ? provider.address2 : "",
+          service?.customAddress ?? "",
+        ].filter((entry): entry is string => Boolean(entry && entry.trim()));
+    const phones = [
+      service?.linkedPhone1 ? provider.phoneNumber1 : "",
+      service?.linkedPhone2 ? provider.phoneNumber2 : "",
+      service?.customPhone ?? "",
+    ].filter((entry): entry is string => Boolean(entry && entry.trim()));
+    const qrForBooking =
+      calendarQrCode?.bookingId === successfulBooking.id ? calendarQrCode : undefined;
+
+    return (
+      <ManageBookingPanel
+        booking={{
+          ...successfulBooking,
+          serviceName: service?.name ?? successfulBooking.serviceName,
+        }}
+        providerName={provider.businessName || provider.fullName}
+        addresses={addresses}
+        phones={phones}
+        costLabel={successfulBooking.cost}
+        manageUrl={successfulManageUrl}
+        copiedManageLink={copiedManageLink}
+        onCopyManageLink={() => void copyManageLink()}
+        canReschedule={!isServiceSingleOccurrence(successfulBooking.serviceId)}
+        onReschedule={startManageReschedule}
+        onCancel={() => openCancellation(successfulBooking.id)}
+        onAddToCalendar={() => downloadBookingCalendarFile(successfulBooking)}
+        onShowQr={() => setIsCalendarQrModalOpen(true)}
+        qrDataUrl={qrForBooking?.url || undefined}
+        qrError={qrForBooking?.error || undefined}
+        noteDraft={clientNoteDraft}
+        onNoteDraftChange={(value) => {
+          setClientNoteDraft(value);
+          setClientNoteStatus("idle");
+        }}
+        onSaveNote={() => void saveClientNote()}
+        isSavingNote={isSavingClientNote}
+        noteStatus={clientNoteStatus}
+        savedNote={successfulBooking.clientNote ?? ""}
+        bookAnotherAction={
+          <Link
+            href={publicUrl}
+            className={cn(
+              "inline-flex min-h-11 min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white",
+              isDedicatedPublicPage && publicPillButtonClass,
+            )}
+          >
+            {t.publicFlow.bookAnother}
+          </Link>
+        }
+        copy={copy}
+        lang={lang}
+        panelClass={publicElevatedPanelClass}
+        insetClass={publicInsetCardClass}
+        buttonClass={isDedicatedPublicPage ? publicPillButtonClass : undefined}
+        ghostButtonClass={
+          isDedicatedPublicPage
+            ? cn(publicPillButtonClass, publicGhostButtonClass)
+            : undefined
+        }
+      />
     );
   }
 
@@ -5596,7 +5948,7 @@ export function HaabBookingModule({
                     !rescheduleState.dateKey ||
                     (service.bookingType === "appointment" && !rescheduleState.time)
                   }
-                  onClick={confirmReschedule}
+                  onClick={() => void confirmReschedule()}
                 >
                   {isMutatingBooking ? t.common.loading : t.manage.saveNewTime}
                 </ActionButton>
@@ -5814,6 +6166,8 @@ export function HaabBookingModule({
             {adminTab === "services" ? renderServices() : null}
             {adminTab === "settings" ? renderSettings() : null}
           </div>
+        ) : isManageView && !isManageRescheduling ? (
+          renderManageBooking()
         ) : (
           renderPublicFlow()
         )}

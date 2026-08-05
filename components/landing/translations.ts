@@ -15,6 +15,8 @@ export const translations = {
       createPageShort: "Crear página",
       createPageLong: "Crear mi página",
       openMenu: "Abrir menú",
+      logIn: "Iniciar sesión",
+      dashboard: "Tu panel",
     },
     home: {
       backToHome: "← Volver al inicio",
@@ -99,6 +101,8 @@ export const translations = {
       ctaPrimary: "Crear mi página →",
       ctaSecondary: "Verlo funcionar en 15 segundos",
       fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
+      returningPrompt: "¿Ya tienes una página?",
+      returningCta: "Inicia sesión",
       previewCaption: "La página real de Dra. Maya Rivera. Tócala: está en vivo.",
     },
     startDialog: {
@@ -484,6 +488,8 @@ export const translations = {
       createPageShort: "Create page",
       createPageLong: "Create your page",
       openMenu: "Open menu",
+      logIn: "Log in",
+      dashboard: "Your dashboard",
     },
     home: {
       backToHome: "← Back to home",
@@ -568,6 +574,8 @@ export const translations = {
       ctaPrimary: "Create your page →",
       ctaSecondary: "See it working in 15 seconds",
       fineprint: "Free while in early access. No card.",
+      returningPrompt: "Already have a page?",
+      returningCta: "Log in",
       previewCaption: "Dr. Maya Rivera's real page. Touch it — it's live.",
     },
     startDialog: {

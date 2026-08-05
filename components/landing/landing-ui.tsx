@@ -23,6 +23,12 @@ type LandingActions = {
   onSelectVertical: (vertical: LandingVertical, pageName?: string) => void;
   /** True once the visitor already has a booking page: CTAs go to it directly. */
   hasPage?: boolean;
+  /** Whether an account session already exists, which hides the log-in entries. */
+  loggedIn?: boolean;
+  /** Sign-in URL that returns to this page, language included. */
+  loginHref?: string;
+  /** Opens the workspace for a signed-in provider who finished setup. */
+  onOpenDashboard?: () => void;
 };
 
 const LandingActionsContext = createContext<LandingActions>({
@@ -120,6 +126,60 @@ function DemoButton({
   return (
     <button type="button" onClick={openDemo} className={className}>
       {children}
+    </button>
+  );
+}
+
+/**
+ * The returning-provider entry point. A visitor with an account has no use for
+ * "create your page", so every placement of this shows one of three things: a
+ * sign-in link, a way into the workspace once setup is done, or nothing at all
+ * while a signed-in provider is still mid-setup (the primary CTA continues that).
+ */
+function useAccountEntry() {
+  const { hasPage, loggedIn, loginHref, onOpenDashboard } = useLandingActions();
+  const { t } = useLanguage();
+
+  if (!loggedIn) {
+    return loginHref
+      ? ({ kind: "login", href: loginHref, label: t.nav.logIn } as const)
+      : null;
+  }
+
+  return hasPage && onOpenDashboard
+    ? ({ kind: "dashboard", onClick: onOpenDashboard, label: t.nav.dashboard } as const)
+    : null;
+}
+
+/** Footer variant: drops the whole row rather than leaving an empty bullet. */
+function AccountEntryListItem() {
+  const entry = useAccountEntry();
+
+  if (!entry) {
+    return null;
+  }
+
+  return (
+    <li>
+      <AccountEntry className="text-left hover:text-[var(--ink)]" />
+    </li>
+  );
+}
+
+function AccountEntry({ className }: { className: string }) {
+  const entry = useAccountEntry();
+
+  if (!entry) {
+    return null;
+  }
+
+  return entry.kind === "login" ? (
+    <a href={entry.href} className={className}>
+      {entry.label}
+    </a>
+  ) : (
+    <button type="button" onClick={entry.onClick} className={className}>
+      {entry.label}
     </button>
   );
 }
@@ -470,10 +530,13 @@ export function StickyNav() {
           <LanguageToggle />
           <a
             href={tryBookingPath(lang)}
-            className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] sm:inline-flex"
+            className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] lg:inline-flex"
           >
             {t.nav.seeLivePage}
           </a>
+          {/* Returning providers look here first. Sits beside the primary CTA
+              on every width above a phone, and in the menu below that. */}
+          <AccountEntry className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] sm:inline-flex" />
           <StartButton className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.28)] transition hover:shadow-[0_14px_30px_rgba(26,115,232,0.34)] active:translate-y-px sm:px-6 sm:py-3">
             <span className="sm:hidden">{t.nav.createPageShort}</span>
             <span className="hidden sm:inline">{t.nav.createPageLong}</span>
@@ -508,11 +571,28 @@ export function StickyNav() {
               >
                 {t.nav.seeLivePage}
               </a>
+              <AccountEntry className="mt-1 block w-full rounded-xl border-t border-[var(--line)] px-4 pb-2.5 pt-3 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white sm:hidden" />
             </nav>
           </details>
         </div>
       </div>
     </header>
+  );
+}
+
+function HeroAccountLine() {
+  const entry = useAccountEntry();
+  const { t } = useLanguage();
+
+  if (!entry) {
+    return null;
+  }
+
+  return (
+    <p className="mt-2 text-sm text-[var(--muted)]">
+      {entry.kind === "login" ? `${t.hero.returningPrompt} ` : ""}
+      <AccountEntry className="font-semibold text-[var(--primary)] underline-offset-4 hover:underline" />
+    </p>
   );
 }
 
@@ -569,6 +649,9 @@ export function Hero() {
             </DemoButton>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
+          {/* Second placement, at the exact moment someone realises the primary
+              CTA is not for them: they already have a page. */}
+          <HeroAccountLine />
         </div>
       </div>
     </section>
@@ -1102,6 +1185,7 @@ export function Footer() {
                   {t.footer.product.seeLivePage}
                 </a>
               </li>
+              <AccountEntryListItem />
             </ul>
           </div>
           <div>

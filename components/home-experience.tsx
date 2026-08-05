@@ -221,7 +221,16 @@ function HomeExperienceInner({
         publicationStatus={publicationStatus}
       />
       <LandingActionsProvider
-        actions={{ onStart, onSelectVertical, hasPage: effectiveConfigured }}
+        actions={{
+          onStart,
+          onSelectVertical,
+          hasPage: effectiveConfigured,
+          loggedIn,
+          // Returning here after signing in shows the dashboard panel for a
+          // configured provider, or the workflow picker for a new one.
+          loginHref: loginHref("/", lang),
+          onOpenDashboard: () => openApp(),
+        }}
       >
         <LandingPage
           afterHero={

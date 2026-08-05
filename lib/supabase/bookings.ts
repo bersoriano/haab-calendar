@@ -271,6 +271,12 @@ function toService(row: ServiceRow): Service {
   };
 }
 
+/** The client's post-booking note lives in `details`, so it needs no column. */
+function readClientNote(details: BookingRow["details"]) {
+  const value = isPlainRecord(details) ? details.clientNote : undefined;
+  return typeof value === "string" ? value : "";
+}
+
 function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
   return {
     id: row.id,
@@ -284,6 +290,7 @@ function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
     clientEmail: row.client_email,
     clientPhone: row.client_phone,
     notes: row.notes ?? "",
+    clientNote: readClientNote(row.details),
     capacitySnapshot: row.capacity_snapshot ?? undefined,
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
@@ -989,6 +996,51 @@ export async function cancelManagedBooking(supabase: SupabaseClient, input: Mana
       manageToken: input.token,
     }),
   };
+}
+
+export const MANAGED_CLIENT_NOTE_MAX_LENGTH = 500;
+
+/**
+ * A note the client leaves from their private link. It is merged into the
+ * booking's `details` payload, so it never collides with the booking notes the
+ * client typed while booking.
+ */
+export async function updateManagedBookingNote(
+  supabase: SupabaseClient,
+  input: ManageBookingInput & { note: string },
+) {
+  const note = input.note.slice(0, MANAGED_CLIENT_NOTE_MAX_LENGTH).trim();
+  const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
+  const booking = await getBookingByManageToken(supabase, provider.id, input.token);
+
+  if (booking.status === "cancelled") {
+    throw new PublicBookingWriteError(
+      "This booking was cancelled, so it cannot be updated.",
+      409,
+    );
+  }
+
+  const details = safeDetails(booking.details);
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ details: { ...details, clientNote: note } })
+    .eq("id", booking.id)
+    .select(BOOKING_SELECT)
+    .single<BookingRow>();
+
+  if (error) {
+    throw new PublicBookingWriteError("Could not save that note.", 500, error);
+  }
+
+  await insertBookingEvent(supabase, {
+    bookingId: data.id,
+    providerId: data.provider_id,
+    actorType: "customer",
+    eventType: "note_added",
+    metadata: { source: "manage_link", cleared: note.length === 0 },
+  });
+
+  return { booking: toBookingRecord(data, input.token) };
 }
 
 export async function cancelProviderBooking(supabase: SupabaseClient, bookingId: string) {

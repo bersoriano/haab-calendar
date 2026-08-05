@@ -357,6 +357,7 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       clientEmail: booking.clientEmail,
       clientPhone: booking.clientPhone,
       notes: booking.notes ?? "",
+      clientNote: booking.clientNote ?? "",
       capacitySnapshot: booking.capacitySnapshot,
       cost: booking.cost ?? "",
       location: booking.location,

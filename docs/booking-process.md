@@ -152,7 +152,7 @@ If the browser loses connectivity:
 - no false confirmation is shown;
 - reconnecting triggers a hold-status request and refreshes server time.
 
-The same status refresh runs when a backgrounded page becomes visible. If the server reports the hold inactive, the UI immediately switches to the expired state and directs the visitor back to availability.
+The same status refresh runs when a backgrounded page becomes visible. If the server reports the hold inactive, the UI switches to the expired state described below.
 
 ### Abandonment and release
 
@@ -174,6 +174,30 @@ An expired hold frees the slot logically as soon as `expires_at <= now()`:
 - event capacity triggers count only unexpired holds.
 
 Supabase Cron runs `cleanup-expired-booking-holds` every minute to remove expired rows physically. Cron is storage cleanup, not the mechanism that makes the slot available.
+
+### What the customer sees when a hold expires
+
+Expiry does not move the customer off the details step, and it never discards
+what they typed. The countdown panel switches to an expired state that offers
+two exits:
+
+- **Hold this time again** requests a fresh hold for the same selection. If it
+  succeeds the countdown restarts and the form is untouched. Only a `409`
+  (the slot really is gone) sends the customer back to time selection with a
+  `SELECTION_CONFLICT` notice; a failed request leaves the expired panel up so
+  the same tap can be retried.
+- **Choose another time** returns to time selection, keeping service, date, and
+  every entered field.
+
+The same pair of actions replaces Back/Confirm in the step's desktop header row
+and mobile action bar while the hold is expired.
+
+### Changing the time without losing the form
+
+The countdown panel also offers **Change time** while the hold is alive. It
+releases the hold and returns to time selection; the booking flow reducer keeps
+the customer's name, email, phone, and notes, and time selection shows a
+"your details are saved" notice whenever any of those fields are filled.
 
 ## 5. Confirmation
 
@@ -198,16 +222,20 @@ The server:
 
 The UI enters the success step only after the server returns a confirmed booking. HTTP `409` means the hold expired or availability changed. The client does not leave the customer on a form for a slot that no longer exists: it dispatches `HOLD_EXPIRED` or `SELECTION_CONFLICT`, returning to time selection with the reason shown and the entered date preserved. The same applies to the client-side re-validation that runs before the request is sent.
 
-## 6. Confirmation tools
+## 6. Confirmation receipt
 
-The success screen provides:
+The success screen is laid out as a receipt worth keeping:
 
-- a clear confirmed, updated, or cancelled status;
-- a complete booking summary;
-- a one-tap `.ics` calendar download;
-- a scannable inline QR code containing the same calendar event, with an enlarged view;
-- a private manage URL that can be opened or copied directly;
-- actions to reschedule, cancel, or book another service.
+- provider name, a status pill (confirmed, updated, or cancelled), a short
+  reference derived from the booking id, and the issue date;
+- the date and time in display type, then the full booking summary;
+- a perforation, below which sit the take-away tools: a one-tap `.ics`
+  download and a scannable inline QR code containing the same calendar event,
+  with an enlarged view;
+- actions to reschedule, cancel, or book another service;
+- the private manage URL in a card of its own, headed "Save this link" and
+  captioned "Save this link – you can reschedule or cancel anytime without an
+  account", with copy and open actions.
 
 The ICS event also contains the private manage URL. The manage URL contains the raw token and should be treated like a password-reset link: anyone with the URL can manage that booking. The database stores only `manage_token_hash`.
 
@@ -228,9 +256,30 @@ PATCH /api/public/{verticalSegment}/{providerSlug}/manage/{token}
 Supported actions are:
 
 - `reschedule` with a replacement date and optional time;
-- `cancel`.
+- `cancel`;
+- `note`, an optional short message (max 500 characters) the customer leaves for
+  the provider. It is merged into the booking's `details` payload as
+  `clientNote`, so it never overwrites the notes typed while booking, and it
+  appends a `note_added` booking event. Cancelled bookings reject it.
 
 Rescheduling repeats date-window, availability, overlap, and capacity validation while ignoring the booking's current slot. A conflict returns `409`. Cancellation changes status to `cancelled`, which no longer blocks availability. Both actions append a booking event.
+
+### What the private link renders
+
+The manage page is its own screen, not the confirmation receipt. In order:
+
+1. **Status first** — a status pill and a plain-language line saying what it
+   means, then the booking's date, time, service, customer, price, and location.
+2. **Change this booking** — cancel (with a confirmation dialog), add to
+   calendar, show QR, book another, and a one-tap reschedule. Rescheduling
+   re-enters the real availability step for the *same* service, with the
+   booking's own slot treated as free, a banner naming the currently booked
+   time, and a "keep current time" way out. Tapping a slot saves the new time
+   directly — no hold is taken, because the booking already exists.
+3. **Note for the provider** — the optional `note` action above.
+4. **Save this link** — the same private-link card the receipt shows.
+
+Everything on this page works without an account or password.
 
 The authenticated provider dashboard subscribes to booking row changes through
 Supabase Realtime. Each notification triggers an authenticated reload of the
@@ -274,7 +323,7 @@ Local storage is never used as proof that an integrated public booking was confi
 | --- | --- |
 | Slot taken while selecting | Hold request returns `409`; the slot list refreshes and the customer chooses another time. |
 | Connection lost during details | Countdown continues; extend/confirm disabled until reconnect. |
-| Hold expires | Customer is returned to time selection with a "hold ran out" notice scrolled into view; service and date are kept, the slot is immediately available to others. |
+| Hold expires | The customer stays on the details step with the form intact; the countdown panel offers "hold this time again" (one tap for the same slot) and "choose another time". The slot is immediately available to others, so the retry can lose to someone else. |
 | Extension already used | Server refuses another extension; client refreshes hold state. |
 | Confirmation conflicts | No success screen; returned to time selection with a "someone confirmed that time first" notice; nothing is booked. |
 | Manage token invalid | Standard not-found/error state without revealing booking data. |
