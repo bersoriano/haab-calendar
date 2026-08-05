@@ -74,24 +74,40 @@ Open `http://localhost:3000/doctors/clinica-salinas`.
   "lu ma mi ju vi sa do").
 - Time slots use 24-hour format (e.g. "09:00", "17:30") — **no AM/PM**.
 - Service cards show Spanish labels: "Tipo", "Duración", "Capacidad", "Total".
-- The "Continue to My Details" button reads **"Continúe a sus datos"**.
-- The "Reserve my spot" button reads **"Reserve su lugar"**.
+- The slot-step hint reads **"Toque un horario: se aparta por 10 minutos."**
+  (Timed appointments advance on the slot tap, so no continue button is shown
+  for them. The "Continue to My Details" / **"Continúe a sus datos"** button
+  still appears for full-day services.)
+- The "Reserve my spot" button reads **"Reserve su lugar"** (single-occurrence
+  and capacity events).
 - Capacity label shows "lugares disponibles" suffix (e.g. "2 lugares disponibles")
   when spots are limited.
 
 ### Book a slot
 
 1. Pick any highlighted (free) weekday on the calendar.
-2. Select a time slot — the slot button is in 24-hour format.
-3. A hold countdown appears; confirm it reads in Spanish:
+2. Tap a time slot — the slot button is in 24-hour format. The tap creates the
+   hold on the server and opens the details step directly; while the request is
+   in flight the slot reads **"Apartando su horario…"**.
+   (Full-day and single-occurrence services have no slots: pick the date, then
+   click **"Continúe a sus datos"** / **"Reserve su lugar"**.)
+3. The details step shows the hold countdown; confirm it reads in Spanish:
    **"Tiempo restante para confirmar"** followed by the countdown timer.
-4. Click **"Continúe a sus datos"** / **"Reserve su lugar"**.
-5. Fill in client details — labels are Spanish:
+4. Fill in client details — labels are Spanish:
    - Name field: "Nombre completo" (placeholder "Juan Pérez")
    - Email field: "Correo electrónico" (placeholder "juan@ejemplo.com")
    - Phone field: "Número de teléfono" (placeholder "+52 55 1234 5678")
    - Notes field: "Notas"
-6. Click **"Confirmar"**.
+5. Click **"Confirmar"**.
+
+### Hold-expiry check (es)
+
+Let a hold run out on the details step (or shorten `BOOKING_HOLD_DURATION_MS`
+temporarily). Confirm the visitor is returned to the time step with:
+
+- title **"Su apartado de 10 minutos venció"**;
+- body **"El horario se liberó. Elija otro: se aparta de nuevo al instante."**;
+- the service and the date still selected.
 
 ### Success summary checks
 

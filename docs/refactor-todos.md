@@ -31,10 +31,10 @@ Each render function currently lives inside `HaabBookingModule` and closes over 
 - [ ] **5a — Public booking flow** (highest value for child projects; also largest/riskiest)
   - Extract `renderPublicCalendar` → `components/booking/public/PublicCalendar.tsx`.
   - Sub-split `renderPublicFlow` (~1,000 lines) → `PublicBookingFlow.tsx` composing `SlotList.tsx` + `BookingSummary.tsx` (+ the success/manage screen and the sticky bottom action bar already added in the mobile work).
-  - Move booking-flow state + handlers into `components/booking/hooks/useBookingFlow.ts`: `bookingFlow`/`setBookingFlow`, `startFreshBooking`, `launchPublicFlow`, `beginClientDetailsStep`, `confirmBooking`, and `updateBookingFlow`.
+  - Move booking-flow state + handlers into `components/booking/hooks/useBookingFlow.ts`: `bookingFlow`/`setBookingFlow`, `startFreshBooking`, `launchPublicFlow`, `beginClientDetailsStep`, `confirmBooking`, and `updateBookingFlow`. **Already done:** the step transitions themselves live in the pure reducer `lib/booking-flow-machine.ts` (dispatched via `dispatchBookingFlow`/`returnToTimeSelection`); the hook only has to own the React state around it.
   - Move hold lifecycle into `components/booking/hooks/useBookingHolds.ts`: `bookingHold`/`setBookingHold`, `bookingHoldNow`, the per-second ticker effect, `releaseExpiredBookingHold`, hold-selection-key wiring. It consumes `useModuleStore` actions (`commitBookingHolds`, `releaseBookingHold`).
   - **Context/risk:** `confirmBooking` and `beginClientDetailsStep` do read-modify-write via `actions.readStandaloneStoreSnapshot()` + `actions.commitBookings/commitBookingHolds` — preserve that re-validate-against-latest-snapshot pattern exactly (it's the double-booking guard, `SYSTEM_REFERENCE.md` §5/§8).
-  - **New tests unlocked:** once `useBookingFlow`/`useBookingHolds` are isolated, add hook tests (React Testing Library `renderHook`) for the step transitions + hold expiry — this closes part of the render-flow coverage gap.
+  - **New tests unlocked:** step transitions are already covered by `lib/__tests__/booking-flow-machine.test.ts`; once `useBookingFlow`/`useBookingHolds` are isolated, add hook tests (React Testing Library `renderHook`) for the wiring around them (hold creation on slot tap, expiry → return to time selection) — this closes the rest of the render-flow coverage gap.
   - **Verify:** full public smoke (book/confirm/reschedule/cancel/hold-expiry) + mobile viewport (the recently-hardened mobile flow must stay intact).
 
 - [ ] **5b — Modals**

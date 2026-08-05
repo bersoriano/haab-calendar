@@ -270,22 +270,27 @@ The Supabase Realtime plan (`BACKEND_RECOMMENDATIONS.md`) covers both, but the p
 
 ## 5. Booking Lifecycle (Public Flow)
 
-The public booking flow is a 4-step state machine driven by `bookingFlow.step`:
+The public booking flow is a 4-step state machine driven by `bookingFlow.step`.
+Transitions are owned by the pure reducer in `lib/booking-flow-machine.ts`; see
+`docs/booking-process.md` §3a for the event table and the invariants it enforces.
 
 ```
 Step 1: pick service        → bookingFlow.serviceId set
-Step 2: pick date + time    → BookingHold created, 10-min timer starts
+Step 2: pick date + time    → tapping a slot creates the BookingHold, 10-min timer starts
 Step 3: enter client details → still holding the slot
 Step 4: confirmation/manage → BookingRecord created, hold released
 ```
 
+An expired hold or a lost slot returns to step 2 with the service and date kept
+and a notice explaining why, instead of stranding the visitor on step 3.
+
 ### Step 2 → Step 3 transition (the hold)
 
-When the user picks a slot/date and advances:
+When the user taps a slot (or, for full-day services, confirms the date):
 
 1. **Re-validate against latest store snapshot.** The module reads the latest `localStorage` state via `readStandaloneStoreSnapshot()` and re-runs `getAvailableSlots` / `isDateAvailable` against the latest `bookings` and pruned `bookingHolds`. This catches changes made by other browser tabs.
-2. **If still available:** create a `BookingHoldRecord` with `expiresAt = now + 10min`, append to `store.bookingHolds`, and persist.
-3. **If no longer available:** set `bookingError` and stop. User must go back and pick a different slot.
+2. **If still available:** create a `BookingHoldRecord` with `expiresAt = now + BOOKING_HOLD_DURATION_MS` (10 min), append to `store.bookingHolds`, and persist.
+3. **If no longer available:** stay on step 2 and surface the reason; the visitor picks a different slot without losing the service or date.
 
 The hold reserves the slot for that one user during their data-entry phase. While a hold exists for `(service, date, time)`, no other user (in any tab in this browser today; in any device once Supabase lands) sees that slot as available.
 
@@ -365,13 +370,14 @@ BOOKING_HOLD_DURATION_MS = 10 * 60 * 1000   // 10 minutes
 
 | Event                                 | Effect                                                                             |
 |---------------------------------------|------------------------------------------------------------------------------------|
-| User advances from step 2 → step 3    | New `BookingHoldRecord` written to store; `expiresAt = now + 10min`                |
+| User taps a time slot (step 2 → 3)    | New `BookingHoldRecord` written to store; `expiresAt = now + BOOKING_HOLD_DURATION_MS` |
+| User taps a different slot            | Previous hold is released before the replacement is created                         |
 | User advances from step 3 → step 4    | On successful `confirmBooking`, hold is removed from store                         |
-| User goes back from step 3 to step 2 | Existing hold is **released** (removed from store)                                  |
+| User goes back from step 3 to step 2 | Existing hold is **released** (removed from store); service and date are kept        |
 | User accepts “Still interested?”      | Server atomically adds five minutes; this can happen only once per hold             |
 | Browser truly leaves the page         | A `pagehide` keepalive request releases the server hold when possible                |
 | Browser reconnects or returns visible | Client re-reads the hold and server time; an expired hold becomes expired immediately |
-| Per-second client timer fires          | If `now >= hold.expiresAt`, hold is removed and `bookingHold.released = true`      |
+| Per-second client timer fires          | If `now >= hold.expiresAt`, hold is removed, `bookingHold.released = true`, and a visitor on step 3 is returned to time selection with a notice |
 | Any read of holds                     | `pruneBookingHolds` filters out anything with `expiresAt <= now` before use        |
 | Database cleanup job runs             | Supabase Cron deletes all expired rows every minute                                 |
 

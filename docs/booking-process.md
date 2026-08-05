@@ -1,6 +1,6 @@
 # Booking Process
 
-**Status:** current as of 2026-08-04. This is the canonical description of the public booking lifecycle in Haab Calendar.
+**Status:** current as of 2026-08-05. This is the canonical description of the public booking lifecycle in Haab Calendar.
 
 Use this document for current behavior. `SYSTEM_REFERENCE.md` contains deeper engine history and local-mode details; older plans and recommendation files describe design intent and may not reflect what is deployed.
 
@@ -9,8 +9,9 @@ Use this document for current behavior. `SYSTEM_REFERENCE.md` contains deeper en
 The public flow requires no customer account:
 
 1. Choose a service.
-2. Choose an available date and, for timed appointments, a start time.
-3. Receive a temporary hold and enter contact details.
+2. Choose an available date and, for timed appointments, a start time. Tapping a
+   time slot creates the hold immediately and moves to the details step.
+3. Enter contact details while the ten-minute hold counts down.
 4. Confirm the booking and receive calendar and self-service tools.
 
 Canonical public URLs are:
@@ -57,11 +58,49 @@ Availability is computed from:
 
 The browser uses these records to render the calendar, but every booking-critical write repeats validation on the server. A slot shown as available is an invitation to request a hold, not a promise that no other visitor can select it first.
 
+## 3a. Step state machine
+
+Step transitions are owned by the pure reducer in `lib/booking-flow-machine.ts`,
+not by ad-hoc updates at each call site. `components/haab-booking-module.tsx`
+dispatches events through it; the reducer decides both the next step and what
+part of the selection survives.
+
+| Event | Effect |
+| --- | --- |
+| `SELECT_SERVICE` | Step 2. Clears date and time (slots differ per service). |
+| `SELECT_DATE` | Step 2. Clears the time (slots differ per day). |
+| `SELECT_TIME` | Step 2. Records the tapped slot before the hold request. |
+| `HOLD_CREATED` | Step 3. A server hold exists for this selection. |
+| `HOLD_EXPIRED` | Step 2 with a `hold-expired` notice. Keeps service and date, clears the time. |
+| `SELECTION_CONFLICT` | Step 2 with a `selection-conflict` notice. Keeps service and date, clears the time. |
+| `CONFIRMED` | Step 4 with the returned booking id. |
+| `BACK` | Step 3 → 2 keeps service and date; step 2 → 1 is the only path that drops the service. |
+| `RESTART` | Step 1 with an empty selection. |
+
+Two invariants follow from the table and are covered by
+`lib/__tests__/booking-flow-machine.test.ts`:
+
+- **Back navigation never loses the selected service.** Only `BACK` from the date
+  step and `RESTART` clear it, and both are explicit "choose another service"
+  actions.
+- **Losing a slot is never a dead end.** Expiry and conflict always land on time
+  selection with the date intact, so re-booking is one tap.
+
+`resolveReachableStep` clamps a step to what the current selection supports, so a
+restored or shared step can never open a screen with no data behind it.
+
+The progress indicator is always on screen: the full three-step indicator
+collapses into a pinned compact bar (step dots, current label, `n/3`) once the
+header sticks, rather than scrolling away.
+
 ## 4. The ten-minute hold
 
 ### Creating the hold
 
-Moving from date/time selection to customer details calls:
+For timed appointments, tapping a time slot is what creates the hold — there is
+no separate confirm-this-selection step. Full-day and single-occurrence services
+have no slot list, so their primary action on the date step creates the hold
+instead. Both call:
 
 ```text
 POST /api/public/{verticalSegment}/{providerSlug}/holds
@@ -73,8 +112,14 @@ The server:
 2. Validates the date and provider booking window.
 3. Deletes stale expired rows for that provider.
 4. Rechecks bookings, active holds, and capacity.
-5. Inserts a `booking_holds` row with `expires_at = server now + 10 minutes`.
+5. Inserts a `booking_holds` row with `expires_at = server now + BOOKING_HOLD_DURATION_MS`
+   (`lib/constants.ts`, ten minutes). The client counts down from the same
+   constant, so the visible timer and the server expiry cannot drift apart.
 6. Returns the hold and `serverNow`.
+
+While the request is in flight the tapped slot shows a holding state and the
+other slots are disabled, so a slow network cannot produce two holds. Tapping a
+different slot after a hold exists releases the previous one.
 
 Database exclusion/unique constraints protect non-capacity slots. Event-capacity triggers protect shared occurrences. A conflict returns HTTP `409`, and the visitor must choose again.
 
@@ -151,7 +196,7 @@ The server:
 7. Generates a random manage token, stores only its SHA-256 hash, and returns the raw token in the booking DTO.
 8. Deletes the consumed hold and records a `created` booking event.
 
-The UI enters the success step only after the server returns a confirmed booking. HTTP `409` means the hold expired or availability changed; the customer is sent back to choose again.
+The UI enters the success step only after the server returns a confirmed booking. HTTP `409` means the hold expired or availability changed. The client does not leave the customer on a form for a slot that no longer exists: it dispatches `HOLD_EXPIRED` or `SELECTION_CONFLICT`, returning to time selection with the reason shown and the entered date preserved. The same applies to the client-side re-validation that runs before the request is sent.
 
 ## 6. Confirmation tools
 
@@ -227,11 +272,11 @@ Local storage is never used as proof that an integrated public booking was confi
 
 | Condition | Customer behavior |
 | --- | --- |
-| Slot taken while selecting | Hold request returns `409`; refresh and choose another slot. |
+| Slot taken while selecting | Hold request returns `409`; the slot list refreshes and the customer chooses another time. |
 | Connection lost during details | Countdown continues; extend/confirm disabled until reconnect. |
-| Hold expires | Expired message appears; slot is immediately available to others. |
+| Hold expires | Customer is returned to time selection with a "hold ran out" notice scrolled into view; service and date are kept, the slot is immediately available to others. |
 | Extension already used | Server refuses another extension; client refreshes hold state. |
-| Confirmation conflicts | No success screen; return to availability. |
+| Confirmation conflicts | No success screen; returned to time selection with a "someone confirmed that time first" notice; nothing is booked. |
 | Manage token invalid | Standard not-found/error state without revealing booking data. |
 | QR generation fails | Booking remains confirmed; show the localized QR error and keep the ICS option. |
 
@@ -240,6 +285,8 @@ Local storage is never used as proof that an integrated public booking was confi
 | Area | File |
 | --- | --- |
 | Public flow orchestration | `components/haab-booking-module.tsx` |
+| Step transitions | `lib/booking-flow-machine.ts` (tests in `lib/__tests__/booking-flow-machine.test.ts`) |
+| Progress indicator (full + compact) | `components/ui/PublicProgressIndicator.tsx` |
 | Countdown and warning UI | `components/ui/BookingHoldCountdownBar.tsx` |
 | Hold timing helpers | `lib/holds.ts`, `lib/constants.ts` |
 | Public page resolution | `lib/public-booking-resolver.ts` |
@@ -266,11 +313,19 @@ npx supabase db lint --linked
 
 Browser smoke-test at least one canonical public route on a mobile viewport:
 
-1. Create a hold and verify the countdown is close to ten minutes.
+1. Tap a time slot and verify a `POST …/holds` fires immediately, the details step
+   opens, and the countdown starts close to ten minutes.
 2. Simulate offline/online and verify confirmation gating plus server refresh.
 3. Verify the final-two-minute warning and one-time extension.
-4. Verify expiry changes the action to “choose another time.”
+4. Verify expiry returns to time selection with the "hold ran out" notice, keeps
+   the service and date, and lets a new slot be tapped straight away.
 5. Verify the expired/abandoned slot can be held by another visitor.
-6. Complete a booking, download ICS, display QR, and open the manage link.
-7. Reschedule and cancel through the manage link.
-8. Keep the authenticated provider dashboard open in a second browser and verify each customer change appears without a manual refresh.
+6. Verify the progress indicator stays visible while scrolling (compact bar).
+7. Verify back navigation from details keeps the selected service and date.
+8. Complete a booking, download ICS, display QR, and open the manage link.
+9. Reschedule and cancel through the manage link.
+10. Keep the authenticated provider dashboard open in a second browser and verify each customer change appears without a manual refresh.
+
+To exercise expiry without waiting ten minutes, temporarily lower
+`BOOKING_HOLD_DURATION_MS` in `lib/constants.ts` — the server reads the same
+constant, so both sides shorten together. Restore it before committing.

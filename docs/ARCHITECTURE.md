@@ -31,6 +31,8 @@ lib/                              # pure, framework-agnostic — NO React
   store.ts                        # createEmptyStore, normalize*, pruneBookingHolds, sortBookings
   availability.ts                 # getAvailableSlots, isDateAvailable, overlapExists, *ForDate
   holds.ts                        # hold selection, countdown, warning, and expiry helpers
+  booking-flow-machine.ts         # public-flow step reducer (service → date/time → details →
+                                  #   confirmed) + reachable-step guards
   ics.ts                          # buildIcsContent, escapeIcsText
   booking-tokens.ts               # manage-token gen, lookup, URL builder, backfill
   __tests__/                      # Vitest characterization tests for the above
@@ -103,6 +105,10 @@ The full orchestrated browser lifecycle is not covered by unit tests. Verify it 
 **Done (merged):** Phases 0/1/3/4 — `lib`/`config`/`components/ui` extraction, the `useModuleStore` hook, and the test net. Canonical public routes also connect the shared module to Supabase-backed reads and booking-critical Route Handlers.
 
 **Deferred (Phase 5/6):** carving the remaining feature code out of `components/haab-booking-module.tsx` — the public booking flow, admin surfaces, setup wizard, and modals — into feature components + headless hooks, then reducing the module to a thin orchestrator with a documented public API barrel. Do each sub-step with its own reviewed step-plan and functional smoke test.
+
+The public flow's *step transitions* are already out: `lib/booking-flow-machine.ts`
+is a pure reducer the monolith dispatches into, so the extraction of the public
+flow components has one less piece of tangled state to carry.
 
 ---
 
