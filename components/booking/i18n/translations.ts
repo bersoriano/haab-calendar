@@ -225,8 +225,11 @@ export type BookingDict = {
     providerLogoAlt: string;
     headerBannerAlt: string;
     managementUrlLabel: string;
-    // Premium receipt
-    receiptTitle: string;
+    // Boarding-pass confirmation
+    passEyebrow: string;
+    passDate: string;
+    passTime: string;
+    passContact: string;
     receiptReference: string;
     receiptIssued: string;
     downloadIcs: string;
@@ -646,7 +649,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Provider logo",
       headerBannerAlt: "Booking page banner",
       managementUrlLabel: "Booking management link",
-      receiptTitle: "Booking receipt",
+      passEyebrow: "Appointment Receipt",
+      passDate: "Date",
+      passTime: "Time",
+      passContact: "Contact",
       receiptReference: "Reference",
       receiptIssued: "Issued",
       downloadIcs: "Download .ics file",
@@ -1076,7 +1082,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Logotipo del proveedor",
       headerBannerAlt: "Banner de la página de reservas",
       managementUrlLabel: "Enlace para gestionar la reserva",
-      receiptTitle: "Comprobante de reserva",
+      passEyebrow: "Confirmación de cita",
+      passDate: "Fecha",
+      passTime: "Horario",
+      passContact: "Contacto",
       receiptReference: "Referencia",
       receiptIssued: "Emitido",
       downloadIcs: "Descargar archivo .ics",

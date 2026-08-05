@@ -148,7 +148,6 @@ import {
   ActionButton,
   ActionLink,
   BookingHoldCountdownBar,
-  BookingStatusPill,
   EmptyState,
   PrivateLinkCard,
   PublicProgressIndicator,
@@ -160,6 +159,7 @@ import {
   ManageBookingPanel,
   type ManageNoteStatus,
 } from "@/components/booking/ManageBookingPanel";
+import { BookingPass, type PassField } from "@/components/booking/BookingPass";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -3870,7 +3870,7 @@ export function HaabBookingModule({
     // Collapse the progress indicator either when the selection step is stuck
     // (scroll-driven) or whenever we enter the confirmation screen — the
     // steps are no longer actionable there, so they just take up space.
-    const collapseProgressIndicator = isStickyHeaderActive || isPublicSuccessStep;
+    const collapseProgressIndicator = isStickyHeaderActive;
 
     const selectionIsSingle = Boolean(
       selectedService && isSingleOccurrence(selectedService),
@@ -4092,8 +4092,7 @@ export function HaabBookingModule({
           isPublicFlowFadingOut ? "opacity-0" : "opacity-100",
         )}
       >
-        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
-        selectedService ? (
+        {(isPublicSelectionStep || isPublicDetailsStep) && selectedService ? (
           <>
             <div ref={attachStickyHeaderSentinel} aria-hidden="true" className="h-px" />
             <div
@@ -4157,86 +4156,6 @@ export function HaabBookingModule({
                     lang={lang}
                   />
                 </div>
-              ) : null}
-              {isPublicSuccessStep ? (
-                <>
-                  <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
-                  <div className="relative px-5 pb-7 pt-6 sm:px-7 sm:pb-8 sm:pt-7">
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl",
-                        isSuccessfulBookingCancelled
-                          ? "bg-[radial-gradient(circle_at_center,rgba(190,18,60,0.10),transparent_65%)]"
-                          : "bg-[radial-gradient(circle_at_center,rgba(0,191,165,0.16),transparent_65%)]",
-                      )}
-                    />
-                    <div
-                      className="relative flex flex-col items-center text-center"
-                      role="status"
-                      aria-live="polite"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "relative flex h-16 w-16 items-center justify-center rounded-full [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
-                          isSuccessfulBookingCancelled
-                            ? "bg-[#fff1f2] text-[#be123c] ring-1 ring-[rgba(254,205,211,0.9)] shadow-[0_18px_40px_rgba(190,18,60,0.14)]"
-                            : "bg-[linear-gradient(135deg,var(--action-teal),var(--primary-container))] text-white shadow-[0_18px_40px_rgba(0,191,165,0.32),inset_0_1px_0_rgba(255,255,255,0.45)]",
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "absolute inset-0 rounded-full ring-2 [animation:haab-halo_0.9s_ease-out_0.45s_both]",
-                            isSuccessfulBookingCancelled
-                              ? "ring-[rgba(190,18,60,0.35)]"
-                              : "ring-[rgba(0,191,165,0.5)]",
-                          )}
-                        />
-                        <svg
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          className="h-7 w-7"
-                          stroke="currentColor"
-                          strokeWidth="2.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          {isSuccessfulBookingCancelled ? (
-                            <>
-                              <path
-                                d="M18 6 6 18"
-                                pathLength={1}
-                                className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.3s_both]"
-                              />
-                              <path
-                                d="m6 6 12 12"
-                                pathLength={1}
-                                className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.5s_both]"
-                              />
-                            </>
-                          ) : (
-                            <path
-                              d="M20 7 9 18l-5-5"
-                              pathLength={1}
-                              className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.45s_ease-out_0.3s_both]"
-                            />
-                          )}
-                        </svg>
-                      </span>
-                      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.24em] text-[var(--muted)] [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.25s_both]">
-                        {selectedService.name}
-                      </p>
-                      <h3 className="mt-1.5 text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)] sm:text-3xl [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.33s_both]">
-                        {isSuccessfulBookingCancelled
-                          ? t.publicFlow.bookingCancelled
-                          : successfulBooking?.status === "rescheduled"
-                            ? t.publicFlow.bookingUpdated
-                            : t.publicFlow.bookingConfirmed}
-                      </h3>
-                    </div>
-                  </div>
-                </>
               ) : null}
               {isPublicSelectionStep ? (
                 <>
@@ -5083,311 +5002,257 @@ export function HaabBookingModule({
             ) : null}
 
             {isPublicSuccessStep && successfulBooking ? (
-              <div
-                className={cn(
-                  publicElevatedPanelClass,
-                  "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both]",
-                )}
-              >
-                {/* A receipt, not a summary: who it is from, what it is worth,
-                    and a reference the client can quote — laid out like
-                    something worth keeping. */}
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                      {t.publicFlow.receiptTitle}
-                    </p>
-                    <p className="mt-1.5 text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                      {provider.businessName || provider.fullName || copy.bookingPage}
-                    </p>
-                  </div>
-                  <BookingStatusPill status={successfulBooking.status} lang={lang} />
-                </div>
-                <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
-                  <div>
-                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                      {t.publicFlow.receiptReference}
-                    </dt>
-                    <dd className="mt-1 text-sm font-semibold uppercase text-[var(--ink)] [font-family:var(--font-plex-mono)]">
-                      {successfulBooking.id.slice(-10)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                      {t.publicFlow.receiptIssued}
-                    </dt>
-                    <dd className="mt-1 text-sm font-semibold text-[var(--ink)]">
-                      {formatDateLabel(
-                        getDateKey(new Date(successfulBooking.createdAt)),
-                        lang,
-                      )}
-                    </dd>
-                  </div>
-                </dl>
-                <div className={cn("mt-6", publicInsetCardClass)}>
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
-                    <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
-                      {formatDateLabel(successfulBooking.dateKey, lang)}
-                    </p>
-                    <p className="text-2xl font-bold leading-tight tracking-[-0.03em] text-[var(--ink)] sm:text-[2rem]">
-                      {formatTimeRange(successfulBooking.startTime, successfulBooking.endTime, lang)}
-                    </p>
-                  </div>
+              <div className="[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5">
+                {(() => {
+                  // The booked location, else the service's linked addresses.
+                  const successAddresses = successfulBooking.location
+                    ? [successfulBooking.location]
+                    : [
+                        selectedService.linkedAddress1 ? provider.address1 : "",
+                        selectedService.linkedAddress2 ? provider.address2 : "",
+                        selectedService.customAddress ?? "",
+                      ].filter((entry): entry is string => Boolean(entry && entry.trim()));
+                  const successPhones = [
+                    selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
+                    selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
+                    selectedService.customPhone ?? "",
+                  ].filter((entry): entry is string => Boolean(entry && entry.trim()));
+                  const qrForBooking =
+                    calendarQrCode?.bookingId === successfulBooking.id
+                      ? calendarQrCode
+                      : undefined;
+                  const isFullDayBooking =
+                    !successfulBooking.startTime || !successfulBooking.endTime;
 
-                  <div className="mt-5 h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
+                  // The remaining fields, as pass cells. There are no section
+                  // headings on a ticket, so each label has to say whose value it
+                  // is on its own — hence "Patient phone" beside "Contact".
+                  // One contact cell per party, so both sides get the same shape
+                  // and the atomic cells fill the row evenly.
+                  const providerContact = [...successPhones, provider.email?.trim() ?? ""]
+                    .filter((entry) => entry.trim().length > 0)
+                    .join("\n");
+                  const clientContact = [
+                    successfulBooking.clientEmail,
+                    successfulBooking.clientPhone,
+                  ]
+                    .filter((entry) => entry.trim().length > 0)
+                    .join("\n");
+                  // Ordered so the grid reads as two bands: everything about the
+                  // person, then the place and the provider. The name is
+                  // rendered by the pass itself and leads the first band.
+                  const passDetails = [
+                    {
+                      label: t.publicFlow.capacity,
+                      value:
+                        successfulBooking.capacitySnapshot ||
+                        formatCapacityLabel(selectedService, lang),
+                    },
+                    clientContact
+                      ? {
+                          label: `${copy.phrases.clientLabel} ${t.publicFlow.passContact.toLowerCase()}`,
+                          value: clientContact,
+                        }
+                      : null,
+                    successfulBooking.notes.trim()
+                      ? {
+                          label: `${copy.phrases.clientLabel} ${t.publicFlow.notes.toLowerCase()}`,
+                          value: successfulBooking.notes,
+                          prose: true,
+                        }
+                      : null,
+                    successAddresses.length > 0
+                      ? {
+                          label:
+                            successAddresses.length > 1
+                              ? t.publicFlow.locations
+                              : t.publicFlow.location,
+                          value: successAddresses.join("\n"),
+                        }
+                      : null,
+                    selectedService.medicalSpecialty
+                      ? { label: t.publicFlow.specialty, value: selectedService.medicalSpecialty }
+                      : null,
+                    providerContact
+                      ? { label: t.publicFlow.passContact, value: providerContact }
+                      : null,
+                    selectedService.notes
+                      ? {
+                          label: `${copy.Booking} ${t.publicFlow.notes.toLowerCase()}`,
+                          value: selectedService.notes,
+                          prose: true,
+                        }
+                      : null,
+                  ].filter((field): field is PassField => field !== null);
 
-                  {(() => {
-                    // Show the booked location when one was recorded; otherwise
-                    // fall back to the service's linked addresses.
-                    const successAddresses = successfulBooking.location
-                      ? [successfulBooking.location]
-                      : [
-                          selectedService.linkedAddress1 ? provider.address1 : "",
-                          selectedService.linkedAddress2 ? provider.address2 : "",
-                          selectedService.customAddress ?? "",
-                        ].filter((entry) => entry && entry.trim().length > 0);
-                    const successPhones = [
-                      selectedService.linkedPhone1 ? provider.phoneNumber1 : "",
-                      selectedService.linkedPhone2 ? provider.phoneNumber2 : "",
-                      selectedService.customPhone ?? "",
-                    ].filter((entry) => entry && entry.trim().length > 0);
-                    return (
-                      <>
-                        <p className="mt-5 text-base font-semibold tracking-[-0.01em] text-[var(--ink)] sm:text-lg">
-                          {selectedService.name}
-                        </p>
-                        <div className="mt-4 grid gap-5 lg:grid-cols-2 lg:gap-8">
-                          <div>
-                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              {selectionIsEvent ? copy.phrases.serviceDetailsTitle : t.publicFlow.appointmentDetails}
-                            </p>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                              {selectedService.description ? (
-                                <SummaryField
-                                  label={t.publicFlow.description}
-                                  value={selectedService.description}
-                                />
-                              ) : null}
-                              {!selectionIsEvent ? (
-                                <SummaryField
-                                  label={t.publicFlow.type}
-                                  value={getBookingTypeLabel(selectedService.bookingType, lang)}
-                                />
-                              ) : null}
-                              {selectedService.medicalSpecialty ? (
-                                <SummaryField
-                                  label={t.publicFlow.specialty}
-                                  value={selectedService.medicalSpecialty}
-                                />
-                              ) : null}
-                              <SummaryField label={t.publicFlow.capacity} value={formatCapacityLabel(selectedService, lang)} />
-                              {!selectionIsSingle ? (
-                                <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
-                              ) : null}
-                              <SummaryField label={t.publicFlow.total} value={effectiveCost || t.publicFlow.notSet} />
-                              {selectedService.notes ? (
-                                <SummaryField label={t.publicFlow.notes} value={selectedService.notes} />
-                              ) : null}
-                              {successAddresses.length > 0 ? (
-                                <SummaryField
-                                  label={successAddresses.length > 1 ? t.publicFlow.locations : t.publicFlow.location}
-                                  value={
-                                    <div className="flex flex-col gap-1.5">
-                                      {successAddresses.map((entry) => (
-                                        <span key={`success-addr-${entry}`} className="inline-flex items-start gap-2">
-                                          <svg
-                                            viewBox="0 0 24 24"
-                                            className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent-strong)]"
-                                            aria-hidden
-                                          >
-                                            <path
-                                              d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
-                                              fill="currentColor"
-                                            />
-                                          </svg>
-                                          <span className="min-w-0 break-words">{entry}</span>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  }
-                                />
-                              ) : null}
-                              {successPhones.length > 0 ? (
-                                <SummaryField
-                                  label={successPhones.length > 1 ? t.publicFlow.phones : t.publicFlow.phone}
-                                  value={
-                                    <div className="flex flex-col gap-1.5">
-                                      {successPhones.map((entry) => (
-                                        <span key={`success-phone-${entry}`} className="inline-flex items-center gap-2">
-                                          <svg
-                                            viewBox="0 0 24 24"
-                                            className="h-4 w-4 shrink-0 text-[var(--accent-strong)]"
-                                            aria-hidden
-                                          >
-                                            <path
-                                              d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
-                                              fill="currentColor"
-                                            />
-                                          </svg>
-                                          <span className="min-w-0 break-words">{entry}</span>
-                                        </span>
-                                      ))}
-                                    </div>
-                                  }
-                                />
-                              ) : null}
-                            </dl>
-                          </div>
-                          <div className="border-t border-[rgba(15,23,42,0.06)] pt-5 lg:border-l lg:border-t-0 lg:pl-8 lg:pt-0">
-                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted)]">
-                              {t.publicFlow.customerDetails}
-                            </p>
-                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4 lg:flex lg:flex-wrap lg:items-start lg:gap-x-10 lg:gap-y-4">
-                              <SummaryField
-                                label={copy.phrases.clientLabel}
-                                value={successfulBooking.clientName || "—"}
-                              />
-                              {successfulBooking.clientEmail.trim() ? (
-                                <SummaryField label={t.publicFlow.email} value={successfulBooking.clientEmail} />
-                              ) : null}
-                              {successfulBooking.clientPhone.trim() ? (
-                                <SummaryField label={t.publicFlow.phone} value={successfulBooking.clientPhone} />
-                              ) : null}
-                              {successfulBooking.notes.trim() ? (
-                                <SummaryField label={t.publicFlow.notes} value={successfulBooking.notes} />
-                              ) : null}
-                            </dl>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {!isSuccessfulBookingCancelled ? (
-                  <>
-                  {/* Perforation. The receipt reads as a ticket you tear off:
-                      details above, what to do with them below. */}
-                  <div className="relative mt-6 h-6" aria-hidden="true">
-                    <span className="absolute inset-x-0 top-1/2 border-t border-dashed border-[rgba(15,23,42,0.16)]" />
-                    <span className="absolute left-0 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(15,23,42,0.06)]" />
-                    <span className="absolute right-0 top-1/2 h-3 w-3 -translate-y-1/2 translate-x-1/2 rounded-full bg-[rgba(15,23,42,0.06)]" />
-                  </div>
-                  <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-stretch">
-                    <div className={cn("flex flex-col justify-center", publicInsetCardClass)}>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                        {t.publicFlow.addToCalendar}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        {copy.phrases.scanQrBody}
-                      </p>
-                      <ActionButton
-                        tone="primary"
-                        className={cn("mt-4 w-full px-6", publicPrimaryActionClass)}
-                        onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                  return (
+                    <>
+                      {/* Arrival: one line, unpanelled. The pass under it is the
+                          artifact; this is only the moment. */}
+                      <div
+                        className="flex items-center justify-center gap-3 pb-1 text-center"
+                        role="status"
+                        aria-live="polite"
                       >
-                        {t.publicFlow.downloadIcs}
-                      </ActionButton>
-                    </div>
-                    <div className={cn("flex flex-col items-center text-center", publicInsetCardClass)}>
-                      <div className="flex aspect-square w-full max-w-[176px] items-center justify-center overflow-hidden rounded-2xl bg-white p-2 ring-1 ring-[var(--line)]">
-                        {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.url ? (
-                          <div
-                            aria-label={copy.phrases.calendarQrLabel}
-                            className="h-full w-full bg-contain bg-center bg-no-repeat"
-                            role="img"
-                            style={{ backgroundImage: `url(${calendarQrCode.url})` }}
+                        <span
+                          aria-hidden="true"
+                          className={cn(
+                            "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
+                            isSuccessfulBookingCancelled
+                              ? "bg-[#fff1f2] text-[#be123c] ring-1 ring-[rgba(254,205,211,0.9)] shadow-[0_18px_40px_rgba(190,18,60,0.14)]"
+                              : "bg-[linear-gradient(135deg,var(--action-teal),var(--primary-container))] text-white shadow-[0_18px_40px_rgba(0,191,165,0.32),inset_0_1px_0_rgba(255,255,255,0.45)]",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "absolute inset-0 rounded-full ring-2 [animation:haab-halo_0.9s_ease-out_0.45s_both]",
+                              isSuccessfulBookingCancelled
+                                ? "ring-[rgba(190,18,60,0.35)]"
+                                : "ring-[rgba(0,191,165,0.5)]",
+                            )}
                           />
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            className="h-5 w-5"
+                            stroke="currentColor"
+                            strokeWidth="2.6"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            {isSuccessfulBookingCancelled ? (
+                              <>
+                                <path
+                                  d="M18 6 6 18"
+                                  pathLength={1}
+                                  className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.3s_both]"
+                                />
+                                <path
+                                  d="m6 6 12 12"
+                                  pathLength={1}
+                                  className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.5s_both]"
+                                />
+                              </>
+                            ) : (
+                              <path
+                                d="M20 7 9 18l-5-5"
+                                pathLength={1}
+                                className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.45s_ease-out_0.3s_both]"
+                              />
+                            )}
+                          </svg>
+                        </span>
+                        <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)] sm:text-2xl [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.25s_both]">
+                          {isSuccessfulBookingCancelled
+                            ? t.publicFlow.bookingCancelled
+                            : successfulBooking.status === "rescheduled"
+                              ? t.publicFlow.bookingUpdated
+                              : t.publicFlow.bookingConfirmed}
+                        </h3>
+                      </div>
+
+                      <BookingPass
+                        booking={successfulBooking}
+                        providerName={
+                          provider.businessName || provider.fullName || copy.bookingPage
+                        }
+                        serviceName={selectedService.name}
+                        dateLabel={formatDateLabel(successfulBooking.dateKey, lang)}
+                        timeLabel={formatTimeLabel(successfulBooking.startTime, lang)}
+                        isFullDay={isFullDayBooking}
+                        durationLabel={formatDuration(selectedService, lang)}
+                        clientFieldLabel={copy.phrases.clientLabel}
+                        costLabel={successfulBooking.cost || effectiveCost}
+                        admitLabel={
+                          successfulBooking.capacitySnapshot ||
+                          formatCapacityLabel(selectedService, lang)
+                        }
+                        reference={successfulBooking.id.slice(-10)}
+                        issuedLabel={formatCompactDate(
+                          getDateKey(new Date(successfulBooking.createdAt)),
+                          lang,
+                        )}
+                        qrDataUrl={qrForBooking?.url || undefined}
+                        qrError={qrForBooking?.error || undefined}
+                        onOpenQr={() => setIsCalendarQrModalOpen(true)}
+                        onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
+                        description={
+                          selectedService.description
+                            ? {
+                                label: t.publicFlow.description,
+                                value: selectedService.description,
+                              }
+                            : undefined
+                        }
+                        details={passDetails}
+                        copy={copy}
+                        lang={lang}
+                      />
+
+                      {successfulBooking.manageToken && successfulManageUrl ? (
+                        <PrivateLinkCard
+                          url={successfulManageUrl}
+                          lang={lang}
+                          copied={copiedManageLink}
+                          onCopy={() => void copyManageLink()}
+                        />
+                      ) : null}
+
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
+                          <ActionButton
+                            tone="ghost"
+                            className={cn(
+                              "min-w-[150px]",
+                              isDedicatedPublicPage &&
+                                cn(publicPillButtonClass, publicGhostButtonClass),
+                            )}
+                            disabled={isSuccessfulBookingCancelled}
+                            onClick={() => openReschedule(successfulBooking.id)}
+                          >
+                            {t.publicFlow.reschedule}
+                          </ActionButton>
+                        )}
+                        <ActionButton
+                          tone="danger"
+                          className={cn(
+                            "min-w-[150px]",
+                            isDedicatedPublicPage && publicPillButtonClass,
+                          )}
+                          disabled={isSuccessfulBookingCancelled}
+                          onClick={() => openCancellation(successfulBooking.id)}
+                        >
+                          {copy.phrases.cancelBookingButton}
+                        </ActionButton>
+                        {manageBookingToken ? (
+                          <Link
+                            href={publicUrl}
+                            className={cn(
+                              "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
+                              isSuccessfulBookingCancelled
+                                ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
+                                : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-white",
+                              isDedicatedPublicPage && publicPillButtonClass,
+                            )}
+                          >
+                            {t.publicFlow.bookAnother}
+                          </Link>
                         ) : (
-                          <p className="px-3 text-center text-xs leading-5 text-[var(--muted)]">
-                            {calendarQrCode?.bookingId === successfulBooking.id && calendarQrCode.error
-                              ? calendarQrCode.error
-                              : t.manage.preparingQr}
-                          </p>
+                          <ActionButton
+                            tone={isSuccessfulBookingCancelled ? "primary" : "secondary"}
+                            className={cn(
+                              "min-w-[150px]",
+                              isDedicatedPublicPage && publicPillButtonClass,
+                            )}
+                            onClick={() => startFreshBooking()}
+                          >
+                            {t.publicFlow.bookAnother}
+                          </ActionButton>
                         )}
                       </div>
-                      <p className="mt-3 text-xs leading-5 text-[var(--muted)]">
-                        {t.publicFlow.scanToAdd}
-                      </p>
-                    </div>
-                  </div>
-                  </>
-                ) : null}
-                <div className="mt-3 flex w-full flex-wrap items-center justify-center gap-3">
-                  <ActionButton
-                    tone="ghost"
-                    className={cn(
-                      "min-w-[150px]",
-                      isDedicatedPublicPage &&
-                        cn(publicPillButtonClass, publicGhostButtonClass),
-                    )}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => setIsCalendarQrModalOpen(true)}
-                  >
-                    {t.publicFlow.showQrCode}
-                  </ActionButton>
-                  {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
-                    <ActionButton
-                      tone="ghost"
-                      className={cn(
-                        "min-w-[150px]",
-                        isDedicatedPublicPage &&
-                          cn(publicPillButtonClass, publicGhostButtonClass),
-                      )}
-                      disabled={isSuccessfulBookingCancelled}
-                      onClick={() => openReschedule(successfulBooking.id)}
-                    >
-                      {t.publicFlow.reschedule}
-                    </ActionButton>
-                  )}
-                  <ActionButton
-                    tone="danger"
-                    className={cn(
-                      "min-w-[150px]",
-                      isDedicatedPublicPage && publicPillButtonClass,
-                    )}
-                    disabled={isSuccessfulBookingCancelled}
-                    onClick={() => openCancellation(successfulBooking.id)}
-                  >
-                    {copy.phrases.cancelBookingButton}
-                  </ActionButton>
-                  {manageBookingToken ? (
-                    <Link
-                      href={publicUrl}
-                      className={cn(
-                        "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
-                        isSuccessfulBookingCancelled
-                          ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
-                          : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-white",
-                        isDedicatedPublicPage && publicPillButtonClass,
-                      )}
-                    >
-                      {t.publicFlow.bookAnother}
-                    </Link>
-                  ) : (
-                    <ActionButton
-                      tone={isSuccessfulBookingCancelled ? "primary" : "secondary"}
-                      className={cn(
-                        "min-w-[150px]",
-                        isDedicatedPublicPage && publicPillButtonClass,
-                      )}
-                      onClick={() => startFreshBooking()}
-                    >
-                      {t.publicFlow.bookAnother}
-                    </ActionButton>
-                  )}
-                </div>
-                {/* The client leaves this page with one thing that matters: the
-                    link that gets them back in without an account. */}
-                {successfulBooking.manageToken && successfulManageUrl ? (
-                  <PrivateLinkCard
-                    className="mt-5"
-                    url={successfulManageUrl}
-                    lang={lang}
-                    copied={copiedManageLink}
-                    onCopy={() => void copyManageLink()}
-                  />
-                ) : null}
+                    </>
+                  );
+                })()}
               </div>
             ) : null}
           </div>
