@@ -1,6 +1,5 @@
 "use client";
 
-import { BookingStatusPill } from "@/components/ui/BookingStatusPill";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import type { BookingRecord, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,16 +25,6 @@ const monoValue =
  * treatment, same cell, same grid — which is what keeps a phone number and a
  * paragraph of instructions reading as parts of one document.
  */
-/** Full-width dashed rule that breaks the field table into bands. */
-function PassRule() {
-  return (
-    <div
-      aria-hidden="true"
-      className="col-span-2 mt-1 border-t border-dashed border-[rgba(15,23,42,0.12)] lg:col-span-4"
-    />
-  );
-}
-
 function PassCell({
   label,
   value,
@@ -43,18 +32,20 @@ function PassCell({
   emphasis,
   className,
 }: PassField & { className?: string }) {
+  // A caller that places a cell by hand owns its whole span; the defaults below
+  // only apply when nobody has.
+  const span =
+    className ??
+    cn(
+      // Every cell is the same width; only a phone's two-up grid is too
+      // narrow to set a sentence in.
+      prose && "col-span-2 sm:col-span-1",
+      // A figure worth reading first gets the whole line to itself.
+      emphasis && "col-span-2 lg:col-span-4",
+    );
+
   return (
-    <div
-      className={cn(
-        "min-w-0",
-        // Every cell is the same width; only a phone's two-up grid is too
-        // narrow to set a sentence in.
-        prose && "col-span-2 sm:col-span-1",
-        // A figure worth reading first gets the whole line to itself.
-        emphasis && "col-span-2 lg:col-span-4",
-        className,
-      )}
-    >
+    <div className={cn("min-w-0", span)}>
       <p className={microLabel}>{label}</p>
       <p
         className={cn(
@@ -97,7 +88,10 @@ export function BookingPass({
   qrError,
   onOpenQr,
   onDownloadIcs,
+  confirmationLabel,
+  location,
   description,
+  notes,
   details,
   copy,
   lang = "en",
@@ -121,8 +115,18 @@ export function BookingPass({
   qrError?: string;
   onOpenQr: () => void;
   onDownloadIcs: () => void;
-  /** Sits beside the date and time: what the booking is actually for. */
+  /**
+   * The moment, carried by the ticket itself: "Booking confirmed", "Booking
+   * cancelled", "Booking updated". Badged on the stub above the code. Omit it
+   * and the pass is just a pass.
+   */
+  confirmationLabel?: string;
+  /** Where it happens. Bands off with the description below the fields. */
+  location?: PassField;
+  /** What the booking is for. Bands off with the location below the fields. */
   description?: PassField;
+  /** What to know before coming. Bands off with the description and location. */
+  notes?: PassField;
   /**
    * Every remaining field, in reading order. Labels must stand alone — the
    * ticket has no section headings to lean on.
@@ -160,24 +164,20 @@ export function BookingPass({
       <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
         {/* ── Pass body ─────────────────────────────────────────── */}
         <div className="flex min-w-0 flex-col p-6 sm:p-8">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className={microLabel}>{t.publicFlow.passEyebrow}</p>
-              <p className="mt-2 truncate text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                {providerName}
-              </p>
-              <p className={cn("mt-1 truncate", microLabel)}>{serviceName}</p>
-            </div>
-            <BookingStatusPill status={booking.status} lang={lang} />
+          <div className="min-w-0">
+            <p className="truncate text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
+              {providerName}
+            </p>
+            <p className={cn("mt-1 truncate", microLabel)}>{serviceName}</p>
           </div>
 
           {/* The pair, on the same column system as every field below it. */}
-          <div className="mt-7 grid grid-cols-1 gap-5 border-t border-[rgba(15,23,42,0.08)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-7 grid grid-cols-1 gap-5 border-t border-dotted border-[rgba(15,23,42,0.2)] pt-6 sm:grid-cols-2 lg:grid-cols-4">
             <div className="min-w-0 lg:col-span-2">
               <p className={microLabel}>{t.publicFlow.passDate}</p>
               <p className={cn("mt-2", headlineClass)}>{dateLabel}</p>
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 lg:col-span-2">
               <p className={microLabel}>
                 {isFullDay ? t.publicFlow.when : t.publicFlow.passTime}
               </p>
@@ -197,19 +197,11 @@ export function BookingPass({
                 ) : null}
               </div>
             </div>
-            {description ? (
-              <div className="min-w-0">
-                <p className={microLabel}>{description.label}</p>
-                <p className="mt-2 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                  {description.value}
-                </p>
-              </div>
-            ) : null}
           </div>
 
           {/* The fields, most-asked-for first, all on one column system so they
               read as a single table rather than a pass with notes stapled on. */}
-          <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-[rgba(15,23,42,0.08)] pt-6 lg:grid-cols-4 lg:pt-7">
+          <div className="mt-7 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-dotted border-[rgba(15,23,42,0.2)] pt-6 lg:grid-cols-4 lg:pt-7">
             {/* The person first, then everything else about them, then the
                 place and the provider — one continuous flow. */}
             <PassCell label={clientFieldLabel} value={booking.clientName || "—"} />
@@ -217,20 +209,79 @@ export function BookingPass({
             {details.map((field) => (
               <PassCell key={field.label} {...field} />
             ))}
-
-            {/* The fare closes the ticket, the way a total closes a receipt. */}
-            {costLabel ? (
-              <>
-                <PassRule />
-                <PassCell label={t.publicFlow.total} value={costLabel} emphasis />
-              </>
-            ) : null}
           </div>
+
+          {/* The sentences: what it is, where it is, what to know before you
+              come. A band of their own, a third of the pass each. */}
+          {description || location || notes ? (
+            <div className="mt-7 grid grid-cols-1 gap-x-6 gap-y-5 border-t border-dotted border-[rgba(15,23,42,0.2)] pt-6 sm:grid-cols-2 lg:grid-cols-3 lg:pt-7">
+              {description ? <PassCell {...description} prose /> : null}
+              {location ? <PassCell {...location} prose /> : null}
+              {notes ? <PassCell {...notes} prose /> : null}
+            </div>
+          ) : null}
+
+          {/* The fare closes the ticket, the way a total closes a receipt. */}
+          {costLabel ? (
+            <div className="mt-7 border-t border-dotted border-[rgba(15,23,42,0.2)] pt-6 lg:pt-7">
+              <PassCell label={t.publicFlow.total} value={costLabel} emphasis />
+            </div>
+          ) : null}
         </div>
 
         {/* ── Tear-off stub ─────────────────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 border-t border-dashed border-[rgba(15,23,42,0.22)] bg-[var(--surface-soft)] p-6 lg:border-l lg:border-t-0">
-          <p className={cn("w-full text-left", microLabel)}>
+        <div className="flex flex-col items-center gap-4 border-t border-dotted border-[rgba(15,23,42,0.32)] bg-[var(--surface-soft)] p-6 text-center lg:border-l lg:border-t-0">
+          {/* Arrival, stamped on the stub above the code — the stub's own
+              voice: a mono line in a badge, not a headline. */}
+          {confirmationLabel ? (
+            <div
+              className={cn(
+                "flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 ring-1 [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
+                isCancelled
+                  ? "bg-[#fff1f2] text-[#be123c] ring-[rgba(190,18,60,0.22)]"
+                  : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal)] ring-[rgba(0,191,165,0.28)]",
+              )}
+              role="status"
+              aria-live="polite"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-3.5 w-3.5 shrink-0"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {isCancelled ? (
+                  <>
+                    <path
+                      d="M18 6 6 18"
+                      pathLength={1}
+                      className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.3s_both]"
+                    />
+                    <path
+                      d="m6 6 12 12"
+                      pathLength={1}
+                      className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.5s_both]"
+                    />
+                  </>
+                ) : (
+                  <path
+                    d="M20 7 9 18l-5-5"
+                    pathLength={1}
+                    className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.45s_ease-out_0.3s_both]"
+                  />
+                )}
+              </svg>
+              <span className="min-w-0 truncate text-[0.625rem] font-semibold uppercase tracking-[0.14em] [font-family:var(--font-plex-mono)]">
+                {confirmationLabel}
+              </span>
+            </div>
+          ) : null}
+
+          <p className={cn("w-full", microLabel)}>
             {admitLabel || t.publicFlow.passEyebrow}
           </p>
 
@@ -263,7 +314,7 @@ export function BookingPass({
             </button>
           )}
 
-          <div className="w-full space-y-3 text-left">
+          <div className="w-full space-y-3">
             <div>
               <p className={microLabel}>{t.publicFlow.receiptReference}</p>
               <p className={cn("mt-1 uppercase", monoValue)}>{reference}</p>
@@ -278,7 +329,7 @@ export function BookingPass({
             <button
               type="button"
               onClick={onDownloadIcs}
-              className="mt-2 w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              className="mt-auto w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
               {t.publicFlow.addToCalendar}
             </button>

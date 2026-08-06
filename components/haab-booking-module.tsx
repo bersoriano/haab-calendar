@@ -5042,12 +5042,6 @@ export function HaabBookingModule({
                   // person, then the place and the provider. The name is
                   // rendered by the pass itself and leads the first band.
                   const passDetails = [
-                    {
-                      label: t.publicFlow.capacity,
-                      value:
-                        successfulBooking.capacitySnapshot ||
-                        formatCapacityLabel(selectedService, lang),
-                    },
                     clientContact
                       ? {
                           label: `${copy.phrases.clientLabel} ${t.publicFlow.passContact.toLowerCase()}`,
@@ -5061,6 +5055,23 @@ export function HaabBookingModule({
                           prose: true,
                         }
                       : null,
+                    selectedService.medicalSpecialty
+                      ? { label: t.publicFlow.specialty, value: selectedService.medicalSpecialty }
+                      : null,
+                    providerContact
+                      ? { label: t.publicFlow.passContact, value: providerContact }
+                      : null,
+                  ].filter((field): field is PassField => field !== null);
+                  // Sentences, not data: they band off together under the table.
+                  const passNotes: PassField | undefined = selectedService.notes
+                    ? {
+                        label: `${copy.Booking} ${t.publicFlow.notes.toLowerCase()}`,
+                        value: selectedService.notes,
+                        prose: true,
+                      }
+                    : undefined;
+                  // Where sits with when, at the head of the pass.
+                  const passLocation: PassField | undefined =
                     successAddresses.length > 0
                       ? {
                           label:
@@ -5069,89 +5080,18 @@ export function HaabBookingModule({
                               : t.publicFlow.location,
                           value: successAddresses.join("\n"),
                         }
-                      : null,
-                    selectedService.medicalSpecialty
-                      ? { label: t.publicFlow.specialty, value: selectedService.medicalSpecialty }
-                      : null,
-                    providerContact
-                      ? { label: t.publicFlow.passContact, value: providerContact }
-                      : null,
-                    selectedService.notes
-                      ? {
-                          label: `${copy.Booking} ${t.publicFlow.notes.toLowerCase()}`,
-                          value: selectedService.notes,
-                          prose: true,
-                        }
-                      : null,
-                  ].filter((field): field is PassField => field !== null);
+                      : undefined;
 
                   return (
                     <>
-                      {/* Arrival: one line, unpanelled. The pass under it is the
-                          artifact; this is only the moment. */}
-                      <div
-                        className="flex items-center justify-center gap-3 pb-1 text-center"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            "relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
-                            isSuccessfulBookingCancelled
-                              ? "bg-[#fff1f2] text-[#be123c] ring-1 ring-[rgba(254,205,211,0.9)] shadow-[0_18px_40px_rgba(190,18,60,0.14)]"
-                              : "bg-[linear-gradient(135deg,var(--action-teal),var(--primary-container))] text-white shadow-[0_18px_40px_rgba(0,191,165,0.32),inset_0_1px_0_rgba(255,255,255,0.45)]",
-                          )}
-                        >
-                          <span
-                            className={cn(
-                              "absolute inset-0 rounded-full ring-2 [animation:haab-halo_0.9s_ease-out_0.45s_both]",
-                              isSuccessfulBookingCancelled
-                                ? "ring-[rgba(190,18,60,0.35)]"
-                                : "ring-[rgba(0,191,165,0.5)]",
-                            )}
-                          />
-                          <svg
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            className="h-5 w-5"
-                            stroke="currentColor"
-                            strokeWidth="2.6"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            {isSuccessfulBookingCancelled ? (
-                              <>
-                                <path
-                                  d="M18 6 6 18"
-                                  pathLength={1}
-                                  className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.3s_both]"
-                                />
-                                <path
-                                  d="m6 6 12 12"
-                                  pathLength={1}
-                                  className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.3s_ease-out_0.5s_both]"
-                                />
-                              </>
-                            ) : (
-                              <path
-                                d="M20 7 9 18l-5-5"
-                                pathLength={1}
-                                className="[stroke-dasharray:1] [animation:haab-stroke-draw_0.45s_ease-out_0.3s_both]"
-                              />
-                            )}
-                          </svg>
-                        </span>
-                        <h3 className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)] sm:text-2xl [animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.25s_both]">
-                          {isSuccessfulBookingCancelled
+                      <BookingPass
+                        confirmationLabel={
+                          isSuccessfulBookingCancelled
                             ? t.publicFlow.bookingCancelled
                             : successfulBooking.status === "rescheduled"
                               ? t.publicFlow.bookingUpdated
-                              : t.publicFlow.bookingConfirmed}
-                        </h3>
-                      </div>
-
-                      <BookingPass
+                              : t.publicFlow.bookingConfirmed
+                        }
                         booking={successfulBooking}
                         providerName={
                           provider.businessName || provider.fullName || copy.bookingPage
@@ -5176,6 +5116,8 @@ export function HaabBookingModule({
                         qrError={qrForBooking?.error || undefined}
                         onOpenQr={() => setIsCalendarQrModalOpen(true)}
                         onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
+                        location={passLocation}
+                        notes={passNotes}
                         description={
                           selectedService.description
                             ? {
