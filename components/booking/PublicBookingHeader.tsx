@@ -23,9 +23,14 @@ import type { VerticalCopy } from "@/lib/vertical-copy";
  * for: the one thing still on screen is the one thing still talking.
  */
 
-/** Same voice as the confirmation pass, so the two surfaces read as family. */
+/**
+ * Same voice as the confirmation pass, set a step larger: on the pass this is a
+ * label above a value, but here it is the line itself and has to carry alone.
+ * Tracking loosens less than the pass's, since wide letterspacing costs more
+ * legibility the longer the string runs.
+ */
 const microLabel =
-  "text-[0.625rem] font-medium uppercase tracking-[0.16em] [font-family:var(--font-plex-mono)]";
+  "text-xs font-medium uppercase tracking-[0.12em] sm:text-[0.8125rem] [font-family:var(--font-plex-mono)]";
 
 const slotToneClass = {
   idle: "text-[var(--muted)]",
@@ -76,8 +81,8 @@ export function PublicBookingHeader({
   });
 
   return (
-    <div className="flex min-w-0 items-start justify-between gap-3 border-b border-[rgba(15,23,42,0.08)] px-5 py-5 sm:gap-5 sm:px-8 sm:py-6 xl:px-10">
-      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[rgba(15,23,42,0.08)] px-5 py-5 sm:gap-5 sm:px-8 sm:py-6 xl:px-10">
+      <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
           <img
@@ -89,7 +94,7 @@ export function PublicBookingHeader({
             }
             // Capped by height so wordmarks and monograms both land on the same
             // optical weight, rather than a fixed box that stretches one of them.
-            className="h-9 w-auto max-w-[11rem] shrink-0 object-contain object-left sm:h-10 sm:max-w-[14rem]"
+            className="h-12 w-auto max-w-[13rem] shrink-0 object-contain object-left sm:h-16 sm:max-w-[18rem]"
           />
         ) : null}
 
@@ -98,7 +103,7 @@ export function PublicBookingHeader({
             showNameVisually ? (
               <h1
                 title={name}
-                className="min-w-0 truncate text-xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-2xl"
+                className="min-w-0 truncate text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl"
               >
                 {name}
               </h1>
@@ -112,7 +117,10 @@ export function PublicBookingHeader({
           <p
             aria-live="polite"
             className={cn(
-              "mt-1 min-w-0 truncate transition-colors duration-200",
+              "min-w-0 truncate transition-colors duration-200",
+              // Only a visible name needs clearing; an sr-only one takes no
+              // space, and the gap would push the slot off the logo's centre.
+              name && showNameVisually && "mt-1.5",
               microLabel,
               slotToneClass[slot.tone],
             )}
