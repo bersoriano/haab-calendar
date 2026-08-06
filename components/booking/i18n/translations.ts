@@ -225,6 +225,9 @@ export type BookingDict = {
     providerLogoAlt: string;
     headerBannerAlt: string;
     managementUrlLabel: string;
+    // Public header live slot
+    headerTimesShownIn: string;
+    headerHoldingSpot: string;
     // Boarding-pass confirmation
     passEyebrow: string;
     passDate: string;
@@ -649,6 +652,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Provider logo",
       headerBannerAlt: "Booking page banner",
       managementUrlLabel: "Booking management link",
+      headerTimesShownIn: "Times shown in",
+      headerHoldingSpot: "Holding your spot…",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
       passTime: "Time",
@@ -1082,6 +1087,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerLogoAlt: "Logotipo del proveedor",
       headerBannerAlt: "Banner de la página de reservas",
       managementUrlLabel: "Enlace para gestionar la reserva",
+      headerTimesShownIn: "Horarios en",
+      headerHoldingSpot: "Apartando tu lugar…",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",
       passTime: "Horario",

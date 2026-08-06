@@ -160,6 +160,7 @@ import {
   type ManageNoteStatus,
 } from "@/components/booking/ManageBookingPanel";
 import { BookingPass, type PassField } from "@/components/booking/BookingPass";
+import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -853,34 +854,6 @@ export function HaabBookingModule({
             </button>
           );
         })}
-      </div>
-    );
-  }
-
-  function renderPublicBranding() {
-    if (!provider.businessName && !provider.logoImageUrl) {
-      return null;
-    }
-
-    return (
-      <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
-        {provider.logoImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
-          <img
-            src={provider.logoImageUrl}
-            alt={
-              provider.businessName
-                ? `${provider.businessName} — ${t.publicFlow.providerLogoAlt}`
-                : eventOrganizerRole?.logoAlt ?? t.publicFlow.providerLogoAlt
-            }
-            className="h-12 w-28 shrink-0 object-contain sm:h-16 sm:w-48"
-          />
-        ) : null}
-        {provider.businessName ? (
-          <h1 className="min-w-0 break-words text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl">
-            {provider.businessName}
-          </h1>
-        ) : null}
       </div>
     );
   }
@@ -3836,7 +3809,21 @@ export function HaabBookingModule({
     // Public-page branding shown above the selection. The logo stays beside
     // the page title, while the optional hero text overlays the banner image.
     const heroText = (provider.heroText?.trim() || provider.businessName || "").trim();
-    const publicPageTitle = isDedicatedPublicPage ? null : renderPublicBranding();
+    // The dedicated page carries the band at the shell's top edge; the embedded
+    // surface has no such edge, so it gets the same band above the banner.
+    const publicPageTitle = isDedicatedPublicPage ? null : (
+      <PublicBookingHeader
+        businessName={provider.businessName}
+        logoImageUrl={provider.logoImageUrl}
+        logoAltFallback={eventOrganizerRole?.logoAlt}
+        copy={copy}
+        providerTimeZone={providerTimeZone}
+        isAdvancing={isPublicFlowFadingOut || isCreatingHold}
+        errorMessage={bookingError}
+        languageChooser={renderPublicLanguageChooser()}
+        lang={lang}
+      />
+    );
     const headerBanner = publicPageTitle || provider.headerImageUrl ? (
       <div className="space-y-4">
         {publicPageTitle}
@@ -5874,10 +5861,19 @@ export function HaabBookingModule({
     <>
       <section className={publicShellClass}>
         {isDedicatedPublicPage && surface === "public" ? (
-          <div className="flex min-w-0 items-start justify-between gap-3 px-5 pt-5 sm:gap-5 sm:px-8 sm:pt-8 xl:px-10 xl:pt-10">
-            {renderPublicBranding()}
-            {renderPublicLanguageChooser("ml-auto shrink-0")}
-          </div>
+          <PublicBookingHeader
+            businessName={provider.businessName}
+            logoImageUrl={provider.logoImageUrl}
+            logoAltFallback={eventOrganizerRole?.logoAlt}
+            copy={copy}
+            providerTimeZone={providerTimeZone}
+            // The two flags that already gate the transition, read for the
+            // first time from outside the region they fade out.
+            isAdvancing={isPublicFlowFadingOut || isCreatingHold}
+            errorMessage={bookingError}
+            languageChooser={renderPublicLanguageChooser()}
+            lang={lang}
+          />
         ) : null}
         {!isDedicatedPublicPage ? (
           <div className="border-b border-[var(--line)] p-5 sm:p-8">
