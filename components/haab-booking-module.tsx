@@ -816,15 +816,28 @@ export function HaabBookingModule({
     ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
-  function renderPublicLanguageChooser(className = "") {
+  /**
+   * Two surfaces, two treatments. On the page background the control has to
+   * supply its own material; inside the header band that material is already
+   * there, so white-on-white would flatten it and the track recesses instead.
+   */
+  function renderPublicLanguageChooser(
+    className = "",
+    variant: "floating" | "inset" = "floating",
+  ) {
     if (surface !== "public") return null;
+
+    const isInset = variant === "inset";
 
     return (
       <div
         role="group"
         aria-label={t.language.chooseLanguage}
         className={cn(
-          "inline-flex rounded-full border border-white/80 bg-white/70 p-1 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
+          "inline-flex rounded-full p-1",
+          isInset
+            ? "border border-[rgba(15,23,42,0.07)] bg-[rgba(15,23,42,0.05)] shadow-[inset_0_1px_2px_rgba(15,23,42,0.07)]"
+            : "border border-white/80 bg-white/70 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
           className,
         )}
       >
@@ -846,8 +859,12 @@ export function HaabBookingModule({
               className={cn(
                 "min-h-9 rounded-full px-2.5 text-xs font-semibold transition sm:min-h-10 sm:px-4 sm:text-sm",
                 active
-                  ? "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
-                  : "text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]",
+                  ? isInset
+                    ? // A saturated pill would shout on a band that is already
+                      // a distinct layer; the lift alone carries the state.
+                      "bg-white text-[var(--ink)] shadow-[0_1px_2px_rgba(15,23,42,0.14),0_4px_10px_rgba(15,23,42,0.08)]"
+                    : "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
+                  : "text-[var(--muted)] hover:bg-white/70 hover:text-[var(--ink)]",
               )}
             >
               {label}
@@ -3820,7 +3837,7 @@ export function HaabBookingModule({
         providerTimeZone={providerTimeZone}
         isAdvancing={isPublicFlowFadingOut || isCreatingHold}
         errorMessage={bookingError}
-        languageChooser={renderPublicLanguageChooser()}
+        languageChooser={renderPublicLanguageChooser("", "inset")}
         lang={lang}
       />
     );
@@ -5871,8 +5888,11 @@ export function HaabBookingModule({
             // first time from outside the region they fade out.
             isAdvancing={isPublicFlowFadingOut || isCreatingHold}
             errorMessage={bookingError}
-            languageChooser={renderPublicLanguageChooser()}
+            languageChooser={renderPublicLanguageChooser("", "inset")}
             lang={lang}
+            // Matches the gutter the flow's own panels use, so the band's edges
+            // line up with the banner and the cards below it.
+            className="mx-4 mt-4 sm:mx-8 sm:mt-8 xl:mx-10"
           />
         ) : null}
         {!isDedicatedPublicPage ? (

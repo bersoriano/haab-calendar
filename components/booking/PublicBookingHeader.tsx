@@ -50,6 +50,7 @@ export function PublicBookingHeader({
   warningMessage,
   languageChooser,
   lang = "en",
+  className,
 }: {
   businessName?: string;
   logoImageUrl?: string;
@@ -64,6 +65,12 @@ export function PublicBookingHeader({
   /** Rendered at the band's top right; the module owns the control itself. */
   languageChooser?: ReactNode;
   lang?: Lang;
+  /**
+   * The band's own inset. The embedded surface already sits inside a padded
+   * container; the dedicated page does not, and has to match the gutter its
+   * siblings use so the edges line up.
+   */
+  className?: string;
 }) {
   const t = bookingTranslations[lang];
   const name = businessName?.trim() ?? "";
@@ -81,7 +88,15 @@ export function PublicBookingHeader({
   });
 
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 border-b border-[rgba(15,23,42,0.08)] px-5 py-5 sm:gap-5 sm:px-8 sm:py-6 xl:px-10">
+    // The same frosted material the sticky bar uses. Every other panel on the
+    // page is a rounded floating surface, so a square full-bleed strip would be
+    // the one square thing on it.
+    <div
+      className={cn(
+        "flex min-w-0 items-center justify-between gap-3 rounded-[28px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] [-webkit-backdrop-filter:blur(20px)] sm:gap-5 sm:px-7 sm:py-5 xl:px-8",
+        className,
+      )}
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
         {logo ? (
           // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
