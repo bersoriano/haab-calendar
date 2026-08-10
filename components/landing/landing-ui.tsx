@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { List } from "@phosphor-icons/react";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
@@ -496,7 +497,7 @@ function SectionHeading({
 }
 
 export function StickyNav() {
-  const { lang, t } = useLanguage();
+  const { t } = useLanguage();
   const navLinks = [
     { href: "#live-examples", label: t.nav.links.examples },
     { href: "#how", label: t.nav.links.how },
@@ -505,56 +506,46 @@ export function StickyNav() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[var(--line)] bg-[rgba(245,247,251,0.78)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-5 py-3 sm:px-8">
-        <Link href="/" className="flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-sm font-bold text-white shadow-[0_8px_22px_rgba(26,115,232,0.32)]">
+    <header className="sticky top-0 z-40 w-full border-b border-[rgba(193,198,214,0.72)] bg-[rgba(248,249,252,0.86)] shadow-[0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-2xl">
+      <div className="mx-auto flex min-h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 py-3 sm:min-h-[80px] sm:px-8 sm:py-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
+          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--primary-container)] text-sm font-bold text-white shadow-[0_8px_22px_rgba(26,115,232,0.26)] sm:h-10 sm:w-10">
             H
           </span>
-          <span className="text-base font-semibold text-[var(--ink)]">
+          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)] max-[379px]:sr-only sm:text-base">
             {t.nav.brand}
           </span>
         </Link>
-        <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-7 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-[var(--muted)] transition hover:text-[var(--ink)]"
+              className="rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
             >
               {link.label}
             </a>
           ))}
         </nav>
-        <div className="flex items-center gap-2 sm:gap-3">
-          <LanguageToggle />
-          <a
-            href={tryBookingPath(lang)}
-            className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] lg:inline-flex"
-          >
-            {t.nav.seeLivePage}
-          </a>
-          {/* Returning providers look here first. Sits beside the primary CTA
-              on every width above a phone, and in the menu below that. */}
-          <AccountEntry className="hidden text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] sm:inline-flex" />
-          <StartButton className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.28)] transition hover:shadow-[0_14px_30px_rgba(26,115,232,0.34)] active:translate-y-px sm:px-6 sm:py-3">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:gap-5">
+          <div className="hidden xl:block">
+            <LanguageToggle />
+          </div>
+          <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
+          <StartButton className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--primary-container)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.24)] transition hover:bg-[var(--primary)] hover:shadow-[0_14px_30px_rgba(26,115,232,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-container)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5">
             <span className="sm:hidden">{t.nav.createPageShort}</span>
             <span className="hidden sm:inline">{t.nav.createPageLong}</span>
           </StartButton>
-          <details className="group relative lg:hidden">
+          <details className="group relative xl:hidden">
             <summary
               aria-label={t.nav.openMenu}
-              className="grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--ink)] transition hover:bg-white"
+              className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-[var(--line)] bg-white/55 text-[var(--ink)] transition marker:content-none hover:border-[var(--muted)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
             >
-              <span aria-hidden="true" className="flex flex-col gap-[3px]">
-                <span className="h-0.5 w-4 rounded-full bg-current" />
-                <span className="h-0.5 w-4 rounded-full bg-current" />
-                <span className="h-0.5 w-4 rounded-full bg-current" />
-              </span>
+              <List aria-hidden="true" weight="bold" className="h-5 w-5" />
             </summary>
             <nav
               aria-label="Mobile"
-              className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-[var(--line)] bg-[rgba(245,247,251,0.97)] p-2 shadow-[0_18px_46px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+              className="absolute right-0 top-full mt-3 w-64 rounded-2xl border border-[var(--line)] bg-[rgba(248,249,252,0.98)] p-2.5 shadow-[0_18px_46px_rgba(15,23,42,0.12)] backdrop-blur-xl"
             >
               {navLinks.map((link) => (
                 <a
@@ -565,13 +556,10 @@ export function StickyNav() {
                   {link.label}
                 </a>
               ))}
-              <a
-                href={tryBookingPath(lang)}
-                className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--ink)] transition hover:bg-white"
-              >
-                {t.nav.seeLivePage}
-              </a>
-              <AccountEntry className="mt-1 block w-full rounded-xl border-t border-[var(--line)] px-4 pb-2.5 pt-3 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white sm:hidden" />
+              <div className="mt-1 border-t border-[var(--line)] pt-1.5">
+                <LanguageToggle className="w-full justify-start px-4 py-2.5" />
+                <AccountEntry className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white" />
+              </div>
             </nav>
           </details>
         </div>

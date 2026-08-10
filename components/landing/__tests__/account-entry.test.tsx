@@ -58,8 +58,8 @@ describe("landing account entry", () => {
     const html = renderNav({ loginHref: "/login?next=%2F&lang=en" });
     const logInOccurrences = html.split(">Log in<").length - 1;
 
-    // One in the bar (>=sm), one inside the collapsed menu (<sm).
+    // One in the desktop utility group, one inside the collapsed menu (<xl).
     expect(logInOccurrences).toBe(2);
-    expect(html).toContain("sm:hidden");
+    expect(html).toContain("xl:hidden");
   });
 });

@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { CaretDown, GlobeSimple } from "@phosphor-icons/react";
 import { translations, type Dict, type Lang } from "./translations";
 
 export const LANDING_LANGUAGE_STORAGE_KEY = "haab-lang";
@@ -99,21 +100,29 @@ export function useLanguage() {
 }
 
 export function LanguageToggle({ className = "" }: { className?: string }) {
-  const { lang, toggle } = useLanguage();
-  const nextLabel = lang === "es" ? "EN" : "ES";
-  const ariaLabel =
-    lang === "es" ? "Switch to English" : "Cambiar a español";
+  const { lang, setLang } = useLanguage();
+  const ariaLabel = lang === "es" ? "Seleccionar idioma" : "Select language";
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={ariaLabel}
-      title={ariaLabel}
-      className={`inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] bg-white/70 px-3 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white ${className}`}
+    <label
+      className={`group relative inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white/65 focus-within:bg-white focus-within:ring-2 focus-within:ring-[var(--accent-soft)] ${className}`}
     >
-      <span aria-hidden="true">🌐</span>
-      <span>{nextLabel}</span>
-    </button>
+      <span className="sr-only">{ariaLabel}</span>
+      <GlobeSimple aria-hidden="true" className="h-[18px] w-[18px] text-[var(--muted)]" />
+      <select
+        aria-label={ariaLabel}
+        value={lang}
+        onChange={(event) => setLang(event.target.value as Lang)}
+        className="cursor-pointer appearance-none bg-transparent pr-4 text-sm font-semibold outline-none"
+      >
+        <option value="en">EN</option>
+        <option value="es">ES</option>
+      </select>
+      <CaretDown
+        aria-hidden="true"
+        weight="bold"
+        className="pointer-events-none absolute right-2 h-3 w-3 text-[var(--muted)] transition group-hover:text-[var(--ink)]"
+      />
+    </label>
   );
 }
