@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   addDays,
   getDateKey,
@@ -295,7 +295,7 @@ export async function loadPublicSchedule(
 }
 
 async function getProviderByScopedSlug(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   vertical: VerticalId,
   slug: string,
 ) {
@@ -314,7 +314,7 @@ async function getProviderByScopedSlug(
 }
 
 async function getProviderById(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   providerId: string,
 ) {
   const { data, error } = await supabase
@@ -331,7 +331,7 @@ async function getProviderById(
 }
 
 async function getProviderRedirect(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   vertical: VerticalId,
   slug: string,
 ) {
@@ -350,7 +350,7 @@ async function getProviderRedirect(
 }
 
 async function getServicesForProvider(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   providerId: string,
 ) {
   const { data, error } = await supabase
@@ -369,7 +369,7 @@ async function getServicesForProvider(
 }
 
 async function getServiceRedirect(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createPublicClient>,
   providerId: string,
   slug: string,
 ) {
@@ -437,7 +437,7 @@ export async function resolvePublicBookingUrl(options: {
     return null;
   }
 
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   let provider = await getProviderByScopedSlug(supabase, vertical, normalizedProviderSlug);
   let needsCanonicalRedirect =
     options.providerSlug !== normalizedProviderSlug ||

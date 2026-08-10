@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import {
   isPublicUrlBackendUnavailable,
   loadPublicSchedule,
@@ -138,7 +138,7 @@ export async function GET(
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
     const { data: providers, error: providerError } = await supabase
       .from("public_providers")
       .select(PUBLIC_PROVIDER_SELECT)
