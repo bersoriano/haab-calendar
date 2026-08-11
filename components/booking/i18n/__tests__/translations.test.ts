@@ -41,6 +41,13 @@ describe("bookingTranslations", () => {
     expect(publicFlow.progressLabel).toBe("Progreso de la reserva");
     expect(publicFlow.statusUpdated).toBe("Actualizada");
     expect(setup.stepProvider).toBe("Mis Datos");
+    expect(setup.stepServices).toBe("Servicios");
+    expect(setup.stepPreview).toBe("Vista previa");
+    expect(setup.createAccountToPublish).toContain("Publicar");
+    expect(setup.retryPublishing).toContain("Reintentar");
+    expect(setup.publicBookingPage).toBe("Página pública de reservas");
+    expect(setup.yourServices).toBe("Tus servicios");
+    expect(bookingTranslations.en.setup.previewNotPublished).toContain("not published");
     expect(bookingTranslations.en.setup.stepProvider).toBe("My Data");
   });
 

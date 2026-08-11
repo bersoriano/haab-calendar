@@ -1,7 +1,11 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { LandingActionsProvider, StickyNav } from "@/components/landing/landing-ui";
+import {
+  getLandingStartMode,
+  LandingActionsProvider,
+  StickyNav,
+} from "@/components/landing/landing-ui";
 import { LanguageProvider } from "@/components/landing/language-provider";
 
 function renderNav(
@@ -19,6 +23,12 @@ function renderNav(
 }
 
 describe("landing account entry", () => {
+  it("resumes an existing guest draft instead of reopening the start dialog", () => {
+    expect(getLandingStartMode({ hasDraft: true, hasPage: false })).toBe("resume");
+    expect(getLandingStartMode({ hasDraft: false, hasPage: false })).toBe("dialog");
+    expect(getLandingStartMode({ hasDraft: false, hasPage: true })).toBe("resume");
+  });
+
   it("offers a sign-in link to a visitor without a session", () => {
     const html = renderNav({ loginHref: "/login?next=%2F&lang=en" });
 

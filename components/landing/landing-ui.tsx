@@ -24,6 +24,8 @@ type LandingActions = {
   onSelectVertical: (vertical: LandingVertical, pageName?: string) => void;
   /** True once the visitor already has a booking page: CTAs go to it directly. */
   hasPage?: boolean;
+  /** True when this browser holds an unfinished or unpublished guest draft. */
+  hasDraft?: boolean;
   /** Whether an account session already exists, which hides the log-in entries. */
   loggedIn?: boolean;
   /** Sign-in URL that returns to this page, language included. */
@@ -54,7 +56,7 @@ function useLandingDialogs() {
 }
 
 function LandingDialogsProvider({ children }: { children: ReactNode }) {
-  const { onSelectVertical, onStart, hasPage } = useLandingActions();
+  const { onSelectVertical, onStart, hasPage, hasDraft } = useLandingActions();
   const [startOpen, setStartOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
 
@@ -62,7 +64,10 @@ function LandingDialogsProvider({ children }: { children: ReactNode }) {
     <LandingDialogsContext.Provider
       value={{
         // Someone who already has a page does not need to name one again.
-        openStart: () => (hasPage ? onStart() : setStartOpen(true)),
+        openStart: () =>
+          getLandingStartMode({ hasDraft, hasPage }) === "resume"
+            ? onStart()
+            : setStartOpen(true),
         openDemo: () => setDemoOpen(true),
       }}
     >
@@ -78,6 +83,16 @@ function LandingDialogsProvider({ children }: { children: ReactNode }) {
       <LiveDemoDialog open={demoOpen} onClose={() => setDemoOpen(false)} />
     </LandingDialogsContext.Provider>
   );
+}
+
+export function getLandingStartMode({
+  hasDraft,
+  hasPage,
+}: {
+  hasDraft?: boolean;
+  hasPage?: boolean;
+}) {
+  return hasDraft || hasPage ? "resume" : "dialog";
 }
 
 export function LandingActionsProvider({

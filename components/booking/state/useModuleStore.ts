@@ -64,6 +64,7 @@ export function useModuleStore(params: {
     seedSetupLanguage(createEmptyStore(), initialLanguage),
   );
   const initialLanguageRef = useRef(initialLanguage);
+  const onStoreChangeRef = useRef(onStoreChange);
   const [shadowBookings, setShadowBookings] = useState<BookingRecord[]>(() =>
     normalizeBookings(injectedConfig?.bookings),
   );
@@ -71,6 +72,10 @@ export function useModuleStore(params: {
     normalizeBookingHolds(injectedConfig?.bookingHolds),
   );
   const [shadowConfig, setShadowConfig] = useState<ModuleStore | null>(null);
+
+  useEffect(() => {
+    onStoreChangeRef.current = onStoreChange;
+  }, [onStoreChange]);
 
   // Hydrate from localStorage
   useEffect(() => {
@@ -109,6 +114,7 @@ export function useModuleStore(params: {
   useEffect(() => {
     if (!integratedMode && hydrated) {
       window.localStorage.setItem(storageKey, JSON.stringify(standaloneStore));
+      onStoreChangeRef.current?.(standaloneStore);
     }
   }, [hydrated, integratedMode, standaloneStore, storageKey]);
 
@@ -159,7 +165,7 @@ export function useModuleStore(params: {
     : standaloneStore;
 
   function emitStoreChange(next: ModuleStore) {
-    onStoreChange?.(next);
+    onStoreChangeRef.current?.(next);
   }
 
   function updateStandaloneStore(updater: (current: ModuleStore) => ModuleStore) {
@@ -173,9 +179,7 @@ export function useModuleStore(params: {
     }
 
     setStandaloneStore((current) => {
-      const next = updater(current);
-      emitStoreChange(next);
-      return next;
+      return updater(current);
     });
   }
 

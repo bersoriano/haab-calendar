@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { AdminHero } from "@/components/provider/AdminHero";
 import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
@@ -21,6 +21,13 @@ import {
 import type { Lang as LandingLang } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import type { PublicationStatus } from "@/lib/supabase/publication";
+import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
+import { normalizeStore } from "@/lib/store";
+import {
+  buildGuestPublishLoginHref,
+  isGuestDraftMeaningful,
+  shouldSeedBuilderFromLanding,
+} from "@/lib/guest-builder";
 
 type View = "home" | "app";
 
@@ -49,6 +56,8 @@ type HomeExperienceProps = {
   publicationStatus?: PublicationStatus;
   /** Whether the signed-in account can open the super-admin area. */
   isSuperAdmin?: boolean;
+  /** Continue a guest draft after signup, confirmation, or sign-in. */
+  resumeGuestPublish?: boolean;
 };
 
 function loginHref(next: string, lang: LandingLang) {
@@ -80,6 +89,7 @@ function HomeExperienceInner({
   dashboardStore,
   publicationStatus,
   isSuperAdmin,
+  resumeGuestPublish = false,
 }: HomeExperienceProps) {
   const router = useRouter();
   const { lang, setLang, t } = useLanguage();
@@ -88,29 +98,66 @@ function HomeExperienceInner({
   >();
   const effectiveDashboardStore = persistedDashboardStore ?? dashboardStore;
   const effectiveConfigured = configured || Boolean(effectiveDashboardStore?.setupComplete);
+  const [guestDraftStore, setGuestDraftStore] = useState<ModuleStore>();
+  const hasGuestDraft = Boolean(
+    !loggedIn && guestDraftStore && isGuestDraftMeaningful(guestDraftStore),
+  );
+
+  useEffect(() => {
+    if (loggedIn) return;
+
+    const raw = window.localStorage.getItem(DEFAULT_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+      const draft = normalizeStore(JSON.parse(raw) as ModuleStore);
+      if (isGuestDraftMeaningful(draft)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the landing CTA from the existing browser-owned guest draft
+        setGuestDraftStore(draft);
+      }
+    } catch {
+      // Malformed draft stays isolated; starting again will replace it safely.
+    }
+  }, [loggedIn]);
 
   // Returning from login with ?vertical=<id> jumps straight into setup for that
   // vertical. Configured users go to their dashboard instead, so they ignore it.
-  const startInApp = loggedIn && !effectiveConfigured && Boolean(initialVertical);
+  const startInApp =
+    loggedIn &&
+    !effectiveConfigured &&
+    (Boolean(initialVertical) || resumeGuestPublish);
   const [view, setView] = useState<View>(startInApp ? "app" : "home");
   const [selectedVertical, setSelectedVertical] = useState<
     VerticalId | undefined
   >(startInApp ? initialVertical : undefined);
+  const [seedLandingSelection, setSeedLandingSelection] = useState(() =>
+    shouldSeedBuilderFromLanding({
+      hasSavedDraft: resumeGuestPublish,
+      resumeGuestPublish,
+      selectedVertical: startInApp ? initialVertical : undefined,
+    }),
+  );
   // Prefills the setup wizard so the page the visitor named on the landing page
   // is already there when setup opens.
   const [pageName, setPageName] = useState<string | undefined>(() =>
     startInApp ? normalizePageName(initialPageName) : undefined,
   );
 
-  function openApp(vertical?: VerticalId, nextPageName?: string) {
+  function openApp(
+    vertical?: VerticalId,
+    nextPageName?: string,
+    seedSelection = true,
+  ) {
     setSelectedVertical(vertical);
     setPageName(normalizePageName(nextPageName));
+    setSeedLandingSelection(seedSelection);
     setView("app");
   }
 
   function backToHome() {
     setView("home");
     setSelectedVertical(undefined);
+    setSeedLandingSelection(false);
     // Drop any ?vertical= param so a refresh lands back on the landing page.
     router.replace("/");
   }
@@ -127,7 +174,16 @@ function HomeExperienceInner({
   // "Create your page" for someone who already has one: straight to the app.
   function onStart() {
     if (effectiveConfigured) {
-      openApp();
+      openApp(undefined, undefined, false);
+      return;
+    }
+
+    if (hasGuestDraft) {
+      openApp(
+        guestDraftStore?.vertical,
+        guestDraftStore?.provider.businessName,
+        false,
+      );
       return;
     }
 
@@ -140,18 +196,11 @@ function HomeExperienceInner({
   // Landing first step complete: workflow chosen, page optionally named. Signed
   // in, setup opens right away; otherwise both survive the login round-trip.
   function onSelectVertical(vertical: LandingVertical, nextPageName?: string) {
-    if (loggedIn) {
-      openApp(vertical, nextPageName);
-      return;
-    }
+    openApp(vertical, nextPageName);
+  }
 
-    const named = normalizePageName(nextPageName);
-    // encodeURIComponent, not URLSearchParams: "+" for a space survives one
-    // round-trip but not every parser, and this string is shown back to the user.
-    const query = named
-      ? `vertical=${vertical}&name=${encodeURIComponent(named)}`
-      : `vertical=${vertical}`;
-    router.push(loginHref(`/?${query}`, lang));
+  function requestGuestPublish() {
+    router.push(buildGuestPublishLoginHref(lang));
   }
 
   if (view === "app") {
@@ -164,6 +213,7 @@ function HomeExperienceInner({
           isSuperAdmin={isSuperAdmin}
           publicationStatus={publicationStatus}
         />
+        {!loggedIn ? <GuestDraftBar onPublish={requestGuestPublish} /> : null}
         <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
           <AdminHero />
         </div>
@@ -178,7 +228,7 @@ function HomeExperienceInner({
                 lang={lang}
                 vertical={activeWorkflowVertical}
                 onChooseAnother={backToHome}
-                onSignOut={logout}
+                onSignOut={loggedIn ? logout : undefined}
                 userEmail={email}
               />
             ) : (
@@ -196,16 +246,29 @@ function HomeExperienceInner({
           <HaabBookingModule
             injectedConfig={effectiveConfigured ? effectiveDashboardStore : undefined}
             userEmail={email}
-            onSignOut={logout}
+            onSignOut={loggedIn ? logout : undefined}
             persistSetup={loggedIn && !effectiveConfigured}
             persistAdminChanges={loggedIn && effectiveConfigured}
+            isGuestDraft={!loggedIn}
+            resumeGuestPublish={loggedIn && resumeGuestPublish}
+            onRequestPublish={requestGuestPublish}
+            onStoreChange={(store) => {
+              if (!loggedIn) {
+                setGuestDraftStore(store);
+              }
+            }}
             onSetupPersisted={(store) => {
               setPersistedDashboardStore(store);
+              router.replace("/");
               router.refresh();
             }}
             initialLanguage={effectiveConfigured ? undefined : lang}
-            initialVerticalId={effectiveConfigured ? undefined : selectedVertical}
-            initialBusinessName={effectiveConfigured ? undefined : pageName}
+            initialVerticalId={
+              effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
+            }
+            initialBusinessName={
+              effectiveConfigured || !seedLandingSelection ? undefined : pageName
+            }
             onLanguageChange={setLang}
             onVerticalChange={handleVerticalChange}
           />
@@ -225,6 +288,7 @@ function HomeExperienceInner({
           onStart,
           onSelectVertical,
           hasPage: effectiveConfigured,
+          hasDraft: hasGuestDraft,
           loggedIn,
           // Returning here after signing in shows the dashboard panel for a
           // configured provider, or the workflow picker for a new one.
@@ -243,6 +307,30 @@ function HomeExperienceInner({
         />
       </LandingActionsProvider>
     </>
+  );
+}
+
+function GuestDraftBar({ onPublish }: { onPublish: () => void }) {
+  const { t } = useLanguage();
+
+  return (
+    <aside className="border-b border-[var(--line)] bg-[var(--teal-soft)] px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-[var(--ink)]">
+            {t.home.guestDraftTitle}
+          </p>
+          <p className="mt-1 text-sm text-[var(--muted)]">{t.home.guestDraftBody}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onPublish}
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(26,115,232,0.2)] transition hover:bg-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
+        >
+          {t.home.guestDraftPublish}
+        </button>
+      </div>
+    </aside>
   );
 }
 

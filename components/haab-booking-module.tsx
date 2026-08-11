@@ -161,6 +161,10 @@ import {
 } from "@/components/booking/ManageBookingPanel";
 import { BookingPass, type PassField } from "@/components/booking/BookingPass";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
+import {
+  isGuestDraftMeaningful,
+  prepareGuestPreviewStore,
+} from "@/lib/guest-builder";
 
 type HaabBookingModuleProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -192,6 +196,12 @@ type HaabBookingModuleProps = {
   // Page name captured on the landing page before setup opened. Applied with the
   // vertical preset so step 1 starts already filled in.
   initialBusinessName?: string;
+  /** Browser-owned draft: all editing works, but publishing requires auth. */
+  isGuestDraft?: boolean;
+  /** After auth, migrate the browser-owned draft through the provider API. */
+  resumeGuestPublish?: boolean;
+  /** Opens signup-first auth without discarding the current local draft. */
+  onRequestPublish?: (store: ModuleStore) => void;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -254,6 +264,9 @@ export function HaabBookingModule({
   initialBusinessName,
   onLanguageChange,
   onVerticalChange,
+  isGuestDraft = false,
+  resumeGuestPublish = false,
+  onRequestPublish,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -277,6 +290,7 @@ export function HaabBookingModule({
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupPublished, setSetupPublished] = useState(false);
   const [isPersistingSetup, setIsPersistingSetup] = useState(false);
+  const resumeGuestPublishAttemptedRef = useRef(false);
   const [adminSaveError, setAdminSaveError] = useState<string | null>(null);
   const [adminSaveMessage, setAdminSaveMessage] = useState<string | null>(null);
   const [isSavingAdmin, setIsSavingAdmin] = useState(false);
@@ -1830,6 +1844,36 @@ export function HaabBookingModule({
     }
   }
 
+  async function resumeGuestDraftPublication() {
+    setSetupStep(4);
+    setSetupPublished(true);
+    setSetupError(null);
+
+    if (!isGuestDraftMeaningful(activeStore)) {
+      setSetupError(t.setup.missingGuestDraft);
+      return;
+    }
+
+    await publishSetup();
+  }
+
+  useEffect(() => {
+    if (
+      !resumeGuestPublish ||
+      !persistSetup ||
+      integratedMode ||
+      !hydrated ||
+      resumeGuestPublishAttemptedRef.current
+    ) {
+      return;
+    }
+
+    resumeGuestPublishAttemptedRef.current = true;
+    void resumeGuestDraftPublication();
+    // One authenticated resume attempt per mount. Retry stays user-controlled.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated, integratedMode, persistSetup, resumeGuestPublish]);
+
   // Leave the Done step for the chosen surface. Setup is already published by
   // the time this runs, so these handlers only steer navigation.
   function leaveSetupToSurface(nextSurface: Surface) {
@@ -1947,7 +1991,11 @@ export function HaabBookingModule({
       }
     }
 
-    if (step === 2) {
+    if (step === 2 && services.length === 0) {
+      return copy.phrases.addServiceFirstError;
+    }
+
+    if (step === 3) {
       const hasEnabledDay = WEEKDAY_KEYS.some((day) => availability[day].enabled);
 
       if (!hasEnabledDay) {
@@ -2029,24 +2077,24 @@ export function HaabBookingModule({
       return;
     }
 
-    // Advancing from Availability (step 2) into Done (step 3) publishes the
-    // page, so it is live regardless of how the public link is later opened.
-    // A published page must have at least one service to be usable.
-    if (setupStep === 2) {
-      if (services.length === 0) {
-        setSetupError(copy.phrases.addServiceFirstError);
-        return;
-      }
-
-      const published = await publishSetup();
-      if (!published) {
-        return;
+    // Guests receive a real browser-local preview. Authenticated providers
+    // persist to Supabase before the final step.
+    if (setupStep === 3) {
+      if (isGuestDraft) {
+        const previewStore = prepareGuestPreviewStore(activeStore);
+        actions.persistStandaloneStore(previewStore);
+        actions.updateStandaloneStore(() => previewStore);
+      } else {
+        const published = await publishSetup();
+        if (!published) {
+          return;
+        }
       }
       setSetupPublished(true);
     }
 
     setSetupError(null);
-    setSetupStep((current) => (current < 3 ? ((current + 1) as SetupStep) : current));
+    setSetupStep((current) => (current < 4 ? ((current + 1) as SetupStep) : current));
   }
 
   function goToPreviousSetupStep() {
@@ -2966,11 +3014,12 @@ export function HaabBookingModule({
             title={copy.phrases.setupTitle}
             body={t.setup.wizardBody}
           />
-          <div className="mt-6 grid gap-3 md:grid-cols-3">
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {([
               ["1", t.setup.stepProvider],
-              ["2", t.setup.stepAvailability],
-              ["3", t.setup.stepDone],
+              ["2", t.setup.stepServices],
+              ["3", t.setup.stepAvailability],
+              ["4", t.setup.stepPreview],
             ] as [string, string][]).map(([index, label]) => {
               const stepNumber = Number(index) as SetupStep;
               const isCurrent = setupStep === stepNumber;
@@ -3009,6 +3058,18 @@ export function HaabBookingModule({
         ) : null}
 
         {setupStep === 2 ? (
+          <div className="mt-8">
+            <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
+              <SectionTitle
+                title={t.setup.stepServicesTitle}
+                body={t.setup.stepServicesBody}
+              />
+              <div className="mt-6">{renderServices()}</div>
+            </div>
+          </div>
+        ) : null}
+
+        {setupStep === 3 ? (
           <div className={cn("mt-8", adminPanelClass, "p-6")}>
             <SectionTitle
               title={t.setup.step2Title}
@@ -3048,7 +3109,7 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {setupStep === 3 ? (
+        {setupStep === 4 ? (
           <div className="mt-8">
             <div className={cn(adminPanelClass, "p-6")}>
               <SectionTitle
@@ -3058,14 +3119,14 @@ export function HaabBookingModule({
               />
               <div className={cn("mt-6", adminInsetClass, "p-4")}>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {`Public ${copy.bookingPage}`}
+                  {t.setup.publicBookingPage}
                 </p>
                 <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
               </div>
               <div className="mt-6">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                    {`Your ${copy.services}`}
+                    {t.setup.yourServices}
                   </p>
                   <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] px-2 text-xs font-semibold text-[var(--accent-strong)]">
                     {services.length}
@@ -3109,17 +3170,58 @@ export function HaabBookingModule({
                 </p>
               </div>
               <div className="mt-6 flex flex-wrap gap-3">
-                <ActionButton tone="primary" onClick={() => leaveSetupToSurface("management")}>
-                  {t.setup.goToDashboard}
-                </ActionButton>
-                <ActionLink
-                  href={publicUrl}
-                  tone="secondary"
-                  onClick={() => leaveSetupToSurface("public")}
-                >
-                  {t.setup.openPublicPage}
-                </ActionLink>
+                {resumeGuestPublish && isPersistingSetup ? (
+                  <p
+                    role="status"
+                    className="rounded-2xl bg-[var(--accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--primary)]"
+                  >
+                    {t.setup.savingAndPublishing}
+                  </p>
+                ) : resumeGuestPublish && setupError ? (
+                  <ActionButton
+                    tone="primary"
+                    onClick={() => void resumeGuestDraftPublication()}
+                  >
+                    {t.setup.retryPublishing}
+                  </ActionButton>
+                ) : isGuestDraft ? (
+                  <>
+                    <ActionButton
+                      tone="primary"
+                      onClick={() => leaveSetupToSurface("public")}
+                    >
+                      {t.setup.previewPage}
+                    </ActionButton>
+                    <ActionButton
+                      tone="secondary"
+                      onClick={() => onRequestPublish?.(activeStore)}
+                    >
+                      {t.setup.createAccountToPublish}
+                    </ActionButton>
+                  </>
+                ) : (
+                  <>
+                    <ActionButton
+                      tone="primary"
+                      onClick={() => leaveSetupToSurface("management")}
+                    >
+                      {t.setup.goToDashboard}
+                    </ActionButton>
+                    <ActionLink
+                      href={publicUrl}
+                      tone="secondary"
+                      onClick={() => leaveSetupToSurface("public")}
+                    >
+                      {t.setup.openPublicPage}
+                    </ActionLink>
+                  </>
+                )}
               </div>
+              {isGuestDraft ? (
+                <p className="mt-4 rounded-2xl bg-[var(--teal-soft)] px-4 py-3 text-sm font-semibold text-[var(--teal)]">
+                  {t.setup.previewNotPublished}
+                </p>
+              ) : null}
             </div>
           </div>
         ) : null}
@@ -3131,7 +3233,7 @@ export function HaabBookingModule({
         ) : null}
 
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
-          {setupStep === 3 && setupPublished ? <span /> : (
+          {setupStep === 4 && setupPublished ? <span /> : (
             <ActionButton
               tone="ghost"
               onClick={goToPreviousSetupStep}
@@ -3140,7 +3242,7 @@ export function HaabBookingModule({
               {t.common.back}
             </ActionButton>
           )}
-          {setupStep < 3 ? (
+          {setupStep < 4 ? (
             <ActionButton
               tone="primary"
               onClick={goToNextSetupStep}

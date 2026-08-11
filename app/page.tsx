@@ -9,6 +9,7 @@ import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import type { LandingVertical } from "@/components/landing/landing-ui";
 import type { Lang } from "@/components/landing/translations";
 import type { ModuleStore } from "@/lib/types";
+import { isGuestPublishResume } from "@/lib/guest-builder";
 
 const LANDING_VERTICALS: LandingVertical[] = [
   "healthcare",
@@ -22,7 +23,12 @@ function parseVertical(value?: string): LandingVertical | undefined {
 }
 
 type HomePageProps = {
-  searchParams: Promise<{ lang?: string; vertical?: string; name?: string }>;
+  searchParams: Promise<{
+    lang?: string;
+    vertical?: string;
+    name?: string;
+    resumePublish?: string;
+  }>;
 };
 
 function parseLanguage(value?: string): Lang | undefined {
@@ -30,7 +36,7 @@ function parseLanguage(value?: string): Lang | undefined {
 }
 
 export default async function Home({ searchParams }: HomePageProps) {
-  const { lang, vertical, name } = await searchParams;
+  const { lang, vertical, name, resumePublish } = await searchParams;
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -78,6 +84,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       initialPageName={name}
       dashboardStore={dashboardStore}
       publicationStatus={publicationStatus}
+      resumeGuestPublish={isGuestPublishResume(resumePublish)}
     />
   );
 }

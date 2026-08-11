@@ -26,6 +26,10 @@ export const translations = {
       dashboardBody:
         "Administra disponibilidad, servicios y reservas entrantes desde tu panel.",
       goToDashboard: "Ir a tu panel →",
+      guestDraftTitle: "Modo de vista previa",
+      guestDraftBody:
+        "Prueba servicios, horarios y tu página pública. Este borrador está guardado en este navegador.",
+      guestDraftPublish: "Publicar mi página",
       selectedWorkflow: "Flujo de trabajo seleccionado",
       selectedWorkflowHint:
         "La configuración usará los servicios, la disponibilidad y las reglas de reserva predeterminados para este flujo.",
@@ -71,6 +75,16 @@ export const translations = {
       signIn: "Iniciar sesión",
       signingIn: "Iniciando sesión...",
       createAccount: "Crear cuenta",
+      createAccountToPublish: "Crear cuenta para publicar",
+      alreadyHaveAccount: "¿Ya tienes una cuenta? Inicia sesión",
+      newHereCreateAccount: "¿Eres nuevo? Crea una cuenta",
+      publishPageTitle: "Crea tu cuenta para publicar tu página.",
+      publishPageBody:
+        "Todo lo que configuraste está seguro en este navegador. Crea una cuenta para guardarlo y publicar.",
+      publishPanelTitle: "Guarda y publica tu página",
+      publishPanelBody:
+        "Usa correo electrónico y contraseña. Volverás a tu página con todo intacto.",
+      draftSafe: "Tu borrador está seguro en este navegador.",
       creatingAccount: "Creando cuenta...",
       creatingAndSending:
         "Creando tu cuenta y enviando el correo de confirmación...",
@@ -499,6 +513,10 @@ export const translations = {
       dashboardBody:
         "Manage availability, services, and incoming bookings from your dashboard.",
       goToDashboard: "Go to your dashboard →",
+      guestDraftTitle: "Preview mode",
+      guestDraftBody:
+        "Try services, availability, and your public page. This draft is saved in this browser.",
+      guestDraftPublish: "Publish my page",
       selectedWorkflow: "Selected workflow",
       selectedWorkflowHint:
         "Setup will use this workflow's service, availability, and booking defaults.",
@@ -544,6 +562,16 @@ export const translations = {
       signIn: "Sign in",
       signingIn: "Signing in...",
       createAccount: "Create account",
+      createAccountToPublish: "Create account to publish",
+      alreadyHaveAccount: "Already have an account? Sign in",
+      newHereCreateAccount: "New here? Create account",
+      publishPageTitle: "Create your account to publish your page.",
+      publishPageBody:
+        "Everything you configured is safe in this browser. Create an account to save it and publish.",
+      publishPanelTitle: "Save and publish your page",
+      publishPanelBody:
+        "Use your email and a password. You will return to your page with everything intact.",
+      draftSafe: "Your draft is safe in this browser.",
       creatingAccount: "Creating account...",
       creatingAndSending:
         "Creating your account and sending your confirmation email...",

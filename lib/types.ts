@@ -14,7 +14,7 @@ export type WeekdayKey =
   | "thursday"
   | "friday"
   | "saturday";
-export type SetupStep = 1 | 2 | 3;
+export type SetupStep = 1 | 2 | 3 | 4;
 export type BookingStep = 1 | 2 | 3 | 4;
 
 export const VERTICAL_IDS = ["healthcare", "spaces", "professional", "events"] as const;

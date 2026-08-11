@@ -8,6 +8,7 @@ import {
 } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import { getAuthReturnVertical } from "@/lib/auth-vertical";
+import { isGuestPublishReturnPath } from "@/lib/guest-builder";
 
 type LoginPageProps = {
   searchParams: Promise<{
@@ -15,6 +16,7 @@ type LoginPageProps = {
     lang?: string;
     next?: string;
     status?: string;
+    mode?: string;
   }>;
 };
 
@@ -30,11 +32,14 @@ function getSafeNextPath(next?: string) {
   return next;
 }
 
-function languageHref(lang: Lang, nextPath: string) {
+function languageHref(lang: Lang, nextPath: string, mode: "login" | "signup") {
   const params = new URLSearchParams({
     lang,
     next: withAuthReturnLanguage(nextPath, lang),
   });
+  if (mode === "signup") {
+    params.set("mode", "signup");
+  }
   return `/login?${params.toString()}`;
 }
 
@@ -44,6 +49,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const t = translations[lang].auth;
   const nextPath = withAuthReturnLanguage(getSafeNextPath(params.next), lang);
   const isEventsFlow = getAuthReturnVertical(nextPath) === "events";
+  const isPublishFlow = isGuestPublishReturnPath(nextPath);
+  const initialIntent = params.mode === "signup" ? "signup" : "login";
   const message = params.message;
   const messageStatus = params.status === "success" ? "success" : "error";
 
@@ -61,7 +68,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 {(["es", "en"] as const).map((option) => (
                   <Link
                     key={option}
-                    href={languageHref(option, nextPath)}
+                    href={languageHref(option, nextPath, initialIntent)}
                     aria-current={lang === option ? "page" : undefined}
                     className={`rounded-full px-3 py-1.5 transition ${
                       lang === option
@@ -75,19 +82,32 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </nav>
             </div>
             <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-[var(--ink)] sm:text-5xl">
-              {t.pageTitle}
+              {isPublishFlow ? t.publishPageTitle : t.pageTitle}
             </h1>
             <p className="mt-5 max-w-xl text-base leading-7 text-[var(--muted)]">
-              {isEventsFlow ? t.eventOrganizerPageBody : t.pageBody}
+              {isPublishFlow
+                ? t.publishPageBody
+                : isEventsFlow
+                  ? t.eventOrganizerPageBody
+                  : t.pageBody}
             </p>
           </div>
           <section className="rounded-[28px] bg-[rgba(248,249,250,0.94)] p-6 shadow-[0_28px_64px_rgba(25,28,29,0.08)] ring-1 ring-[rgba(255,255,255,0.68)] sm:p-8">
             <h2 className="text-2xl font-semibold text-[var(--ink)]">
-              {isEventsFlow ? t.eventOrganizerPanelTitle : t.panelTitle}
+              {isPublishFlow
+                ? t.publishPanelTitle
+                : isEventsFlow
+                  ? t.eventOrganizerPanelTitle
+                  : t.panelTitle}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              {t.panelBody}
+              {isPublishFlow ? t.publishPanelBody : t.panelBody}
             </p>
+            {isPublishFlow ? (
+              <p className="mt-4 rounded-2xl bg-[var(--teal-soft)] px-4 py-3 text-sm font-semibold text-[var(--teal)]">
+                {t.draftSafe}
+              </p>
+            ) : null}
             {message ? (
               <p
                 className={`mt-5 rounded-2xl px-4 py-3 text-sm leading-6 ${
@@ -99,7 +119,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 {message}
               </p>
             ) : null}
-            <AuthForm lang={lang} nextPath={nextPath} />
+            <AuthForm
+              initialIntent={initialIntent}
+              lang={lang}
+              nextPath={nextPath}
+            />
           </section>
         </section>
       </main>

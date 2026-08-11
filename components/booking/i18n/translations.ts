@@ -338,12 +338,16 @@ export type BookingDict = {
     wizardBody: string;
     stepLabel: string;
     stepProvider: string;
+    stepServices: string;
     stepAvailability: string;
     stepDone: string;
+    stepPreview: string;
     statusReady: string;
     statusCurrent: string;
     statusNext: string;
     step1Title: string;
+    stepServicesTitle: string;
+    stepServicesBody: string;
     step2Title: string;
     bookingLength: string;
     bookingLengthHint: string;
@@ -355,6 +359,14 @@ export type BookingDict = {
     editServicesSuffix: string;
     goToDashboard: string;
     openPublicPage: string;
+    previewPage: string;
+    previewNotPublished: string;
+    createAccountToPublish: string;
+    savingAndPublishing: string;
+    retryPublishing: string;
+    missingGuestDraft: string;
+    publicBookingPage: string;
+    yourServices: string;
     continueButton: string;
     providerRequiredFieldsError: string;
   };
@@ -768,12 +780,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       wizardBody: "Add your details and weekly hours, then publish.",
       stepLabel: "Step",
       stepProvider: "My Data",
+      stepServices: "Services",
       stepAvailability: "Availability",
       stepDone: "Done",
+      stepPreview: "Preview",
       statusReady: "Ready",
       statusCurrent: "Current",
       statusNext: "Next",
       step1Title: "My data",
+      stepServicesTitle: "Review your services",
+      stepServicesBody:
+        "Edit the ready-made services or add your own before previewing the page.",
       step2Title: "Set the weekly availability schedule",
       bookingLength: "Booking length",
       bookingLengthHint: "Choose how long each booking should last. You can refine individual services later from the Services tab.",
@@ -785,6 +802,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       editServicesSuffix: "tab.",
       goToDashboard: "Go to dashboard",
       openPublicPage: "Open public booking page",
+      previewPage: "Preview booking page",
+      previewNotPublished: "Preview mode — this page is not published yet.",
+      createAccountToPublish: "Create account to publish",
+      savingAndPublishing: "Saving and publishing your page…",
+      retryPublishing: "Retry publishing",
+      missingGuestDraft:
+        "We could not find the draft saved in this browser. Return home to start again.",
+      publicBookingPage: "Public booking page",
+      yourServices: "Your services",
       continueButton: "Continue",
       providerRequiredFieldsError: "Provider name, business name, and email are all required.",
     },
@@ -1203,12 +1229,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       wizardBody: "Agregue sus datos y horarios semanales, y luego publique.",
       stepLabel: "Paso",
       stepProvider: "Mis Datos",
+      stepServices: "Servicios",
       stepAvailability: "Disponibilidad",
       stepDone: "Listo",
+      stepPreview: "Vista previa",
       statusReady: "Listo",
       statusCurrent: "Actual",
       statusNext: "Siguiente",
       step1Title: "Mis datos",
+      stepServicesTitle: "Revise sus servicios",
+      stepServicesBody:
+        "Edite los servicios preparados o agregue los suyos antes de ver la página.",
       step2Title: "Configure el horario de disponibilidad semanal",
       bookingLength: "Duración de la reserva",
       bookingLengthHint: "Elija cuánto debe durar cada reserva. Puede ajustar los servicios individuales más tarde desde la pestaña de Servicios.",
@@ -1220,6 +1251,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       editServicesSuffix: ".",
       goToDashboard: "Ir al panel",
       openPublicPage: "Abrir página de reservas",
+      previewPage: "Ver página de reservas",
+      previewNotPublished: "Modo de vista previa — esta página aún no está publicada.",
+      createAccountToPublish: "Publicar creando una cuenta",
+      savingAndPublishing: "Guardando y publicando su página…",
+      retryPublishing: "Reintentar publicación",
+      missingGuestDraft:
+        "No encontramos el borrador guardado en este navegador. Vuelva al inicio para comenzar de nuevo.",
+      publicBookingPage: "Página pública de reservas",
+      yourServices: "Tus servicios",
       continueButton: "Continuar",
       providerRequiredFieldsError: "El nombre del proveedor, el nombre del negocio y el correo electrónico son obligatorios.",
     },
