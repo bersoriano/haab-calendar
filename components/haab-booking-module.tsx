@@ -104,12 +104,13 @@ import {
 import {
   getBookingsForDate,
   getAvailableSlots as getAvailableSlotsAtTime,
+  getDayAvailability as getDayAvailabilityAtTime,
   isDateAvailable as isDateAvailableAtTime,
   isSingleOccurrence,
   isWeeklyOccurrence,
   getSpotsLeft,
 } from "@/lib/availability";
-import type { AvailabilityClock } from "@/lib/availability";
+import type { AvailabilityClock, DayAvailabilityLevel } from "@/lib/availability";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
 import {
   canExtendBookingHold,
@@ -239,6 +240,54 @@ function getSetupBookingLengthValue(services: Service[]) {
   return String(
     services.find((service) => service.bookingType === "appointment")?.durationMinutes ??
       DEFAULT_APPOINTMENT_DURATION_MINUTES,
+  );
+}
+
+// Calendar day tints. A tinted level supplies the cell's whole background
+// instead of layering over the default one: `cn` is a plain join, not
+// tailwind-merge, so two bg-* utilities on one element would resolve by
+// stylesheet order rather than class order. "full" and "closed" keep the
+// default surface and dim the number instead, so the unbookable states stay
+// quiet next to the coded ones.
+//
+// The literal var() fallbacks keep the colours right even where the tokens in
+// globals.css have not been picked up yet.
+const DAY_AVAILABILITY_BG: Record<DayAvailabilityLevel, string> = {
+  open: "bg-[var(--avail-open,rgba(13,148,136,0.16))]",
+  tight: "bg-[var(--avail-tight,rgba(217,119,6,0.16))]",
+  full: "",
+  closed: "",
+};
+
+const DAY_AVAILABILITY_EDGE: Record<DayAvailabilityLevel, string> = {
+  open: "ring-1 ring-[var(--avail-open-line,rgba(13,148,136,0.32))]",
+  tight: "ring-1 ring-[var(--avail-tight-line,rgba(217,119,6,0.34))]",
+  full: "",
+  closed: "",
+};
+
+// Diagonal strike over a fully-booked day's number. An SVG rather than a
+// rotated pseudo-element: the cell clips its overflow at mobile sizes, and
+// currentColor keeps the line matched to the dimmed number.
+function DayNumberStrike() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 10 10"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute -inset-x-1 -inset-y-0.5 h-[calc(100%+0.25rem)] w-[calc(100%+0.5rem)]"
+    >
+      <line
+        x1="0.5"
+        y1="9.5"
+        x2="9.5"
+        y2="0.5"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
   );
 }
 
@@ -506,6 +555,27 @@ export function HaabBookingModule({
     ignoredHoldId?: string,
   ) {
     return getAvailableSlotsAtTime(
+      dateKey,
+      service,
+      weeklyAvailability,
+      currentBookings,
+      ignoredBookingId,
+      currentBookingHolds,
+      ignoredHoldId,
+      availabilityClock,
+    );
+  }
+
+  function getDayAvailability(
+    dateKey: string,
+    service: Service,
+    weeklyAvailability: WeeklyAvailability,
+    currentBookings: BookingRecord[],
+    ignoredBookingId?: string,
+    currentBookingHolds: BookingHoldRecord[] = [],
+    ignoredHoldId?: string,
+  ) {
+    return getDayAvailabilityAtTime(
       dateKey,
       service,
       weeklyAvailability,
@@ -3813,8 +3883,8 @@ export function HaabBookingModule({
               {week.map((date) => {
                 const dateKey = getDateKey(date);
                 const inMonth = date.getMonth() === publicMonthAnchor.getMonth();
-                const available = selectedService
-                  ? isDateAvailable(
+                const dayAvailability = selectedService
+                  ? getDayAvailability(
                       dateKey,
                       selectedService,
                       availability,
@@ -3823,9 +3893,37 @@ export function HaabBookingModule({
                       activeBookingHolds,
                       bookingHold?.released ? undefined : bookingHold?.id,
                     )
-                  : false;
+                  : null;
+                const level: DayAvailabilityLevel = dayAvailability?.level ?? "closed";
+                const available = level === "open" || level === "tight";
                 const chosen = bookingFlow.dateKey === dateKey;
                 const isToday = dateKey === todayKey();
+                const availabilityLabel =
+                  level === "open"
+                    ? t.publicFlow.availabilityOpen
+                    : level === "tight"
+                      ? t.publicFlow.availabilityTight
+                      : level === "full"
+                        ? t.publicFlow.availabilityFull
+                        : t.publicFlow.availabilityClosed;
+                // A tinted day owns its surface; an untinted one keeps the
+                // default. Each utility is emitted exactly once across the two
+                // slots, so nothing depends on stylesheet ordering.
+                const daySurfaceClass = available
+                  ? cn(
+                      DAY_AVAILABILITY_BG[level],
+                      isDedicatedPublicPage
+                        ? "shadow-[0_12px_30px_rgba(25,28,29,0.04)]"
+                        : "border border-[var(--line)]",
+                    )
+                  : inMonth
+                    ? publicQuietChoiceClass
+                    : publicSoftChoiceClass;
+                // Only a bookable day can be chosen, so the accent ring never
+                // has to compete with the default surface's own ring.
+                const dayEdgeClass = chosen
+                  ? "ring-2 ring-[var(--accent)]"
+                  : DAY_AVAILABILITY_EDGE[level];
 
                 return (
                   <button
@@ -3860,55 +3958,46 @@ export function HaabBookingModule({
                         });
                       }
                     }}
+                    aria-label={`${formatDateLabel(dateKey, lang)}, ${availabilityLabel}`}
                     className={cn(
-                      "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
-                      inMonth
-                        ? publicQuietChoiceClass
-                        : publicSoftChoiceClass,
+                      "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:justify-start sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
+                      daySurfaceClass,
+                      dayEdgeClass,
                       available &&
+                        !chosen &&
                         (isDedicatedPublicPage
-                          ? "hover:bg-[rgba(255,255,255,0.72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
+                          ? "hover:ring-2"
                           : "hover:border-[var(--accent)]"),
-                      chosen &&
-                        (isDedicatedPublicPage
-                          ? cn(
-                              publicSelectedChoiceClass,
-                              "border-[var(--accent)] ring-2 ring-[rgba(26,115,232,0.16)]",
-                            )
-                          : publicSelectedChoiceClass),
-                      !available && "cursor-default opacity-50",
+                      !available && "cursor-default",
+                      level === "full" && "opacity-70",
+                      level === "closed" && "opacity-50",
                     )}
                   >
                     <div className="flex flex-col items-center gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                      <span className="text-base font-semibold text-[var(--ink)] sm:text-sm">
+                      <span
+                        className={cn(
+                          "relative text-base font-semibold sm:text-sm",
+                          level === "full" || level === "closed"
+                            ? "text-[var(--muted)]"
+                            : "text-[var(--ink)]",
+                        )}
+                      >
                         {date.getDate()}
+                        {level === "full" ? <DayNumberStrike /> : null}
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        {chosen ? (
-                          <>
-                            <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:hidden" />
-                            <span className={cn("hidden shrink-0 rounded-full bg-white px-1.5 py-0.5 text-[var(--accent)] sm:inline", compactBadgeTextClass)}>
-                              {t.publicFlow.selected}
-                            </span>
-                          </>
-                        ) : null}
-                        {!chosen && isToday ? (
-                          <>
-                            <span className="h-1.5 w-1.5 rounded-full bg-[var(--muted)] sm:hidden" />
-                            <span
-                              className={cn(
-                                "hidden shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)] sm:inline",
-                                compactBadgeTextClass,
-                              )}
-                            >
-                              {t.publicFlow.today}
-                            </span>
-                          </>
-                        ) : null}
-                        {!chosen && !isToday && available ? (
-                          <span className="h-2 w-2 rounded-full bg-[var(--accent)] sm:h-2.5 sm:w-2.5" />
-                        ) : null}
-                      </div>
+                      {isToday ? (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--muted)] sm:hidden" />
+                          <span
+                            className={cn(
+                              "hidden shrink-0 rounded-full bg-[var(--surface-soft)] px-1.5 py-0.5 text-[var(--muted)] sm:inline",
+                              compactBadgeTextClass,
+                            )}
+                          >
+                            {t.publicFlow.today}
+                          </span>
+                        </>
+                      ) : null}
                     </div>
                   </button>
                 );

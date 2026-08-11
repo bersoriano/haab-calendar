@@ -254,6 +254,164 @@ export function getAvailableSlots(
   return slots;
 }
 
+// How full a single day is, for the calendar's colour coding.
+//
+// `capacity` is what the day could ever offer, ignoring bookings, holds,
+// blocked windows and elapsed time; `free` is what is bookable right now. A
+// day with no capacity was never a candidate (past date, disabled weekday, a
+// date the event does not fall on), which is what separates "closed" from a
+// day that filled up.
+export type DayAvailabilityLevel = "open" | "tight" | "full" | "closed";
+
+export type DayAvailability = {
+  capacity: number;
+  free: number;
+  ratio: number;
+  level: DayAvailabilityLevel;
+};
+
+const CLOSED_DAY: DayAvailability = {
+  capacity: 0,
+  free: 0,
+  ratio: 0,
+  level: "closed",
+};
+
+function toDayAvailability(capacity: number, free: number): DayAvailability {
+  if (capacity <= 0) {
+    return CLOSED_DAY;
+  }
+
+  const boundedFree = Math.max(0, Math.min(free, capacity));
+  const ratio = boundedFree / capacity;
+
+  return {
+    capacity,
+    free: boundedFree,
+    ratio,
+    level: boundedFree === 0 ? "full" : ratio >= 0.5 ? "open" : "tight",
+  };
+}
+
+// Slots the weekly schedule yields for this weekday at the service's duration,
+// before anything is taken off it.
+function getScheduleCapacity(service: Service, daySchedule: WeeklyAvailability[WeekdayKey]) {
+  if (!service.durationMinutes) {
+    return 0;
+  }
+
+  const start = toMinutes(daySchedule.startTime);
+  const end = toMinutes(daySchedule.endTime);
+
+  if (end <= start) {
+    return 0;
+  }
+
+  return Math.floor((end - start) / service.durationMinutes);
+}
+
+export function getDayAvailability(
+  dateKey: string,
+  service: Service,
+  availability: WeeklyAvailability,
+  bookings: BookingRecord[],
+  ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
+  clockOptions?: AvailabilityClock,
+): DayAvailability {
+  const effectiveClockOptions = {
+    ...clockOptions,
+    now: clockOptions?.now ?? new Date(),
+  };
+  const clock = resolveAvailabilityClock(effectiveClockOptions);
+
+  if (isPastAvailabilityDate(dateKey, clock)) {
+    return CLOSED_DAY;
+  }
+
+  // Events carry their own capacity: the date either hosts the occurrence or it
+  // is not a candidate at all, and spots are the denominator when capped.
+  if (isSingleOccurrence(service) || isWeeklyOccurrence(service)) {
+    const hostsOccurrence = isSingleOccurrence(service)
+      ? Boolean(service.occurrenceDate) && service.occurrenceDate === dateKey
+      : weeklyMatchesDate(service, dateKey);
+
+    if (!hostsOccurrence || !service.startTime) {
+      return CLOSED_DAY;
+    }
+
+    const capacity =
+      typeof service.maxSpots === "number" && Number.isFinite(service.maxSpots)
+        ? Math.max(0, service.maxSpots)
+        : 1;
+
+    if (hasSlotStarted(dateKey, service.startTime, clock)) {
+      return toDayAvailability(capacity, 0);
+    }
+
+    const spotsLeft = getSpotsLeft(
+      service,
+      dateKey,
+      bookings,
+      ignoredBookingId,
+      bookingHolds,
+      ignoredHoldId,
+    );
+
+    return toDayAvailability(
+      capacity,
+      Number.isFinite(spotsLeft) ? Math.max(0, spotsLeft) : capacity,
+    );
+  }
+
+  const daySchedule = availability[getWeekdayKey(dateKey)];
+
+  if (!daySchedule.enabled) {
+    return CLOSED_DAY;
+  }
+
+  // Appointments spread over the day's schedule, so the slot grid is the
+  // denominator and blocked or elapsed slots simply shrink `free`.
+  if (service.bookingType === "appointment") {
+    const capacity = getScheduleCapacity(service, daySchedule);
+
+    if (capacity <= 0) {
+      return CLOSED_DAY;
+    }
+
+    const free = getAvailableSlots(
+      dateKey,
+      service,
+      availability,
+      bookings,
+      ignoredBookingId,
+      bookingHolds,
+      ignoredHoldId,
+      effectiveClockOptions,
+    ).length;
+
+    return toDayAvailability(capacity, free);
+  }
+
+  // Full-day and anything else is all-or-nothing: one notional slot per day.
+  return toDayAvailability(
+    1,
+    isDateAvailable(
+      dateKey,
+      service,
+      availability,
+      bookings,
+      ignoredBookingId,
+      bookingHolds,
+      ignoredHoldId,
+      effectiveClockOptions,
+    )
+      ? 1
+      : 0,
+  );
+}
+
 export function isDateAvailable(
   dateKey: string,
   service: Service,

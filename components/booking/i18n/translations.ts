@@ -129,6 +129,12 @@ export type BookingDict = {
     onlyRealFreeDatesActive: string;
     noDateSelectedYet: string;
     selected: string;
+    // Day availability, announced to screen readers since the calendar codes it
+    // by colour alone.
+    availabilityOpen: string;
+    availabilityTight: string;
+    availabilityFull: string;
+    availabilityClosed: string;
     // Step summary / helpers / buttons
     dateNotSet: string;
     selectADay: string;
@@ -573,6 +579,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       onlyRealFreeDatesActive: "Only real free dates are active.",
       noDateSelectedYet: "No date selected yet",
       selected: "Selected",
+      availabilityOpen: "mostly available",
+      availabilityTight: "limited availability",
+      availabilityFull: "fully booked",
+      availabilityClosed: "unavailable",
       dateNotSet: "Date not set",
       selectADay: "Choose a day",
       selectADate: "Choose a date",
@@ -1019,6 +1029,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       onlyRealFreeDatesActive: "Solo las fechas realmente libres están activas.",
       noDateSelectedYet: "Aún no ha seleccionado una fecha",
       selected: "Seleccionado",
+      availabilityOpen: "buena disponibilidad",
+      availabilityTight: "disponibilidad limitada",
+      availabilityFull: "sin cupos",
+      availabilityClosed: "no disponible",
       dateNotSet: "Fecha no definida",
       selectADay: "Seleccione un día",
       selectADate: "Seleccione una fecha",

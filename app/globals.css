@@ -21,6 +21,12 @@
   --secondary-fixed: #68fadd;
   --secondary-container: rgba(104, 250, 221, 0.22);
   --full-day: #1f658f;
+  /* Calendar day availability coding (see renderPublicCalendar). Light tints
+     that layer over the glass cell surface rather than replacing it. */
+  --avail-open: rgba(13, 148, 136, 0.14);
+  --avail-open-line: rgba(13, 148, 136, 0.3);
+  --avail-tight: rgba(217, 119, 6, 0.15);
+  --avail-tight-line: rgba(217, 119, 6, 0.32);
   --shadow-air: rgba(25, 28, 29, 0.06);
   /* Landing page accents (see components/landing/) */
   --teal: #0d9488;

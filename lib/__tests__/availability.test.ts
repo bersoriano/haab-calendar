@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   getAvailableSlots,
+  getDayAvailability,
   isDateAvailable,
   overlapExists,
   getSpotsLeft,
@@ -552,5 +553,200 @@ describe("getAvailableSlots (weekly occurrence)", () => {
         clock,
       ),
     ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getDayAvailability
+// ---------------------------------------------------------------------------
+
+/** 09:00-11:00 Monday only: 4 slots at 30 minutes, so halves are exact. */
+const shortMondayAvailability: WeeklyAvailability = {
+  ...baseAvailability,
+  monday: { enabled: true, startTime: "09:00", endTime: "11:00" },
+};
+
+describe("getDayAvailability", () => {
+  it("reports a wide-open appointment day as open at full ratio", () => {
+    useToday();
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svc30, shortMondayAvailability, []),
+    ).toEqual({ capacity: 4, free: 4, ratio: 1, level: "open" });
+  });
+
+  it("treats exactly half-free as open, not tight", () => {
+    useToday();
+
+    const bookings = [
+      makeBooking({ id: "bk_1", startTime: "09:00", endTime: "09:30" }),
+      makeBooking({ id: "bk_2", startTime: "09:30", endTime: "10:00" }),
+    ];
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svc30, shortMondayAvailability, bookings),
+    ).toMatchObject({ capacity: 4, free: 2, ratio: 0.5, level: "open" });
+  });
+
+  it("reports below-half as tight", () => {
+    useToday();
+
+    const bookings = [
+      makeBooking({ id: "bk_1", startTime: "09:00", endTime: "09:30" }),
+      makeBooking({ id: "bk_2", startTime: "09:30", endTime: "10:00" }),
+      makeBooking({ id: "bk_3", startTime: "10:00", endTime: "10:30" }),
+    ];
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svc30, shortMondayAvailability, bookings),
+    ).toMatchObject({ capacity: 4, free: 1, ratio: 0.25, level: "tight" });
+  });
+
+  it("reports a fully-booked day as full, keeping its capacity", () => {
+    useToday();
+
+    const bookings = [
+      makeBooking({ id: "bk_1", startTime: "09:00", endTime: "09:30" }),
+      makeBooking({ id: "bk_2", startTime: "09:30", endTime: "10:00" }),
+      makeBooking({ id: "bk_3", startTime: "10:00", endTime: "10:30" }),
+      makeBooking({ id: "bk_4", startTime: "10:30", endTime: "11:00" }),
+    ];
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svc30, shortMondayAvailability, bookings),
+    ).toEqual({ capacity: 4, free: 0, ratio: 0, level: "full" });
+  });
+
+  it("counts blocked windows against free slots but not capacity", () => {
+    useToday();
+
+    const withBlock: WeeklyAvailability = {
+      ...shortMondayAvailability,
+      monday: {
+        enabled: true,
+        startTime: "09:00",
+        endTime: "11:00",
+        blockedWindows: [{ startTime: "09:00", endTime: "10:00" }],
+      },
+    };
+
+    expect(getDayAvailability(MONDAY_KEY, svc30, withBlock, [])).toMatchObject({
+      capacity: 4,
+      free: 2,
+      level: "open",
+    });
+  });
+
+  it("closes a disabled weekday", () => {
+    useToday();
+
+    expect(
+      getDayAvailability(SATURDAY_KEY, svc30, baseAvailability, []),
+    ).toEqual({ capacity: 0, free: 0, ratio: 0, level: "closed" });
+  });
+
+  it("closes a past date", () => {
+    useToday();
+
+    expect(getDayAvailability("2026-05-01", svc30, baseAvailability, [])).toEqual({
+      capacity: 0,
+      free: 0,
+      ratio: 0,
+      level: "closed",
+    });
+  });
+
+  it("drops elapsed slots from free on today", () => {
+    const clock = { now: new Date("2026-05-29T10:15:00Z"), timeZone: "UTC" };
+    // 2026-05-29 is a Friday; use the short 09:00-11:00 window on Friday.
+    const shortFriday: WeeklyAvailability = {
+      ...baseAvailability,
+      friday: { enabled: true, startTime: "09:00", endTime: "11:00" },
+    };
+
+    // 09:00, 09:30 and 10:00 have all started by 10:15; only 10:30 remains.
+    expect(
+      getDayAvailability(
+        "2026-05-29",
+        svc30,
+        shortFriday,
+        [],
+        undefined,
+        [],
+        undefined,
+        clock,
+      ),
+    ).toMatchObject({ capacity: 4, free: 1, level: "tight" });
+  });
+
+  it("treats a full-day service as a single all-or-nothing slot", () => {
+    useToday();
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svcFullDay, baseAvailability, []),
+    ).toEqual({ capacity: 1, free: 1, ratio: 1, level: "open" });
+
+    const taken = [
+      makeBooking({
+        id: "bk_fd",
+        serviceId: svcFullDay.id,
+        bookingType: "full-day",
+        startTime: undefined,
+        endTime: undefined,
+      }),
+    ];
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svcFullDay, baseAvailability, taken),
+    ).toEqual({ capacity: 1, free: 0, ratio: 0, level: "full" });
+  });
+
+  it("uses maxSpots as the denominator for a capped single-occurrence event", () => {
+    useToday();
+
+    const event: Service = {
+      id: "svc_evt",
+      name: "Workshop",
+      bookingType: "appointment",
+      description: "",
+      occurrenceMode: "single",
+      occurrenceDate: MONDAY_KEY,
+      startTime: "18:00",
+      maxSpots: 4,
+    };
+
+    expect(getDayAvailability(MONDAY_KEY, event, baseAvailability, [])).toEqual({
+      capacity: 4,
+      free: 4,
+      ratio: 1,
+      level: "open",
+    });
+
+    const threeTaken = [1, 2, 3].map((n) =>
+      makeBooking({ id: `bk_evt_${n}`, serviceId: event.id, dateKey: MONDAY_KEY }),
+    );
+
+    expect(
+      getDayAvailability(MONDAY_KEY, event, baseAvailability, threeTaken),
+    ).toMatchObject({ capacity: 4, free: 1, ratio: 0.25, level: "tight" });
+  });
+
+  it("closes dates the event does not fall on", () => {
+    useToday();
+
+    const event: Service = {
+      id: "svc_evt",
+      name: "Workshop",
+      bookingType: "appointment",
+      description: "",
+      occurrenceMode: "single",
+      occurrenceDate: MONDAY_KEY,
+      startTime: "18:00",
+      maxSpots: 4,
+    };
+
+    expect(
+      getDayAvailability("2026-06-02", event, baseAvailability, []),
+    ).toEqual({ capacity: 0, free: 0, ratio: 0, level: "closed" });
   });
 });
