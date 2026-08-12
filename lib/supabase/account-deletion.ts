@@ -42,7 +42,7 @@ type CleanupJobRow = {
 export type AccountDeletionCleanupSummary = {
   id: string;
   attemptCount: number;
-  lastError?: string;
+  lastAttemptFailed: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -256,7 +256,7 @@ export async function listAccountDeletionCleanupJobs(): Promise<
   >[]).map((job) => ({
     id: job.id,
     attemptCount: job.attempt_count,
-    lastError: job.last_error || undefined,
+    lastAttemptFailed: Boolean(job.last_error),
     createdAt: job.created_at,
     updatedAt: job.updated_at,
   }));

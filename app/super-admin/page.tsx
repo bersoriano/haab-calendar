@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 
 import { logout } from "@/app/login/actions";
 import { DemoPagesPanel } from "@/components/super-admin/DemoPagesPanel";
+import { PendingDeletionCleanups } from "@/components/super-admin/PendingDeletionCleanups";
 import { UserPublicationTable } from "@/components/super-admin/UserPublicationTable";
+import {
+  listAccountDeletionCleanupJobs,
+  type AccountDeletionCleanupSummary,
+} from "@/lib/supabase/account-deletion";
 import { listDemoPageSummaries, type DemoPageSummary } from "@/lib/supabase/demo-edit";
 import {
   listManagedUsers,
@@ -15,10 +20,12 @@ export const dynamic = "force-dynamic";
 export default async function SuperAdminPage() {
   let users;
   let demoPages: DemoPageSummary[] = [];
+  let cleanupJobs: AccountDeletionCleanupSummary[] = [];
 
   try {
     users = await listManagedUsers();
     demoPages = await listDemoPageSummaries();
+    cleanupJobs = await listAccountDeletionCleanupJobs();
   } catch (error) {
     if (error instanceof SuperAdminAccessError) {
       notFound();
@@ -39,11 +46,11 @@ export default async function SuperAdminPage() {
               Super admin
             </p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-              User publication control
+              User account control
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--muted)]">
-              Manage whether each registered account can expose public URLs and
-              accept public booking actions.
+              Manage publication access or permanently delete registered
+              accounts and their booking data.
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -74,6 +81,8 @@ export default async function SuperAdminPage() {
         </section>
 
         <DemoPagesPanel demoPages={demoPages} />
+
+        <PendingDeletionCleanups initialJobs={cleanupJobs} />
 
         <UserPublicationTable initialUsers={users} />
       </div>

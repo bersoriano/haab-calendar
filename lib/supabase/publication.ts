@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
+import { isDemoOwnerEmail } from "@/lib/demo-pages";
 import { buildProviderPath } from "@/lib/public-url";
 import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -48,6 +49,7 @@ export type ManagedUserSummary = {
     publicPath: string;
   };
   superAdmin: boolean;
+  demoOwner: boolean;
 };
 
 export class SuperAdminAccessError extends Error {
@@ -166,6 +168,7 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
             }
           : undefined,
         superAdmin: isSuperAdminEmail(user.email),
+        demoOwner: isDemoOwnerEmail(user.email),
       } satisfies ManagedUserSummary;
     })
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { DeleteAccountDialog } from "@/components/super-admin/DeleteAccountDialog";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
 
 function formatUtcDate(value?: string) {
@@ -20,8 +22,15 @@ export function UserPublicationTable({
 }: {
   initialUsers: ManagedUserSummary[];
 }) {
+  const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [pendingUserId, setPendingUserId] = useState<string>();
+  const [deletionTarget, setDeletionTarget] = useState<ManagedUserSummary>();
+  const [deletionError, setDeletionError] = useState<string>();
+  const [accountFeedback, setAccountFeedback] = useState<{
+    tone: "success" | "error";
+    message: string;
+  }>();
   const [feedback, setFeedback] = useState<{
     userId: string;
     tone: "success" | "error";
@@ -94,34 +103,85 @@ export function UserPublicationTable({
     }
   }
 
+  async function deleteAccount(
+    user: ManagedUserSummary,
+    confirmationEmail: string,
+  ) {
+    setPendingUserId(user.id);
+    setDeletionError(undefined);
+    setAccountFeedback(undefined);
+
+    try {
+      const response = await fetch(
+        `/api/super-admin/users/${encodeURIComponent(user.id)}`,
+        {
+          method: "DELETE",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ confirmationEmail }),
+        },
+      );
+      const result = (await response.json()) as {
+        userMessage?: string;
+        cleanupPending?: boolean;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.userMessage || "Could not delete account.");
+      }
+
+      setUsers((current) =>
+        current.filter((candidate) => candidate.id !== user.id),
+      );
+      setDeletionTarget(undefined);
+      setAccountFeedback({
+        tone: "success",
+        message: result.cleanupPending
+          ? "Account deleted. Haab-hosted asset cleanup is queued for retry."
+          : "Account and current Haab-hosted assets deleted permanently.",
+      });
+      router.refresh();
+    } catch (error) {
+      setDeletionError(
+        error instanceof Error ? error.message : "Could not delete account.",
+      );
+    } finally {
+      setPendingUserId(undefined);
+    }
+  }
+
   if (users.length === 0) {
     return (
-      <div className="rounded-3xl border border-[var(--line)] bg-white p-8 text-center">
-        <h2 className="text-lg font-semibold text-[var(--ink)]">
-          No registered users
-        </h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          Accounts will appear here as soon as they sign up.
-        </p>
+      <div className="space-y-4">
+        {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
+        <div className="rounded-3xl border border-[var(--line)] bg-white p-8 text-center">
+          <h2 className="text-lg font-semibold text-[var(--ink)]">
+            No registered users
+          </h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Accounts will appear here as soon as they sign up.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.07)]">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[980px] border-collapse text-left">
-          <thead className="bg-[var(--surface)] text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
-            <tr>
-              <th className="px-6 py-4 font-semibold">Account</th>
-              <th className="px-6 py-4 font-semibold">Workflow</th>
-              <th className="px-6 py-4 font-semibold">Email status</th>
-              <th className="px-6 py-4 font-semibold">Last sign-in</th>
-              <th className="px-6 py-4 font-semibold">Publication</th>
-              <th className="px-6 py-4 text-right font-semibold">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[var(--line)]">
+    <>
+      {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
+      <div className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.07)]">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1080px] border-collapse text-left">
+            <thead className="bg-[var(--surface)] text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+              <tr>
+                <th className="px-6 py-4 font-semibold">Account</th>
+                <th className="px-6 py-4 font-semibold">Workflow</th>
+                <th className="px-6 py-4 font-semibold">Email status</th>
+                <th className="px-6 py-4 font-semibold">Last sign-in</th>
+                <th className="px-6 py-4 font-semibold">Publication</th>
+                <th className="px-6 py-4 text-right font-semibold">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--line)]">
             {users.map((user) => {
               const pending = pendingUserId === user.id;
               const rowFeedback = feedback?.userId === user.id ? feedback : undefined;
@@ -214,30 +274,89 @@ export function UserPublicationTable({
                     ) : null}
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button
-                      type="button"
-                      aria-pressed={!user.publishingEnabled}
-                      disabled={pending}
-                      onClick={() => changePublication(user)}
-                      className={`inline-flex min-w-36 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
-                        user.publishingEnabled
-                          ? "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                          : "bg-emerald-600 text-white hover:bg-emerald-700"
-                      }`}
-                    >
-                      {pending
-                        ? "Saving…"
-                        : user.publishingEnabled
-                          ? "Disable publishing"
-                          : "Enable publishing"}
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={!user.publishingEnabled}
+                        disabled={pending}
+                        onClick={() => changePublication(user)}
+                        className={`inline-flex min-w-36 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
+                          user.publishingEnabled
+                            ? "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
+                            : "bg-emerald-600 text-white hover:bg-emerald-700"
+                        }`}
+                      >
+                        {pending
+                          ? "Saving…"
+                          : user.publishingEnabled
+                            ? "Disable publishing"
+                            : "Enable publishing"}
+                      </button>
+                      {user.superAdmin ? (
+                        <button
+                          type="button"
+                          disabled
+                          className="inline-flex min-w-36 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500"
+                        >
+                          Protected account
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => {
+                            setDeletionError(undefined);
+                            setDeletionTarget(user);
+                          }}
+                          className="inline-flex min-w-36 items-center justify-center rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-wait disabled:opacity-60"
+                        >
+                          Delete account
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
             })}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+      {deletionTarget ? (
+        <DeleteAccountDialog
+          user={deletionTarget}
+          busy={pendingUserId === deletionTarget.id}
+          error={deletionError}
+          onCancel={() => {
+            if (pendingUserId !== deletionTarget.id) {
+              setDeletionError(undefined);
+              setDeletionTarget(undefined);
+            }
+          }}
+          onConfirm={(confirmationEmail) =>
+            deleteAccount(deletionTarget, confirmationEmail)
+          }
+        />
+      ) : null}
+    </>
+  );
+}
+
+function AccountFeedback({
+  feedback,
+}: {
+  feedback: { tone: "success" | "error"; message: string };
+}) {
+  return (
+    <p
+      role={feedback.tone === "error" ? "alert" : "status"}
+      className={`mb-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+        feedback.tone === "success"
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-rose-200 bg-rose-50 text-rose-700"
+      }`}
+    >
+      {feedback.message}
+    </p>
   );
 }

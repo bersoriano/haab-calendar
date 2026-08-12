@@ -1,5 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
 
 import { UserPublicationTable } from "@/components/super-admin/UserPublicationTable";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
@@ -13,6 +17,7 @@ const users: ManagedUserSummary[] = [
     lastSignInAt: "2026-07-23T05:30:00.000Z",
     publishingEnabled: true,
     superAdmin: true,
+    demoOwner: false,
     workflow: {
       businessName: "Haab Admin",
       setupComplete: true,
@@ -25,6 +30,7 @@ const users: ManagedUserSummary[] = [
     createdAt: "2026-07-20T12:00:00.000Z",
     publishingEnabled: false,
     superAdmin: false,
+    demoOwner: false,
   },
 ];
 
@@ -43,6 +49,8 @@ describe("UserPublicationTable", () => {
     expect(html).toContain("Unconfirmed");
     expect(html).toContain("Disable publishing");
     expect(html).toContain("Enable publishing");
+    expect(html).toContain("Protected account");
+    expect(html).toContain("Delete account");
   });
 
   it("renders the empty state", () => {
