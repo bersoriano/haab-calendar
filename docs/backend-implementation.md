@@ -1,6 +1,6 @@
 # Backend Implementation
 
-**Status:** current as of 2026-08-04. The Supabase backend supports provider administration, canonical public pages, server-authoritative booking writes, customer manage links, publication controls, capacity events, and resilient temporary holds.
+**Status:** current as of 2026-08-12. The Supabase backend supports provider administration, canonical public pages, server-authoritative booking writes, customer manage links, publication controls, permanent super-admin account deletion, capacity events, and resilient temporary holds.
 
 For the customer lifecycle, start with `docs/booking-process.md`. This document summarizes the backend boundary and deployment contract.
 
@@ -112,7 +112,26 @@ Rescheduling repeats availability and capacity checks while ignoring the booking
 
 Authenticated provider reads/writes use ownership derived from the Supabase user rather than client-supplied provider IDs. Provider-store persistence handles provider profile, services, availability, language, vertical, branding, and setup completion.
 
-The dedicated super-admin route can update publication state, but it cannot appoint additional super administrators. Publication policy and notifications are documented separately in the schema catalog and super-admin tests.
+Super-admin routes can update publication state or permanently delete an Auth
+account. They cannot appoint additional super administrators, and server code
+always rejects deletion of `bsorianodev@gmail.com`, the sole super admin.
+
+Permanent deletion requires the target email in the request body and rechecks it
+against the Auth user loaded by ID. Demo-owner accounts are deletable; their
+public examples return 404 until reseeded. `auth.admin.deleteUser(userId, false)`
+triggers existing cascade foreign keys for providers, services, bookings and
+client details, holds, redirects, and publication settings.
+
+Before Auth deletion, current provider logo, header, and gallery URLs belonging
+to Vercel Blob are recorded in `account_deletion_cleanup_jobs`. Successful Blob
+deletion removes the job. A post-delete Blob failure returns HTTP `202` and keeps
+an opaque service-only job for `/api/super-admin/account-deletion-cleanups/{jobId}/retry`.
+No email, business name, booking details, client details, Blob URLs, or raw Blob
+errors are exposed by cleanup summaries.
+
+Only current image URLs referenced by provider rows can be removed safely.
+Historical unreferenced files from past image replacements cannot be attributed
+because existing upload paths contain no owner ID.
 
 ## Security invariants
 
@@ -137,6 +156,7 @@ Migration files in `supabase/migrations/` are part of the deployable application
 | `20260803071013_enable_event_capacity_bookings.sql` | Shared event capacity for bookings and holds. |
 | `20260803071618_support_legacy_capacity_hold_confirmation.sql` | Compatibility for existing capacity bookings. |
 | `20260804123315_make_booking_holds_resilient.sql` | One-time extension plus scheduled expired-hold cleanup. |
+| `20260812140400_add_account_deletion_cleanup_jobs.sql` | Service-only durable retry state for post-account-deletion Vercel Blob cleanup. |
 
 ## Deployment
 

@@ -106,6 +106,9 @@ RLS is enabled without `anon` or `authenticated` policies or grants. Only
 `service_role` can select, insert, update, or delete jobs. Jobs retain no email,
 provider name, booking details, or client data. Successful Blob cleanup deletes
 the job; failed cleanup increments `attempt_count` and retains it for retry.
+Only current provider image URLs can be captured. Older unreferenced Blob files
+cannot be attributed safely because upload paths created before this feature do
+not contain an Auth owner ID.
 
 ### `public.providers`
 
