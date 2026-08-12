@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
+// Same "haab-lang" string as the cookie, but this page still only reads and
+// writes it via localStorage, not the cookie the proxy/server resolve —
+// Task 6 moves this page onto the server-resolved language.
+import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +17,7 @@ export default function NotFoundPage() {
 
   useEffect(() => {
     const queryLanguage = new URLSearchParams(window.location.search).get("lang");
-    const savedLanguage = window.localStorage.getItem(LANGUAGE_COOKIE);
+    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
     const preferredLanguage =
       queryLanguage === "en" || queryLanguage === "es"
         ? queryLanguage
@@ -28,7 +31,7 @@ export default function NotFoundPage() {
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANGUAGE_COOKIE, lang);
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
   }, [lang]);
 
   function chooseLanguage(nextLanguage: Lang) {

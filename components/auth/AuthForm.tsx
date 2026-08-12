@@ -7,7 +7,10 @@ import {
   translations,
   type Lang,
 } from "@/components/landing/translations";
-import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
+// Same "haab-lang" string as the cookie, but this form still only writes it
+// via localStorage, not the cookie the proxy/server resolve — Task 6 moves
+// this onto the server-resolved language.
+import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
 
 const initialState: AuthFormState = {
@@ -36,7 +39,7 @@ export function AuthForm({
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANGUAGE_COOKIE, lang);
+    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
   }, [lang]);
 
   const formMessage = showSignupPendingMessage
