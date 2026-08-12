@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { applyLanguageCookie } from "@/lib/language/proxy-language";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedRoutePrefixes = [
@@ -46,13 +47,18 @@ export async function updateSession(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirect = NextResponse.redirect(loginUrl);
+    applyLanguageCookie(request, redirect);
+    return redirect;
   }
 
   if (claims && request.nextUrl.pathname === "/login") {
     const nextPath = request.nextUrl.searchParams.get("next") || "/";
-    return NextResponse.redirect(new URL(nextPath, request.url));
+    const redirect = NextResponse.redirect(new URL(nextPath, request.url));
+    applyLanguageCookie(request, redirect);
+    return redirect;
   }
 
+  applyLanguageCookie(request, supabaseResponse);
   return supabaseResponse;
 }

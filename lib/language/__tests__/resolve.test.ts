@@ -7,6 +7,40 @@ import {
   parseLang,
   resolveLanguage,
 } from "@/lib/language/resolve";
+import { applyLanguageCookie } from "@/lib/language/proxy-language";
+
+type FakeRequest = {
+  cookies: { get(name: string): { value: string } | undefined };
+  headers: { get(name: string): string | null };
+  nextUrl: { searchParams: URLSearchParams };
+};
+
+function fakeRequest(options: {
+  cookie?: string;
+  acceptLanguage?: string;
+  search?: string;
+}): FakeRequest {
+  return {
+    cookies: {
+      get: (name) =>
+        name === "haab-lang" && options.cookie
+          ? { value: options.cookie }
+          : undefined,
+    },
+    headers: {
+      get: (name) =>
+        name.toLowerCase() === "accept-language"
+          ? (options.acceptLanguage ?? null)
+          : null,
+    },
+    nextUrl: { searchParams: new URLSearchParams(options.search ?? "") },
+  };
+}
+
+function fakeResponse() {
+  const set: { name: string; value: string }[] = [];
+  return { set, cookies: { set: (name: string, value: string) => set.push({ name, value }) } };
+}
 
 describe("parseLang", () => {
   it("accepts only the two supported languages", () => {
@@ -85,5 +119,46 @@ describe("resolveLanguage", () => {
 
   it("names the cookie consistently", () => {
     expect(LANGUAGE_COOKIE).toBe("haab-lang");
+  });
+});
+
+describe("applyLanguageCookie", () => {
+  it("writes the detected language when no cookie exists", () => {
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({ acceptLanguage: "es-MX,en;q=0.6" }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("es");
+    expect(response.set).toEqual([{ name: "haab-lang", value: "es" }]);
+  });
+
+  it("defaults to English and still writes the cookie", () => {
+    const response = fakeResponse();
+    expect(applyLanguageCookie(fakeRequest({}) as never, response as never)).toBe("en");
+    expect(response.set).toEqual([{ name: "haab-lang", value: "en" }]);
+  });
+
+  it("does not rewrite a cookie that already agrees", () => {
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({ cookie: "en", acceptLanguage: "es-MX" }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("en");
+    expect(response.set).toEqual([]);
+  });
+
+  it("lets an explicit ?lang overwrite a stored cookie", () => {
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({ cookie: "en", search: "lang=es" }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("es");
+    expect(response.set).toEqual([{ name: "haab-lang", value: "es" }]);
   });
 });
