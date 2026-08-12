@@ -1,4 +1,4 @@
-import { HomeExperience } from "@/components/home-experience";
+import { HomeExperience, type DemoEditBanner } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import {
@@ -6,6 +6,7 @@ import {
   type PublicationStatus,
 } from "@/lib/supabase/publication";
 import { isSuperAdminEmail } from "@/lib/super-admin-policy";
+import { resolveDemoEditTarget } from "@/lib/supabase/demo-edit";
 import type { LandingVertical } from "@/components/landing/landing-ui";
 import type { Lang } from "@/components/landing/translations";
 import type { ModuleStore } from "@/lib/types";
@@ -47,6 +48,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   let dashboardStore: ModuleStore | undefined;
   let publicationStatus: PublicationStatus | undefined;
   let isSuperAdmin = false;
+  let demoEdit: DemoEditBanner | undefined;
 
   if (loggedIn) {
     const {
@@ -55,11 +57,25 @@ export default async function Home({ searchParams }: HomePageProps) {
     email = user?.email ?? claimsData?.claims?.email;
     isSuperAdmin = isSuperAdminEmail(email);
 
+    // Super admin editing an example page: the dashboard runs against that
+    // demo provider instead of the caller's own booking page.
+    const demoTarget = isSuperAdmin ? await resolveDemoEditTarget() : null;
+
+    if (demoTarget) {
+      demoEdit = {
+        label: demoTarget.page.label,
+        publicPath: demoTarget.publicPath,
+      };
+    }
+
     if (user) {
+      const storeClient = demoTarget?.admin ?? supabase;
+      const storeUserId = demoTarget?.ownerUserId ?? user.id;
+
       try {
         [dashboardStore, publicationStatus] = await Promise.all([
-          getProviderDashboardStore(supabase, user.id).then((store) => store ?? undefined),
-          getPublicationStatus(supabase, user.id),
+          getProviderDashboardStore(storeClient, storeUserId).then((store) => store ?? undefined),
+          getPublicationStatus(storeClient, storeUserId),
         ]);
         // "Configured" = this provider has completed setup. Drives whether the
         // landing shows verticals or a "go to your dashboard" panel.
@@ -84,6 +100,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       initialPageName={name}
       dashboardStore={dashboardStore}
       publicationStatus={publicationStatus}
+      demoEdit={demoEdit}
       resumeGuestPublish={isGuestPublishResume(resumePublish)}
     />
   );

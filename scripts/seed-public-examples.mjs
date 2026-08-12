@@ -14,7 +14,13 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const demoOwnerEmail = "public-examples@haab-calendar.invalid";
+// One synthetic owner per example page. The dashboard loads and saves a
+// provider through its owner account, so separate owners are what let the
+// super admin edit each demo with the normal editor (see lib/demo-pages.ts —
+// the owner emails and slugs here must match that list).
+function demoOwnerEmail(ownerKey) {
+  return `public-examples+${ownerKey}@haab-calendar.invalid`;
+}
 
 const closedDay = (startTime, endTime) => ({ enabled: false, startTime, endTime });
 const openDay = (startTime, endTime, blockedWindows = []) => ({
@@ -27,10 +33,11 @@ const openDay = (startTime, endTime, blockedWindows = []) => ({
 const examples = [
   {
     path: "/doctors/dr-maya-rivera",
+    ownerKey: "doctors",
     provider: {
       full_name: "Dr. Maya Rivera",
       business_name: "Rivera Family Medicine",
-      email: demoOwnerEmail,
+      email: demoOwnerEmail("doctors"),
       vertical: "healthcare",
       slug: "dr-maya-rivera",
       custom_slug: "dr-maya-rivera",
@@ -93,10 +100,11 @@ const examples = [
   },
   {
     path: "/spaces/riverside-padel-club",
+    ownerKey: "spaces",
     provider: {
       full_name: "Alex Morgan",
       business_name: "Riverside Padel Club",
-      email: demoOwnerEmail,
+      email: demoOwnerEmail("spaces"),
       vertical: "spaces",
       slug: "riverside-padel-club",
       custom_slug: "riverside-padel-club",
@@ -159,10 +167,11 @@ const examples = [
   },
   {
     path: "/professionals/northstar-strategy",
+    ownerKey: "professionals",
     provider: {
       full_name: "Jordan Lee",
       business_name: "Northstar Strategy",
-      email: demoOwnerEmail,
+      email: demoOwnerEmail("professionals"),
       vertical: "professional",
       slug: "northstar-strategy",
       custom_slug: "northstar-strategy",
@@ -225,10 +234,11 @@ const examples = [
   },
   {
     path: "/events/makers-workshop",
+    ownerKey: "events",
     provider: {
       full_name: "Samira Chen",
       business_name: "Makers Workshop",
-      email: demoOwnerEmail,
+      email: demoOwnerEmail("events"),
       vertical: "events",
       slug: "makers-workshop",
       custom_slug: "makers-workshop",
@@ -295,18 +305,18 @@ const examples = [
   },
 ];
 
-async function getOrCreateDemoOwner() {
+async function getOrCreateDemoOwner(email) {
   for (let page = 1; page <= 10; page += 1) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 100 });
     if (error) throw error;
 
-    const existing = data.users.find((user) => user.email === demoOwnerEmail);
+    const existing = data.users.find((user) => user.email === email);
     if (existing) return existing.id;
     if (data.users.length < 100) break;
   }
 
   const { data, error } = await supabase.auth.admin.createUser({
-    email: demoOwnerEmail,
+    email,
     password: `${randomUUID()}-Haab!`,
     email_confirm: true,
   });
@@ -386,14 +396,16 @@ async function upsertServices(providerId, services) {
   }
 }
 
-const ownerUserId = await getOrCreateDemoOwner();
-
-const { error: publicationError } = await supabase
-  .from("user_publication_settings")
-  .upsert({ user_id: ownerUserId, publishing_enabled: true }, { onConflict: "user_id" });
-if (publicationError) throw publicationError;
-
 for (const example of examples) {
+  // Re-running re-parents an existing demo row to its own owner, which is how
+  // demos seeded under a single shared account get migrated.
+  const ownerUserId = await getOrCreateDemoOwner(demoOwnerEmail(example.ownerKey));
+
+  const { error: publicationError } = await supabase
+    .from("user_publication_settings")
+    .upsert({ user_id: ownerUserId, publishing_enabled: true }, { onConflict: "user_id" });
+  if (publicationError) throw publicationError;
+
   const providerId = await upsertProvider(ownerUserId, example);
   await upsertServices(providerId, example.services);
 }

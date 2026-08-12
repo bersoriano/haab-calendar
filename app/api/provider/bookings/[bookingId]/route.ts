@@ -6,6 +6,25 @@ import {
   PublicBookingWriteError,
   rescheduleProviderBooking,
 } from "@/lib/supabase/bookings";
+import { resolveDemoEditTarget, type DemoEditTarget } from "@/lib/supabase/demo-edit";
+
+/**
+ * Demo editing runs on a service-role client, which RLS no longer scopes, so
+ * the booking must be proven to belong to the demo provider being edited.
+ */
+async function demoOwnsBooking(target: DemoEditTarget, bookingId: string) {
+  const { data, error } = await target.admin
+    .from("bookings")
+    .select("provider_id")
+    .eq("id", bookingId)
+    .maybeSingle<{ provider_id: string }>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data?.provider_id === target.providerId;
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -61,9 +80,20 @@ export async function PATCH(
     );
   }
 
+  const demoTarget = await resolveDemoEditTarget();
+
+  if (demoTarget && !(await demoOwnsBooking(demoTarget, bookingId))) {
+    return NextResponse.json(
+      { userMessage: "That booking is not part of this demo page." },
+      { status: 404 },
+    );
+  }
+
+  const bookingClient = demoTarget?.admin ?? supabase;
+
   try {
     if (action === "cancel") {
-      const result = await cancelProviderBooking(supabase, bookingId);
+      const result = await cancelProviderBooking(bookingClient, bookingId);
       return NextResponse.json(result);
     }
 
@@ -77,7 +107,7 @@ export async function PATCH(
         );
       }
 
-      const result = await rescheduleProviderBooking(supabase, {
+      const result = await rescheduleProviderBooking(bookingClient, {
         bookingId,
         dateKey,
         time: readOptionalString(body.time),

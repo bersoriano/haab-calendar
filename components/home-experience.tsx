@@ -7,6 +7,7 @@ import { HaabBookingModule } from "@/components/haab-booking-module";
 import { AdminHero } from "@/components/provider/AdminHero";
 import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
 import { logout } from "@/app/login/actions";
+import { stopDemoEdit } from "@/app/super-admin/actions";
 import { VERTICALS } from "@/config/verticals";
 import type { ModuleStore, VerticalId } from "@/lib/types";
 import {
@@ -30,6 +31,12 @@ import {
 } from "@/lib/guest-builder";
 
 type View = "home" | "app";
+
+/** Set when the super admin is editing one of the public example pages. */
+export type DemoEditBanner = {
+  label: string;
+  publicPath: string;
+};
 
 /** Page name captured on the landing page, before any account exists. */
 const MAX_PAGE_NAME_LENGTH = 60;
@@ -56,6 +63,8 @@ type HomeExperienceProps = {
   publicationStatus?: PublicationStatus;
   /** Whether the signed-in account can open the super-admin area. */
   isSuperAdmin?: boolean;
+  /** Active demo-editing session; the dashboard edits that example page. */
+  demoEdit?: DemoEditBanner;
   /** Continue a guest draft after signup, confirmation, or sign-in. */
   resumeGuestPublish?: boolean;
 };
@@ -89,6 +98,7 @@ function HomeExperienceInner({
   dashboardStore,
   publicationStatus,
   isSuperAdmin,
+  demoEdit,
   resumeGuestPublish = false,
 }: HomeExperienceProps) {
   const router = useRouter();
@@ -126,7 +136,10 @@ function HomeExperienceInner({
     loggedIn &&
     !effectiveConfigured &&
     (Boolean(initialVertical) || resumeGuestPublish);
-  const [view, setView] = useState<View>(startInApp ? "app" : "home");
+  // A demo-editing session lands straight in the editor for that example page.
+  const [view, setView] = useState<View>(
+    startInApp || demoEdit ? "app" : "home",
+  );
   const [selectedVertical, setSelectedVertical] = useState<
     VerticalId | undefined
   >(startInApp ? initialVertical : undefined);
@@ -209,6 +222,7 @@ function HomeExperienceInner({
 
     return (
       <div className="flex min-h-full flex-col">
+        <DemoEditBar demoEdit={demoEdit} />
         <AccountStatusBar
           isSuperAdmin={isSuperAdmin}
           publicationStatus={publicationStatus}
@@ -279,6 +293,7 @@ function HomeExperienceInner({
 
   return (
     <>
+      <DemoEditBar demoEdit={demoEdit} />
       <AccountStatusBar
         isSuperAdmin={isSuperAdmin}
         publicationStatus={publicationStatus}
@@ -329,6 +344,44 @@ function GuestDraftBar({ onPublish }: { onPublish: () => void }) {
         >
           {t.home.guestDraftPublish}
         </button>
+      </div>
+    </aside>
+  );
+}
+
+// Demo editing changes what every save in this session writes to, so the
+// target stays on screen with a one-click way out.
+function DemoEditBar({ demoEdit }: { demoEdit?: DemoEditBanner }) {
+  if (!demoEdit) {
+    return null;
+  }
+
+  return (
+    <aside className="border-b border-violet-200 bg-violet-50 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm font-medium text-violet-900">
+          <span className="font-semibold">Editing demo page:</span>{" "}
+          {demoEdit.label}
+          <span className="ml-2 text-violet-700">{demoEdit.publicPath}</span>
+        </p>
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href={demoEdit.publicPath}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-violet-800 hover:underline"
+          >
+            View live
+          </Link>
+          <form action={stopDemoEdit}>
+            <button
+              type="submit"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800"
+            >
+              Exit demo editing
+            </button>
+          </form>
+        </div>
       </div>
     </aside>
   );

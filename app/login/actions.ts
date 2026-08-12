@@ -1,9 +1,10 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { DEMO_EDIT_COOKIE } from "@/lib/demo-pages";
 import { translations, type Lang } from "@/components/landing/translations";
 import { getAuthCopy, getAuthErrorMessage } from "@/lib/auth-i18n";
 
@@ -189,6 +190,11 @@ export async function logout() {
   const supabase = await createClient();
 
   await supabase.auth.signOut();
+
+  // A stale demo-editing marker must not outlive the session that set it.
+  const cookieStore = await cookies();
+  cookieStore.delete(DEMO_EDIT_COOKIE);
+
   revalidatePath("/", "layout");
   redirect("/login");
 }

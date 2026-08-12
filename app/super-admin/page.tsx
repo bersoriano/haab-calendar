@@ -2,7 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { logout } from "@/app/login/actions";
+import { DemoPagesPanel } from "@/components/super-admin/DemoPagesPanel";
 import { UserPublicationTable } from "@/components/super-admin/UserPublicationTable";
+import { listDemoPageSummaries, type DemoPageSummary } from "@/lib/supabase/demo-edit";
 import {
   listManagedUsers,
   SuperAdminAccessError,
@@ -12,9 +14,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SuperAdminPage() {
   let users;
+  let demoPages: DemoPageSummary[] = [];
 
   try {
     users = await listManagedUsers();
+    demoPages = await listDemoPageSummaries();
   } catch (error) {
     if (error instanceof SuperAdminAccessError) {
       notFound();
@@ -68,6 +72,8 @@ export default async function SuperAdminPage() {
           <SummaryCard label="Publishing enabled" value={enabledCount} tone="enabled" />
           <SummaryCard label="Publishing disabled" value={disabledCount} tone="disabled" />
         </section>
+
+        <DemoPagesPanel demoPages={demoPages} />
 
         <UserPublicationTable initialUsers={users} />
       </div>

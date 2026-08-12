@@ -46,12 +46,28 @@ See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-
 ## Public Examples
 
 Seed four published examples with `npm run seed:examples`. The command is
-idempotent and uses a dedicated non-login owner account.
+idempotent and gives each example its own non-login owner account.
 
 - Health: `/doctors/dr-maya-rivera`
 - Spaces: `/spaces/riverside-padel-club`
 - Professional services: `/professionals/northstar-strategy`
 - Events with capacity: `/events/makers-workshop`
+
+`lib/demo-pages.ts` is the allowlist these pages are resolved from; the seed
+script must stay in sync with it (`lib/__tests__/demo-pages.test.ts` enforces
+this).
+
+### Editing the examples
+
+The super admin edits them in the app: `/super-admin` → **Demo pages** →
+**Edit demo**. That sets an httpOnly cookie naming the demo, and the normal
+dashboard at `/` then loads and saves that example page instead of the
+caller's own booking page, with a banner and an **Exit demo editing** button.
+
+Every request re-checks that the caller is the super admin and that the target
+row is still owned by a demo account, so the cookie alone grants nothing. Demo
+writes run on a service-role client because RLS scopes writes to the caller's
+own rows; only the four allowlisted demos can ever be targeted.
 
 ## Reuse
 

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { getProviderDashboardStore } from "@/lib/supabase/bookings";
+import { resolveDemoEditTarget } from "@/lib/supabase/demo-edit";
 import {
   persistProviderStore,
   ProviderStoreWriteError,
@@ -48,8 +49,14 @@ export async function GET() {
     );
   }
 
+  // Demo editing swaps the whole read to the example provider, service-role
+  // scoped because RLS ties reads and writes to the caller's own rows.
+  const demoTarget = await resolveDemoEditTarget();
+  const storeClient = demoTarget?.admin ?? supabase;
+  const storeUserId = demoTarget?.ownerUserId ?? user.id;
+
   try {
-    const store = await getProviderDashboardStore(supabase, user.id);
+    const store = await getProviderDashboardStore(storeClient, storeUserId);
 
     if (!store) {
       return NextResponse.json(
@@ -96,12 +103,19 @@ export async function PUT(request: NextRequest) {
     );
   }
 
+  const demoTarget = await resolveDemoEditTarget();
+  const storeClient = demoTarget?.admin ?? supabase;
+  const storeUserId = demoTarget?.ownerUserId ?? user.id;
+  const storeOwnerEmail = demoTarget
+    ? demoTarget.page.ownerEmail
+    : (user.email ?? undefined);
+
   try {
     const store = normalizeStore(body.store as ModuleStore);
     const persistedStore = await persistProviderStore({
-      supabase,
-      ownerUserId: user.id,
-      ownerEmail: user.email ?? undefined,
+      supabase: storeClient,
+      ownerUserId: storeUserId,
+      ownerEmail: storeOwnerEmail,
       store,
     });
 

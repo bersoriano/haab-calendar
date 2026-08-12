@@ -1,9 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { DEMO_PAGES } from "@/lib/demo-pages";
 import {
   isPublicUrlBackendUnavailable,
   resolvePublicBookingUrl,
 } from "@/lib/public-booking-resolver";
+import { getPublicVerticalSegment } from "@/lib/public-url";
 import {
   parsePublicLanguage,
   withPublicLanguage,
@@ -11,12 +13,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const exampleCandidates = [
-  { verticalSegment: "doctors", providerSlug: "dr-maya-rivera" },
-  { verticalSegment: "spaces", providerSlug: "riverside-padel-club" },
-  { verticalSegment: "professionals", providerSlug: "northstar-strategy" },
-  { verticalSegment: "events", providerSlug: "makers-workshop" },
-] as const;
+const exampleCandidates = DEMO_PAGES.map((page) => ({
+  verticalSegment: getPublicVerticalSegment(page.vertical),
+  providerSlug: page.providerSlug,
+}));
 
 function redirectWithoutCaching(location: URL) {
   const response = NextResponse.redirect(location, 307);

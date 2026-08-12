@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { List } from "@phosphor-icons/react";
 import { createContext, useContext, useState, type ReactNode } from "react";
+import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { LanguageToggle, useLanguage } from "./language-provider";
@@ -207,12 +208,7 @@ const ghostButtonClass =
   "inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white";
 
 const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
-const liveExamplePaths = [
-  "/doctors/dr-maya-rivera",
-  "/spaces/riverside-padel-club",
-  "/professionals/northstar-strategy",
-  "/events/makers-workshop",
-] as const;
+const liveExamplePaths = DEMO_PAGES.map(getDemoPagePath);
 
 function localizedExamplePath(path: string, lang: "en" | "es") {
   return `${path}?lang=${lang}`;
