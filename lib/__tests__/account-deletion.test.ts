@@ -433,6 +433,7 @@ describe("account deletion orchestration", () => {
     const blobUrl =
       "https://store.public.blob.vercel-storage.com/provider-logos/logo.png";
     const admin = makeAdmin({
+      targetEmail: null,
       initialJobs: [
         {
           id: "cleanup-job",
@@ -452,6 +453,33 @@ describe("account deletion orchestration", () => {
       cleanupPending: false,
     });
     expect(mocks.deleteBlobs).toHaveBeenCalledWith([blobUrl]);
+    expect(admin.jobs.size).toBe(0);
+  });
+
+  it("removes a stale job without deleting blobs when Auth target still exists", async () => {
+    const blobUrl =
+      "https://store.public.blob.vercel-storage.com/provider-logos/logo.png";
+    const admin = makeAdmin({
+      targetEmail: "target@example.com",
+      initialJobs: [
+        {
+          id: "cleanup-job",
+          target_user_id: "target-user",
+          blob_urls: [blobUrl],
+          attempt_count: 1,
+          last_error: "Cleanup-job rollback failed",
+          created_at: "2026-08-12T12:00:00.000Z",
+          updated_at: "2026-08-12T12:05:00.000Z",
+        },
+      ],
+    });
+    mocks.createAdminClient.mockReturnValue(admin.client);
+
+    await expect(retryAccountDeletionCleanup("cleanup-job")).resolves.toEqual({
+      jobId: "cleanup-job",
+      cleanupPending: false,
+    });
+    expect(mocks.deleteBlobs).not.toHaveBeenCalled();
     expect(admin.jobs.size).toBe(0);
   });
 

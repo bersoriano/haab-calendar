@@ -267,14 +267,40 @@ export async function retryAccountDeletionCleanup(jobId: string) {
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("account_deletion_cleanup_jobs")
-    .select("id, blob_urls, attempt_count")
+    .select("id, target_user_id, blob_urls, attempt_count")
     .eq("id", jobId)
     .maybeSingle<
-      Pick<CleanupJobRow, "id" | "blob_urls" | "attempt_count">
+      Pick<
+        CleanupJobRow,
+        "id" | "target_user_id" | "blob_urls" | "attempt_count"
+      >
     >();
 
   if (error || !data) {
     throw new AccountDeletionError("not_found", "Cleanup job not found.");
+  }
+
+  const { data: targetData, error: targetError } =
+    await admin.auth.admin.getUserById(data.target_user_id);
+
+  if (targetData?.user) {
+    const { error: staleJobDeleteError } = await removeCleanupJob(admin, jobId);
+    if (staleJobDeleteError) {
+      throw new AccountDeletionError(
+        "cleanup_persistence_failed",
+        "Could not remove stale account cleanup state.",
+      );
+    }
+
+    return { jobId, cleanupPending: false } as const;
+  }
+
+  if (targetError && targetError.status !== 404) {
+    await recordCleanupFailure(admin, data, targetError);
+    throw new AccountDeletionError(
+      "cleanup_persistence_failed",
+      "Could not verify deleted account state.",
+    );
   }
 
   try {

@@ -129,6 +129,11 @@ an opaque service-only job for `/api/super-admin/account-deletion-cleanups/{jobI
 No email, business name, booking details, client details, Blob URLs, or raw Blob
 errors are exposed by cleanup summaries.
 
+Every retry rechecks `target_user_id` through Auth before deleting files. If the
+Auth account still exists because deletion failed and cleanup-job rollback also
+failed, retry removes only the stale job and leaves the live account's assets
+untouched.
+
 Only current image URLs referenced by provider rows can be removed safely.
 Historical unreferenced files from past image replacements cannot be attributed
 because existing upload paths contain no owner ID.
