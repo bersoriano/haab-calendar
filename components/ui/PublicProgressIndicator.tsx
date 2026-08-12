@@ -127,7 +127,9 @@ export function PublicProgressIndicator({
                 </span>
                 <span
                   className={cn(
-                    "max-w-[4.25rem] text-center text-[0.6875rem] font-semibold uppercase tracking-[0.12em] leading-tight transition-colors sm:max-w-[7.5rem] sm:text-[0.8125rem]",
+                    // Narrow screens still wrap — three nowrap labels would not
+                    // fit — but from sm up each step name reads as one line.
+                    "max-w-[4.25rem] text-center text-[0.6875rem] font-semibold uppercase tracking-[0.12em] leading-tight transition-colors sm:max-w-none sm:whitespace-nowrap sm:text-[0.8125rem]",
                     status === "complete" && "text-[var(--ink)]",
                     status === "current" && "text-[var(--primary)]",
                     status === "upcoming" && "text-[var(--muted)]",

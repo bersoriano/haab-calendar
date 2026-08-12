@@ -123,7 +123,7 @@ export function PublicBookingHeader({
               showNameVisually ? (
                 <h1
                   title={name}
-                  className="min-w-0 truncate text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl"
+                  className="min-w-0 truncate text-xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-2xl"
                 >
                   {name}
                 </h1>
