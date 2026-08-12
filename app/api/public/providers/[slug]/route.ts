@@ -6,6 +6,7 @@ import {
   PUBLIC_SERVICE_SELECT,
 } from "@/lib/public-booking-resolver";
 import { buildProviderPath, normalizeUrlSlugSegment, validateProviderSlug } from "@/lib/public-url";
+import { isUnsetTimeZone } from "@/lib/timezone";
 import type {
   LocationKey,
   ModuleStore,
@@ -113,6 +114,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
+      timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),
     availability: provider.availability,

@@ -36,6 +36,12 @@ export type ProviderInfo = {
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
   /** UI/content language for this provider. Drives the public booking page. */
   language: Lang;
+  /**
+   * IANA zone the provider's hours are stated in, e.g. "America/Mexico_City".
+   * "" means never chosen; the column defaults to "UTC", which is stored but
+   * read back as unset. Drives slot generation and the public page's label.
+   */
+  timezone: string;
 };
 
 export type Service = {

@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import { getServiceSlug } from "@/lib/public-url";
 import { normalizeAvailability, normalizeProvider, normalizeServices } from "@/lib/store";
+import { normalizeTimeZone, UNSET_TIME_ZONE } from "@/lib/timezone";
 import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from "@/lib/types";
 
 const PROVIDER_ID_SELECT = "id";
@@ -155,6 +156,9 @@ async function upsertProvider(options: {
     slug: provider.publicSlug,
     vertical,
     language: provider.language,
+    // The column is not null; an unchosen zone stores the default rather than
+    // failing the save, and reads back as unset.
+    timezone: normalizeTimeZone(provider.timezone) || UNSET_TIME_ZONE,
     availability: normalizeAvailability(options.store.availability),
     setup_complete: Boolean(options.store.setupComplete),
     phone_number_1: provider.phoneNumber1.trim(),

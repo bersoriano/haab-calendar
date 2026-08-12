@@ -428,6 +428,15 @@ export type BookingDict = {
     heroText: string;
     heroTextHint: string;
     heroTextPlaceholder: string;
+    timeZone: string;
+    timeZoneUnset: string;
+    timeZoneHint: string;
+    timeZoneDetect: string;
+    timeZoneCurrentTime: string;
+    timeZonePromptTitle: string;
+    timeZonePromptBody: string;
+    timeZonePromptAccept: string;
+    timeZonePromptDismiss: string;
     headerImage: string;
     headerImageHint: string;
     headerImagePreviewAlt: string;
@@ -877,6 +886,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       heroText: "Hero text",
       heroTextHint: "Shown over the header image. Defaults to your business name.",
       heroTextPlaceholder: "Your business name",
+      timeZone: "Time zone",
+      timeZoneUnset: "Choose your time zone",
+      timeZoneHint:
+        "Your opening hours and every booking time are read in this zone. Clients see the city on your public page.",
+      timeZoneDetect: "Detect my time zone",
+      timeZoneCurrentTime: "Right now it's {time} there.",
+      timeZonePromptTitle: "Confirm your time zone \u2014 we detected {zone}",
+      timeZonePromptBody:
+        "Your page is still using UTC, so booking times may not match your real hours.",
+      timeZonePromptAccept: "Use this time zone",
+      timeZonePromptDismiss: "Not now",
       headerImage: "Header image",
       headerImageHint: "Shown as a banner at the top of your public page, above the list to book.",
       headerImagePreviewAlt: "Header banner preview",
@@ -1330,6 +1350,17 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       heroText: "Texto del encabezado",
       heroTextHint: "Se muestra sobre la imagen de encabezado. Predeterminado: nombre del negocio.",
       heroTextPlaceholder: "Nombre de su negocio",
+      timeZone: "Zona horaria",
+      timeZoneUnset: "Elija su zona horaria",
+      timeZoneHint:
+        "Sus horarios de atenci\u00f3n y cada reserva se leen en esta zona. Sus clientes ven la ciudad en su p\u00e1gina p\u00fablica.",
+      timeZoneDetect: "Detectar mi zona horaria",
+      timeZoneCurrentTime: "All\u00e1 son las {time} en este momento.",
+      timeZonePromptTitle: "Confirme su zona horaria: detectamos {zone}",
+      timeZonePromptBody:
+        "Su p\u00e1gina sigue usando UTC, as\u00ed que los horarios de reserva pueden no coincidir con su horario real.",
+      timeZonePromptAccept: "Usar esta zona horaria",
+      timeZonePromptDismiss: "Ahora no",
       headerImage: "Imagen de encabezado",
       headerImageHint: "Se muestra como banner en la parte superior de su página pública, antes de la lista de reservas.",
       headerImagePreviewAlt: "Vista previa del banner de encabezado",

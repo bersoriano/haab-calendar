@@ -1,3 +1,8 @@
+import {
+  formatTimeZoneChoice,
+  isUnsetTimeZone,
+  normalizeTimeZone,
+} from "./timezone";
 import type { Lang } from "./types";
 
 /**
@@ -25,16 +30,18 @@ export function shouldShowProviderNameVisually(logoImageUrl?: string): boolean {
 }
 
 /**
- * The offset a visitor should read the page's times in — "GMT-6", not
- * "America/Mexico_City". An unknown or unsupported zone yields nothing rather
- * than a wrong offset.
+ * Where a visitor should read the page's times — "Ciudad de México, México
+ * (GMT-6)", not "America/Mexico_City" and not a bare "GMT-6". The place leads
+ * because that is what a person recognises; the offset trails for whoever is
+ * reading from somewhere else. An unknown or unsupported zone yields nothing
+ * rather than a wrong label.
  */
 export function formatTimeZoneLabel(
   timeZone: string | undefined,
   lang: Lang = "en",
   now: Date = new Date(),
 ): string {
-  const zone = timeZone?.trim();
+  const zone = normalizeTimeZone(timeZone);
 
   if (!zone) {
     return "";
@@ -45,21 +52,11 @@ export function formatTimeZoneLabel(
   // GMT+0 to a client of a provider who simply left the field alone is worse
   // than saying nothing, so an unset-looking zone is treated as unset. The cost
   // is that a provider genuinely on UTC loses the clause.
-  if (zone.toUpperCase() === "UTC") {
+  if (isUnsetTimeZone(zone)) {
     return "";
   }
 
-  try {
-    const parts = new Intl.DateTimeFormat(lang, {
-      timeZone: zone,
-      timeZoneName: "shortOffset",
-    }).formatToParts(now);
-
-    return parts.find((part) => part.type === "timeZoneName")?.value ?? "";
-  } catch {
-    // An invalid IANA zone throws; saying nothing beats naming the wrong one.
-    return "";
-  }
+  return formatTimeZoneChoice(zone, lang, now);
 }
 
 /**

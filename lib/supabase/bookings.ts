@@ -18,6 +18,7 @@ import {
 import { BOOKING_HOLD_DURATION_MS } from "@/lib/constants";
 import { formatCapacityLabel } from "@/lib/format";
 import { getEffectiveCost } from "@/lib/locations";
+import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { getPublicVerticalSegment } from "@/lib/public-url";
 import type {
   BookingHoldRecord,
@@ -238,6 +239,9 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
       ? row.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: row.language === "es" ? "es" : "en",
+    // "UTC" is the column default, so it reads back as "never chosen" — the
+    // dashboard then offers the detected zone instead of looking configured.
+    timezone: isUnsetTimeZone(row.timezone) ? "" : normalizeTimeZone(row.timezone),
   };
 }
 

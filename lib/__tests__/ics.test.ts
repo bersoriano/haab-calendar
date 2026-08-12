@@ -16,6 +16,7 @@ const provider: ProviderInfo = {
   address2: "",
   publicSlug: "alice-wellness",
   language: "en",
+  timezone: "America/New_York",
 };
 
 function makeAppointmentBooking(overrides: Partial<BookingRecord> = {}): BookingRecord {
@@ -119,12 +120,26 @@ describe("buildIcsContent — appointment booking", () => {
     expect(ics).toContain("SUMMARY:Consultation");
   });
 
-  it("contains DTSTART with datetime format (no VALUE=DATE)", () => {
-    expect(ics).toContain("DTSTART:20260715T100000");
+  // 10:00 in New York on a July date is 14:00 UTC. Emitting the instant rather
+  // than a floating "10:00" is what stops the invite from landing at 10:00
+  // wherever the client happens to open it.
+  it("anchors DTSTART to the provider's zone as a UTC instant", () => {
+    expect(ics).toContain("DTSTART:20260715T140000Z");
   });
 
-  it("contains DTEND with datetime format", () => {
-    expect(ics).toContain("DTEND:20260715T103000");
+  it("anchors DTEND to the provider's zone as a UTC instant", () => {
+    expect(ics).toContain("DTEND:20260715T143000Z");
+  });
+
+  it("leaves times floating when the provider has no zone set", () => {
+    const floating = buildIcsContent(
+      makeAppointmentBooking(),
+      { ...provider, timezone: "" },
+      "https://example.com/manage/tok_abc",
+    );
+
+    expect(floating).toContain("DTSTART:20260715T100000");
+    expect(floating).not.toContain("DTSTART:20260715T100000Z");
   });
 
   it("does NOT use VALUE=DATE for appointment", () => {

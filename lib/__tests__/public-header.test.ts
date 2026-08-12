@@ -31,8 +31,20 @@ describe("shouldShowProviderNameVisually", () => {
 });
 
 describe("formatTimeZoneLabel", () => {
-  it("reduces an IANA zone to the offset a visitor can read", () => {
-    expect(formatTimeZoneLabel("America/Mexico_City", "en")).toMatch(/^GMT[+-]\d/);
+  it("names the place, with the offset kept for visitors elsewhere", () => {
+    expect(formatTimeZoneLabel("America/Mexico_City", "en")).toMatch(
+      /^Mexico City, Mexico \(GMT[+-]\d/,
+    );
+  });
+
+  it("says the place in the page's own language", () => {
+    expect(formatTimeZoneLabel("America/Mexico_City", "es")).toMatch(
+      /^Ciudad de M\u00e9xico, M\u00e9xico \(GMT[+-]\d/,
+    );
+  });
+
+  it("falls back to the zone's own city when it is not curated", () => {
+    expect(formatTimeZoneLabel("America/Nuuk", "en")).toMatch(/^Nuuk \(GMT[+-]\d/);
   });
 
   it("says nothing when the zone is missing", () => {

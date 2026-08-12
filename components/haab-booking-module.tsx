@@ -120,6 +120,7 @@ import {
   isBookingHoldWarning,
 } from "@/lib/holds";
 import { buildIcsContent } from "@/lib/ics";
+import { detectTimeZone } from "@/lib/timezone";
 import {
   bookingFlowReducer,
   createBookingFlowState,
@@ -2044,6 +2045,23 @@ export function HaabBookingModule({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, initialBusinessName, initialVerticalId, integratedMode]);
+
+  // A provider who never touches the field would otherwise be published on the
+  // column's UTC default, which silently shifts every slot on their page. The
+  // browser's zone is the best guess available and stays editable in Settings.
+  const appliedDetectedTimeZoneRef = useRef(false);
+  useEffect(() => {
+    if (appliedDetectedTimeZoneRef.current) return;
+    if (integratedMode || !hydrated) return;
+    if (activeStore.setupComplete || storedProvider.timezone) return;
+
+    const detected = detectTimeZone();
+    if (!detected) return;
+
+    appliedDetectedTimeZoneRef.current = true;
+    updateProvider("timezone", detected);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStore.setupComplete, hydrated, integratedMode, storedProvider.timezone]);
 
   function updateSetupBookingLength(value: string) {
     if (integratedMode) {

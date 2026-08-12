@@ -2,6 +2,7 @@ import { slugify, currentTimestamp, createId } from "./utils";
 import { getServiceSlug } from "./public-url";
 import { compareDateKeys } from "./date";
 import { DEFAULT_APPOINTMENT_DURATION_MINUTES, WEEKDAY_KEYS } from "./constants";
+import { normalizeTimeZone } from "./timezone";
 import { VERTICAL_IDS } from "./types";
 import type {
   AvailabilityBlock,
@@ -45,6 +46,7 @@ export function createEmptyStore(): ModuleStore {
       address2: "",
       publicSlug: "",
       language: "en",
+      timezone: "",
     },
     services: [],
     availability: createDefaultAvailability(),
@@ -290,6 +292,9 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: source?.language === "es" ? "es" : "en",
+    // An unusable zone is worse than none: it would silently push slot
+    // generation back to server-local time while looking configured.
+    timezone: normalizeTimeZone(source?.timezone),
   };
 }
 

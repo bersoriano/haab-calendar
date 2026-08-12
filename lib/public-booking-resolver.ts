@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
+import { isUnsetTimeZone } from "@/lib/timezone";
 import {
   addDays,
   getDateKey,
@@ -204,6 +205,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
+      timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),
     availability: provider.availability,

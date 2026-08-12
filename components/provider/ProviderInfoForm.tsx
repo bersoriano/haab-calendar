@@ -4,6 +4,7 @@ import type { Lang, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { adminFieldClass } from "@/components/provider/adminGlass";
 import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
+import { TimeZoneField } from "@/components/provider/TimeZoneField";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 export function ProviderInfoForm({
@@ -103,6 +104,12 @@ export function ProviderInfoForm({
           />
         </label>
       </div>
+      <TimeZoneField
+        value={provider.timezone}
+        onChange={(zone) => onChange("timezone", zone)}
+        disabled={disabled}
+        lang={lang}
+      />
       <HeaderImageUploader
         value={provider.headerImageUrl}
         onChange={(url) => onChange("headerImageUrl", url)}

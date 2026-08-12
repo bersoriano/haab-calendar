@@ -186,6 +186,22 @@ describe("normalizeProvider language", () => {
   });
 });
 
+describe("normalizeProvider timezone", () => {
+  it("keeps a usable IANA zone", () => {
+    expect(normalizeProvider({ timezone: "America/Mexico_City" }).timezone).toBe(
+      "America/Mexico_City",
+    );
+  });
+
+  it("drops a zone the runtime cannot use rather than storing it", () => {
+    // A bad zone that survived would push slot generation back to server-local
+    // time while the account still looked configured.
+    expect(normalizeProvider({ timezone: "Not/AZone" }).timezone).toBe("");
+    expect(normalizeProvider({}).timezone).toBe("");
+    expect(normalizeProvider(undefined).timezone).toBe("");
+  });
+});
+
 describe("seedSetupLanguage", () => {
   it("seeds the landing language into a fresh setup store", () => {
     const next = seedSetupLanguage(createEmptyStore(), "es");
