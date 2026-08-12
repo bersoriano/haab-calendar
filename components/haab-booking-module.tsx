@@ -981,6 +981,10 @@ export function HaabBookingModule({
       return;
     }
 
+    if (!isDesktopColumns) {
+      return;
+    }
+
     const primaryNode = publicPrimaryPanelRef.current;
 
     if (!primaryNode || typeof ResizeObserver === "undefined") {
@@ -1041,7 +1045,7 @@ export function HaabBookingModule({
       window.cancelAnimationFrame(frameId);
       observer.disconnect();
     };
-  }, [resolvedBookingFlow.step]);
+  }, [isDesktopColumns, resolvedBookingFlow.step]);
 
   useEffect(() => {
     if (surface !== "public") {
@@ -4809,7 +4813,7 @@ export function HaabBookingModule({
               <div
                 ref={publicAboutPanelRef}
                 className={cn(
-                  "order-3 lg:order-none self-start flex min-h-full flex-col",
+                  "order-3 lg:order-none self-start flex flex-col",
                   publicSoftPanelClass,
                 )}
                 style={
@@ -4929,7 +4933,7 @@ export function HaabBookingModule({
                   step2IsAppointment &&
                   bookingFlow.dateKey &&
                   "flex flex-col overflow-hidden",
-                isPublicDetailsStep && "flex min-h-full flex-col",
+                isPublicDetailsStep && "flex flex-col",
               )}
               style={
                 isDesktopColumns &&
