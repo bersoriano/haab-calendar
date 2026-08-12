@@ -10,16 +10,6 @@ export const WEEKDAY_KEYS: WeekdayKey[] = [
   "saturday",
 ];
 
-export const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
-  sunday: "Sunday",
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-};
-
 export const DEFAULT_APPOINTMENT_DURATION_MINUTES = 30;
 export const DURATION_OPTIONS = [15, 30, 60, 120, 180, 240];
 
@@ -49,12 +39,6 @@ export const getCompactDateFormatter = memoFormatter(
 export const getWeekdayShortFormatter = memoFormatter(
   (locale) => new Intl.DateTimeFormat(locale, { weekday: "short" }),
 );
-
-// Backward-compatible English singletons (existing importers).
-export const monthFormatter = getMonthFormatter("en");
-export const longDateFormatter = getLongDateFormatter("en");
-export const compactDateFormatter = getCompactDateFormatter("en");
-export const weekdayShortFormatter = getWeekdayShortFormatter("en");
 
 export const compactBadgeTextClass = "text-xs font-semibold uppercase tracking-[0.08em]";
 export const compactMetaTextClass = "text-xs font-semibold uppercase tracking-[0.1em]";

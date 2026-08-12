@@ -10,6 +10,7 @@ import {
   getBookingStatusLabel,
   getOccurrenceModeLabel,
 } from "@/lib/format";
+import { getLongDateFormatter } from "@/lib/constants";
 import type { Service } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -273,5 +274,43 @@ describe("getBookingStatusLabel", () => {
     expect(getBookingStatusLabel("confirmed", "es")).toBe("Confirmado");
     expect(getBookingStatusLabel("rescheduled", "es")).toBe("Reagendado");
     expect(getBookingStatusLabel("cancelled", "es")).toBe("Cancelado");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// locale-matched formatting (characterization test — pins existing behavior)
+// ---------------------------------------------------------------------------
+
+const localeMatchedService: Service = {
+  id: "svc-1",
+  name: "Taller",
+  bookingType: "full-day",
+  description: "",
+  maxSpots: 400,
+};
+
+describe("locale-matched formatting", () => {
+  it("writes long dates in the page's language", () => {
+    expect(formatDateLabel("2026-03-09", "en")).toContain("March");
+    expect(formatDateLabel("2026-03-09", "es")).toContain("marzo");
+  });
+
+  it("puts the day before the month in Spanish", () => {
+    const parts = getLongDateFormatter("es").formatToParts(new Date(2026, 2, 9));
+    const order = parts.filter((p) => p.type === "day" || p.type === "month");
+    expect(order[0].type).toBe("day");
+  });
+
+  it("keeps 24-hour time in Spanish and 12-hour in English", () => {
+    // Deliberate: Mexican schedules are written 24-hour, and Intl's es-MX
+    // default would render "2:30 p.m." Pinned here so it is a decision, not
+    // an accident.
+    expect(formatTimeLabel("14:30", "es")).toBe("14:30");
+    expect(formatTimeLabel("14:30", "en")).toBe("2:30 PM");
+  });
+
+  it("translates event capacity", () => {
+    expect(formatCapacityLabel(localeMatchedService, "en")).toBe("Up to 400 spots");
+    expect(formatCapacityLabel(localeMatchedService, "es")).toBe("Hasta 400 lugares");
   });
 });

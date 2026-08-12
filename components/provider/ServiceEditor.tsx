@@ -298,6 +298,11 @@ export function ServiceEditor({
                     }))
                   }
                   type="date"
+                  /* Native date inputs follow the OS/browser locale, not the
+                     page. Chromium honours `lang`; Firefox and Safari ignore
+                     it, so a Spanish page on a US-configured machine still
+                     shows mm/dd/yyyy. Fixing that needs a custom picker. */
+                  lang={lang}
                   className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
               </label>
