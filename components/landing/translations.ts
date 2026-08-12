@@ -163,7 +163,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Producto real, no una maqueta",
       title: "Abre una. Resérvala como lo haría un cliente.",
-      body: "Cuatro páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
+      body: "Seis páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
       liveBadge: "En vivo",
       items: [
         {
@@ -190,8 +190,20 @@ export const translations = {
           proof: "Registros para talleres con fecha, cupo y lugares disponibles.",
           cta: "Probar un registro",
         },
+        {
+          vertical: "Carreras",
+          title: "Kilómetro Cero Running",
+          proof: "Inscripciones a carreras con fecha fija, cupo y entrenamientos semanales.",
+          cta: "Inscribirse a una carrera",
+        },
+        {
+          vertical: "Belleza",
+          title: "Nube Rosa Nail Studio",
+          proof: "Citas de manicure y pestañas con duración, precio y horarios reales.",
+          cta: "Agendar una cita",
+        },
       ],
-      note: "No necesitas iniciar sesión. Las cuatro páginas usan el flujo público real de Haab.",
+      note: "No necesitas iniciar sesión. Las seis páginas usan el flujo público real de Haab.",
     },
     socialProof: {
       badge: "Producto en acceso anticipado",
@@ -650,7 +662,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Real product, not a mockup",
       title: "Open one. Book it like a client would.",
-      body: "Four public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
+      body: "Six public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
       liveBadge: "Live",
       items: [
         {
@@ -677,8 +689,20 @@ export const translations = {
           proof: "Workshop registration with a fixed date, capacity, and spots left.",
           cta: "Try a registration",
         },
+        {
+          vertical: "Races",
+          title: "Kilómetro Cero Running",
+          proof: "Race entries with a fixed date, entry caps, and weekly training sessions.",
+          cta: "Enter a race",
+        },
+        {
+          vertical: "Beauty",
+          title: "Nube Rosa Nail Studio",
+          proof: "Nail and lash appointments with real durations, prices, and hours.",
+          cta: "Book an appointment",
+        },
       ],
-      note: "No sign-in required. All four pages use Haab's real public booking flow.",
+      note: "No sign-in required. All six pages use Haab's real public booking flow.",
     },
     socialProof: {
       badge: "Early-access product",

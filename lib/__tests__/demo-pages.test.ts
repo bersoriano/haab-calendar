@@ -3,6 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { translations } from "@/components/landing/translations";
 import {
   DEMO_PAGES,
   findDemoPage,
@@ -36,6 +37,14 @@ describe("demo pages allowlist", () => {
         `public-examples+${page.key}@haab-calendar.invalid`,
       );
       expect(seedScript).toContain(`email: demoOwnerEmail("${page.key}")`);
+    }
+  });
+
+  it("has one landing card per demo in every language", () => {
+    // LiveExamples pairs items[index] with DEMO_PAGES[index]; a short list
+    // would silently drop a demo, a long one would link nowhere.
+    for (const lang of ["en", "es"] as const) {
+      expect(translations[lang].liveExamples.items).toHaveLength(DEMO_PAGES.length);
     }
   });
 

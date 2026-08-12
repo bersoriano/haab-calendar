@@ -659,8 +659,8 @@ export function Hero() {
 
 export function LiveExamples() {
   const { lang, t } = useLanguage();
-  const glyphs = ["+", "S", "P", "E"];
-  const tones = ["teal", "blue", "blue", "gold"] as const;
+  const glyphs = ["+", "S", "P", "E", "K", "N"];
+  const tones = ["teal", "blue", "blue", "gold", "teal", "gold"] as const;
 
   return (
     <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-14 sm:px-8 sm:py-16">
@@ -676,7 +676,7 @@ export function LiveExamples() {
           </div>
           <p className="max-w-xl text-base leading-7 text-[var(--muted)]">{t.liveExamples.body}</p>
         </div>
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {t.liveExamples.items.map((item, index) => (
             <Link
               key={item.title}

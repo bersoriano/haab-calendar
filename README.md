@@ -45,13 +45,19 @@ See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-
 
 ## Public Examples
 
-Seed four published examples with `npm run seed:examples`. The command is
+Seed the published examples with `npm run seed:examples`. The command is
 idempotent and gives each example its own non-login owner account.
 
 - Health: `/doctors/dr-maya-rivera`
 - Spaces: `/spaces/riverside-padel-club`
 - Professional services: `/professionals/northstar-strategy`
 - Events with capacity: `/events/makers-workshop`
+- Races, single-date and weekly (Spanish): `/events/kilometro-cero-running`
+- Beauty appointments (Spanish): `/professionals/nube-rosa-nail-studio`
+
+The two race entries are dated relative to the seed run, so re-seeding always
+leaves them in the future. Every example is fictional, including the phone
+numbers and addresses.
 
 `lib/demo-pages.ts` is the allowlist these pages are resolved from; the seed
 script must stay in sync with it (`lib/__tests__/demo-pages.test.ts` enforces

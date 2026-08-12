@@ -54,6 +54,20 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     ownerEmail: "public-examples+events@haab-calendar.invalid",
     label: "Makers Workshop",
   },
+  {
+    key: "runners",
+    vertical: "events",
+    providerSlug: "kilometro-cero-running",
+    ownerEmail: "public-examples+runners@haab-calendar.invalid",
+    label: "Kilómetro Cero Running",
+  },
+  {
+    key: "nails",
+    vertical: "professional",
+    providerSlug: "nube-rosa-nail-studio",
+    ownerEmail: "public-examples+nails@haab-calendar.invalid",
+    label: "Nube Rosa Nail Studio",
+  },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {
