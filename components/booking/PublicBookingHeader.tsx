@@ -41,6 +41,7 @@ const slotToneClass = {
 
 export function PublicBookingHeader({
   businessName,
+  serviceName,
   logoImageUrl,
   logoAltFallback,
   copy,
@@ -53,6 +54,8 @@ export function PublicBookingHeader({
   className,
 }: {
   businessName?: string;
+  /** What is being booked, once chosen. Absent on the service list. */
+  serviceName?: string;
   logoImageUrl?: string;
   /** Used when there is no business name to build the alt text from. */
   logoAltFallback?: string;
@@ -74,6 +77,7 @@ export function PublicBookingHeader({
 }) {
   const t = bookingTranslations[lang];
   const name = businessName?.trim() ?? "";
+  const service = serviceName?.trim() ?? "";
   const logo = logoImageUrl?.trim() ?? "";
   const showNameVisually = shouldShowProviderNameVisually(logo);
 
@@ -114,20 +118,34 @@ export function PublicBookingHeader({
         ) : null}
 
         <div className="min-w-0">
-          {name ? (
-            showNameVisually ? (
-              <h1
-                title={name}
-                className="min-w-0 truncate text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl"
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5">
+            {name ? (
+              showNameVisually ? (
+                <h1
+                  title={name}
+                  className="min-w-0 truncate text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-3xl"
+                >
+                  {name}
+                </h1>
+              ) : (
+                // The mark already says it. Kept for the heading outline, screen
+                // readers, and anything crawling the page.
+                <h1 className="sr-only">{name}</h1>
+              )
+            ) : null}
+
+            {/* Once a service is chosen the band is the only place still
+                naming it, so it sits beside the business rather than below
+                the fold with the summary. */}
+            {service ? (
+              <span
+                title={service}
+                className="max-w-full shrink truncate rounded-full bg-[rgba(255,255,255,0.72)] px-3 py-1 text-xs font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.55)] sm:text-[0.8125rem]"
               >
-                {name}
-              </h1>
-            ) : (
-              // The mark already says it. Kept for the heading outline, screen
-              // readers, and anything crawling the page.
-              <h1 className="sr-only">{name}</h1>
-            )
-          ) : null}
+                {service}
+              </span>
+            ) : null}
+          </div>
 
           <p
             aria-live="polite"

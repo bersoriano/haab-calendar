@@ -195,10 +195,15 @@ describe("shared booking components", () => {
     );
 
     expect(html).toContain("This time is yours for the next 10 minutes");
+    // The reassurance now rides an info tooltip: still in the markup, so
+    // assistive tech reads it, but hidden until the visitor asks for it.
     expect(html).toContain("Nobody else can book it while the timer runs");
     expect(html).toContain("Anything you have typed is kept.");
-    // The step's action bar owns the only "Change" control.
-    expect(html).not.toContain("<button");
+    expect(html).toContain('role="tooltip"');
+    expect(html).toContain("What this hold means");
+    // The step's action bar owns the only "Change" control; the only button
+    // here is the tooltip's own trigger.
+    expect(html).not.toContain("Change");
   });
 
   it("turns an expired hold into one-tap recovery instead of a dead end", () => {

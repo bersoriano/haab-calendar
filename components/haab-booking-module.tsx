@@ -4044,6 +4044,7 @@ export function HaabBookingModule({
     const publicPageTitle = isDedicatedPublicPage ? null : (
       <PublicBookingHeader
         businessName={provider.businessName}
+        serviceName={selectedService?.name}
         logoImageUrl={provider.logoImageUrl}
         logoAltFallback={eventOrganizerRole?.logoAlt}
         copy={copy}
@@ -6093,6 +6094,7 @@ export function HaabBookingModule({
         {isDedicatedPublicPage && surface === "public" ? (
           <PublicBookingHeader
             businessName={provider.businessName}
+            serviceName={selectedService?.name}
             logoImageUrl={provider.logoImageUrl}
             logoAltFallback={eventOrganizerRole?.logoAlt}
             copy={copy}

@@ -71,6 +71,7 @@ export type BookingDict = {
     // Soft-hold explanation + expiry recovery
     holdMeaningTitle: string;
     holdMeaningBody: string;
+    holdMeaningTooltipLabel: string;
     holdChangeTime: string;
     holdDetailsSafe: string;
     holdExpiredTitle: string;
@@ -529,6 +530,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdMeaningTitle: "This time is yours for the next 10 minutes",
       holdMeaningBody:
         "Nobody else can book it while the timer runs. Nothing is charged and nothing is final until you confirm.",
+      holdMeaningTooltipLabel: "What this hold means",
       holdChangeTime: "Change",
       holdDetailsSafe: "Anything you have typed is kept.",
       holdExpiredTitle: "The hold ran out",
@@ -990,6 +992,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdMeaningTitle: "Este horario es suyo durante los próximos 10 minutos",
       holdMeaningBody:
         "Nadie más puede reservarlo mientras corre el tiempo. No se cobra nada y nada queda en firme hasta que usted confirme.",
+      holdMeaningTooltipLabel: "Qu\u00e9 significa esta reserva temporal",
       holdChangeTime: "Cambiar",
       holdDetailsSafe: "Lo que ya escribió se conserva.",
       holdExpiredTitle: "Se agotó la reserva temporal",

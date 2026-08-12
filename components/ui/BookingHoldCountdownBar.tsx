@@ -3,6 +3,7 @@ import { formatCountdown } from "@/lib/format";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 import type { Lang } from "@/lib/types";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 export function BookingHoldCountdownBar({
   isCancelled,
@@ -91,7 +92,9 @@ export function BookingHoldCountdownBar({
     <section
       aria-label={lang === "en" ? `${copy.Booking} hold countdown` : t.public.holdRemaining}
       className={cn(
-        "overflow-hidden px-0 py-0 transition-colors duration-300",
+        // Not clipped: the label's tooltip has to be able to hang below the
+        // section. The progress bar does its own clipping.
+        "px-0 py-0 transition-colors duration-300",
         isCancelled || isUrgent || isExpired
           ? "text-[#be123c]"
           : isConfirmed
@@ -112,8 +115,18 @@ export function BookingHoldCountdownBar({
       ) : null}
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
+          <p className="flex items-center gap-1.5 text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
             {lang === "en" ? `${copy.Booking} hold` : t.public.holdLabel}
+            {/* What the hold means is reassurance, not instruction: worth
+                having on demand, not worth re-reading on every booking. The
+                icon rides the label because the title below it is hidden on
+                small screens, where the answer is wanted most. */}
+            {isRunning ? (
+              <InfoTooltip
+                label={t.public.holdMeaningTooltipLabel}
+                text={`${t.public.holdMeaningBody} ${t.public.holdDetailsSafe}`}
+              />
+            ) : null}
           </p>
           {statusLabel ? (
             <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
@@ -174,12 +187,8 @@ export function BookingHoldCountdownBar({
         {helperText}
       </p>
       {/* No button here: the step's action bar already carries "Change", and two
-          controls for one action read as two different outcomes. */}
-      {isRunning ? (
-        <p className="mt-3 text-sm leading-5 text-[var(--muted)]">
-          {t.public.holdMeaningBody} {t.public.holdDetailsSafe}
-        </p>
-      ) : null}
+          controls for one action read as two different outcomes. The hold's
+          meaning now lives in the tooltip on the label above. */}
       {!isConfirmed && !isCancelled && isUrgent && !isExpired ? (
         <div
           aria-live="polite"
