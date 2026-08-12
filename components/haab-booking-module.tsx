@@ -144,6 +144,7 @@ import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import { resolveSurfaceLanguage } from "@/lib/language/surface";
 import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
@@ -437,13 +438,18 @@ export function HaabBookingModule({
   const storedProvider = activeStore.provider;
   const storedServices = activeStore.services;
   const configuredLanguage = storedProvider.language ?? "en";
-  // The owner's workspace language is their own; it falls back to whatever the
-  // rest of the app resolved for them, never to their clients' setting.
-  const dashboardLanguage = storedProvider.dashboardLanguage ?? viewerLanguage;
   const [publicLanguage, setPublicLanguage] = useState<Lang>(
     initialPublicLanguage ?? configuredLanguage,
   );
-  const lang = surface === "public" ? publicLanguage : dashboardLanguage;
+  // The owner's workspace language is their own; it falls back to whatever the
+  // rest of the app resolved for them, never to their clients' setting. See
+  // resolveSurfaceLanguage for the guarded logic and its tests.
+  const lang = resolveSurfaceLanguage({
+    surface,
+    publicLanguage,
+    providerDashboardLanguage: storedProvider.dashboardLanguage,
+    viewerLanguage,
+  });
   const localizedPublicContent = localizePublicExampleContent(
     storedProvider,
     storedServices,
