@@ -101,7 +101,7 @@ describe("no inline English branches", () => {
     const files = ["components", "app", "lib"].flatMap(sourceFiles);
 
     const offenders = files.filter((file) =>
-      /lang === "en"\s*\?/.test(readFileSync(file, "utf8")),
+      /lang === "en"/.test(readFileSync(file, "utf8")),
     );
 
     expect(offenders).toEqual([]);
@@ -110,14 +110,21 @@ describe("no inline English branches", () => {
   it("carries the templated hold copy in both languages", () => {
     for (const lang of ["en", "es"] as const) {
       const { public: publicCopy, admin } = bookingTranslations[lang];
-      expect(publicCopy.holdCancelledFor).toContain("{Booking}");
-      expect(publicCopy.holdSecuredFor).toContain("{Booking}");
       expect(publicCopy.holdConfirmedFor).toContain("{booking}");
       expect(admin.publicBookingLinkFor).toContain("{booking}");
     }
-    // holdLabelFor and holdCountdownLabel put the noun sentence-initial in
-    // English ("Booking hold") but mid-sentence in Spanish ("Apartado de
-    // reserva"), so the placeholder casing differs by language on purpose.
+    // holdCancelledFor, holdSecuredFor, holdLabelFor, and holdCountdownLabel
+    // put the noun sentence-initial in English ("Booking cancelled",
+    // "Booking hold"), which capitalizes it. Spanish rewords these as
+    // gender-neutral past-tense verbs ("Se canceló su {booking}") or puts the
+    // noun mid-sentence ("Apartado de {booking}") instead of agreeing a
+    // participle adjective with a noun whose gender varies by vertical
+    // (reserva/cita/sesión are feminine, registro is masculine) — so the
+    // placeholder casing differs by language on purpose.
+    expect(bookingTranslations.en.public.holdCancelledFor).toContain("{Booking}");
+    expect(bookingTranslations.es.public.holdCancelledFor).toContain("{booking}");
+    expect(bookingTranslations.en.public.holdSecuredFor).toContain("{Booking}");
+    expect(bookingTranslations.es.public.holdSecuredFor).toContain("{booking}");
     expect(bookingTranslations.en.public.holdLabelFor).toContain("{Booking}");
     expect(bookingTranslations.es.public.holdLabelFor).toContain("{booking}");
     expect(bookingTranslations.en.public.holdCountdownLabel).toContain("{Booking}");
