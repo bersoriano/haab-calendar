@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { formatCountdown } from "@/lib/format";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 import type { Lang } from "@/lib/types";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { InfoTooltip } from "@/components/ui/InfoTooltip";
 
 export function BookingHoldCountdownBar({
@@ -51,46 +51,27 @@ export function BookingHoldCountdownBar({
   const displayedRemainingPercent = isExpired
     ? 100
     : Math.max(isUrgent && remainingPercent > 0 ? 8 : 0, remainingPercent);
-  const statusLabel =
-    lang === "en"
-      ? isCancelled
-        ? `${copy.Booking} cancelled`
-        : isConfirmed
-          ? `${copy.Booking} secured`
-          : isExpired
-            ? "Hold expired"
-            : isUrgent || isWarning
-              ? "Hold ending soon"
-              : ""
-      : isCancelled
-        ? t.public.holdCancelled
-        : isConfirmed
-          ? t.public.holdSecured
-          : isExpired
-            ? t.public.holdExpired
-            : isUrgent || isWarning
-              ? t.public.holdEndingSoon
-              : "";
-  const helperText =
-    lang === "en"
-      ? isCancelled
-        ? "This reservation is no longer active."
-        : isConfirmed
-          ? `Your ${copy.booking} is confirmed and the temporary hold is complete.`
-          : isExpired
-            ? t.public.expiredBody
-            : "Finish your details before the temporary hold expires."
-      : isCancelled
-        ? t.public.holdInactiveBody
-        : isConfirmed
-          ? t.public.holdConfirmedBody
-          : isExpired
-            ? t.public.expiredBody
-            : t.public.holdFinishBody;
+  const nouns = { booking: copy.booking, Booking: copy.Booking };
+  const statusLabel = isCancelled
+    ? fillTemplate(t.public.holdCancelledFor, nouns)
+    : isConfirmed
+      ? fillTemplate(t.public.holdSecuredFor, nouns)
+      : isExpired
+        ? t.public.holdExpired
+        : isUrgent || isWarning
+          ? t.public.holdEndingSoon
+          : "";
+  const helperText = isCancelled
+    ? t.public.holdInactiveBody
+    : isConfirmed
+      ? fillTemplate(t.public.holdConfirmedFor, nouns)
+      : isExpired
+        ? t.public.expiredBody
+        : t.public.holdFinishBody;
 
   return (
     <section
-      aria-label={lang === "en" ? `${copy.Booking} hold countdown` : t.public.holdRemaining}
+      aria-label={fillTemplate(t.public.holdCountdownLabel, nouns)}
       className={cn(
         // Not clipped: the label's tooltip has to be able to hang below the
         // section. The progress bar does its own clipping.
@@ -116,7 +97,7 @@ export function BookingHoldCountdownBar({
       <div className="flex items-center justify-between gap-4">
         <div className="min-w-0">
           <p className="flex items-center gap-1.5 text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
-            {lang === "en" ? `${copy.Booking} hold` : t.public.holdLabel}
+            {fillTemplate(t.public.holdLabelFor, nouns)}
             {/* What the hold means is reassurance, not instruction: worth
                 having on demand, not worth re-reading on every booking. The
                 icon rides the label because the title below it is hidden on

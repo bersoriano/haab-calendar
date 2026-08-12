@@ -30,10 +30,8 @@ export function getAuthErrorMessage(
 ) {
   const t = translations[lang].auth;
 
-  if (lang === "en") {
-    return error.message || t[fallback];
-  }
-
+  // Both languages map the same codes. Supabase's own message is English
+  // regardless of the visitor, so it is never surfaced.
   switch (error.code) {
     case "invalid_credentials":
       return t.invalidCredentials;

@@ -57,13 +57,30 @@ describe("auth i18n", () => {
     ).toBe("No se pudo crear la cuenta.");
   });
 
-  it("preserves the existing detailed English Supabase message", () => {
+  it("maps known Supabase auth errors to English instead of passing through Supabase's raw message", () => {
     expect(
       getAuthErrorMessage(
         { code: "invalid_credentials", message: "Invalid login credentials" },
         "en",
         "signInFailed",
       ),
-    ).toBe("Invalid login credentials");
+    ).toBe("Invalid email or password.");
+    expect(
+      getAuthErrorMessage(
+        { code: "user_already_exists", message: "User already registered" },
+        "en",
+        "createFailed",
+      ),
+    ).toBe("An account already exists for this email address.");
+  });
+
+  it("uses a localized fallback for unknown English errors", () => {
+    expect(
+      getAuthErrorMessage(
+        { code: "unexpected", message: "Internal English detail" },
+        "en",
+        "createFailed",
+      ),
+    ).toBe("Could not create that account.");
   });
 });

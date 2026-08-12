@@ -142,7 +142,7 @@ import { AvailabilitySettingsSection } from "@/components/provider/AvailabilityS
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 // Same "haab-lang" string as the cookie, but this module still only reads
 // and writes it via localStorage on the public surface, not the cookie the
 // proxy/server resolve — Task 8 moves this onto the server-resolved language.
@@ -3791,7 +3791,7 @@ export function HaabBookingModule({
             </label>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
-            {lang === "en" ? `Public ${copy.booking} link:` : t.admin.publicBookingLink}{" "}
+            {fillTemplate(t.admin.publicBookingLinkFor, { booking: copy.booking })}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
           </p>
           {!integratedMode ? (

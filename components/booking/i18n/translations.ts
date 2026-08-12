@@ -67,6 +67,11 @@ export type BookingDict = {
     holdInactiveBody: string;
     holdConfirmedBody: string;
     holdFinishBody: string;
+    holdCancelledFor: string;
+    holdSecuredFor: string;
+    holdLabelFor: string;
+    holdCountdownLabel: string;
+    holdConfirmedFor: string;
     expired: string;
     // Soft-hold explanation + expiry recovery
     holdMeaningTitle: string;
@@ -281,6 +286,7 @@ export type BookingDict = {
     languageLabel: string;
     languageHint: string;
     publicBookingLink: string;
+    publicBookingLinkFor: string;
     viewPublicPage: string;
     availabilityStart: string;
     availabilityEnd: string;
@@ -526,6 +532,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdInactiveBody: "This reservation is no longer active.",
       holdConfirmedBody: "Your booking is confirmed and the temporary hold is complete.",
       holdFinishBody: "Finish your details before the temporary hold expires.",
+      holdCancelledFor: "{Booking} cancelled",
+      holdSecuredFor: "{Booking} secured",
+      holdLabelFor: "{Booking} hold",
+      holdCountdownLabel: "{Booking} hold countdown",
+      holdConfirmedFor: "Your {booking} is confirmed and the temporary hold is complete.",
       expired: "Expired",
       holdMeaningTitle: "This time is yours for the next 10 minutes",
       holdMeaningBody:
@@ -730,6 +741,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       languageLabel: "Language",
       languageHint: "Sets the language clients see on your public booking page.",
       publicBookingLink: "Public booking link:",
+      publicBookingLinkFor: "Public {booking} link:",
       viewPublicPage: "View public page",
       availabilityStart: "Start",
       availabilityEnd: "End",
@@ -988,6 +1000,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdInactiveBody: "Esta reserva ya no está activa.",
       holdConfirmedBody: "Su reserva está confirmada y la retención temporal ha finalizado.",
       holdFinishBody: "Complete sus datos antes de que expire la reserva temporal.",
+      holdCancelledFor: "{Booking} cancelada",
+      holdSecuredFor: "{Booking} asegurada",
+      holdLabelFor: "Apartado de {booking}",
+      holdCountdownLabel: "Cuenta regresiva del apartado de {booking}",
+      holdConfirmedFor: "Su {booking} está confirmada y el apartado temporal terminó.",
       expired: "Vencida",
       holdMeaningTitle: "Este horario es suyo durante los próximos 10 minutos",
       holdMeaningBody:
@@ -1195,6 +1212,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       languageLabel: "Idioma",
       languageHint: "Define el idioma que sus clientes ven en la página pública de reservas.",
       publicBookingLink: "Enlace público de reservas:",
+      publicBookingLinkFor: "Enlace público de {booking}:",
       viewPublicPage: "Ver página pública",
       availabilityStart: "Inicio",
       availabilityEnd: "Fin",
@@ -1383,6 +1401,19 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
     },
   },
 };
+
+/**
+ * Vertical nouns ("appointment", "reservation", "cita") are the only runtime
+ * values these strings take, and each language orders them differently — so
+ * they are placeholders in the dictionary rather than string concatenation at
+ * the call site, which is what let English drift out of the dictionary.
+ */
+export function fillTemplate(
+  template: string,
+  values: Record<string, string>,
+): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
 
 export function bookingT(lang: Lang = "en"): BookingDict {
   return bookingTranslations[lang] ?? bookingTranslations.en;

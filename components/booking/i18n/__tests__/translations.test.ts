@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 
 function keyPaths(obj: unknown, prefix = ""): string[] {
@@ -79,5 +81,46 @@ describe("bookingTranslations", () => {
     expect(
       Object.values(bookingTranslations.es.eventOrganizerRole).join(" "),
     ).not.toMatch(/\bproveedor\b/i);
+  });
+});
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      return entry.name === "__tests__" || entry.name === "node_modules"
+        ? []
+        : sourceFiles(path);
+    }
+    return /\.tsx?$/.test(entry.name) ? [path] : [];
+  });
+}
+
+describe("no inline English branches", () => {
+  it("has no component that composes English inline and Spanish from the dictionary", () => {
+    const files = ["components", "app", "lib"].flatMap(sourceFiles);
+
+    const offenders = files.filter((file) =>
+      /lang === "en"\s*\?/.test(readFileSync(file, "utf8")),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("carries the templated hold copy in both languages", () => {
+    for (const lang of ["en", "es"] as const) {
+      const { public: publicCopy, admin } = bookingTranslations[lang];
+      expect(publicCopy.holdCancelledFor).toContain("{Booking}");
+      expect(publicCopy.holdSecuredFor).toContain("{Booking}");
+      expect(publicCopy.holdConfirmedFor).toContain("{booking}");
+      expect(admin.publicBookingLinkFor).toContain("{booking}");
+    }
+    // holdLabelFor and holdCountdownLabel put the noun sentence-initial in
+    // English ("Booking hold") but mid-sentence in Spanish ("Apartado de
+    // reserva"), so the placeholder casing differs by language on purpose.
+    expect(bookingTranslations.en.public.holdLabelFor).toContain("{Booking}");
+    expect(bookingTranslations.es.public.holdLabelFor).toContain("{booking}");
+    expect(bookingTranslations.en.public.holdCountdownLabel).toContain("{Booking}");
+    expect(bookingTranslations.es.public.holdCountdownLabel).toContain("{booking}");
   });
 });
