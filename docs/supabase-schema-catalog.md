@@ -82,6 +82,31 @@ The app does not store authorization decisions in user-editable metadata.
 Provider ownership is resolved by joining `providers.owner_user_id` to
 `auth.uid()`.
 
+Deleting an Auth user through the trusted super-admin service hard-deletes the
+identity. Existing cascade foreign keys then remove the user's provider data,
+services, bookings and client details, holds, redirects, and publication
+setting. The sole super-admin account is protected in server application code.
+
+### `public.account_deletion_cleanup_jobs`
+
+Stores service-only retry state for current Vercel Blob branding assets captured
+immediately before an Auth account is hard-deleted.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Opaque primary key exposed to the super-admin retry UI. |
+| `target_user_id` | `uuid` | Deleted Auth user identifier. Unique, with no foreign key because the Auth row no longer exists while cleanup is pending. |
+| `blob_urls` | `text[]` | Non-empty, de-duplicated current Vercel Blob URLs. Never returned to the browser. |
+| `attempt_count` | `integer` | Non-negative cleanup-attempt count. |
+| `last_error` | `text` | Optional bounded operational error, at most 500 characters. |
+| `created_at` | `timestamptz` | Job creation timestamp. |
+| `updated_at` | `timestamptz` | Maintained by `private.set_updated_at()`. |
+
+RLS is enabled without `anon` or `authenticated` policies or grants. Only
+`service_role` can select, insert, update, or delete jobs. Jobs retain no email,
+provider name, booking details, or client data. Successful Blob cleanup deletes
+the job; failed cleanup increments `attempt_count` and retains it for retry.
+
 ### `public.providers`
 
 Stores one provider profile, its public URL scope, and its weekly availability.
