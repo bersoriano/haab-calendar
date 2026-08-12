@@ -1,11 +1,11 @@
 import { AuthForm } from "@/components/auth/AuthForm";
 import { LoginHeader } from "@/components/auth/LoginHeader";
-import Link from "next/link";
 import {
   normalizeLandingLang,
   translations,
   type Lang,
 } from "@/components/landing/translations";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import { getAuthReturnVertical } from "@/lib/auth-vertical";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
@@ -61,25 +61,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         <section className="grid gap-6 lg:grid-cols-[1fr_0.82fr] lg:items-center">
           <div>
             <div className="flex justify-end">
-              <nav
-                aria-label={t.languageSelector}
-                className="inline-flex rounded-full border border-[var(--line)] bg-white/75 p-1 text-xs font-semibold"
-              >
-                {(["es", "en"] as const).map((option) => (
-                  <Link
-                    key={option}
-                    href={languageHref(option, nextPath, initialIntent)}
-                    aria-current={lang === option ? "page" : undefined}
-                    className={`rounded-full px-3 py-1.5 transition ${
-                      lang === option
-                        ? "bg-[var(--primary)] text-white"
-                        : "text-[var(--muted)] hover:text-[var(--ink)]"
-                    }`}
-                  >
-                    {option.toUpperCase()}
-                  </Link>
-                ))}
-              </nav>
+              <LanguageSwitcher
+                lang={lang}
+                hrefFor={(option) => languageHref(option, nextPath, initialIntent)}
+              />
             </div>
             <h1 className="mt-4 max-w-2xl text-4xl font-semibold text-[var(--ink)] sm:text-5xl">
               {isPublishFlow ? t.publishPageTitle : t.pageTitle}

@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 // Same "haab-lang" string as the cookie, but this page still only reads and
 // writes it via localStorage, not the cookie the proxy/server resolve —
 // Task 6 moves this page onto the server-resolved language.
 import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export default function NotFoundPage() {
   const [lang, setLang] = useState<Lang>("en");
@@ -45,28 +45,11 @@ export default function NotFoundPage() {
         className="absolute inset-0 bg-[url('/bkg2.jpg')] bg-cover bg-center opacity-70"
       />
       <section className="relative w-full max-w-xl rounded-[34px] border border-white/80 bg-[rgba(255,255,255,0.82)] p-6 text-center shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-10">
-        <div
-          role="group"
-          aria-label={t.language.chooseLanguage}
-          className="mx-auto mb-10 inline-flex rounded-full border border-[var(--line)] bg-white/80 p-1"
-        >
-          {(["en", "es"] as const).map((language) => (
-            <button
-              key={language}
-              type="button"
-              aria-pressed={lang === language}
-              onClick={() => chooseLanguage(language)}
-              className={cn(
-                "min-h-10 rounded-full px-4 text-sm font-semibold transition",
-                lang === language
-                  ? "bg-[var(--primary)] text-white"
-                  : "text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink)]",
-              )}
-            >
-              {language === "en" ? t.language.english : t.language.spanish}
-            </button>
-          ))}
-        </div>
+        <LanguageSwitcher
+          lang={lang}
+          onChange={chooseLanguage}
+          className="mx-auto mb-10"
+        />
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
           {t.notFound.eyebrow}
         </p>

@@ -6,7 +6,8 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
-import { LanguageToggle, useLanguage } from "./language-provider";
+import { useLanguage } from "./language-provider";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { LiveDemoDialog } from "./live-demo-dialog";
 import { StartPageDialog } from "./start-page-dialog";
 
@@ -508,7 +509,7 @@ function SectionHeading({
 }
 
 export function StickyNav() {
-  const { t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const navLinks = [
     { href: "#live-examples", label: t.nav.links.examples },
     { href: "#how", label: t.nav.links.how },
@@ -540,7 +541,7 @@ export function StickyNav() {
         </nav>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:gap-5">
           <div className="hidden xl:block">
-            <LanguageToggle />
+            <LanguageSwitcher lang={lang} onChange={setLang} />
           </div>
           <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
           <StartButton className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--primary-container)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.24)] transition hover:bg-[var(--primary)] hover:shadow-[0_14px_30px_rgba(26,115,232,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-container)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5">
@@ -568,7 +569,11 @@ export function StickyNav() {
                 </a>
               ))}
               <div className="mt-1 border-t border-[var(--line)] pt-1.5">
-                <LanguageToggle className="w-full justify-start px-4 py-2.5" />
+                <LanguageSwitcher
+                  lang={lang}
+                  onChange={setLang}
+                  className="w-full justify-start"
+                />
                 <AccountEntry className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white" />
               </div>
             </nav>

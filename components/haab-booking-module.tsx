@@ -143,6 +143,7 @@ import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 // Same "haab-lang" string as the cookie, but this module still only reads
 // and writes it via localStorage on the public surface, not the cookie the
 // proxy/server resolve — Task 8 moves this onto the server-resolved language.
@@ -915,51 +916,13 @@ export function HaabBookingModule({
   ) {
     if (surface !== "public") return null;
 
-    const isInset = variant === "inset";
-
     return (
-      <div
-        role="group"
-        aria-label={t.language.chooseLanguage}
-        className={cn(
-          "inline-flex rounded-full p-1",
-          isInset
-            ? "border border-[rgba(15,23,42,0.07)] bg-[rgba(15,23,42,0.05)] shadow-[inset_0_1px_2px_rgba(15,23,42,0.07)]"
-            : "border border-white/80 bg-white/70 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
-          className,
-        )}
-      >
-        {(["en", "es"] as const).map((language) => {
-          const active = lang === language;
-          const label = language === "en" ? t.language.english : t.language.spanish;
-          const actionLabel =
-            language === "en"
-              ? t.language.switchToEnglish
-              : t.language.switchToSpanish;
-
-          return (
-            <button
-              key={language}
-              type="button"
-              aria-label={actionLabel}
-              aria-pressed={active}
-              onClick={() => choosePublicLanguage(language)}
-              className={cn(
-                "min-h-9 rounded-full px-2.5 text-xs font-semibold transition sm:min-h-10 sm:px-4 sm:text-sm",
-                active
-                  ? isInset
-                    ? // A saturated pill would shout on a band that is already
-                      // a distinct layer; the lift alone carries the state.
-                      "bg-white text-[var(--ink)] shadow-[0_1px_2px_rgba(15,23,42,0.14),0_4px_10px_rgba(15,23,42,0.08)]"
-                    : "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
-                  : "text-[var(--muted)] hover:bg-white/70 hover:text-[var(--ink)]",
-              )}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <LanguageSwitcher
+        lang={lang}
+        onChange={choosePublicLanguage}
+        tone={variant}
+        className={className}
+      />
     );
   }
 
