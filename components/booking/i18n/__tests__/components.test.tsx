@@ -11,6 +11,7 @@ import { PrivateLinkCard } from "@/components/ui/PrivateLinkCard";
 import { PublicProgressIndicator } from "@/components/ui/PublicProgressIndicator";
 import { SummaryStatusTitle } from "@/components/ui/SummaryStatusTitle";
 import { ManageBookingPanel } from "@/components/booking/ManageBookingPanel";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { createBlankServiceDraft, createEmptyStore } from "@/lib/store";
 import type { BookingRecord } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -379,5 +380,31 @@ describe("private management page", () => {
     expect(html).toContain("Cancelada");
     expect(html).toContain("El horario quedó libre para otras personas.");
     expect(html).not.toContain("Nota para el proveedor");
+  });
+});
+
+describe("owner language settings copy", () => {
+  it("separates the client-facing setting from the owner's own workspace", () => {
+    for (const lang of ["en", "es"] as const) {
+      const { admin } = bookingTranslations[lang];
+      expect(admin.clientLanguageLabel.length).toBeGreaterThan(0);
+      expect(admin.dashboardLanguageLabel.length).toBeGreaterThan(0);
+      expect(admin.clientLanguageLabel).not.toBe(admin.dashboardLanguageLabel);
+      expect(admin.clientsSeeNotice).toContain("{language}");
+    }
+  });
+
+  it("names the client language in the reader's own language", () => {
+    expect(
+      fillTemplate(bookingTranslations.en.admin.clientsSeeNotice, {
+        language: bookingTranslations.en.language.spanish,
+      }),
+    ).toBe("Your clients see this page in Español.");
+
+    expect(
+      fillTemplate(bookingTranslations.es.admin.clientsSeeNotice, {
+        language: bookingTranslations.es.language.english,
+      }),
+    ).toBe("Sus clientes ven esta página en English.");
   });
 });

@@ -144,10 +144,6 @@ import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
-// Same "haab-lang" string as the cookie, but this module still only reads
-// and writes it via localStorage on the public surface, not the cookie the
-// proxy/server resolve — Task 8 moves this onto the server-resolved language.
-import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
 import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
@@ -193,6 +189,8 @@ type HaabBookingModuleProps = {
   // Seeds the visitor-owned language on a server-rendered public route, avoiding
   // an English/Spanish flash before browser preferences can be restored.
   initialPublicLanguage?: Lang;
+  /** Language resolved for the signed-in viewer; the dashboard default. */
+  viewerLanguage?: Lang;
   providerTimeZone?: string;
   onLanguageChange?: (language: Lang) => void;
   onVerticalChange?: (vertical?: VerticalId) => void;
@@ -313,6 +311,7 @@ export function HaabBookingModule({
   onSetupPersisted,
   initialLanguage,
   initialPublicLanguage,
+  viewerLanguage = "en",
   providerTimeZone,
   initialVerticalId,
   initialBusinessName,
@@ -438,10 +437,13 @@ export function HaabBookingModule({
   const storedProvider = activeStore.provider;
   const storedServices = activeStore.services;
   const configuredLanguage = storedProvider.language ?? "en";
+  // The owner's workspace language is their own; it falls back to whatever the
+  // rest of the app resolved for them, never to their clients' setting.
+  const dashboardLanguage = storedProvider.dashboardLanguage ?? viewerLanguage;
   const [publicLanguage, setPublicLanguage] = useState<Lang>(
     initialPublicLanguage ?? configuredLanguage,
   );
-  const lang = surface === "public" ? publicLanguage : configuredLanguage;
+  const lang = surface === "public" ? publicLanguage : dashboardLanguage;
   const localizedPublicContent = localizePublicExampleContent(
     storedProvider,
     storedServices,
@@ -617,13 +619,8 @@ export function HaabBookingModule({
     if (!hydrated || surface !== "public") return;
 
     const queryLanguage = new URLSearchParams(window.location.search).get("lang");
-    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
     const preferredLanguage =
-      queryLanguage === "en" || queryLanguage === "es"
-        ? queryLanguage
-        : savedLanguage === "en" || savedLanguage === "es"
-          ? savedLanguage
-          : configuredLanguage;
+      queryLanguage === "en" || queryLanguage === "es" ? queryLanguage : configuredLanguage;
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- restore the visitor's explicit public-language preference after hydration
     setPublicLanguage(preferredLanguage);
@@ -632,7 +629,6 @@ export function HaabBookingModule({
   useEffect(() => {
     if (!hydrated || surface !== "public") return;
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
   }, [hydrated, lang, surface]);
 
   function choosePublicLanguage(nextLanguage: Lang) {
@@ -645,10 +641,12 @@ export function HaabBookingModule({
     setCalendarQrCode(null);
     if (typeof window === "undefined") return;
 
+    // Scoped to this page's URL only. Writing the global language cookie here
+    // would let a client's choice on one business's page follow them to the
+    // marketing site and to other businesses.
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLanguage);
     window.history.replaceState(window.history.state, "", url);
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, nextLanguage);
   }
 
   // Default a fresh (untouched) service draft to the vertical's occurrence mode:
@@ -3736,22 +3734,44 @@ export function HaabBookingModule({
               lang={lang}
             />
           </div>
-          <div className="mt-6">
+          <div className="mt-6 grid gap-6">
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.languageLabel}
+              {t.admin.clientLanguageLabel}
               <select
                 value={provider.language ?? "en"}
-                onChange={(event) => updateProvider("language", event.target.value as ProviderInfo["language"])}
+                onChange={(event) =>
+                  updateProvider("language", event.target.value as ProviderInfo["language"])
+                }
                 disabled={isSavingAdmin}
                 className={cn("min-h-12", adminFieldClass)}
               >
-                <option value="en">English</option>
-                <option value="es">Español</option>
+                <option value="en">{t.language.english}</option>
+                <option value="es">{t.language.spanish}</option>
               </select>
               <span className="text-xs leading-5 text-[var(--muted)]">
-                {t.admin.languageHint}
+                {t.admin.clientLanguageHint}
+              </span>
+              {/* Said back plainly, because the owner cannot see their own
+                  public page while editing it. */}
+              <span className="text-xs font-semibold leading-5 text-[var(--ink)]">
+                {fillTemplate(t.admin.clientsSeeNotice, {
+                  language:
+                    (provider.language ?? "en") === "en"
+                      ? t.language.english
+                      : t.language.spanish,
+                })}
               </span>
             </label>
+
+            <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              {t.admin.dashboardLanguageLabel}
+              <LanguageSwitcher
+                lang={lang}
+                onChange={(next) => updateProvider("dashboardLanguage", next)}
+                tone="inset"
+                className="self-start"
+              />
+            </div>
           </div>
           <p className="mt-4 text-sm text-[var(--muted)]">
             {fillTemplate(t.admin.publicBookingLinkFor, { booking: copy.booking })}{" "}

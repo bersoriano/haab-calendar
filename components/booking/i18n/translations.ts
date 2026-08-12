@@ -284,8 +284,10 @@ export type BookingDict = {
     resetStandaloneSetup: string;
     saveChanges: string;
     couldNotSaveSettings: string;
-    languageLabel: string;
-    languageHint: string;
+    clientLanguageLabel: string;
+    clientLanguageHint: string;
+    clientsSeeNotice: string;
+    dashboardLanguageLabel: string;
     publicBookingLink: string;
     publicBookingLinkFor: string;
     viewPublicPage: string;
@@ -740,8 +742,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       resetStandaloneSetup: "Reset standalone setup",
       saveChanges: "Save changes",
       couldNotSaveSettings: "Could not save settings.",
-      languageLabel: "Language",
-      languageHint: "Sets the language clients see on your public booking page.",
+      clientLanguageLabel: "Language your clients see",
+      clientLanguageHint:
+        "Applies to your public booking page and the confirmation screen. It does not translate the text you write yourself.",
+      clientsSeeNotice: "Your clients see this page in {language}.",
+      dashboardLanguageLabel: "Your workspace language",
       publicBookingLink: "Public booking link:",
       publicBookingLinkFor: "Public {booking} link:",
       viewPublicPage: "View public page",
@@ -1212,8 +1217,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       resetStandaloneSetup: "Restablecer configuración independiente",
       saveChanges: "Guardar cambios",
       couldNotSaveSettings: "No se pudieron guardar los ajustes.",
-      languageLabel: "Idioma",
-      languageHint: "Define el idioma que sus clientes ven en la página pública de reservas.",
+      clientLanguageLabel: "Idioma que ven sus clientes",
+      clientLanguageHint:
+        "Se aplica a su página pública de reservas y a la pantalla de confirmación. No traduce el texto que usted escribe.",
+      clientsSeeNotice: "Sus clientes ven esta página en {language}.",
+      dashboardLanguageLabel: "Idioma de su espacio de trabajo",
       publicBookingLink: "Enlace público de reservas:",
       publicBookingLinkFor: "Enlace público de {booking}:",
       viewPublicPage: "Ver página pública",

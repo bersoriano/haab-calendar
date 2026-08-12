@@ -9,7 +9,7 @@ import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHe
 import { logout } from "@/app/login/actions";
 import { stopDemoEdit } from "@/app/super-admin/actions";
 import { VERTICALS } from "@/config/verticals";
-import type { ModuleStore, VerticalId } from "@/lib/types";
+import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 import {
   LandingActionsProvider,
   LandingPage,
@@ -57,6 +57,8 @@ type HomeExperienceProps = {
   initialPageName?: string;
   /** Server-resolved visitor language: cookie, Accept-Language, or the English default. */
   initialLanguage: LandingLang;
+  /** Server-resolved language for the signed-in viewer; the dashboard default. */
+  viewerLanguage: Lang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
   /** Server-controlled ability to expose public URLs and booking actions. */
@@ -78,8 +80,12 @@ function loginHref(next: string, lang: LandingLang) {
 }
 
 export function HomeExperience(props: HomeExperienceProps) {
+  const dashboardLanguage = props.configured
+    ? props.dashboardStore?.provider.dashboardLanguage
+    : undefined;
+
   return (
-    <LanguageProvider initialLang={props.initialLanguage}>
+    <LanguageProvider initialLang={dashboardLanguage ?? props.initialLanguage}>
       <HomeExperienceInner {...props} />
     </LanguageProvider>
   );
@@ -91,6 +97,7 @@ function HomeExperienceInner({
   email,
   initialVertical,
   initialPageName,
+  viewerLanguage,
   dashboardStore,
   publicationStatus,
   isSuperAdmin,
@@ -273,6 +280,7 @@ function HomeExperienceInner({
               router.refresh();
             }}
             initialLanguage={effectiveConfigured ? undefined : lang}
+            viewerLanguage={viewerLanguage}
             initialVerticalId={
               effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
             }

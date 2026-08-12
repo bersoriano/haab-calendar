@@ -100,6 +100,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       publicationStatus={publicationStatus}
       demoEdit={demoEdit}
       resumeGuestPublish={isGuestPublishResume(resumePublish)}
+      viewerLanguage={resolvedLanguage}
     />
   );
 }
