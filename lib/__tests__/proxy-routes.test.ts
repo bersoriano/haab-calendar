@@ -8,7 +8,9 @@ describe("Supabase proxy route classification", () => {
     "/api/blob/upload",
     "/api/provider/store",
     "/api/provider/bookings/booking-id",
+    "/api/super-admin/users/user-id",
     "/api/super-admin/users/user-id/publication",
+    "/api/super-admin/account-deletion-cleanups/job-id/retry",
   ])("protects a real private route: %s", (pathname) => {
     expect(isProtectedRoute(pathname)).toBe(true);
   });
