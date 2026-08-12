@@ -156,6 +156,7 @@ async function upsertProvider(options: {
     slug: provider.publicSlug,
     vertical,
     language: provider.language,
+    dashboard_language: provider.dashboardLanguage ?? null,
     // The column is not null; an unchosen zone stores the default rather than
     // failing the save, and reads back as unset.
     timezone: normalizeTimeZone(provider.timezone) || UNSET_TIME_ZONE,

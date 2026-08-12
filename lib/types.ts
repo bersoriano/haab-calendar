@@ -37,6 +37,13 @@ export type ProviderInfo = {
   /** UI/content language for this provider. Drives the public booking page. */
   language: Lang;
   /**
+   * The owner's own dashboard language. Undefined means "follow the browser",
+   * which is what every pre-existing provider does. Deliberately separate from
+   * `language`: an owner may write Spanish page content and still want an
+   * English workspace.
+   */
+  dashboardLanguage?: Lang;
+  /**
    * IANA zone the provider's hours are stated in, e.g. "America/Mexico_City".
    * "" means never chosen; the column defaults to "UTC", which is stored but
    * read back as unset. Drives slot generation and the public page's label.

@@ -292,6 +292,10 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: source?.language === "es" ? "es" : "en",
+    dashboardLanguage:
+      source?.dashboardLanguage === "en" || source?.dashboardLanguage === "es"
+        ? source.dashboardLanguage
+        : undefined,
     // An unusable zone is worse than none: it would silently push slot
     // generation back to server-local time while looking configured.
     timezone: normalizeTimeZone(source?.timezone),

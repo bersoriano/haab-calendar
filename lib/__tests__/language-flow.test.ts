@@ -8,6 +8,7 @@ import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import {
   applyVerticalToStore,
   createEmptyStore,
+  normalizeProvider,
   seedSetupLanguage,
 } from "@/lib/store";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -114,5 +115,28 @@ describe("language defaults", () => {
 
   it("agrees with the shared default", () => {
     expect(normalizeLandingLang(undefined)).toBe(DEFAULT_LANGUAGE);
+  });
+});
+
+describe("dashboard language", () => {
+  it("is unset by default so the browser decides", () => {
+    expect(normalizeProvider({}).dashboardLanguage).toBeUndefined();
+  });
+
+  it("round-trips a pinned value", () => {
+    expect(normalizeProvider({ dashboardLanguage: "es" }).dashboardLanguage).toBe("es");
+    expect(normalizeProvider({ dashboardLanguage: "en" }).dashboardLanguage).toBe("en");
+  });
+
+  it("drops an unsupported value rather than guessing", () => {
+    expect(
+      normalizeProvider({ dashboardLanguage: "fr" as never }).dashboardLanguage,
+    ).toBeUndefined();
+  });
+
+  it("stays independent of the public page language", () => {
+    const provider = normalizeProvider({ language: "es", dashboardLanguage: "en" });
+    expect(provider.language).toBe("es");
+    expect(provider.dashboardLanguage).toBe("en");
   });
 });
