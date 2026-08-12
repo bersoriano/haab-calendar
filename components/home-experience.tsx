@@ -225,7 +225,7 @@ function HomeExperienceInner({
         />
         {!loggedIn ? <GuestDraftBar onPublish={requestGuestPublish} /> : null}
         <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
-          <AdminHero />
+          <AdminHero lang={lang} />
         </div>
         <header
           className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${

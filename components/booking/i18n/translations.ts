@@ -257,6 +257,7 @@ export type BookingDict = {
   };
   admin: {
     // Dashboard
+    heroTitle: string;
     upcoming7Days: string;
     confirmed: string;
     allTimeEveryStatus: string;
@@ -714,6 +715,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Pick a new time — everything you already typed is still filled in.",
     },
     admin: {
+      heroTitle: "Haab Calendar — booking operations in one workspace",
       upcoming7Days: "Upcoming (7 days)",
       confirmed: "Confirmed",
       allTimeEveryStatus: "All time, every status",
@@ -1185,6 +1187,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Elija un nuevo horario: todo lo que ya escribió sigue completo.",
     },
     admin: {
+      heroTitle: "Haab Calendar — sus reservas en un solo lugar",
       upcoming7Days: "Próximos (7 días)",
       confirmed: "Confirmado",
       allTimeEveryStatus: "Todo el tiempo, todos los estados",
