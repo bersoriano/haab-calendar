@@ -11,7 +11,7 @@ describe("auth i18n", () => {
   it("normalizes the requested login language", () => {
     expect(getAuthCopy("en").lang).toBe("en");
     expect(getAuthCopy("es").t.signIn).toBe("Iniciar sesión");
-    expect(getAuthCopy(null).lang).toBe("es");
+    expect(getAuthCopy(null).lang).toBe("en");
   });
 
   it("keeps the selected language in the post-authentication return path", () => {

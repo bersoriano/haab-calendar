@@ -55,8 +55,8 @@ type HomeExperienceProps = {
   initialVertical?: LandingVertical;
   /** Page name chosen on the landing page, carried through login via ?name=. */
   initialPageName?: string;
-  /** Visitor language carried explicitly through the authentication return URL. */
-  initialLanguage?: LandingLang;
+  /** Server-resolved visitor language: cookie, Accept-Language, or the English default. */
+  initialLanguage: LandingLang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
   /** Server-controlled ability to expose public URLs and booking actions. */
@@ -78,12 +78,8 @@ function loginHref(next: string, lang: LandingLang) {
 }
 
 export function HomeExperience(props: HomeExperienceProps) {
-  const configuredLanguage = props.configured
-    ? props.dashboardStore?.provider.language
-    : undefined;
-
   return (
-    <LanguageProvider initialLang={configuredLanguage ?? props.initialLanguage}>
+    <LanguageProvider initialLang={props.initialLanguage}>
       <HomeExperienceInner {...props} />
     </LanguageProvider>
   );

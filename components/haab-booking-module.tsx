@@ -143,7 +143,7 @@ import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
+import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
 import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
@@ -613,7 +613,7 @@ export function HaabBookingModule({
     if (!hydrated || surface !== "public") return;
 
     const queryLanguage = new URLSearchParams(window.location.search).get("lang");
-    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
+    const savedLanguage = window.localStorage.getItem(LANGUAGE_COOKIE);
     const preferredLanguage =
       queryLanguage === "en" || queryLanguage === "es"
         ? queryLanguage
@@ -628,7 +628,7 @@ export function HaabBookingModule({
   useEffect(() => {
     if (!hydrated || surface !== "public") return;
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
+    window.localStorage.setItem(LANGUAGE_COOKIE, lang);
   }, [hydrated, lang, surface]);
 
   function choosePublicLanguage(nextLanguage: Lang) {
@@ -644,7 +644,7 @@ export function HaabBookingModule({
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLanguage);
     window.history.replaceState(window.history.state, "", url);
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, nextLanguage);
+    window.localStorage.setItem(LANGUAGE_COOKIE, nextLanguage);
   }
 
   // Default a fresh (untouched) service draft to the vertical's occurrence mode:

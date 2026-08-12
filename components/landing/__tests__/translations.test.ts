@@ -60,9 +60,9 @@ describe("landing translations", () => {
     expect(translations.es.auth.eventOrganizerPageBody).not.toMatch(/\bproveedor\b/i);
   });
 
-  it("defaults visitor-owned surfaces to Spanish", () => {
-    expect(normalizeLandingLang(undefined)).toBe("es");
-    expect(normalizeLandingLang("fr")).toBe("es");
-    expect(normalizeLandingLang("en")).toBe("en");
+  it("defaults visitor-owned surfaces to English", () => {
+    expect(normalizeLandingLang(undefined)).toBe("en");
+    expect(normalizeLandingLang("fr")).toBe("en");
+    expect(normalizeLandingLang("es")).toBe("es");
   });
 });

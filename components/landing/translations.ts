@@ -1003,5 +1003,5 @@ export const translations = {
 export type Dict = (typeof translations)["en"];
 
 export function normalizeLandingLang(value: unknown): Lang {
-  return value === "en" ? "en" : "es";
+  return value === "es" ? "es" : "en";
 }

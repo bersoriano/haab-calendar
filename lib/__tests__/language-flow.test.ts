@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { normalizeLandingLang } from "@/components/landing/translations";
+import { DEFAULT_LANGUAGE } from "@/lib/language/resolve";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { getVerticalPreset, VERTICALS } from "@/config/verticals";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
@@ -97,5 +99,20 @@ describe("landing-to-admin language continuity", () => {
     expect(withPublicLanguage("/public/dr-maya-rivera?service=follow-up", "es")).toBe(
       "/public/dr-maya-rivera?service=follow-up&lang=es",
     );
+  });
+});
+
+describe("language defaults", () => {
+  it("defaults the landing and auth surfaces to English", () => {
+    expect(normalizeLandingLang(undefined)).toBe("en");
+    expect(normalizeLandingLang(null)).toBe("en");
+    expect(normalizeLandingLang("")).toBe("en");
+    expect(normalizeLandingLang("fr")).toBe("en");
+    expect(normalizeLandingLang("es")).toBe("es");
+    expect(normalizeLandingLang("en")).toBe("en");
+  });
+
+  it("agrees with the shared default", () => {
+    expect(normalizeLandingLang(undefined)).toBe(DEFAULT_LANGUAGE);
   });
 });

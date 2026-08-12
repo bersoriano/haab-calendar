@@ -7,7 +7,7 @@ import {
   translations,
   type Lang,
 } from "@/components/landing/translations";
-import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
+import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
 
 const initialState: AuthFormState = {
@@ -36,7 +36,7 @@ export function AuthForm({
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
+    window.localStorage.setItem(LANGUAGE_COOKIE, lang);
   }, [lang]);
 
   const formMessage = showSignupPendingMessage

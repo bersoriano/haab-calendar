@@ -7,8 +7,8 @@ import {
 } from "@/lib/supabase/publication";
 import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import { resolveDemoEditTarget } from "@/lib/supabase/demo-edit";
+import { getServerLanguage } from "@/lib/language/server";
 import type { LandingVertical } from "@/components/landing/landing-ui";
-import type { Lang } from "@/components/landing/translations";
 import type { ModuleStore } from "@/lib/types";
 import { isGuestPublishResume } from "@/lib/guest-builder";
 
@@ -31,10 +31,6 @@ type HomePageProps = {
     resumePublish?: string;
   }>;
 };
-
-function parseLanguage(value?: string): Lang | undefined {
-  return value === "en" || value === "es" ? value : undefined;
-}
 
 export default async function Home({ searchParams }: HomePageProps) {
   const { lang, vertical, name, resumePublish } = await searchParams;
@@ -89,13 +85,15 @@ export default async function Home({ searchParams }: HomePageProps) {
     }
   }
 
+  const resolvedLanguage = await getServerLanguage(lang);
+
   return (
     <HomeExperience
       loggedIn={loggedIn}
       configured={configured}
       email={email}
       isSuperAdmin={isSuperAdmin}
-      initialLanguage={parseLanguage(lang)}
+      initialLanguage={resolvedLanguage}
       initialVertical={parseVertical(vertical)}
       initialPageName={name}
       dashboardStore={dashboardStore}

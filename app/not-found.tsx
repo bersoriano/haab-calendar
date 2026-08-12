@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { LANDING_LANGUAGE_STORAGE_KEY } from "@/components/landing/language-provider";
+import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +14,7 @@ export default function NotFoundPage() {
 
   useEffect(() => {
     const queryLanguage = new URLSearchParams(window.location.search).get("lang");
-    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
+    const savedLanguage = window.localStorage.getItem(LANGUAGE_COOKIE);
     const preferredLanguage =
       queryLanguage === "en" || queryLanguage === "es"
         ? queryLanguage
@@ -28,7 +28,7 @@ export default function NotFoundPage() {
 
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
+    window.localStorage.setItem(LANGUAGE_COOKIE, lang);
   }, [lang]);
 
   function chooseLanguage(nextLanguage: Lang) {

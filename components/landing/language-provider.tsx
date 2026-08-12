@@ -9,9 +9,15 @@ import {
   type ReactNode,
 } from "react";
 import { CaretDown, GlobeSimple } from "@phosphor-icons/react";
+import { LANGUAGE_COOKIE } from "@/lib/language/resolve";
 import { translations, type Dict, type Lang } from "./translations";
 
-export const LANDING_LANGUAGE_STORAGE_KEY = "haab-lang";
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+
+/** Same cookie the proxy reads, so the next server render agrees on sight. */
+function persistLanguage(lang: Lang) {
+  document.cookie = `${LANGUAGE_COOKIE}=${lang}; path=/; max-age=${ONE_YEAR_SECONDS}; samesite=lax`;
+}
 
 function updateLanguageInCurrentUrl(lang: Lang) {
   const url = new URL(window.location.href);
@@ -33,51 +39,31 @@ export function LanguageProvider({
   initialLang,
 }: {
   children: ReactNode;
-  initialLang?: Lang;
+  initialLang: Lang;
 }) {
-  const [lang, setLangState] = useState<Lang>(initialLang ?? "es");
-  const [isReady, setIsReady] = useState(Boolean(initialLang));
+  const [lang, setLangState] = useState<Lang>(initialLang);
 
-  // A server-known language (auth return or configured provider) wins. Otherwise
-  // restore the visitor preference after mount so browser APIs stay client-only.
+  // The server already resolved the language into the cookie, so there is
+  // nothing to restore after mount — only `<html lang>` to keep honest when
+  // the visitor switches without a navigation.
   useEffect(() => {
-    if (initialLang) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronize a server-known language after a refreshed client boundary
-      setLangState(initialLang);
-      setIsReady(true);
-      return;
-    }
-
-    const saved = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
-    if (saved === "es" || saved === "en") {
-      setLangState(saved);
-    }
-    setIsReady(true);
-  }, [initialLang]);
-
-  // Keep <html lang> and storage in sync.
-  useEffect(() => {
-    if (!isReady) return;
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
-  }, [isReady, lang]);
+  }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
-    setIsReady(true);
     setLangState(next);
+    persistLanguage(next);
     updateLanguageInCurrentUrl(next);
   }, []);
-  const toggle = useCallback(
-    () => {
-      setIsReady(true);
-      setLangState((prev) => {
-        const next = prev === "es" ? "en" : "es";
-        updateLanguageInCurrentUrl(next);
-        return next;
-      });
-    },
-    [],
-  );
+
+  const toggle = useCallback(() => {
+    setLangState((prev) => {
+      const next = prev === "es" ? "en" : "es";
+      persistLanguage(next);
+      updateLanguageInCurrentUrl(next);
+      return next;
+    });
+  }, []);
 
   const value: LanguageContextValue = {
     lang,
