@@ -8,17 +8,19 @@ import {
   resolveLanguage,
 } from "@/lib/language/resolve";
 import { applyLanguageCookie } from "@/lib/language/proxy-language";
+import { isPublicBookingRoute } from "@/lib/language/public-routes";
 
 type FakeRequest = {
   cookies: { get(name: string): { value: string } | undefined };
   headers: { get(name: string): string | null };
-  nextUrl: { searchParams: URLSearchParams };
+  nextUrl: { pathname: string; searchParams: URLSearchParams };
 };
 
 function fakeRequest(options: {
   cookie?: string;
   acceptLanguage?: string;
   search?: string;
+  pathname?: string;
 }): FakeRequest {
   return {
     cookies: {
@@ -33,7 +35,10 @@ function fakeRequest(options: {
           ? (options.acceptLanguage ?? null)
           : null,
     },
-    nextUrl: { searchParams: new URLSearchParams(options.search ?? "") },
+    nextUrl: {
+      pathname: options.pathname ?? "/",
+      searchParams: new URLSearchParams(options.search ?? ""),
+    },
   };
 }
 
@@ -160,5 +165,86 @@ describe("applyLanguageCookie", () => {
 
     expect(lang).toBe("es");
     expect(response.set).toEqual([{ name: "haab-lang", value: "es" }]);
+  });
+});
+
+describe("applyLanguageCookie on a public booking page", () => {
+  it("keeps a client's per-business ?lang out of the shared cookie", () => {
+    // The module writes the visitor's choice into this page's URL and
+    // deliberately not into the cookie, so that choosing Spanish on one
+    // business's page does not follow the visitor to the marketing site or to
+    // another business. Honouring ?lang here would undo exactly that on the
+    // next reload, and on any shared "…?lang=es" link.
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({
+        cookie: "en",
+        search: "lang=es",
+        pathname: "/doctors/dr-maya-rivera",
+      }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("en");
+    expect(response.set).toEqual([]);
+  });
+
+  it("still detects a language for a first-time visitor", () => {
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({
+        acceptLanguage: "es-MX,en;q=0.6",
+        search: "lang=en",
+        pathname: "/public/ferias-del-sur",
+      }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("es");
+    expect(response.set).toEqual([{ name: "haab-lang", value: "es" }]);
+  });
+
+  it("still honours ?lang everywhere else", () => {
+    const response = fakeResponse();
+    const lang = applyLanguageCookie(
+      fakeRequest({ cookie: "en", search: "lang=es", pathname: "/login" }) as never,
+      response as never,
+    );
+
+    expect(lang).toBe("es");
+    expect(response.set).toEqual([{ name: "haab-lang", value: "es" }]);
+  });
+});
+
+describe("isPublicBookingRoute", () => {
+  it.each([
+    "/doctors/dr-maya-rivera",
+    "/professionals/estudio-luz",
+    "/spaces/casa-azul",
+    "/venues/casa-azul",
+    "/events/ferias-del-sur",
+    "/events/ferias-del-sur/taller-de-barro",
+    "/events/ferias-del-sur/manage/abc123",
+    "/public/ferias-del-sur",
+    "/public/ferias-del-sur/manage/abc123",
+    "/Doctors/Dr-Maya-Rivera",
+  ])("recognises a client-facing booking page: %s", (pathname) => {
+    expect(isPublicBookingRoute(pathname)).toBe(true);
+  });
+
+  it.each([
+    "/",
+    "/login",
+    "/auth/confirm",
+    "/super-admin",
+    "/super-admin/users",
+    "/try-booking",
+    "/api/public/doctors/dr-maya-rivera/holds",
+    "/api/provider/store",
+    "/doctors",
+    "/public",
+    "/doctorate/whatever",
+  ])("leaves every other route alone: %s", (pathname) => {
+    expect(isPublicBookingRoute(pathname)).toBe(false);
   });
 });

@@ -657,7 +657,9 @@ export function HaabBookingModule({
 
     // Scoped to this page's URL only. Writing the global language cookie here
     // would let a client's choice on one business's page follow them to the
-    // marketing site and to other businesses.
+    // marketing site and to other businesses. The proxy holds up the other end:
+    // isPublicBookingRoute keeps applyLanguageCookie from reading this `?lang`
+    // back into the shared cookie on the next request.
     const url = new URL(window.location.href);
     url.searchParams.set("lang", nextLanguage);
     window.history.replaceState(window.history.state, "", url);
