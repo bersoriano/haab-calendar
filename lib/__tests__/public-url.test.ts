@@ -89,6 +89,15 @@ describe("public URL slug helpers", () => {
     expect(validateCustomProviderSlug("dr-ahmad", "premium").ok).toBe(true);
   });
 
+  it("returns undefined for inherited object keys, not a prototype member", () => {
+    // The map is a plain object literal, so an unguarded index lookup answers
+    // these with a truthy prototype member rather than undefined. Only the
+    // all-lowercase ones can reach it — the parser lowercases first, which
+    // already turns "toString" into the harmless "tostring".
+    expect(parsePublicVerticalSegment("constructor")).toBeUndefined();
+    expect(parsePublicVerticalSegment("__proto__")).toBeUndefined();
+  });
+
   it("maps vertical ids and aliases to canonical paths", () => {
     expect(parsePublicVerticalSegment("venues")).toBe("spaces");
     expect(buildProviderPath("healthcare", "dr-ahmad-khan")).toBe(

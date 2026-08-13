@@ -244,6 +244,13 @@ describe("isPublicBookingRoute", () => {
     "/doctors",
     "/public",
     "/doctorate/whatever",
+    // Object.prototype members reachable through the segment map's index
+    // lookup. These are not verticals, so they must not be treated as one
+    // business's page — this predicate gates the shared-cookie write. Only
+    // the all-lowercase members can get this far; the segment parser
+    // lowercases, so "/toString/x" arrives as the harmless "tostring".
+    "/constructor/whatever",
+    "/__proto__/whatever",
   ])("leaves every other route alone: %s", (pathname) => {
     expect(isPublicBookingRoute(pathname)).toBe(false);
   });

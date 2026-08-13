@@ -188,7 +188,18 @@ export function validateCustomProviderSlug(value: string, planTier: ProviderPlan
 }
 
 export function parsePublicVerticalSegment(value: string): VerticalId | undefined {
-  return PUBLIC_SEGMENT_TO_VERTICAL[value.trim().toLowerCase() as PublicVerticalSegment];
+  const segment = value.trim().toLowerCase();
+
+  // A plain object literal inherits Object.prototype, so a bare index lookup
+  // returns a truthy function for "constructor", "toString" and friends. That
+  // used to be harmless, but this parser now backs isPublicBookingRoute, which
+  // decides whether the proxy may promote a page's `?lang` into the shared
+  // cookie — a policy boundary must only ever answer yes to a declared segment.
+  if (!Object.prototype.hasOwnProperty.call(PUBLIC_SEGMENT_TO_VERTICAL, segment)) {
+    return undefined;
+  }
+
+  return PUBLIC_SEGMENT_TO_VERTICAL[segment as PublicVerticalSegment];
 }
 
 export function getPublicVerticalSegment(vertical: VerticalId): PublicVerticalSegment {
