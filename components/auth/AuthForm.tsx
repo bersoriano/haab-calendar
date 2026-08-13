@@ -7,10 +7,6 @@ import {
   translations,
   type Lang,
 } from "@/components/landing/translations";
-// Same "haab-lang" string as the cookie, but this form still only writes it
-// via localStorage, not the cookie the proxy/server resolve — Task 6 moves
-// this onto the server-resolved language.
-import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
 
 const initialState: AuthFormState = {
@@ -37,9 +33,12 @@ export function AuthForm({
   const showSignupPendingMessage = isPending && intent === "signup";
   const isPublishFlow = isGuestPublishReturnPath(nextPath);
 
+  // The login page is server-rendered with `lang` already resolved; this only
+  // keeps `<html lang>` honest when the visitor switches without a full
+  // navigation. The language itself lives in the cookie the proxy writes —
+  // nothing reads or writes it from localStorage any more.
   useEffect(() => {
     document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
   }, [lang]);
 
   const formMessage = showSignupPendingMessage

@@ -1,42 +1,22 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
-// Same "haab-lang" string as the cookie, but this page still only reads and
-// writes it via localStorage, not the cookie the proxy/server resolve —
-// Task 6 moves this page onto the server-resolved language.
-import { LANGUAGE_COOKIE as LANDING_LANGUAGE_STORAGE_KEY } from "@/lib/language/resolve";
-import type { Lang } from "@/lib/types";
+import { getServerLanguage } from "@/lib/language/server";
 
-export default function NotFoundPage() {
-  const [lang, setLang] = useState<Lang>("en");
+/**
+ * A server component, like /login: the language is already resolved before the
+ * first byte, so a visitor carrying `haab-lang=es` reads a Spanish 404 inside
+ * `<html lang="es">` rather than an English one. Nothing here writes the
+ * language — the proxy owns that, and the switcher's `?lang=` link is what it
+ * reads on the next request.
+ *
+ * `/_not-found` is already dynamic (the root layout reads cookies/headers), so
+ * this costs no static rendering.
+ */
+export default async function NotFoundPage() {
+  const lang = await getServerLanguage();
   const t = bookingTranslations[lang];
-
-  useEffect(() => {
-    const queryLanguage = new URLSearchParams(window.location.search).get("lang");
-    const savedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY);
-    const preferredLanguage =
-      queryLanguage === "en" || queryLanguage === "es"
-        ? queryLanguage
-        : savedLanguage === "en" || savedLanguage === "es"
-          ? savedLanguage
-          : "en";
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- restore the visitor's language after hydration
-    setLang(preferredLanguage);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, lang);
-  }, [lang]);
-
-  function chooseLanguage(nextLanguage: Lang) {
-    setLang(nextLanguage);
-  }
 
   return (
     <main className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-[#eef2f5] px-5 py-10">
@@ -45,9 +25,14 @@ export default function NotFoundPage() {
         className="absolute inset-0 bg-[url('/bkg2.jpg')] bg-cover bg-center opacity-70"
       />
       <section className="relative w-full max-w-xl rounded-[34px] border border-white/80 bg-[rgba(255,255,255,0.82)] p-6 text-center shadow-[0_32px_90px_rgba(15,23,42,0.14)] backdrop-blur-2xl sm:p-10">
+        {/* Relative on purpose: a 404 keeps the address the visitor typed, and
+            the proxy turns the `?lang=` it lands on into the stored language.
+            Public booking routes are exempt from that write (see
+            lib/language/public-routes.ts), so a 404 from a mistyped provider
+            slug switches only for that request. */}
         <LanguageSwitcher
           lang={lang}
-          onChange={chooseLanguage}
+          hrefFor={(option) => `?lang=${option}`}
           className="mx-auto mb-10"
         />
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">

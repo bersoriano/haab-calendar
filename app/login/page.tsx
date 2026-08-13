@@ -1,12 +1,9 @@
 import { AuthForm } from "@/components/auth/AuthForm";
 import { LoginHeader } from "@/components/auth/LoginHeader";
-import {
-  normalizeLandingLang,
-  translations,
-  type Lang,
-} from "@/components/landing/translations";
+import { translations, type Lang } from "@/components/landing/translations";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
+import { getServerLanguage } from "@/lib/language/server";
 import { getAuthReturnVertical } from "@/lib/auth-vertical";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
 
@@ -45,7 +42,10 @@ function languageHref(lang: Lang, nextPath: string, mode: "login" | "signup") {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
-  const lang = normalizeLandingLang(params.lang);
+  // `?lang` still wins when a link carries one, but the proxy's redirect to
+  // /login sets only `next` — so without the cookie and Accept-Language behind
+  // it, a Spanish visitor sent here from a protected route got an English page.
+  const lang = await getServerLanguage(params.lang);
   const t = translations[lang].auth;
   const nextPath = withAuthReturnLanguage(getSafeNextPath(params.next), lang);
   const isEventsFlow = getAuthReturnVertical(nextPath) === "events";
