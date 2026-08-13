@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveSurfaceLanguage } from "@/lib/language/surface";
+import {
+  resolveGuestChromeLanguage,
+  resolveSurfaceLanguage,
+} from "@/lib/language/surface";
 
 describe("resolveSurfaceLanguage", () => {
   it("uses the public language on the public surface, ignoring both dashboard inputs", () => {
@@ -51,5 +54,54 @@ describe("resolveSurfaceLanguage", () => {
     expect(resolveSurfaceLanguage({ surface: "management", ...inputs })).toBe(
       "en",
     );
+  });
+});
+
+describe("resolveGuestChromeLanguage", () => {
+  it("keeps a signed-out guest's chrome and module in one language after a reload", () => {
+    // The bug: the guest pins Spanish, reloads, and the server — which cannot
+    // read their browser-owned draft — resolves English from Accept-Language.
+    // The chrome started there while the module read the draft and rendered
+    // Spanish. Both halves now resolve from the same pin, so they agree.
+    const draftDashboardLanguage = "es" as const;
+    const viewerLanguage = "en" as const;
+
+    const chrome = resolveGuestChromeLanguage({
+      loggedIn: false,
+      draftDashboardLanguage,
+      viewerLanguage,
+    });
+    const module = resolveSurfaceLanguage({
+      surface: "management",
+      publicLanguage: "en",
+      providerDashboardLanguage: draftDashboardLanguage,
+      viewerLanguage,
+    });
+
+    expect(chrome).toBe("es");
+    expect(chrome).toBe(module);
+  });
+
+  it("leaves the guest on the resolved viewer language when the draft pins nothing", () => {
+    expect(
+      resolveGuestChromeLanguage({
+        loggedIn: false,
+        draftDashboardLanguage: undefined,
+        viewerLanguage: "es",
+      }),
+    ).toBe("es");
+  });
+
+  it("ignores a browser draft once someone is signed in", () => {
+    // A signed-in owner's pin comes from the database and is already applied on
+    // the server render. A stale draft left in this browser by an earlier guest
+    // session must not override it.
+    expect(
+      resolveGuestChromeLanguage({
+        loggedIn: true,
+        draftDashboardLanguage: "es",
+        viewerLanguage: "en",
+      }),
+    ).toBe("en");
   });
 });

@@ -27,6 +27,7 @@ import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
 import { normalizeStore } from "@/lib/store";
+import { resolveGuestChromeLanguage } from "@/lib/language/surface";
 import {
   buildGuestPublishLoginHref,
   isGuestDraftMeaningful,
@@ -143,10 +144,25 @@ function HomeExperienceInner({
         // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the landing CTA from the existing browser-owned guest draft
         setGuestDraftStore(draft);
       }
+
+      // A signed-out draft lives only in this browser, so the server had
+      // nothing to resolve `viewerLanguage` from and the chrome started in the
+      // visitor's browser language. The module, meanwhile, reads this same
+      // draft and honours the workspace language pinned in it — so without
+      // this the two halves of one screen disagree after every reload. Seeded
+      // even from a draft that is not yet "meaningful": the language is
+      // pinned before there is anything worth publishing.
+      setDashboardLanguage(
+        resolveGuestChromeLanguage({
+          loggedIn,
+          draftDashboardLanguage: draft.provider.dashboardLanguage,
+          viewerLanguage,
+        }),
+      );
     } catch {
       // Malformed draft stays isolated; starting again will replace it safely.
     }
-  }, [loggedIn]);
+  }, [loggedIn, viewerLanguage]);
 
   // Returning from login with ?vertical=<id> jumps straight into setup for that
   // vertical. Configured users go to their dashboard instead, so they ignore it.
