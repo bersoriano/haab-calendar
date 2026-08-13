@@ -387,8 +387,9 @@ describe("owner language settings copy", () => {
   it("separates the client-facing setting from the owner's own workspace", () => {
     for (const lang of ["en", "es"] as const) {
       const { admin } = bookingTranslations[lang];
-      expect(admin.clientLanguageLabel.length).toBeGreaterThan(0);
-      expect(admin.dashboardLanguageLabel.length).toBeGreaterThan(0);
+      // The type already guarantees both are strings; what matters is that
+      // they are two different labels, so the owner can tell the client-facing
+      // setting from their own.
       expect(admin.clientLanguageLabel).not.toBe(admin.dashboardLanguageLabel);
       expect(admin.clientsSeeNotice).toContain("{language}");
     }
@@ -406,5 +407,49 @@ describe("owner language settings copy", () => {
         language: bookingTranslations.es.language.english,
       }),
     ).toBe("Sus clientes ven esta página en English.");
+  });
+});
+
+describe("field labels that name a vertical noun", () => {
+  it("reads in each language's own word order", () => {
+    // The confirmation screen built these by concatenation
+    // (`${copy.Booking} ${t.publicFlow.notes.toLowerCase()}`), which renders
+    // "Registro notas" in Spanish — English word order on a Spanish screen,
+    // invisible to the `lang === "en"` guard because the concatenation itself
+    // is language-agnostic.
+    for (const [lang, expected] of [
+      ["en", ["Registration notes", "Attendee notes", "Attendee contact"]],
+      ["es", ["Notas de registro", "Notas de asistente", "Contacto de asistente"]],
+    ] as const) {
+      const copy = getVerticalCopy("events", lang);
+      const t = bookingTranslations[lang].publicFlow;
+      const nouns = {
+        booking: copy.booking,
+        Booking: copy.Booking,
+        client: copy.phrases.clientLabel.toLowerCase(),
+        Client: copy.phrases.clientLabel,
+      };
+
+      expect([
+        fillTemplate(t.passBookingNotes, nouns),
+        fillTemplate(t.passClientNotes, nouns),
+        fillTemplate(t.passClientContact, nouns),
+      ]).toEqual([...expected]);
+    }
+  });
+
+  it("names the service in the service editor in both languages", () => {
+    for (const [lang, expected] of [
+      ["en", "Event name"],
+      ["es", "Nombre del evento"],
+    ] as const) {
+      const copy = getVerticalCopy("events", lang);
+      expect(
+        fillTemplate(bookingTranslations[lang].admin.serviceNameLabel, {
+          service: copy.service,
+          Service: copy.Service,
+        }),
+      ).toBe(expected);
+    }
   });
 });

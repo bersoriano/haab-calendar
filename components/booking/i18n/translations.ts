@@ -60,12 +60,8 @@ export type BookingDict = {
     expiredBody: string;
     chooseAnotherTime: string;
     onlineRequired: string;
-    holdLabel: string;
-    holdCancelled: string;
-    holdSecured: string;
     holdExpired: string;
     holdInactiveBody: string;
-    holdConfirmedBody: string;
     holdFinishBody: string;
     holdCancelledFor: string;
     holdSecuredFor: string;
@@ -245,6 +241,19 @@ export type BookingDict = {
     passDate: string;
     passTime: string;
     passContact: string;
+    /**
+     * Field labels that name a vertical noun. English puts the noun first
+     * ("Registration notes"), Spanish puts it last ("Notas de registro") — so
+     * they are templates, not `${noun} ${label.toLowerCase()}` at the call
+     * site, which rendered "Registro notas" on the confirmation screen.
+     *
+     * The Spanish forms use the bare "de" rather than "del"/"de la" on
+     * purpose: the nouns are mixed gender (`reserva` F, `cita` F, `registro`
+     * M, `sesión` F) and a contraction would agree with only some of them.
+     */
+    passBookingNotes: string;
+    passClientNotes: string;
+    passClientContact: string;
     receiptReference: string;
     receiptIssued: string;
     downloadIcs: string;
@@ -288,7 +297,6 @@ export type BookingDict = {
     clientLanguageHint: string;
     clientsSeeNotice: string;
     dashboardLanguageLabel: string;
-    publicBookingLink: string;
     publicBookingLinkFor: string;
     viewPublicPage: string;
     availabilityStart: string;
@@ -310,6 +318,18 @@ export type BookingDict = {
     serviceReadOnly: string;
     editButton: string;
     deleteButton: string;
+    /**
+     * Service-editor labels that name a vertical noun. Composed inline in
+     * English before, which meant a Spanish dashboard read "Keep at least
+     * one servicio." Spanish word order differs, so they are templates.
+     *
+     * The Spanish forms take a masculine article ("un", "del") because every
+     * Spanish `service` noun is masculine — servicio, servicio médico, evento,
+     * espacio. A new vertical with a feminine one has to reword these, the same
+     * bar the booking nouns already set in `public.hold*For`.
+     */
+    keepOneService: string;
+    serviceNameLabel: string;
     clearButton: string;
     occurrenceLabel: string;
     occurrenceSingle: string;
@@ -528,12 +548,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       expiredBody: "This slot is available to others again. Choose a new time to continue.",
       chooseAnotherTime: "Choose another time",
       onlineRequired: "Reconnect to confirm",
-      holdLabel: "Booking hold",
-      holdCancelled: "Booking cancelled",
-      holdSecured: "Booking secured",
       holdExpired: "Hold expired",
       holdInactiveBody: "This reservation is no longer active.",
-      holdConfirmedBody: "Your booking is confirmed and the temporary hold is complete.",
       holdFinishBody: "Finish your details before the temporary hold expires.",
       holdCancelledFor: "{Booking} cancelled",
       holdSecuredFor: "{Booking} secured",
@@ -705,6 +721,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       passDate: "Date",
       passTime: "Time",
       passContact: "Contact",
+      passBookingNotes: "{Booking} notes",
+      passClientNotes: "{Client} notes",
+      passClientContact: "{Client} contact",
       receiptReference: "Reference",
       receiptIssued: "Issued",
       downloadIcs: "Download .ics file",
@@ -747,7 +766,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Applies to your public booking page and the confirmation screen. It does not translate the text you write yourself.",
       clientsSeeNotice: "Your clients see this page in {language}.",
       dashboardLanguageLabel: "Your workspace language",
-      publicBookingLink: "Public booking link:",
       publicBookingLinkFor: "Public {booking} link:",
       viewPublicPage: "View public page",
       availabilityStart: "Start",
@@ -775,6 +793,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       serviceReadOnly: "Configured by the parent app. Service editing is read-only in this mode.",
       editButton: "Edit",
       deleteButton: "Delete",
+      keepOneService:
+        "Keep at least one {service}. Add another before you can remove this one.",
+      serviceNameLabel: "{Service} name",
       clearButton: "Clear",
       occurrenceLabel: "Occurrence",
       occurrenceSingle: "Single",
@@ -1000,12 +1021,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       expiredBody: "Este horario vuelve a estar disponible para otras personas. Elija uno nuevo para continuar.",
       chooseAnotherTime: "Elegir otro horario",
       onlineRequired: "Reconéctese para confirmar",
-      holdLabel: "Reserva temporal",
-      holdCancelled: "Reserva cancelada",
-      holdSecured: "Reserva asegurada",
       holdExpired: "Reserva temporal vencida",
       holdInactiveBody: "Esta reserva ya no está activa.",
-      holdConfirmedBody: "Su reserva está confirmada y la retención temporal ha finalizado.",
       holdFinishBody: "Complete sus datos antes de que expire la reserva temporal.",
       holdCancelledFor: "Se canceló su {booking}",
       holdSecuredFor: "Se confirmó su {booking}",
@@ -1180,6 +1197,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       passDate: "Fecha",
       passTime: "Horario",
       passContact: "Contacto",
+      passBookingNotes: "Notas de {booking}",
+      passClientNotes: "Notas de {client}",
+      passClientContact: "Contacto de {client}",
       receiptReference: "Referencia",
       receiptIssued: "Emitido",
       downloadIcs: "Descargar archivo .ics",
@@ -1222,7 +1242,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Se aplica a su página pública de reservas y a la pantalla de confirmación. No traduce el texto que usted escribe.",
       clientsSeeNotice: "Sus clientes ven esta página en {language}.",
       dashboardLanguageLabel: "Idioma de su espacio de trabajo",
-      publicBookingLink: "Enlace público de reservas:",
       publicBookingLinkFor: "Enlace público de {booking}:",
       viewPublicPage: "Ver página pública",
       availabilityStart: "Inicio",
@@ -1250,6 +1269,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       serviceReadOnly: "Configurado por la aplicación principal. La edición de servicios es de solo lectura en este modo.",
       editButton: "Editar",
       deleteButton: "Eliminar",
+      keepOneService:
+        "Conserve al menos un {service}. Agregue otro antes de quitar este.",
+      serviceNameLabel: "Nombre del {service}",
       clearButton: "Limpiar",
       occurrenceLabel: "Frecuencia",
       occurrenceSingle: "Único",

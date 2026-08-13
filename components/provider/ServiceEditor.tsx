@@ -15,7 +15,10 @@ import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import {
+  bookingTranslations,
+  fillTemplate,
+} from "@/components/booking/i18n/translations";
 import { parseDateKey } from "@/lib/date";
 
 function formatDurationOption(minutes: number, lang: Lang = "en") {
@@ -201,7 +204,7 @@ export function ServiceEditor({
           )}
           {!disabled && services.length === 1 ? (
             <p className="text-sm text-[var(--muted)]">
-              {`Keep at least one ${copy.service}. Add another before you can remove this one.`}
+              {fillTemplate(t.admin.keepOneService, { service: copy.service })}
             </p>
           ) : null}
         </div>
@@ -214,7 +217,10 @@ export function ServiceEditor({
         />
         <div className="mt-6 grid gap-4">
           <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {`${copy.Service} name`}
+            {fillTemplate(t.admin.serviceNameLabel, {
+              service: copy.service,
+              Service: copy.Service,
+            })}
             <input
               disabled={disabled}
               value={serviceDraft.name}

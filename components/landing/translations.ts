@@ -59,7 +59,6 @@ export const translations = {
       },
     },
     auth: {
-      languageSelector: "Idioma de inicio de sesión",
       pageTitle: "Inicia sesión para administrar tu espacio de reservas.",
       pageBody:
         "Usa tu cuenta de proveedor para configurar servicios, disponibilidad, reservas y la página pública de reservas.",
@@ -558,7 +557,6 @@ export const translations = {
       },
     },
     auth: {
-      languageSelector: "Login language",
       pageTitle: "Sign in to manage your booking workspace.",
       pageBody:
         "Use your provider account to configure services, availability, bookings, and the public booking page.",

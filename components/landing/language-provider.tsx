@@ -27,7 +27,6 @@ function updateLanguageInCurrentUrl(lang: Lang) {
 type LanguageContextValue = {
   lang: Lang;
   setLang: (lang: Lang) => void;
-  toggle: () => void;
   t: Dict;
 };
 
@@ -55,19 +54,9 @@ export function LanguageProvider({
     updateLanguageInCurrentUrl(next);
   }, []);
 
-  const toggle = useCallback(() => {
-    setLangState((prev) => {
-      const next = prev === "es" ? "en" : "es";
-      persistLanguage(next);
-      updateLanguageInCurrentUrl(next);
-      return next;
-    });
-  }, []);
-
   const value: LanguageContextValue = {
     lang,
     setLang,
-    toggle,
     t: translations[lang],
   };
 

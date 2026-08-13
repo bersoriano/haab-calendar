@@ -98,7 +98,9 @@ function sourceFiles(dir: string): string[] {
 
 describe("no inline English branches", () => {
   it("has no component that composes English inline and Spanish from the dictionary", () => {
-    const files = ["components", "app", "lib"].flatMap(sourceFiles);
+    // `config/` holds copy too (config/verticals.ts carries the per-vertical
+    // presets), so it has to be walked like the other three.
+    const files = ["components", "app", "lib", "config"].flatMap(sourceFiles);
 
     const offenders = files.filter((file) =>
       /lang === "en"/.test(readFileSync(file, "utf8")),

@@ -5236,13 +5236,19 @@ export function HaabBookingModule({
                   const passDetails = [
                     clientContact
                       ? {
-                          label: `${copy.phrases.clientLabel} ${t.publicFlow.passContact.toLowerCase()}`,
+                          label: fillTemplate(t.publicFlow.passClientContact, {
+                            client: copy.phrases.clientLabel.toLowerCase(),
+                            Client: copy.phrases.clientLabel,
+                          }),
                           value: clientContact,
                         }
                       : null,
                     successfulBooking.notes.trim()
                       ? {
-                          label: `${copy.phrases.clientLabel} ${t.publicFlow.notes.toLowerCase()}`,
+                          label: fillTemplate(t.publicFlow.passClientNotes, {
+                            client: copy.phrases.clientLabel.toLowerCase(),
+                            Client: copy.phrases.clientLabel,
+                          }),
                           value: successfulBooking.notes,
                           prose: true,
                         }
@@ -5257,7 +5263,10 @@ export function HaabBookingModule({
                   // Sentences, not data: they band off together under the table.
                   const passNotes: PassField | undefined = selectedService.notes
                     ? {
-                        label: `${copy.Booking} ${t.publicFlow.notes.toLowerCase()}`,
+                        label: fillTemplate(t.publicFlow.passBookingNotes, {
+                          booking: copy.booking,
+                          Booking: copy.Booking,
+                        }),
                         value: selectedService.notes,
                         prose: true,
                       }
