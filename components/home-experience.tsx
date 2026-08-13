@@ -108,7 +108,7 @@ function HomeExperienceInner({
   resumeGuestPublish = false,
 }: HomeExperienceProps) {
   const router = useRouter();
-  const { lang, t } = useLanguage();
+  const { lang } = useLanguage();
   /**
    * The dashboard's one language. The chrome below (hero, workflow header,
    * guest bar) and the booking module are one composed screen, so they read a
