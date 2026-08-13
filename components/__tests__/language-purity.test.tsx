@@ -8,9 +8,10 @@ import {
 import { AdminHero } from "@/components/provider/AdminHero";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
+import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { BookingHoldCountdownBar } from "@/components/ui/BookingHoldCountdownBar";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
-import { createEmptyStore } from "@/lib/store";
+import { createBlankServiceDraft, createEmptyStore, normalizeProvider } from "@/lib/store";
 import type { Lang } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
@@ -38,6 +39,12 @@ const ENGLISH_MARKERS = [
   "The hold ran out", // public.holdExpiredTitle — BookingHoldCountdownBar, expired state
   "Language your clients see", // admin.clientLanguageLabel — LanguageSettingsSection
   "Your workspace language", // admin.dashboardLanguageLabel — LanguageSettingsSection
+  "Price at this location", // admin.priceAtLocation — ServiceEditor, linked-address row
+  "Same as base price", // admin.sameAsBasePrice — ServiceEditor, empty-cost placeholder
+  "Court rental", // admin.serviceNamePlaceholder — ServiceEditor, no-hints fallback
+  "Family medicine", // admin.medicalSpecialtyPlaceholder — ServiceEditor, healthcare only
+  "Max 12 people", // admin.capacityPlaceholder — ServiceEditor, non-events only
+  "123 Main St", // providerForm.address1Placeholder — ServiceEditor, add-an-address block
 ];
 
 const SPANISH_MARKERS = [
@@ -49,6 +56,12 @@ const SPANISH_MARKERS = [
   "sus reservas", // admin.heroTitle — AdminHero
   "Idioma que ven sus clientes", // admin.clientLanguageLabel — LanguageSettingsSection
   "Idioma de su espacio", // admin.dashboardLanguageLabel — LanguageSettingsSection
+  "Precio en esta ubicación", // admin.priceAtLocation — ServiceEditor, linked-address row
+  "Igual que el precio base", // admin.sameAsBasePrice — ServiceEditor, empty-cost placeholder
+  "Renta de cancha", // admin.serviceNamePlaceholder — ServiceEditor, no-hints fallback
+  "Medicina familiar", // admin.medicalSpecialtyPlaceholder — ServiceEditor, healthcare only
+  "Máx. 12 personas", // admin.capacityPlaceholder — ServiceEditor, non-events only
+  "Av. Principal 123", // providerForm.address1Placeholder — ServiceEditor, add-an-address block
 ];
 
 function renderScreens(lang: "en" | "es") {
@@ -98,6 +111,27 @@ function renderScreens(lang: "en" | "es") {
         clientLanguage={otherLanguage(lang)}
         onClientLanguageChange={() => undefined}
         onDashboardLanguageChange={() => undefined}
+      />,
+    ),
+    // The per-location price field is the hunk that shipped an unconditional
+    // English placeholder, and nothing rendered this component. It only appears
+    // once the provider has an address AND the draft links to it, so the
+    // fixture below sets both; `cost` stays empty so the placeholder falls
+    // through to the interface string rather than to the owner's own number.
+    renderToStaticMarkup(
+      <ServiceEditor
+        services={[]}
+        serviceDraft={{ ...createBlankServiceDraft("healthcare"), linkedAddress1: true }}
+        onDraftChange={() => undefined}
+        editingServiceId={null}
+        onUpsert={() => undefined}
+        onReset={() => undefined}
+        onEdit={() => undefined}
+        onRemove={() => undefined}
+        provider={normalizeProvider({ address1: "Av. Reforma 100" })}
+        vertical="healthcare"
+        copy={copy}
+        lang={lang}
       />,
     ),
   ].join("\n");

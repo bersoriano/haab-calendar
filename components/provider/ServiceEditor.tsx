@@ -89,7 +89,9 @@ export function ServiceEditor({
         disabled={disabled}
         value={serviceDraft.locationPrices?.[key] ?? ""}
         onChange={(event) => setLocationPrice(key, event.target.value)}
-        placeholder={serviceDraft.cost ? `${serviceDraft.cost} (base)` : "Same as base price"}
+        placeholder={
+          serviceDraft.cost ? `${serviceDraft.cost} (base)` : t.admin.sameAsBasePrice
+        }
         className={cn("min-h-10", adminFieldClass, "disabled:opacity-45")}
       />
     </label>
@@ -227,7 +229,7 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder={hints?.serviceName ?? "Court Rental"}
+              placeholder={hints?.serviceName ?? t.admin.serviceNamePlaceholder}
               className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
           </label>
@@ -437,7 +439,7 @@ export function ServiceEditor({
                     medicalSpecialty: event.target.value,
                   }))
                 }
-                placeholder={hints?.medicalSpecialty ?? "Family medicine"}
+                placeholder={hints?.medicalSpecialty ?? t.admin.medicalSpecialtyPlaceholder}
                 className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
@@ -464,7 +466,7 @@ export function ServiceEditor({
                 onChange={(event) =>
                   onDraftChange((current) => ({ ...current, capacity: event.target.value }))
                 }
-                placeholder={hints?.capacity ?? "Max 12 people"}
+                placeholder={hints?.capacity ?? t.admin.capacityPlaceholder}
                 className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>
@@ -566,7 +568,7 @@ export function ServiceEditor({
                   onChange={(event) =>
                     onDraftChange((current) => ({ ...current, customAddress: event.target.value }))
                   }
-                  placeholder="123 Main St, Suite 4, Springfield"
+                  placeholder={t.providerForm.address1Placeholder}
                   autoComplete="street-address"
                   className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
@@ -628,7 +630,7 @@ export function ServiceEditor({
                   onChange={(event) =>
                     onDraftChange((current) => ({ ...current, customPhone: event.target.value }))
                   }
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={t.providerForm.phone1Placeholder}
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"

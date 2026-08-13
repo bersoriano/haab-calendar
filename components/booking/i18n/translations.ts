@@ -361,6 +361,10 @@ export type BookingDict = {
     addAnotherPhone: string;
     addAPhone: string;
     priceAtLocation: string;
+    sameAsBasePrice: string;
+    serviceNamePlaceholder: string;
+    medicalSpecialtyPlaceholder: string;
+    capacityPlaceholder: string;
     addressHintSlot1: string;
     addressHintSlot2: string;
     addressHintFull: string;
@@ -828,6 +832,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       addAnotherPhone: "Add another phone",
       addAPhone: "Add a phone",
       priceAtLocation: "Price at this location",
+      sameAsBasePrice: "Same as base price",
+      // Fallbacks for when no vertical is chosen yet, so no preset hints exist.
+      serviceNamePlaceholder: "Court rental",
+      medicalSpecialtyPlaceholder: "Family medicine",
+      capacityPlaceholder: "Max 12 people",
       addressHintSlot1: "We'll save this as Address 1 in your provider profile so other services can reuse it.",
       addressHintSlot2: "We'll save this as Address 2 in your provider profile so other services can reuse it.",
       addressHintFull: "Both provider address slots are already taken — this address will stay with this service only.",
@@ -1304,6 +1313,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       addAnotherPhone: "Agregar otro teléfono",
       addAPhone: "Agregar un teléfono",
       priceAtLocation: "Precio en esta ubicación",
+      sameAsBasePrice: "Igual que el precio base",
+      // Respaldos para cuando aún no se elige un giro y no hay sugerencias.
+      serviceNamePlaceholder: "Renta de cancha",
+      medicalSpecialtyPlaceholder: "Medicina familiar",
+      capacityPlaceholder: "Máx. 12 personas",
       addressHintSlot1: "Lo guardaremos como Dirección 1 en su perfil para que otros servicios puedan reutilizarla.",
       addressHintSlot2: "Lo guardaremos como Dirección 2 en su perfil para que otros servicios puedan reutilizarla.",
       addressHintFull: "Ambos campos de dirección ya están ocupados — esta dirección solo se guardará con este servicio.",
