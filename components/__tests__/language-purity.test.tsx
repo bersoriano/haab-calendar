@@ -1,6 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import {
+  bookingTranslations,
+  fillTemplate,
+} from "@/components/booking/i18n/translations";
 import { AdminHero } from "@/components/provider/AdminHero";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
@@ -102,6 +106,130 @@ function renderScreens(lang: "en" | "es") {
 function otherLanguage(lang: Lang): Lang {
   return lang === "es" ? "en" : "es";
 }
+
+/**
+ * The Spanish vertical nouns are mixed gender — `reserva` (F), `cita` (F),
+ * `registro` (M), `sesión` (F) — so a Spanish string that interpolates one and
+ * then agrees with it is wrong for at least one vertical. Task 4 shipped
+ * exactly that ("registro cancelada"). The test that closed it asserted only
+ * that the `{booking}` placeholder was still present, which "{booking}
+ * cancelado" would also satisfy while reading wrong for three of the five
+ * nouns. This renders the component instead and reads the sentences back.
+ */
+const SPANISH_NOUN = String.raw`(?:reservas?|citas?|registros?|sesion(?:es)?|sesión)`;
+const PARTICIPLE = String.raw`[a-záéíóúüñ]{3,}(?:ad|id)[oa]s?`;
+
+/**
+ * On screen: the noun standing directly next to an agreeing word, which is the
+ * exact shape that shipped ("registro cancelada"). Kept tight because rendered
+ * Spanish also carries *literal* nouns that agree correctly and must not trip
+ * it — "Reserva temporal vencida" is right, because that `reserva` is the hold
+ * itself and never varies.
+ */
+const NOUN_BESIDE_PARTICIPLE = new RegExp(
+  String.raw`\b(${SPANISH_NOUN})\s+(${PARTICIPLE})\b`,
+  "i",
+);
+
+/**
+ * In the dictionary: the same thing with up to one word in between, which
+ * catches the separated form ("su {booking} fue cancelado"). Safe to widen
+ * here because it runs only over strings that actually interpolate the noun,
+ * where no literal, fixed-gender noun is in play.
+ */
+const NOUN_AGREEING_PARTICIPLE = new RegExp(
+  String.raw`\b(${SPANISH_NOUN})(?:\s+[a-záéíóúüñ]+)?\s+(${PARTICIPLE})\b`,
+  "i",
+);
+
+const SPANISH_VERTICALS = ["healthcare", "professional", "spaces", "events"] as const;
+
+/** Every Spanish dictionary string that interpolates a vertical noun. */
+function templatedSpanishStrings(
+  value: unknown,
+  path = "",
+): { path: string; template: string }[] {
+  if (typeof value === "string") {
+    return /\{Booking\}|\{booking\}/.test(value) ? [{ path, template: value }] : [];
+  }
+  if (value && typeof value === "object") {
+    return Object.entries(value).flatMap(([key, child]) =>
+      templatedSpanishStrings(child, path ? `${path}.${key}` : key),
+    );
+  }
+  return [];
+}
+
+function renderHoldStatesInSpanish(vertical: (typeof SPANISH_VERTICALS)[number]) {
+  const copy = getVerticalCopy(vertical, "es");
+  const states = [
+    { isCancelled: true, isExpired: false },
+    { isConfirmed: true, isExpired: false },
+    { isExpired: true },
+    { isExpired: false },
+  ];
+
+  return states
+    .map((state) =>
+      renderToStaticMarkup(
+        <BookingHoldCountdownBar
+          {...state}
+          isExpired={state.isExpired}
+          remainingMs={90000}
+          remainingRatio={0.1}
+          copy={copy}
+          lang="es"
+        />,
+      ),
+    )
+    .join("\n");
+}
+
+/** Sentences only — tag names and class names are not Spanish. */
+function visibleText(html: string) {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&#x27;/g, "'")
+    .replace(/\s+/g, " ");
+}
+
+describe("Spanish gender agreement", () => {
+  it.each(SPANISH_VERTICALS)(
+    "never agrees an adjective with the %s vertical's noun",
+    (vertical) => {
+      const text = visibleText(renderHoldStatesInSpanish(vertical));
+      const match = text.match(NOUN_BESIDE_PARTICIPLE);
+
+      expect(match?.[0] ?? null).toBeNull();
+    },
+  );
+
+  it("carries no agreement in any templated Spanish string, for any vertical", () => {
+    const offenders = templatedSpanishStrings(bookingTranslations.es).flatMap(
+      ({ path, template }) =>
+        SPANISH_VERTICALS.flatMap((vertical) => {
+          const copy = getVerticalCopy(vertical, "es");
+          const filled = fillTemplate(template, {
+            booking: copy.booking,
+            Booking: copy.Booking,
+          });
+          return NOUN_AGREEING_PARTICIPLE.test(filled) ? [`${path}: ${filled}`] : [];
+        }),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("actually reaches the noun-bearing status copy it is guarding", () => {
+    // A guard that never renders the strings it checks proves nothing. The
+    // masculine `registro` is the one that broke, so pin that it is on screen.
+    const text = visibleText(renderHoldStatesInSpanish("events"));
+
+    expect(text).toContain("Se canceló su registro");
+    expect(text).toContain("Se confirmó su registro");
+    expect(text).toContain("Apartado de registro");
+  });
+});
 
 describe("screen language purity", () => {
   it("leaves no English interface text on Spanish screens", () => {
