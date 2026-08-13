@@ -139,6 +139,7 @@ import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
+import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -193,7 +194,14 @@ type HaabBookingModuleProps = {
   /** Language resolved for the signed-in viewer; the dashboard default. */
   viewerLanguage?: Lang;
   providerTimeZone?: string;
-  onLanguageChange?: (language: Lang) => void;
+  /**
+   * Reports the owner pinning a new *workspace* language, so the dashboard
+   * chrome rendered above this module follows it without a reload. There is
+   * deliberately no matching callback for `provider.language`: that setting
+   * changes what the owner's clients read, and letting it report upward is
+   * what put a Spanish headline over an English workspace.
+   */
+  onDashboardLanguageChange?: (language: Lang) => void;
   onVerticalChange?: (vertical?: VerticalId) => void;
   // When set (standalone mode, fresh setup), pre-applies this vertical's preset
   // and starts the setup wizard on it. Used by the landing verticals picker.
@@ -316,7 +324,7 @@ export function HaabBookingModule({
   providerTimeZone,
   initialVerticalId,
   initialBusinessName,
-  onLanguageChange,
+  onDashboardLanguageChange,
   onVerticalChange,
   isGuestDraft = false,
   resumeGuestPublish = false,
@@ -1941,8 +1949,10 @@ export function HaabBookingModule({
       },
     }));
 
-    if (key === "language") {
-      onLanguageChange?.(value as Lang);
+    // Only the owner's own workspace language travels upward. `language` is
+    // the clients' language and stays inside the store.
+    if (key === "dashboardLanguage") {
+      onDashboardLanguageChange?.(value as Lang);
     }
   }
 
@@ -3740,45 +3750,15 @@ export function HaabBookingModule({
               lang={lang}
             />
           </div>
-          <div className="mt-6 grid gap-6">
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.clientLanguageLabel}
-              <select
-                value={provider.language ?? "en"}
-                onChange={(event) =>
-                  updateProvider("language", event.target.value as ProviderInfo["language"])
-                }
-                disabled={isSavingAdmin}
-                className={cn("min-h-12", adminFieldClass)}
-              >
-                <option value="en">{t.language.english}</option>
-                <option value="es">{t.language.spanish}</option>
-              </select>
-              <span className="text-xs leading-5 text-[var(--muted)]">
-                {t.admin.clientLanguageHint}
-              </span>
-              {/* Said back plainly, because the owner cannot see their own
-                  public page while editing it. */}
-              <span className="text-xs font-semibold leading-5 text-[var(--ink)]">
-                {fillTemplate(t.admin.clientsSeeNotice, {
-                  language:
-                    (provider.language ?? "en") === "en"
-                      ? t.language.english
-                      : t.language.spanish,
-                })}
-              </span>
-            </label>
-
-            <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.dashboardLanguageLabel}
-              <LanguageSwitcher
-                lang={lang}
-                onChange={(next) => updateProvider("dashboardLanguage", next)}
-                tone="inset"
-                className="self-start"
-              />
-            </div>
-          </div>
+          <LanguageSettingsSection
+            lang={lang}
+            clientLanguage={provider.language ?? "en"}
+            onClientLanguageChange={(next) => updateProvider("language", next)}
+            onDashboardLanguageChange={(next) =>
+              updateProvider("dashboardLanguage", next)
+            }
+            disabled={isSavingAdmin}
+          />
           <p className="mt-4 text-sm text-[var(--muted)]">
             {fillTemplate(t.admin.publicBookingLinkFor, { booking: copy.booking })}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>

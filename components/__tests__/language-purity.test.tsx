@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { AdminHero } from "@/components/provider/AdminHero";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
 import { BookingHoldCountdownBar } from "@/components/ui/BookingHoldCountdownBar";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { createEmptyStore } from "@/lib/store";
+import type { Lang } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 /**
@@ -30,6 +32,8 @@ const ENGLISH_MARKERS = [
   "Monday", // admin.weekdays.monday — AvailabilityEditor
   "Add block", // admin.addBlock — AvailabilityEditor, every day row
   "The hold ran out", // public.holdExpiredTitle — BookingHoldCountdownBar, expired state
+  "Language your clients see", // admin.clientLanguageLabel — LanguageSettingsSection
+  "Your workspace language", // admin.dashboardLanguageLabel — LanguageSettingsSection
 ];
 
 const SPANISH_MARKERS = [
@@ -39,6 +43,8 @@ const SPANISH_MARKERS = [
   "Lunes", // admin.weekdays.monday — AvailabilityEditor
   "Hasta", // admin.blockedTo — AvailabilityEditor, only on a day with a blocked window
   "sus reservas", // admin.heroTitle — AdminHero
+  "Idioma que ven sus clientes", // admin.clientLanguageLabel — LanguageSettingsSection
+  "Idioma de su espacio", // admin.dashboardLanguageLabel — LanguageSettingsSection
 ];
 
 function renderScreens(lang: "en" | "es") {
@@ -77,7 +83,24 @@ function renderScreens(lang: "en" | "es") {
       />,
     ),
     renderToStaticMarkup(<LanguageSwitcher lang={lang} onChange={() => undefined} />),
+    // Composed with the hero above on purpose: the dashboard is one screen
+    // assembled from two files, and that seam is where the two halves drifted
+    // into different languages. `clientLanguage` is deliberately the *other*
+    // language — this panel describes the client-facing setting but must be
+    // written in the owner's workspace language, never in their clients'.
+    renderToStaticMarkup(
+      <LanguageSettingsSection
+        lang={lang}
+        clientLanguage={otherLanguage(lang)}
+        onClientLanguageChange={() => undefined}
+        onDashboardLanguageChange={() => undefined}
+      />,
+    ),
   ].join("\n");
+}
+
+function otherLanguage(lang: Lang): Lang {
+  return lang === "es" ? "en" : "es";
 }
 
 describe("screen language purity", () => {

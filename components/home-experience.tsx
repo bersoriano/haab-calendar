@@ -19,7 +19,10 @@ import {
   LanguageProvider,
   useLanguage,
 } from "@/components/landing/language-provider";
-import type { Lang as LandingLang } from "@/components/landing/translations";
+import {
+  translations as landingTranslations,
+  type Lang as LandingLang,
+} from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
@@ -105,7 +108,19 @@ function HomeExperienceInner({
   resumeGuestPublish = false,
 }: HomeExperienceProps) {
   const router = useRouter();
-  const { lang, setLang, t } = useLanguage();
+  const { lang, t } = useLanguage();
+  /**
+   * The dashboard's one language. The chrome below (hero, workflow header,
+   * guest bar) and the booking module are one composed screen, so they read a
+   * single value: the owner's pinned workspace language, or the language the
+   * server resolved for this viewer. It is deliberately NOT the landing
+   * provider's `lang` — that one is the marketing site's, is writable by the
+   * public switcher, and is backed by the global `haab-lang` cookie.
+   */
+  const [dashboardLanguage, setDashboardLanguage] = useState<Lang>(
+    () => dashboardStore?.provider.dashboardLanguage ?? viewerLanguage,
+  );
+  const dashboardT = landingTranslations[dashboardLanguage];
   const [persistedDashboardStore, setPersistedDashboardStore] = useState<
     ModuleStore | undefined
   >();
@@ -230,9 +245,11 @@ function HomeExperienceInner({
           isSuperAdmin={isSuperAdmin}
           publicationStatus={publicationStatus}
         />
-        {!loggedIn ? <GuestDraftBar onPublish={requestGuestPublish} /> : null}
+        {!loggedIn ? (
+          <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
+        ) : null}
         <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
-          <AdminHero lang={lang} />
+          <AdminHero lang={dashboardLanguage} />
         </div>
         <header
           className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${
@@ -242,7 +259,7 @@ function HomeExperienceInner({
           <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
             {activeWorkflowVertical ? (
               <SelectedWorkflowHeader
-                lang={lang}
+                lang={dashboardLanguage}
                 vertical={activeWorkflowVertical}
                 onChooseAnother={backToHome}
                 onSignOut={loggedIn ? logout : undefined}
@@ -254,7 +271,7 @@ function HomeExperienceInner({
                 onClick={backToHome}
                 className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
               >
-                {t.home.backToHome}
+                {dashboardT.home.backToHome}
               </button>
             )}
           </div>
@@ -280,14 +297,14 @@ function HomeExperienceInner({
               router.refresh();
             }}
             initialLanguage={effectiveConfigured ? undefined : lang}
-            viewerLanguage={viewerLanguage}
+            viewerLanguage={dashboardLanguage}
             initialVerticalId={
               effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
             }
             initialBusinessName={
               effectiveConfigured || !seedLandingSelection ? undefined : pageName
             }
-            onLanguageChange={setLang}
+            onDashboardLanguageChange={setDashboardLanguage}
             onVerticalChange={handleVerticalChange}
           />
         </main>
@@ -329,8 +346,14 @@ function HomeExperienceInner({
   );
 }
 
-function GuestDraftBar({ onPublish }: { onPublish: () => void }) {
-  const { t } = useLanguage();
+function GuestDraftBar({
+  lang,
+  onPublish,
+}: {
+  lang: LandingLang;
+  onPublish: () => void;
+}) {
+  const t = landingTranslations[lang];
 
   return (
     <aside className="border-b border-[var(--line)] bg-[var(--teal-soft)] px-4 py-3 sm:px-6">
