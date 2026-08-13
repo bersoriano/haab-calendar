@@ -163,7 +163,6 @@ export type BookingDict = {
     bookingCancelled: string;
     bookingConfirmed: string;
     bookingUpdated: string;
-    chooseAnother: string;
     selectedDate: string;
     finishBeforeHoldExpires: string;
     confirm: string;
@@ -651,7 +650,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       bookingCancelled: "Booking Cancelled",
       bookingConfirmed: "Booking Confirmed",
       bookingUpdated: "Booking Updated",
-      chooseAnother: "Choose another",
       selectedDate: "Selected Date",
       finishBeforeHoldExpires: "Finish your details before the temporary hold expires.",
       confirm: "Confirm",
@@ -1130,7 +1128,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       bookingCancelled: "Reserva cancelada",
       bookingConfirmed: "Reserva confirmada",
       bookingUpdated: "Reserva actualizada",
-      chooseAnother: "Elija otro",
       selectedDate: "Fecha seleccionada",
       finishBeforeHoldExpires:
         "Complete sus datos antes de que expire la reservación temporal.",

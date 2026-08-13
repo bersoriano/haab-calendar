@@ -46,6 +46,11 @@ export interface VerticalCopy {
 
     // Public flow
     chooseServiceTitle: string;
+    // Written per vertical rather than assembled as "<verb> " + `service`,
+    // because the article has to agree with whatever noun the vertical uses.
+    // Every Spanish noun here happens to be masculine today; a feminine one
+    // (una clase, una cancha) would make a shared "otro" wrong.
+    chooseAnotherService: string;
     chooseServiceBody: string;
     onlyOneServiceBody: string;
     serviceUnavailableBody: string;
@@ -160,6 +165,7 @@ export const defaultCopy: VerticalCopy = {
       "Client name, email, and phone number are required.",
 
     chooseServiceTitle: "Choose a service",
+    chooseAnotherService: "Choose another service",
     chooseServiceBody:
       "Every card clearly shows whether it books a timed appointment or an entire day.",
     onlyOneServiceBody:
@@ -275,6 +281,7 @@ export const defaultCopyEs: VerticalCopy = {
       "El nombre, el correo electrónico y el número de teléfono del cliente son obligatorios.",
 
     chooseServiceTitle: "Elija un servicio",
+    chooseAnotherService: "Elegir otro servicio",
     chooseServiceBody:
       "Cada tarjeta muestra claramente si reserva una cita con horario o un día completo.",
     onlyOneServiceBody:
@@ -392,6 +399,7 @@ export const healthcareCopy: VerticalCopy = {
       "Patient name, email, and phone number are required.",
 
     chooseServiceTitle: "Choose a medical service",
+    chooseAnotherService: "Choose another medical service",
     chooseServiceBody:
       "Every card shows whether it schedules a timed appointment or reserves an entire day.",
     onlyOneServiceBody:
@@ -509,6 +517,7 @@ export const healthcareCopyEs: VerticalCopy = {
       "El nombre, el correo electrónico y el número de teléfono del paciente son obligatorios.",
 
     chooseServiceTitle: "Elija un servicio médico",
+    chooseAnotherService: "Elegir otro servicio médico",
     chooseServiceBody:
       "Cada tarjeta muestra si agenda una cita con horario o reserva un día completo.",
     onlyOneServiceBody:
@@ -625,6 +634,7 @@ export const eventsCopy: VerticalCopy = {
       "Attendee name, email, and phone number are required.",
 
     chooseServiceTitle: "Choose an event",
+    chooseAnotherService: "Choose another event",
     chooseServiceBody:
       "Compare each event's schedule, location, price, and spots before registering.",
     onlyOneServiceBody:
@@ -743,6 +753,7 @@ export const eventsCopyEs: VerticalCopy = {
       "El nombre, el correo electrónico y el número de teléfono del asistente son obligatorios.",
 
     chooseServiceTitle: "Elija un evento",
+    chooseAnotherService: "Elegir otro evento",
     chooseServiceBody:
       "Compare el horario, la ubicación, el precio y los lugares de cada evento antes de registrarse.",
     onlyOneServiceBody:
@@ -861,6 +872,7 @@ export const spacesCopy: VerticalCopy = {
       "Guest name, email, and phone number are required.",
 
     chooseServiceTitle: "Choose a space",
+    chooseAnotherService: "Choose another space",
     chooseServiceBody:
       "Every card shows whether it reserves an hourly slot or the full day.",
     onlyOneServiceBody:
@@ -976,6 +988,7 @@ export const spacesCopyEs: VerticalCopy = {
       "El nombre, el correo electrónico y el número de teléfono del huésped son obligatorios.",
 
     chooseServiceTitle: "Elija un espacio",
+    chooseAnotherService: "Elegir otro espacio",
     chooseServiceBody:
       "Cada tarjeta muestra si reserva un horario por hora o el día completo.",
     onlyOneServiceBody:
@@ -1092,6 +1105,7 @@ export const professionalCopy: VerticalCopy = {
       "Client name, email, and phone number are required.",
 
     chooseServiceTitle: "Choose a service",
+    chooseAnotherService: "Choose another service",
     chooseServiceBody:
       "Every card shows whether it schedules a timed session or books an entire day.",
     onlyOneServiceBody:
@@ -1207,6 +1221,7 @@ export const professionalCopyEs: VerticalCopy = {
       "El nombre, el correo electrónico y el número de teléfono del cliente son obligatorios.",
 
     chooseServiceTitle: "Elija un servicio",
+    chooseAnotherService: "Elegir otro servicio",
     chooseServiceBody:
       "Cada tarjeta muestra si agenda una sesión con horario o reserva un día completo.",
     onlyOneServiceBody:

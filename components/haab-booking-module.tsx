@@ -4422,7 +4422,7 @@ export function HaabBookingModule({
                                 fill="none"
                               />
                             </svg>
-                            {t.publicFlow.chooseAnother} {copy.service}
+                            {copy.phrases.chooseAnotherService}
                           </button>
                         </div>
                       ) : null}
