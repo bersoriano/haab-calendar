@@ -25,7 +25,8 @@ Run with browser language set to English, then repeat with it set to Spanish
 | 18 | Owner content | An English service description on a Spanish page stays English (expected) | | |
 | 19 | `/nonexistent` | 404 page matches the resolved language | | |
 | 20 | Service editor date field | Known limitation: native input follows the OS locale, not the page | n/a | n/a |
-| 21 | Public booking page, Spanish-configured owner, no `?lang` | Known limitation: served `<html lang>` follows the *visitor*, not the owner's page language, and is corrected only after hydration. Check View Source (not DevTools, which shows the corrected DOM) | | |
+| 21 | Public booking page, Spanish-configured owner | Known limitation: served `<html lang>` follows the *visitor*, not the owner's page language, and is corrected only after hydration. Check View Source (not DevTools, which shows the corrected DOM) | | |
+| 21b | Same page with `?lang=es` on an EN browser | Same limitation, not a way around it: the proxy ignores `?lang` on these routes, so View Source still shows `<html lang="en">` while the visible copy is Spanish from the first paint | | |
 | 22 | Dashboard → Settings | Change "Language your clients see" only — the dashboard headline, workflow header and the rest of the workspace must NOT change language | | |
 | 23 | Dashboard → Settings | Change "Your workspace language" only — the headline above the module changes immediately, with no reload | | |
 | 24 | Dashboard → Settings → `/` | After changing "Language your clients see", reload `/` — the marketing site is unchanged | | |
@@ -43,3 +44,5 @@ Run with browser language set to English, then repeat with it set to Spanish
   hydration. The proxy deliberately keeps the owner's page language out of the
   shared cookie (`lib/language/public-routes.ts`), because promoting it there is
   what let one business's language follow a client to the marketing site.
+  That exemption also means `?lang=` does not resolve on these routes, so it
+  applies with a `?lang=` in the URL exactly as it does without one — row 21b.

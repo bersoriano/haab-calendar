@@ -35,10 +35,16 @@ export default async function RootLayout({
   // params, and no database access, and the proxy deliberately keeps that
   // language out of the shared cookie (lib/language/public-routes.ts) so one
   // business's language cannot follow a client to the rest of the site. So a
-  // Spanish-configured page viewed by an English browser with no `?lang` is
-  // served inside <html lang="en">, and haab-booking-module corrects
+  // Spanish-configured page viewed by an English browser is served inside
+  // <html lang="en">, and haab-booking-module corrects
   // document.documentElement.lang after hydration. Assistive tech and search
   // engines that read the served markup see the wrong claim until then.
+  //
+  // This covers `?lang=es` too, not only the bare URL: the same exemption that
+  // stops the leak also stops the proxy from resolving `?lang` on these routes,
+  // so /events/casa-azul?lang=es is served inside <html lang="en"> as well. The
+  // module still paints Spanish content from the first byte either way — it is
+  // the attribute, not the copy, that lags.
   //
   // Fixing it properly means resolving the provider before the layout renders
   // (a route-group layout under the public segments, or a per-page <html>),
