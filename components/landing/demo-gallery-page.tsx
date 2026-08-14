@@ -18,7 +18,7 @@ function GalleryContent({ indexes }: { indexes: number[] }) {
 
   return (
     <>
-      <StickyNav />
+      <StickyNav alwaysShowCta />
       <main className="flex-1 px-5 py-14 sm:px-8 sm:py-16">
         <div className="mx-auto max-w-[1280px]">
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">

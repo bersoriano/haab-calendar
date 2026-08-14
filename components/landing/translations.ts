@@ -108,17 +108,11 @@ export const translations = {
         "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
     },
     hero: {
-      badge: "Disponibilidad en vivo · Apartado de 10 minutos",
       title: "Un enlace. Sin cuentas para tus clientes. Sin reservas duplicadas.",
-      body: "Comparte una sola página. Tus clientes ven disponibilidad real, reciben un apartado de 10 minutos mientras completan sus datos y reagendan solos. Nunca crean una cuenta.",
-      proofs: [
-        "Disponibilidad en vivo",
-        "Apartado de 10 minutos",
-        "Sin cuenta para el cliente",
-      ],
-      ctaPrimary: "Crear mi página →",
-      ctaSecondary: "Verlo funcionar en 15 segundos",
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
+      body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
+      ctaPrimary: "Crear mi página",
+      ctaSecondary: "Ver una página real",
+      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta y sin instalar nada.",
       returningPrompt: "¿Ya tienes una página?",
       returningCta: "Inicia sesión",
       previewCaption: "La página real de Dra. Maya Rivera. Tócala: está en vivo.",
@@ -288,51 +282,41 @@ export const translations = {
     },
     how: {
       eyebrow: "Cómo funciona",
-      title: "Publica una vez. Deja de contestar mensajes de reservas.",
+      title: "Publica una vez. Y deja de contestar mensajes de reservas.",
       stepLabel: "Paso",
       steps: [
         {
           title: "Nombra tu página.",
-          body: "Elige qué reservas. Servicios, horarios y precios llegan puestos: cambia lo que quieras.",
+          body: "Servicios, horarios y precios llegan puestos para lo que haces. Cambia lo que quieras.",
         },
         {
-          title: "Comparte un enlace.",
-          body: "Tu propia dirección, lista para tu bio, tus correos y un código QR en la puerta.",
+          title: "Comparte el enlace.",
+          body: "Tu bio, tus correos, un código QR en la puerta.",
         },
         {
           title: "Silencio.",
-          body: "Tus clientes reservan, apartan, confirman y reagendan solos. Nada llega a tu bandeja.",
+          body: "Ellos reservan, ellos reagendan, a ti te llega una cita al calendario.",
         },
       ],
       cta: "Crear mi página",
     },
     features: {
       eyebrow: "Por qué se siente diferente",
-      title: "Cinco decisiones que borran el trabajo repetitivo.",
+      title: "Tres decisiones que notarás la primera semana.",
       items: [
         {
-          title: "Tus clientes nunca se registran.",
-          body: "Eligen, escriben sus datos, listo. Sin cuenta, sin contraseña, sin nada que recordar.",
-          tag: "Menos fricción",
-        },
-        {
-          title: "Cada selección se aparta 10 minutos.",
-          body: "Una cuenta regresiva visible protege el horario. Dos personas van por el mismo lugar: el servidor confirma a una y rechaza a la otra.",
-          tag: "Protección contra conflictos",
-        },
-        {
-          title: "Citas, días completos y boletos.",
-          body: "Una página hace las tres. Sin un segundo producto para tu evento o tu renta.",
+          title: "Citas, días completos y boletos en una página.",
+          body: "Una hora de consultoría, un salón para el sábado y cuarenta lugares en una clase son la misma página y el mismo enlace. Sin un segundo producto para el evento.",
           tag: "Tres modos, una página",
         },
         {
           title: "Habla como tu sector.",
-          body: "Pacientes, huéspedes, clientes o asistentes: cada etiqueta y confirmación calza con lo que vendes.",
+          body: "Pacientes, huéspedes, clientes, asistentes, comensales: cada etiqueta, confirmación y error calza con lo que vendes, en español o en inglés.",
           tag: "Lenguaje específico",
         },
         {
           title: "Ellos arreglan sus cambios.",
-          body: "Un enlace privado en cada confirmación reagenda o cancela. Sin ti.",
+          body: "Cada confirmación lleva un enlace privado para reagendar o cancelar. El cambio llega a tu calendario sin llegar a tu bandeja.",
           tag: "Autoservicio privado",
         },
       ],
@@ -396,22 +380,32 @@ export const translations = {
       title: "Diseñado para completar una reserva desde el teléfono.",
       body: "Fechas cómodas para tocar, horarios legibles, acciones de confirmación visibles y una cuenta regresiva clara. El mismo flujo se adapta desde una pantalla pequeña hasta un escritorio.",
     },
+    trust: {
+      eyebrow: "Confianza",
+      title: "Hecho para cuidar un calendario real.",
+      items: [
+        {
+          title: "Decide el servidor, no el navegador.",
+          body: "Un horario apartado se aparta en el servidor. Cuando dos personas van por el mismo horario, una queda confirmada y a la otra se le avisa de inmediato: la página no puede convencerse sola de duplicar una reserva.",
+        },
+        {
+          title: "Sin cuentas no hay contraseñas que perder.",
+          body: "Tus clientes nunca se registran, así que no hay contraseña que guardar, filtrar ni restablecer. Llegan a su reserva por un enlace privado que se guarda cifrado, nunca en texto plano.",
+        },
+        {
+          title: "Tu página la publicas tú.",
+          body: "Nada es público hasta que lo publicas, y puedes bajarlo desde tu panel sin borrar tu trabajo.",
+        },
+        {
+          title: "Te vamos a decir qué falta.",
+          body: "Los pagos y la sincronización con calendarios externos todavía no están hechos. Si algo no está listo, no aparece en esta página.",
+        },
+      ],
+    },
     faq: {
       eyebrow: "Preguntas",
       title: "Preguntas, respondidas.",
       items: [
-        {
-          q: "¿Mis clientes necesitan una cuenta?",
-          a: "Nunca. Eligen un horario, escriben sus datos, listo. Sin registro, sin contraseña.",
-        },
-        {
-          q: "¿Cómo se evitan las reservas duplicadas?",
-          a: "Elegir un horario lo aparta 10 minutos. Al confirmar, el servidor vuelve a revisar reservas y apartados, y rechaza al perdedor de cualquier empate.",
-        },
-        {
-          q: "¿Los clientes pueden reagendar o cancelar solos?",
-          a: "Sí. Cada confirmación trae un enlace privado para reagendar o cancelar. Sin iniciar sesión y sin escribirte.",
-        },
         {
           q: "¿Qué funciona hoy?",
           a: "Páginas públicas, disponibilidad en vivo, apartados, confirmaciones, cupo de eventos y enlaces de autoservicio. Haab está en acceso anticipado: pagos y sincronización con calendarios externos todavía no.",
@@ -471,9 +465,9 @@ export const translations = {
     },
     finalCta: {
       title: "Un enlace. Después, silencio.",
-      body: "Nombra tu página y compártela hoy. Tus clientes nunca crean una cuenta.",
-      ctaPrimary: "Crear mi página →",
-      ctaSecondary: "Verlo funcionar en 15 segundos",
+      body: "Nombra tu página y compártela hoy.",
+      ctaPrimary: "Crear mi página",
+      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
     },
     footer: {
       tagline: "Un enlace de reservas. Disponibilidad protegida. Sin cuentas para tus clientes.",
@@ -655,17 +649,11 @@ export const translations = {
         "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
     },
     hero: {
-      badge: "Live availability · 10-minute hold",
       title: "One link. No client accounts. No double bookings.",
-      body: "Share a single page. Clients see live availability, get a 10-minute hold while they fill in their details, and reschedule themselves. They never create an account.",
-      proofs: [
-        "Live availability",
-        "10-minute hold",
-        "No client account",
-      ],
-      ctaPrimary: "Create your page →",
-      ctaSecondary: "See it working in 15 seconds",
-      fineprint: "Free while in early access. No card.",
+      body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your clients never make an account, and you never confirm a time by hand.",
+      ctaPrimary: "Create your page",
+      ctaSecondary: "See a real page",
+      fineprint: "Free while in early access. No card, nothing to install.",
       returningPrompt: "Already have a page?",
       returningCta: "Log in",
       previewCaption: "Dr. Maya Rivera's real page. Touch it — it's live.",
@@ -835,51 +823,41 @@ export const translations = {
     },
     how: {
       eyebrow: "How it works",
-      title: "Publish once. Stop answering booking messages.",
+      title: "Publish once. Then stop answering booking messages.",
       stepLabel: "Step",
       steps: [
         {
           title: "Name your page.",
-          body: "Pick what you book. Your services, hours, and prices arrive pre-filled — change what you want.",
+          body: "Services, hours, and prices arrive pre-filled for what you do. Change what you want.",
         },
         {
-          title: "Share one link.",
-          body: "Your own address, ready for your bio, your emails, a QR code on the door.",
+          title: "Share the link.",
+          body: "Your bio, your emails, a QR code on the door.",
         },
         {
           title: "Go quiet.",
-          body: "Clients book, hold, confirm, and reschedule themselves. Nothing lands in your inbox.",
+          body: "They book, they reschedule, you get a calendar entry.",
         },
       ],
       cta: "Create your page",
     },
     features: {
       eyebrow: "Why it feels different",
-      title: "Five decisions that delete the busywork.",
+      title: "Three decisions you will notice in week one.",
       items: [
         {
-          title: "Your clients never sign up.",
-          body: "Pick, fill in, confirmed. No account, no password, nothing to remember.",
-          tag: "Less friction",
-        },
-        {
-          title: "Every pick is held for 10 minutes.",
-          body: "A visible countdown protects the time. Two people reach for the same slot; the server confirms one and turns the other away.",
-          tag: "Conflict protection",
-        },
-        {
-          title: "Appointments, full days, and tickets.",
-          body: "One page runs all three. No second product for your event or your rental.",
+          title: "Appointments, full days, and tickets on one page.",
+          body: "A consulting hour, a venue for a Saturday, and forty seats at a class are the same page and the same link. No second product for the event.",
           tag: "Three modes, one page",
         },
         {
           title: "It speaks your industry.",
-          body: "Patients, guests, clients, or attendees — every label and confirmation matches what you actually sell.",
+          body: "Patients, guests, clients, attendees, diners — every label, confirmation, and error matches what you actually sell, in English or Spanish.",
           tag: "Industry-specific language",
         },
         {
           title: "They fix their own changes.",
-          body: "A private link on every confirmation reschedules or cancels. Without you.",
+          body: "Every confirmation carries a private link to reschedule or cancel. The change lands on your calendar without landing in your inbox.",
           tag: "Private self-service",
         },
       ],
@@ -943,22 +921,32 @@ export const translations = {
       title: "Designed to complete a booking on a phone.",
       body: "Tap-friendly dates, readable time slots, visible confirmation actions, and a clear countdown. The same booking flow adapts from a small screen to a desktop.",
     },
+    trust: {
+      eyebrow: "Trust",
+      title: "Built to be trusted with a real calendar.",
+      items: [
+        {
+          title: "The server decides, not the browser.",
+          body: "A held slot is held on the server. When two people reach for the same time, one is confirmed and the other is told immediately — the page cannot talk itself into a double booking.",
+        },
+        {
+          title: "No accounts means no passwords to lose.",
+          body: "Your clients never register, so there is no client password to store, leak, or reset. Their booking is reached through a private link that is stored hashed, never in plain text.",
+        },
+        {
+          title: "Your page is yours to publish.",
+          body: "Nothing is public until you publish it, and you can take it down again from your dashboard without deleting your work.",
+        },
+        {
+          title: "We will tell you what is missing.",
+          body: "Payments and two-way calendar sync are not built yet. When something is not ready, it is not on this page.",
+        },
+      ],
+    },
     faq: {
       eyebrow: "FAQ",
       title: "Questions, answered.",
       items: [
-        {
-          q: "Do my clients need an account?",
-          a: "Never. They pick a time, enter their details, done. No signup, no password.",
-        },
-        {
-          q: "How are double-bookings prevented?",
-          a: "Picking a time holds it for 10 minutes. The server re-checks bookings and holds at confirmation and rejects the loser of any race.",
-        },
-        {
-          q: "Can clients reschedule or cancel themselves?",
-          a: "Yes. Every confirmation carries a private link to reschedule or cancel. No login, no message to you.",
-        },
         {
           q: "What works today?",
           a: "Public pages, live availability, holds, confirmations, event capacity, and self-service links. Haab is in early access — payments and external calendar sync are not in yet.",
@@ -1018,9 +1006,9 @@ export const translations = {
     },
     finalCta: {
       title: "One link. Then silence.",
-      body: "Name your page and share it today. Your clients never create an account.",
-      ctaPrimary: "Create your page →",
-      ctaSecondary: "See it working in 15 seconds",
+      body: "Name your page and share it today.",
+      ctaPrimary: "Create your page",
+      fineprint: "Free while in early access. No card.",
     },
     footer: {
       tagline: "One booking link. Protected availability. No client accounts.",

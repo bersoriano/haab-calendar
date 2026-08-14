@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { List } from "@phosphor-icons/react";
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
@@ -200,10 +201,13 @@ function AccountEntry({ className }: { className: string }) {
 }
 
 const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 py-3 text-sm font-semibold !text-white shadow-[0_14px_32px_rgba(26,115,232,0.28)] transition hover:shadow-[0_18px_40px_rgba(26,115,232,0.34)] active:translate-y-px";
+  "inline-flex items-center justify-center rounded-lg bg-[var(--ink)] px-7 py-3 text-sm font-semibold !text-white transition hover:bg-[var(--ink)]/90 active:translate-y-px";
 
-const ghostButtonClass =
-  "inline-flex items-center justify-center rounded-full border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white";
+// Secondary actions read as links with a rule under them. Only the one action
+// that starts a page is allowed a filled button, so nothing competes with it.
+const secondaryLinkClass =
+  "inline-flex items-center border-b border-[var(--primary)] pb-0.5 text-sm font-semibold text-[var(--primary)] transition hover:border-[var(--ink)] hover:text-[var(--ink)]";
+
 
 const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
 const liveExamplePaths = DEMO_PAGES.map(getDemoPagePath);
@@ -247,234 +251,15 @@ function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "
   );
 }
 
-function PhoneFrame({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`rounded-[32px] border-[10px] border-[#111827] bg-white shadow-[0_22px_55px_rgba(15,23,42,0.16)] ${className}`}
-    >
-      <div className="mx-auto mt-2 h-4 w-16 rounded-full bg-[#111827]" />
-      <div className="p-4">{children}</div>
-    </div>
-  );
-}
 
-function CalendarGrid({ selected = 11 }: { selected?: number }) {
-  const { t } = useLanguage();
-  const days = [30, 31, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
 
-  return (
-    <div className="grid grid-cols-7 gap-1.5 text-center text-[10px] text-[var(--muted)]">
-      {t.visuals.weekdays.map((d, i) => (
-        <span key={`${d}-${i}`} className="py-1 font-semibold">
-          {d}
-        </span>
-      ))}
-      {days.map((day, i) => (
-        <span
-          key={`${day}-${i}`}
-          className={`rounded-xl py-1.5 font-medium ${
-            day === selected
-              ? "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.26)]"
-              : i < 2
-                ? "text-[rgba(91,99,115,0.42)]"
-                : "bg-white/70 text-[var(--ink)]"
-          }`}
-        >
-          {day}
-        </span>
-      ))}
-    </div>
-  );
-}
 
-function SlotChips({ selected = "2:00 PM" }: { selected?: string }) {
-  const slots = ["10:00 AM", "1:00 PM", "2:00 PM", "3:30 PM"];
 
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {slots.map((slot) => (
-        <span
-          key={slot}
-          className={`rounded-xl border px-3 py-2 text-center text-[11px] font-semibold ${
-            slot === selected
-              ? "border-[var(--teal)] bg-[rgba(13,148,136,0.1)] text-[var(--teal)]"
-              : "border-[var(--line)] bg-white text-[var(--ink)]"
-          }`}
-        >
-          {slot}
-        </span>
-      ))}
-    </div>
-  );
-}
 
-function HoldVisual() {
-  const { t } = useLanguage();
-  const v = t.visuals.hold;
-  return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-[32px] border border-white/80 bg-[linear-gradient(135deg,#fff,#e9fbf8)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-      <PhoneFrame className="mx-auto max-w-[230px] rotate-[-4deg]">
-        <div className="space-y-4">
-          <CalendarGrid selected={11} />
-          <SlotChips selected="2:00 PM" />
-          <div className="rounded-2xl bg-[#f59e0b] px-3 py-2 text-center text-xs font-bold text-white shadow-[0_12px_24px_rgba(245,158,11,0.24)]">
-            {v.expires}
-          </div>
-          <div className="h-10 rounded-2xl bg-[var(--teal)]" />
-        </div>
-      </PhoneFrame>
-      <div className="absolute right-6 top-6 rounded-2xl bg-white/85 px-4 py-3 text-xs font-semibold text-[var(--ink)] shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
-        {v.protected}
-      </div>
-    </div>
-  );
-}
 
-function SelfServiceVisual() {
-  const { t } = useLanguage();
-  const tones = ["bg-[var(--accent-soft)] text-[var(--primary)]", "bg-[var(--teal-soft)] text-[var(--teal)]"];
-  return (
-    <div className="aspect-[4/3] overflow-hidden rounded-[32px] border border-white/80 bg-[linear-gradient(135deg,#fff,#eef8f7)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-      <div className="grid h-full content-center gap-4">
-        {t.visuals.selfService.map(([title, body], i) => (
-          <div key={title} className="relative rounded-[28px] border border-[var(--line)] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)]">
-            <div className="flex items-center gap-4">
-              <span className={`grid h-12 w-12 place-items-center rounded-2xl text-sm font-bold ${tones[i]}`}>
-                {i === 0 ? "1" : "2"}
-              </span>
-              <div>
-                <p className="text-lg font-semibold text-[var(--ink)]">{title}</p>
-                <p className="text-sm text-[var(--muted)]">{body}</p>
-              </div>
-            </div>
-            {i === 0 ? <div className="absolute left-11 top-full h-4 w-px bg-[var(--line)]" /> : null}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
-function DifferentiatorVisual({ type }: { type: "hold" | "selfservice" }) {
-  if (type === "hold") return <HoldVisual />;
-  return <SelfServiceVisual />;
-}
 
-function UseCaseVisual({ variant }: { variant: keyof typeof glyphMap }) {
-  const { t } = useLanguage();
-  const meta = glyphMap[variant] ?? glyphMap.healthcare;
-  const lines = t.visuals.useCaseLines[variant] ?? t.visuals.useCaseLines.healthcare;
 
-  return (
-    <div className="relative aspect-[3/2] overflow-hidden rounded-[24px] border border-white/80 bg-[linear-gradient(135deg,#fff,#eef7ff)] p-4 shadow-inner">
-      <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[rgba(13,148,136,0.12)]" />
-      <div className="relative flex h-full flex-col justify-between rounded-[20px] border border-[var(--line)] bg-white/78 p-4">
-        <div className="flex items-center justify-between">
-          <BrandGlyph label={meta.glyph} tone={meta.tone} />
-          <span className="rounded-full bg-[var(--accent-soft)] px-3 py-1 text-[10px] font-bold uppercase text-[var(--primary)]">
-            {t.visuals.useCaseBadge}
-          </span>
-        </div>
-        <div className="space-y-2">
-          {lines.map((line, i) => (
-            <div key={line} className="flex items-center justify-between rounded-xl bg-[rgba(245,247,251,0.88)] px-3 py-2">
-              <span className="text-xs font-semibold text-[var(--ink)]">{line}</span>
-              <span className={i === 0 ? "h-2 w-10 rounded-full bg-[var(--teal)]" : "h-2 w-8 rounded-full bg-[rgba(15,23,42,0.12)]"} />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const glyphMap = {
-  healthcare: { glyph: "+", tone: "teal" as const },
-  spaces: { glyph: "▦", tone: "blue" as const },
-  professional: { glyph: "↗", tone: "blue" as const },
-  events: { glyph: "★", tone: "gold" as const },
-};
-
-function MobileScreen({ type }: { type: "calendar" | "slots" | "confirm" }) {
-  const { t } = useLanguage();
-  const v = t.visuals.mobile;
-  return (
-    <PhoneFrame className="w-full max-w-[190px]">
-      {type === "calendar" ? (
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-bold text-[var(--ink)]">{v.calendar.name}</p>
-            <p className="text-[11px] text-[var(--muted)]">{v.calendar.service}</p>
-          </div>
-          <CalendarGrid selected={11} />
-          <div className="rounded-2xl bg-[var(--primary)] py-3 text-center text-xs font-bold text-white">
-            {v.calendar.cta}
-          </div>
-        </div>
-      ) : null}
-      {type === "slots" ? (
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm font-bold text-[var(--ink)]">{v.slots.date}</p>
-            <p className="text-[11px] text-[var(--muted)]">{v.slots.openings}</p>
-          </div>
-          <SlotChips selected="2:00 PM" />
-          <div className="rounded-2xl bg-[#f59e0b] py-2 text-center text-[11px] font-bold text-white">
-            {v.slots.held}
-          </div>
-          <div className="rounded-2xl bg-[var(--teal)] py-3 text-center text-xs font-bold text-white">
-            {v.slots.cta}
-          </div>
-        </div>
-      ) : null}
-      {type === "confirm" ? (
-        <div className="space-y-4 text-center">
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[var(--teal-soft)] text-2xl font-bold text-[var(--teal)]">
-            ✓
-          </div>
-          <div>
-            <p className="text-sm font-bold text-[var(--ink)]">{v.confirm.title}</p>
-            <p className="mt-1 text-[11px] text-[var(--muted)]">{v.confirm.when}</p>
-          </div>
-          <div className="mx-auto grid h-24 w-24 grid-cols-5 gap-1 rounded-2xl border border-[var(--line)] bg-white p-2">
-            {Array.from({ length: 25 }).map((_, i) => (
-              <span
-                key={i}
-                className={`${[0, 2, 3, 6, 8, 10, 12, 13, 17, 19, 20, 22, 24].includes(i) ? "bg-[var(--ink)]" : "bg-[rgba(15,23,42,0.08)]"} rounded-[2px]`}
-              />
-            ))}
-          </div>
-          <div className="rounded-2xl bg-[var(--primary)] py-3 text-center text-xs font-bold text-white">
-            {v.confirm.cta}
-          </div>
-        </div>
-      ) : null}
-    </PhoneFrame>
-  );
-}
-
-function CustomerAvatar({ initials, tone = "blue" }: { initials: string; tone?: "blue" | "teal" | "gold" }) {
-  return (
-    <div
-      aria-hidden="true"
-      className={`grid h-12 w-12 shrink-0 place-items-center rounded-full text-sm font-bold ${
-        tone === "teal"
-          ? "bg-[var(--teal-soft)] text-[var(--teal)]"
-          : tone === "gold"
-            ? "bg-[#fef3c7] text-[#b45309]"
-            : "bg-[var(--accent-soft)] text-[var(--primary)]"
-      }`}
-    >
-      {initials}
-    </div>
-  );
-}
 
 function GlassCard({
   children,
@@ -485,7 +270,7 @@ function GlassCard({
 }) {
   return (
     <div
-      className={`rounded-[28px] border border-[rgba(255,255,255,0.7)] bg-[rgba(255,255,255,0.78)] p-6 shadow-[0_18px_46px_rgba(15,23,42,0.06)] backdrop-blur-md ${className}`}
+      className={`rounded-lg border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
     >
       {children}
     </div>
@@ -518,8 +303,40 @@ function SectionHeading({
   );
 }
 
-export function StickyNav() {
+/**
+ * True once the hero's action row has scrolled out of view, so the nav's own
+ * primary can take over without two filled buttons sharing a screen. Pages
+ * without a hero (the gallery) pass `alwaysShowCta` instead of watching.
+ */
+function useHeroPassed(alwaysShowCta: boolean) {
+  const [passed, setPassed] = useState(false);
+
+  useEffect(() => {
+    if (alwaysShowCta || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    const anchor = document.getElementById("hero-cta-anchor");
+
+    if (!anchor) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setPassed(!entry.isIntersecting),
+      { rootMargin: "-8px 0px 0px 0px" },
+    );
+
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [alwaysShowCta]);
+
+  return alwaysShowCta || passed;
+}
+
+export function StickyNav({ alwaysShowCta = false }: { alwaysShowCta?: boolean } = {}) {
   const { lang, setLang, t } = useLanguage();
+  const heroPassed = useHeroPassed(alwaysShowCta);
   const navLinks = [
     { href: "#live-examples", label: t.nav.links.examples },
     { href: "#how", label: t.nav.links.how },
@@ -554,7 +371,13 @@ export function StickyNav() {
             <LanguageSwitcher lang={lang} onChange={setLang} />
           </div>
           <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
-          <StartButton className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--primary-container)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_22px_rgba(26,115,232,0.24)] transition hover:bg-[var(--primary)] hover:shadow-[0_14px_30px_rgba(26,115,232,0.3)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-container)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5">
+          <StartButton
+            className={cn(
+              "inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ink)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5",
+              // Hidden rather than unmounted: the layout stays put as it appears.
+              heroPassed ? "opacity-100" : "pointer-events-none opacity-0",
+            )}
+          >
             <span className="sm:hidden">{t.nav.createPageShort}</span>
             <span className="hidden sm:inline">{t.nav.createPageLong}</span>
           </StartButton>
@@ -621,10 +444,6 @@ export function Hero() {
           screens it moves into its own column beside the full text block. */}
       <div className="relative mx-auto grid max-w-[1280px] gap-5 px-5 pb-8 pt-5 sm:gap-6 sm:px-8 sm:py-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-x-14 lg:gap-y-6 lg:py-18">
         <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
-          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] sm:text-xs">
-            <span className="haab-live-dot h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
-            {t.hero.badge}
-          </p>
           <h1 className="mt-3 max-w-3xl text-balance text-[2.1rem] font-semibold leading-[1.05] tracking-[-0.045em] text-[var(--ink)] sm:mt-5 sm:text-5xl lg:text-[3.65rem] lg:leading-[1.02]">
             {t.hero.title}
           </h1>
@@ -641,23 +460,9 @@ export function Hero() {
           <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
             {t.hero.body}
           </p>
-          <ul className="mt-4 flex flex-wrap gap-2 sm:mt-6 sm:gap-2.5">
-            {t.hero.proofs.map((proof) => (
-              <li
-                key={proof}
-                className="inline-flex items-center gap-2 rounded-full border border-white/80 bg-white/72 px-3 py-1.5 text-xs font-semibold text-[var(--ink)] shadow-[0_10px_26px_rgba(15,23,42,0.05)] backdrop-blur-md sm:text-sm"
-              >
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]"
-                />
-                {proof}
-              </li>
-            ))}
-          </ul>
-          <div className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
+          <div id="hero-cta-anchor" className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
             <StartButton className={primaryButtonClass}>{t.hero.ctaPrimary}</StartButton>
-            <DemoButton className={ghostButtonClass}>
+            <DemoButton className={secondaryLinkClass}>
               <span className="haab-live-dot mr-2 h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
               {t.hero.ctaSecondary}
             </DemoButton>
@@ -671,25 +476,6 @@ export function Hero() {
     </section>
   );
 }
-
-// One entry per DEMO_PAGES row, in the same order. The modulo where these are
-// read keeps a newly seeded demo from rendering an empty glyph before the lists
-// catch up.
-const DEMO_GLYPHS = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G", "M"];
-const DEMO_TONES = [
-  "teal",
-  "blue",
-  "blue",
-  "gold",
-  "teal",
-  "gold",
-  "blue",
-  "teal",
-  "gold",
-  "blue",
-  "teal",
-  "gold",
-] as const;
 
 /**
  * A single example page. `index` addresses both DEMO_PAGES and the landing
@@ -707,21 +493,18 @@ export function DemoCard({ index }: { index: number }) {
   return (
     <Link
       href={localizedExamplePath(liveExamplePaths[index], lang)}
-      className="group flex min-h-56 flex-col rounded-[24px] border border-[var(--line)] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_24px_56px_rgba(15,23,42,0.11)]"
+      className="group flex min-h-56 flex-col rounded-lg border border-[var(--line)] bg-white p-5 transition hover:border-[rgba(26,115,232,0.28)]"
     >
       <div className="flex items-center justify-between gap-3">
-        <BrandGlyph
-          label={DEMO_GLYPHS[index % DEMO_GLYPHS.length]}
-          tone={DEMO_TONES[index % DEMO_TONES.length]}
-        />
-        <span className="rounded-full bg-[var(--teal-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          {item.vertical}
+        </p>
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
+          <span className="haab-live-dot h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
           {t.liveExamples.liveBadge}
         </span>
       </div>
-      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-        {item.vertical}
-      </p>
-      <h3 className="mt-2 text-lg font-semibold text-[var(--ink)]">{item.title}</h3>
+      <h3 className="mt-4 text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">{item.title}</h3>
       <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.proof}</p>
       <span className="mt-auto pt-5 text-sm font-semibold text-[var(--primary)] group-hover:underline">
         {item.cta} →
@@ -766,7 +549,7 @@ export function LiveExamples({ featured }: { featured: number[] }) {
         </div>
         <DemoGrid indexes={featured} />
         <div className="mt-8 flex flex-col items-center gap-3">
-          <Link href={galleryPath(lang)} className={primaryButtonClass}>
+          <Link href={galleryPath(lang)} className={secondaryLinkClass}>
             {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length)}
           </Link>
           <p className="text-center text-xs text-[var(--muted)]">
@@ -778,92 +561,7 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   );
 }
 
-export function SocialProof() {
-  const { t } = useLanguage();
-  const tones = ["teal", "blue", "blue", "gold", "teal", "blue"] as const;
-  const glyphs = ["+", "C", "N", "A", "D", "B"];
 
-  return (
-    <section className="border-y border-[var(--line)] bg-white/55 px-5 py-12 sm:px-8">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--teal)]" />
-            {t.socialProof.badge}
-          </span>
-          <p className="max-w-xl text-base font-medium text-[var(--ink)]">
-            {t.socialProof.earlyAccess}
-          </p>
-        </div>
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
-          {t.socialProof.stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-[24px] border border-[var(--line)] bg-white/80 p-5 text-center shadow-[0_14px_34px_rgba(15,23,42,0.04)]"
-            >
-              <p className="text-3xl font-semibold tracking-tight text-[var(--primary)]">{stat.value}</p>
-              <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-        <p className="mt-12 text-center text-xs font-semibold uppercase text-[var(--muted)]">
-          {t.socialProof.heading}
-        </p>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {t.socialProof.customers.map((customer, i) => (
-            <div
-              key={customer.name}
-              className="flex min-h-24 flex-col items-start gap-3 rounded-[24px] border border-[var(--line)] bg-white/80 p-4 shadow-[0_14px_34px_rgba(15,23,42,0.04)] sm:flex-row sm:items-center"
-            >
-              <BrandGlyph label={glyphs[i]} tone={tones[i]} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold leading-5 text-[var(--ink)]">{customer.name}</p>
-                <p className="mt-1 text-xs text-[var(--muted)]">{customer.detail}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-sm text-[var(--muted)]">
-          {t.socialProof.footer}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-export function Problem() {
-  const { t } = useLanguage();
-  return (
-    <section className={sectionPadding}>
-      <div className="mx-auto max-w-[1100px]">
-        <SectionHeading
-          eyebrow={t.problem.eyebrow}
-          title={t.problem.title}
-          body={t.problem.body}
-        />
-        <ul className="mt-12 grid gap-3 sm:grid-cols-2">
-          {t.problem.pains.map((p) => (
-            <li
-              key={p}
-              className="flex gap-3 rounded-[24px] border border-[var(--line)] bg-white/70 p-5 text-[15px] leading-6 text-[var(--ink)]"
-            >
-              <span
-                aria-hidden="true"
-                className="mt-1 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[#fee2e2] text-[12px] font-bold text-[#be123c]"
-              >
-                ×
-              </span>
-              <span>{p}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="mt-10 text-center text-lg font-medium text-[var(--ink)]">
-          {t.problem.closing}
-        </p>
-      </div>
-    </section>
-  );
-}
 
 export function HowItWorks() {
   const { t } = useLanguage();
@@ -878,7 +576,7 @@ export function HowItWorks() {
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {t.how.steps.map((s, i) => (
             <GlassCard key={stepNumbers[i]} className="flex h-full flex-col gap-4">
-              <span className="text-xs font-semibold uppercase text-[var(--primary)]">
+              <span className="font-mono text-xs font-semibold uppercase tracking-[0.1em] tabular-nums text-[var(--primary)]">
                 {t.how.stepLabel} {stepNumbers[i]}
               </span>
               <h3 className="text-2xl font-semibold text-[var(--ink)]">
@@ -932,148 +630,31 @@ export function Features() {
   );
 }
 
-export function Differentiators() {
+
+
+
+
+/**
+ * Reliability, privacy, and scope. Every claim here describes behavior that
+ * ships today; the last item names what does not, which is the part that makes
+ * the other three believable while the product is in early access.
+ */
+export function Trust() {
   const { t } = useLanguage();
-  const visuals = ["hold", "selfservice"] as const;
+
   return (
-    <section className={`${sectionPadding} bg-white/55`}>
-      <div className="mx-auto max-w-[1280px] space-y-20 lg:space-y-28">
-        <SectionHeading
-          eyebrow={t.differentiators.eyebrow}
-          title={t.differentiators.title}
-        />
-        {t.differentiators.blocks.map((b, i) => (
-          <div
-            key={b.heading}
-            className="grid items-center gap-10 lg:grid-cols-2"
-          >
-            <div className={i % 2 === 1 ? "lg:order-2" : ""}>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
-                {b.tag}
-              </p>
-              <h3 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-                {b.heading}
+    <section id="trust" className="scroll-mt-20 border-y border-[var(--line)] bg-white/55 px-5 py-16 sm:px-8 sm:py-20">
+      <div className="mx-auto max-w-[1280px]">
+        <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} />
+        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-2">
+          {t.trust.items.map((item) => (
+            <div key={item.title} className="bg-[var(--surface-lowest)] p-6 sm:p-7">
+              <h3 className="text-base font-semibold tracking-[-0.01em] text-[var(--ink)]">
+                {item.title}
               </h3>
-              <p className="mt-5 text-base leading-8 text-[var(--muted)]">{b.body}</p>
-            </div>
-            <DifferentiatorVisual type={visuals[i]} />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-export function IndustryLanguage() {
-  const { t } = useLanguage();
-  const tones = [
-    "from-[rgba(13,148,136,0.16)] to-[rgba(26,115,232,0.06)] text-[var(--teal)]",
-    "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]",
-    "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]",
-    "from-[rgba(217,119,6,0.16)] to-[rgba(26,115,232,0.05)] text-[#b45309]",
-  ];
-  return (
-    <section className={sectionPadding}>
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading
-          eyebrow={t.industryLanguage.eyebrow}
-          title={t.industryLanguage.title}
-          body={t.industryLanguage.body}
-        />
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {t.industryLanguage.verticals.map((v, i) => (
-            <div
-              key={v.label}
-              className="rounded-[24px] border border-[var(--line)] bg-white/80 p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)]"
-            >
-              <div className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${tones[i]}`}>
-                {v.label.charAt(0)}
-              </div>
-              <p className="mt-4 text-base font-semibold text-[var(--ink)]">{v.label}</p>
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center gap-2 rounded-xl bg-[rgba(245,247,251,0.88)] px-3 py-2">
-                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--accent-soft)] text-[10px] font-bold text-[var(--primary)]">●</span>
-                  <span className="font-semibold text-[var(--ink)]">{v.client}</span>
-                </div>
-                <div className="flex items-center gap-2 rounded-xl bg-[rgba(245,247,251,0.88)] px-3 py-2">
-                  <span aria-hidden="true" className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[var(--teal-soft)] text-[10px] font-bold text-[var(--teal)]">▣</span>
-                  <span className="font-semibold text-[var(--teal)]">{v.booking}</span>
-                </div>
-              </div>
+              <p className="mt-2.5 text-[15px] leading-7 text-[var(--muted)]">{item.body}</p>
             </div>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function UseCases() {
-  const { t } = useLanguage();
-  const { onSelectVertical } = useLandingActions();
-  const variants = ["healthcare", "spaces", "professional", "events"] as const;
-  return (
-    <section id="use-cases" className={sectionPadding}>
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading
-          eyebrow={t.useCases.eyebrow}
-          title={t.useCases.title}
-          body={t.useCases.body}
-        />
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {t.useCases.cards.map((c, i) => (
-            <button
-              key={c.title}
-              type="button"
-              onClick={() => onSelectVertical(variants[i])}
-              className="text-left transition hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
-            >
-              <GlassCard className="flex h-full flex-col gap-4 transition hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
-                <UseCaseVisual variant={variants[i]} />
-                <h3 className="text-lg font-semibold text-[var(--ink)]">
-                  {c.title}
-                </h3>
-                <p className="text-[15px] leading-7 text-[var(--muted)]">{c.body}</p>
-                <span className="mt-auto text-sm font-semibold text-[var(--primary)]">
-                  {t.useCases.cta} →
-                </span>
-              </GlassCard>
-            </button>
-          ))}
-        </div>
-        <p className="mx-auto mt-10 max-w-xl text-center text-sm text-[var(--muted)]">
-          {t.useCases.note}
-        </p>
-        <div className="mt-8 flex justify-center">
-          <StartButton className={primaryButtonClass}>
-            {t.useCases.cta}
-          </StartButton>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function MobileSection() {
-  const { t } = useLanguage();
-  return (
-    <section className={`${sectionPadding} bg-white/55`}>
-      <div className="mx-auto grid max-w-[1280px] items-center gap-12 lg:grid-cols-[1fr_0.85fr]">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-            {t.mobile.eyebrow}
-          </p>
-          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl lg:text-5xl">
-            {t.mobile.title}
-          </h2>
-          <p className="mt-5 text-base leading-8 text-[var(--muted)]">
-            {t.mobile.body}
-          </p>
-        </div>
-        <div className="grid justify-items-center gap-5 sm:grid-cols-3">
-          <MobileScreen type="calendar" />
-          <MobileScreen type="slots" />
-          <MobileScreen type="confirm" />
         </div>
       </div>
     </section>
@@ -1114,79 +695,7 @@ export function FAQ() {
   );
 }
 
-export function Testimonials() {
-  const { t } = useLanguage();
-  const tones = ["teal", "blue", "gold"] as const;
-  const initials = ["✚", "◎", "↗"];
-  return (
-    <section className={`${sectionPadding} bg-white/55`}>
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.testimonials.eyebrow} title={t.testimonials.title} />
-        <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {t.testimonials.items.map((item, i) => (
-            <GlassCard key={item.quote} className="flex h-full flex-col justify-between gap-6">
-              <p className="text-lg leading-8 text-[var(--ink)]">{item.quote}</p>
-              <div className="flex items-center gap-3">
-                <CustomerAvatar initials={initials[i]} tone={tones[i]} />
-                <div>
-                  <p className="text-sm font-semibold text-[var(--ink)]">{item.name}</p>
-                  <p className="text-xs text-[var(--muted)]">{item.role}</p>
-                </div>
-              </div>
-            </GlassCard>
-          ))}
-        </div>
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-[var(--muted)]">
-          {t.testimonials.note}
-        </p>
-      </div>
-    </section>
-  );
-}
 
-export function EarlyAccessTeaser() {
-  const { lang, t } = useLanguage();
-  return (
-    <section id="early-access" className={sectionPadding}>
-      <div className="mx-auto grid max-w-[1040px] overflow-hidden rounded-[36px] border border-[var(--line)] bg-white/85 shadow-[0_24px_64px_rgba(15,23,42,0.07)] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="p-8 sm:p-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-            {t.pricing.eyebrow}
-          </p>
-          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-            {t.pricing.title}
-          </h2>
-          <p className="mt-4 text-base leading-7 text-[var(--muted)]">
-            {t.pricing.body}
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <StartButton className={primaryButtonClass}>
-              {t.pricing.startFree}
-            </StartButton>
-            <a
-              href={tryBookingPath(lang)}
-              className="inline-flex items-center justify-center rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-white"
-            >
-              {t.pricing.viewPricing}
-            </a>
-          </div>
-        </div>
-        <div className="border-t border-[var(--line)] bg-[linear-gradient(135deg,rgba(26,115,232,0.08),rgba(13,148,136,0.1))] p-8 sm:p-10 lg:border-l lg:border-t-0">
-          <div className="rounded-[28px] border border-white/80 bg-white/78 p-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-            {t.pricing.features.map((item) => (
-              <div key={item} className="flex items-center gap-3 border-b border-[var(--line)] py-3 last:border-b-0">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-[var(--teal-soft)] text-xs font-bold text-[var(--teal)]">
-                  ✓
-                </span>
-                <span className="text-sm font-semibold text-[var(--ink)]">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export function FinalCTA() {
   const { t } = useLanguage();
@@ -1201,13 +710,11 @@ export function FinalCTA() {
         <p className="mt-5 text-lg leading-8 text-white/85">
           {t.finalCta.body}
         </p>
-        <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-          <StartButton className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-[var(--primary)] shadow-[0_18px_44px_rgba(15,23,42,0.18)] transition hover:bg-white/90">
+        <div className="mt-9 flex flex-col items-center gap-4">
+          <StartButton className="inline-flex items-center justify-center rounded-lg bg-white px-8 py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white/90">
             {t.finalCta.ctaPrimary}
           </StartButton>
-          <DemoButton className="inline-flex items-center justify-center rounded-full border border-white/60 px-6 py-3 text-sm font-semibold !text-white transition hover:bg-white/10">
-            {t.finalCta.ctaSecondary}
-          </DemoButton>
+          <p className="text-sm !text-white/70">{t.finalCta.fineprint}</p>
         </div>
       </div>
     </section>
@@ -1330,6 +837,7 @@ export function LandingPage({
         {afterHero}
         <HowItWorks />
         <Features />
+        <Trust />
         <FAQ />
         <FinalCTA />
       </main>
