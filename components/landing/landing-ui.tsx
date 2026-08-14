@@ -334,13 +334,19 @@ function useHeroPassed(alwaysShowCta: boolean) {
   return alwaysShowCta || passed;
 }
 
-export function StickyNav({ alwaysShowCta = false }: { alwaysShowCta?: boolean } = {}) {
+export function StickyNav({
+  alwaysShowCta = false,
+  showUseCases = true,
+}: {
+  alwaysShowCta?: boolean;
+  showUseCases?: boolean;
+} = {}) {
   const { lang, setLang, t } = useLanguage();
   const heroPassed = useHeroPassed(alwaysShowCta);
   const navLinks = [
     { href: "#live-examples", label: t.nav.links.examples },
     { href: "#how", label: t.nav.links.how },
-    { href: "#verticals", label: t.nav.links.useCases },
+    ...(showUseCases ? [{ href: "#verticals", label: t.nav.links.useCases }] : []),
     { href: "#faq", label: t.nav.links.faq },
   ];
 
@@ -721,7 +727,7 @@ export function FinalCTA() {
   );
 }
 
-export function Footer() {
+export function Footer({ showUseCases = true }: { showUseCases?: boolean } = {}) {
   const { lang, t } = useLanguage();
   return (
     <footer className="border-t border-[var(--line)] bg-white/65 px-5 py-12 sm:px-8">
@@ -753,11 +759,13 @@ export function Footer() {
                   {t.footer.product.features}
                 </a>
               </li>
-              <li>
-                <a href="#verticals" className="hover:text-[var(--ink)]">
-                  {t.footer.product.useCases}
-                </a>
-              </li>
+              {showUseCases ? (
+                <li>
+                  <a href="#verticals" className="hover:text-[var(--ink)]">
+                    {t.footer.product.useCases}
+                  </a>
+                </li>
+              ) : null}
               <li>
                 <a href={tryBookingPath(lang)} className="text-left hover:text-[var(--ink)]">
                   {t.footer.product.seeLivePage}
@@ -823,14 +831,21 @@ export function Footer() {
 export function LandingPage({
   afterHero,
   featuredDemos,
+  showUseCases = true,
 }: {
   afterHero?: ReactNode;
   /** Chosen on the server; see lib/demo-gallery.ts. */
   featuredDemos: number[];
+  /**
+   * Whether the verticals picker is on the page. It is replaced by the
+   * dashboard panel once an owner has a page, and the nav must not keep
+   * offering an anchor that no longer exists.
+   */
+  showUseCases?: boolean;
 }) {
   return (
     <LandingDialogsProvider>
-      <StickyNav />
+      <StickyNav showUseCases={showUseCases} />
       <main className="flex-1">
         <Hero />
         <LiveExamples featured={featuredDemos} />
@@ -841,7 +856,7 @@ export function LandingPage({
         <FAQ />
         <FinalCTA />
       </main>
-      <Footer />
+      <Footer showUseCases={showUseCases} />
     </LandingDialogsProvider>
   );
 }

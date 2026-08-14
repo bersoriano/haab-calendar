@@ -353,6 +353,7 @@ function HomeExperienceInner({
       >
         <LandingPage
           featuredDemos={featuredDemos}
+          showUseCases={!effectiveConfigured}
           afterHero={
             effectiveConfigured ? (
               <DashboardPanel onOpen={() => openApp()} email={email} />
