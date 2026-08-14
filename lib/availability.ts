@@ -8,6 +8,7 @@ import {
 import type {
   BookingHoldRecord,
   BookingRecord,
+  BookingType,
   Service,
   WeekdayKey,
   WeeklyAvailability,
@@ -115,6 +116,62 @@ export function getSpotsLeft(
   return service.maxSpots - taken - held;
 }
 
+// An event runs on the same provider as every other service, so anything else
+// scheduled across its window takes it off the calendar: a full-day booking on
+// that date, or an overlapping booking or hold from another service.
+//
+// Bookings of the event's own service are its attendees — dozens of them share
+// the one window by design — so they are governed by `getSpotsLeft` instead and
+// never block here.
+function isEventWindowTaken(
+  service: Service,
+  dateKey: string,
+  bookings: BookingRecord[],
+  ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
+) {
+  const startTime = service.startTime;
+  const endTime =
+    service.endTime ??
+    (startTime && service.durationMinutes
+      ? addMinutes(startTime, service.durationMinutes)
+      : undefined);
+
+  if (!startTime || !endTime) {
+    return false;
+  }
+
+  const takesEventWindow = (occupant: {
+    serviceId: string;
+    bookingType: BookingType;
+    startTime?: string;
+    endTime?: string;
+  }) => {
+    if (occupant.serviceId === service.id) {
+      return false;
+    }
+
+    if (occupant.bookingType === "full-day") {
+      return true;
+    }
+
+    const occupantStart = occupant.startTime;
+    const occupantEnd = occupant.endTime;
+
+    if (!occupantStart || !occupantEnd) {
+      return false;
+    }
+
+    return overlapExists(startTime, endTime, occupantStart, occupantEnd);
+  };
+
+  return (
+    getBookingsForDate(bookings, dateKey, ignoredBookingId).some(takesEventWindow) ||
+    getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId).some(takesEventWindow)
+  );
+}
+
 export function getBookingHoldsForDate(
   bookingHolds: BookingHoldRecord[],
   dateKey: string,
@@ -150,6 +207,14 @@ export function getAvailableSlots(
       !service.startTime ||
       isPastAvailabilityDate(dateKey, clock) ||
       hasSlotStarted(dateKey, service.startTime, clock) ||
+      isEventWindowTaken(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) ||
       getSpotsLeft(
         service,
         dateKey,
@@ -172,6 +237,14 @@ export function getAvailableSlots(
       !weeklyMatchesDate(service, dateKey) ||
       isPastAvailabilityDate(dateKey, clock) ||
       hasSlotStarted(dateKey, service.startTime, clock) ||
+      isEventWindowTaken(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) ||
       getSpotsLeft(
         service,
         dateKey,
@@ -346,7 +419,17 @@ export function getDayAvailability(
         ? Math.max(0, service.maxSpots)
         : 1;
 
-    if (hasSlotStarted(dateKey, service.startTime, clock)) {
+    if (
+      hasSlotStarted(dateKey, service.startTime, clock) ||
+      isEventWindowTaken(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      )
+    ) {
       return toDayAvailability(capacity, 0);
     }
 
@@ -440,6 +523,14 @@ export function isDateAvailable(
       service.occurrenceDate === dateKey &&
       Boolean(service.startTime) &&
       !hasSlotStarted(dateKey, service.startTime ?? "", clock) &&
+      !isEventWindowTaken(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) &&
       getSpotsLeft(
         service,
         dateKey,
@@ -458,6 +549,14 @@ export function isDateAvailable(
       Boolean(service.startTime) &&
       weeklyMatchesDate(service, dateKey) &&
       !hasSlotStarted(dateKey, service.startTime ?? "", clock) &&
+      !isEventWindowTaken(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+      ) &&
       getSpotsLeft(
         service,
         dateKey,
@@ -503,9 +602,19 @@ export function isDateAvailable(
     ).length > 0;
   }
 
+  // A full-day booking takes the whole open day, so any block that eats into
+  // opening hours rules the date out. A block sitting entirely outside those
+  // hours takes nothing off the day and is ignored.
   if (
     (daySchedule.blockedWindows ?? []).some(
-      (block) => toMinutes(block.endTime) > toMinutes(block.startTime),
+      (block) =>
+        toMinutes(block.endTime) > toMinutes(block.startTime) &&
+        overlapExists(
+          daySchedule.startTime,
+          daySchedule.endTime,
+          block.startTime,
+          block.endTime,
+        ),
     )
   ) {
     return false;

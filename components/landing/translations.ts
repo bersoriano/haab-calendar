@@ -174,8 +174,8 @@ export const translations = {
         {
           vertical: "Espacios",
           title: "Riverside Padel Club",
-          proof: "Reservas de cancha por horario con capacidad y reglas claras.",
-          cta: "Reservar una cancha",
+          proof: "Una cancha techada por horario: reservarla la quita del calendario de todos.",
+          cta: "Reservar la cancha",
         },
         {
           vertical: "Servicios profesionales",
@@ -702,8 +702,8 @@ export const translations = {
         {
           vertical: "Spaces",
           title: "Riverside Padel Club",
-          proof: "Time-based court reservations with capacity and clear rules.",
-          cta: "Book a court",
+          proof: "One indoor court by the hour — booking it takes that time off every list.",
+          cta: "Book the court",
         },
         {
           vertical: "Professional services",

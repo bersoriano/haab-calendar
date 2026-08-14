@@ -750,3 +750,147 @@ describe("getDayAvailability", () => {
     ).toEqual({ capacity: 0, free: 0, ratio: 0, level: "closed" });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Events vs. the rest of the provider's calendar
+//
+// An event occupies the same provider as every other service, so anything else
+// booked across its window takes the event off the calendar. Bookings of the
+// event's own service are its attendees and are governed by spots instead.
+// ---------------------------------------------------------------------------
+
+describe("event availability against other services", () => {
+  it("closes a weekly event when another service is booked across its window", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_other",
+        serviceId: "svc_1",
+        dateKey: TUESDAY_KEY,
+        startTime: "18:00",
+        endTime: "19:00",
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      false,
+    );
+    expect(getAvailableSlots(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toEqual(
+      [],
+    );
+    expect(
+      getDayAvailability(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings),
+    ).toMatchObject({ free: 0, level: "full" });
+  });
+
+  it("keeps a weekly event open when the other service's booking does not overlap", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_other",
+        serviceId: "svc_1",
+        dateKey: TUESDAY_KEY,
+        startTime: "09:00",
+        endTime: "09:30",
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      true,
+    );
+    expect(getAvailableSlots(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toEqual(
+      ["18:30"],
+    );
+  });
+
+  it("keeps a weekly event open for its own attendees while spots remain", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_attendee",
+        serviceId: svcWeeklyTue.id,
+        dateKey: TUESDAY_KEY,
+        startTime: "18:30",
+        endTime: "19:30",
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      true,
+    );
+    expect(getAvailableSlots(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toEqual(
+      ["18:30"],
+    );
+  });
+
+  it("closes a single-occurrence event when a full-day booking takes the date", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_fullday",
+        serviceId: "svc_2",
+        bookingType: "full-day",
+        dateKey: MONDAY_KEY,
+        startTime: undefined,
+        endTime: undefined,
+      }),
+    ];
+
+    expect(isDateAvailable(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toBe(false);
+    expect(getAvailableSlots(MONDAY_KEY, svcSingle, baseAvailability, bookings)).toEqual([]);
+  });
+
+  it("closes a single-occurrence event while another service holds its window", () => {
+    useToday();
+    const holds = [
+      {
+        id: "hold_other",
+        serviceId: "svc_1",
+        bookingType: "appointment" as const,
+        dateKey: MONDAY_KEY,
+        startTime: "17:30",
+        endTime: "18:30",
+        createdAt: "",
+        expiresAt: 0,
+      },
+    ];
+
+    expect(
+      isDateAvailable(MONDAY_KEY, svcSingle, baseAvailability, [], undefined, holds),
+    ).toBe(false);
+  });
+
+  it("ignores a cancelled booking from another service", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_other",
+        serviceId: "svc_1",
+        dateKey: TUESDAY_KEY,
+        startTime: "18:00",
+        endTime: "19:00",
+        status: "cancelled",
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      true,
+    );
+  });
+});
+
+describe("full-day availability vs. blocked windows outside opening hours", () => {
+  it("stays available when the blocked window falls outside the day's hours", () => {
+    useToday();
+    // The day runs 09:00-17:00; an evening block takes nothing off it.
+    const availability: WeeklyAvailability = {
+      ...baseAvailability,
+      monday: {
+        ...baseAvailability.monday,
+        blockedWindows: [{ startTime: "18:00", endTime: "19:00" }],
+      },
+    };
+
+    expect(isDateAvailable(MONDAY_KEY, svcFullDay, availability, [])).toBe(true);
+  });
+});

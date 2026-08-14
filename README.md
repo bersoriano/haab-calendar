@@ -89,6 +89,13 @@ cannot represent them honestly today:
   check-out, so a three-night stay can only be sold as three separate
   bookings that nothing keeps together.
 
+No example uses a `full-day` service either. A full-day booking means an
+uninterrupted day, so `isDateAvailable` rejects one on any weekday whose
+opening hours are broken by a blocked window, and on any date that already
+holds a booking of any kind. That is deliberate — an owner who wants to sell
+full days removes the block — and the blocked-times hint in the availability
+editor now says so.
+
 ### Editing the examples
 
 The super admin edits them in the app: `/super-admin` → **Demo pages** →

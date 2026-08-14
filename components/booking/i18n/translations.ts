@@ -773,7 +773,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       availabilityStart: "Start",
       availabilityEnd: "End",
       blockedTimes: "Blocked times",
-      blockedTimesHint: "Hide breaks or unavailable windows from booking.",
+      blockedTimesHint:
+        "Hide breaks or unavailable windows from booking. A day with a blocked time cannot take full-day bookings.",
       addBlock: "Add block",
       blockedFrom: "From",
       blockedTo: "To",
@@ -1253,7 +1254,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       availabilityStart: "Inicio",
       availabilityEnd: "Fin",
       blockedTimes: "Horarios bloqueados",
-      blockedTimesHint: "Oculte descansos u horarios no disponibles para reservas.",
+      blockedTimesHint:
+        "Oculte descansos u horarios no disponibles para reservas. Un día con horario bloqueado no acepta reservas de día completo.",
       addBlock: "Agregar bloqueo",
       blockedFrom: "Desde",
       blockedTo: "Hasta",

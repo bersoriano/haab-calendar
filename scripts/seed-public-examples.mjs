@@ -139,8 +139,8 @@ const examples = [
     },
     services: [
       {
-        name: "Show court, one hour",
-        slug: "show-court-one-hour",
+        name: "Indoor padel court",
+        slug: "indoor-padel-court",
         booking_type: "appointment",
         duration_minutes: 60,
         description:
@@ -157,8 +157,8 @@ const examples = [
         linked_phone_1: true,
       },
       {
-        name: "Show court with a coach, 90 minutes",
-        slug: "show-court-with-a-coach-90-minutes",
+        name: "Private coaching court",
+        slug: "private-coaching-court",
         booking_type: "appointment",
         duration_minutes: 90,
         description:
@@ -618,7 +618,7 @@ const examples = [
       phone_number_2: "",
       address_1: "Avenida Coyoacán 1450, Ciudad de México",
       address_2: "",
-      hero_text: "Consultas sin sala de espera llena.",
+      hero_text: "Un consultorio, una mascota a la vez.",
       gallery_image_urls: [],
       availability: {
         sunday: closedDay("09:00", "18:00"),
