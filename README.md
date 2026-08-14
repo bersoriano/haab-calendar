@@ -39,6 +39,9 @@ See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-
   Public service-specific booking page.
 - `/[vertical]/[providerSlug]/manage/[token]`
   Self-service page to view, reschedule, or cancel an existing booking via its manage token.
+- `/gallery`
+  Every published example page in one grid. The landing page shows four of them,
+  picked per request, and links here.
 - `/public/[slug]`
   Standalone local demo booking URL. Production-style public URLs should use
   the hierarchical routes above.

@@ -167,7 +167,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Producto real, no una maqueta",
       title: "Abre una. Resérvala como lo haría un cliente.",
-      body: "Doce páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
+      body: "{n} páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
       liveBadge: "En vivo",
       items: [
         {
@@ -243,7 +243,15 @@ export const translations = {
           cta: "Reservar una mesa",
         },
       ],
-      note: "No necesitas iniciar sesión. Las doce páginas usan el flujo público real de Haab.",
+      seeAll: "Ver las {n} demos →",
+      note: "No necesitas iniciar sesión. Las {n} páginas usan el flujo público real de Haab.",
+    },
+    gallery: {
+      eyebrow: "Todas las demos",
+      title: "Cada página de ejemplo, en vivo.",
+      body: "{n} negocios distintos sobre el mismo motor de reservas. Abre cualquiera y resérvala como lo haría un cliente.",
+      back: "← Volver al inicio",
+      note: "Ninguna requiere cuenta. Todas usan el flujo público real de Haab.",
     },
     socialProof: {
       badge: "Producto en acceso anticipado",
@@ -706,7 +714,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Real product, not a mockup",
       title: "Open one. Book it like a client would.",
-      body: "Twelve public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
+      body: "{n} public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
       liveBadge: "Live",
       items: [
         {
@@ -782,7 +790,15 @@ export const translations = {
           cta: "Reserve a table",
         },
       ],
-      note: "No sign-in required. All twelve pages use Haab's real public booking flow.",
+      seeAll: "See all {n} demos →",
+      note: "No sign-in required. All {n} pages use Haab's real public booking flow.",
+    },
+    gallery: {
+      eyebrow: "Every demo",
+      title: "Every example page, live.",
+      body: "{n} different businesses on one booking engine. Open any of them and book it the way a client would.",
+      back: "← Back to home",
+      note: "None of them need an account. All use Haab's real public booking flow.",
     },
     socialProof: {
       badge: "Early-access product",

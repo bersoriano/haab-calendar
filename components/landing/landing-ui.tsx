@@ -13,10 +13,7 @@ import { StartPageDialog } from "./start-page-dialog";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
 // `VerticalId`s in config/verticals.ts and to the UseCases card variants below.
-export type LandingVertical = Extract<
-  VerticalId,
-  "healthcare" | "spaces" | "professional" | "events"
->;
+export type LandingVertical = VerticalId;
 
 // Wiring from the host page (HomeExperience) into the landing UI: a generic
 // "start setup" action and a per-vertical selection. Defaults are no-ops so the
@@ -217,6 +214,19 @@ function localizedExamplePath(path: string, lang: "en" | "es") {
 
 function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
+}
+
+export function galleryPath(lang: "en" | "es") {
+  return `/gallery?lang=${lang}`;
+}
+
+/**
+ * How many examples there are is written once, in DEMO_PAGES. Copy that names
+ * the number carries a {n} placeholder instead, because a hand-written count
+ * goes stale the moment a demo is added.
+ */
+export function formatDemoCount(template: string, count: number) {
+  return template.replace("{n}", String(count));
 }
 
 function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
@@ -662,25 +672,81 @@ export function Hero() {
   );
 }
 
-export function LiveExamples() {
+// One entry per DEMO_PAGES row, in the same order. The modulo where these are
+// read keeps a newly seeded demo from rendering an empty glyph before the lists
+// catch up.
+const DEMO_GLYPHS = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G", "M"];
+const DEMO_TONES = [
+  "teal",
+  "blue",
+  "blue",
+  "gold",
+  "teal",
+  "gold",
+  "blue",
+  "teal",
+  "gold",
+  "blue",
+  "teal",
+  "gold",
+] as const;
+
+/**
+ * A single example page. `index` addresses both DEMO_PAGES and the landing
+ * copy's items list, which are kept the same length by demo-pages.test.ts — so
+ * one number is enough to pair a card with the page it opens.
+ */
+export function DemoCard({ index }: { index: number }) {
   const { lang, t } = useLanguage();
-  // One entry per DEMO_PAGES row, in the same order. The modulo below keeps a
-  // newly seeded demo from rendering an empty glyph before this list catches up.
-  const glyphs = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G", "M"];
-  const tones = [
-    "teal",
-    "blue",
-    "blue",
-    "gold",
-    "teal",
-    "gold",
-    "blue",
-    "teal",
-    "gold",
-    "blue",
-    "teal",
-    "gold",
-  ] as const;
+  const item = t.liveExamples.items[index];
+
+  if (!item) {
+    return null;
+  }
+
+  return (
+    <Link
+      href={localizedExamplePath(liveExamplePaths[index], lang)}
+      className="group flex min-h-56 flex-col rounded-[24px] border border-[var(--line)] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_24px_56px_rgba(15,23,42,0.11)]"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <BrandGlyph
+          label={DEMO_GLYPHS[index % DEMO_GLYPHS.length]}
+          tone={DEMO_TONES[index % DEMO_TONES.length]}
+        />
+        <span className="rounded-full bg-[var(--teal-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
+          {t.liveExamples.liveBadge}
+        </span>
+      </div>
+      <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+        {item.vertical}
+      </p>
+      <h3 className="mt-2 text-lg font-semibold text-[var(--ink)]">{item.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.proof}</p>
+      <span className="mt-auto pt-5 text-sm font-semibold text-[var(--primary)] group-hover:underline">
+        {item.cta} →
+      </span>
+    </Link>
+  );
+}
+
+export function DemoGrid({ indexes }: { indexes: number[] }) {
+  return (
+    <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {indexes.map((index) => (
+        <DemoCard key={index} index={index} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The landing section. `featured` is chosen on the server so a visit can show a
+ * different handful without the shuffle causing a hydration mismatch; the rest
+ * live in the gallery.
+ */
+export function LiveExamples({ featured }: { featured: number[] }) {
+  const { lang, t } = useLanguage();
 
   return (
     <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-14 sm:px-8 sm:py-16">
@@ -694,36 +760,19 @@ export function LiveExamples() {
               {t.liveExamples.title}
             </h2>
           </div>
-          <p className="max-w-xl text-base leading-7 text-[var(--muted)]">{t.liveExamples.body}</p>
+          <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
+            {formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
+          </p>
         </div>
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {t.liveExamples.items.map((item, index) => (
-            <Link
-              key={item.title}
-              href={localizedExamplePath(liveExamplePaths[index], lang)}
-              className="group flex min-h-56 flex-col rounded-[24px] border border-[var(--line)] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_24px_56px_rgba(15,23,42,0.11)]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <BrandGlyph
-                  label={glyphs[index % glyphs.length]}
-                  tone={tones[index % tones.length]}
-                />
-                <span className="rounded-full bg-[var(--teal-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
-                  {t.liveExamples.liveBadge}
-                </span>
-              </div>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
-                {item.vertical}
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-[var(--ink)]">{item.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.proof}</p>
-              <span className="mt-auto pt-5 text-sm font-semibold text-[var(--primary)] group-hover:underline">
-                {item.cta} →
-              </span>
-            </Link>
-          ))}
+        <DemoGrid indexes={featured} />
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <Link href={galleryPath(lang)} className={primaryButtonClass}>
+            {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length)}
+          </Link>
+          <p className="text-center text-xs text-[var(--muted)]">
+            {formatDemoCount(t.liveExamples.note, DEMO_PAGES.length)}
+          </p>
         </div>
-        <p className="mt-6 text-center text-xs text-[var(--muted)]">{t.liveExamples.note}</p>
       </div>
     </section>
   );
@@ -1264,13 +1313,20 @@ export function Footer() {
 // Full marketing landing. `afterHero` is slotted directly below the hero — the
 // host (HomeExperience) injects the verticals picker or the "go to dashboard"
 // panel there, depending on auth/configuration state.
-export function LandingPage({ afterHero }: { afterHero?: ReactNode }) {
+export function LandingPage({
+  afterHero,
+  featuredDemos,
+}: {
+  afterHero?: ReactNode;
+  /** Chosen on the server; see lib/demo-gallery.ts. */
+  featuredDemos: number[];
+}) {
   return (
     <LandingDialogsProvider>
       <StickyNav />
       <main className="flex-1">
         <Hero />
-        <LiveExamples />
+        <LiveExamples featured={featuredDemos} />
         {afterHero}
         <HowItWorks />
         <Features />

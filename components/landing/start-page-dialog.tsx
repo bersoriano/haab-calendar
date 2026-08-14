@@ -13,6 +13,7 @@ const VERTICAL_ORDER: LandingVertical[] = [
   "spaces",
   "professional",
   "events",
+  "restaurant",
 ];
 
 const VERTICAL_GLYPHS: Record<LandingVertical, string> = {
@@ -20,6 +21,7 @@ const VERTICAL_GLYPHS: Record<LandingVertical, string> = {
   spaces: "▦",
   professional: "↗",
   events: "★",
+  restaurant: "▢",
 };
 
 // First step of provider onboarding: pick what you book, name the page, see the

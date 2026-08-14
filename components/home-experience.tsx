@@ -61,6 +61,8 @@ type HomeExperienceProps = {
   initialPageName?: string;
   /** Server-resolved visitor language: cookie, Accept-Language, or the English default. */
   initialLanguage: LandingLang;
+  /** Which example pages the landing section shows, picked per request. */
+  featuredDemos: number[];
   /** Server-resolved language for the signed-in viewer; the dashboard default. */
   viewerLanguage: Lang;
   /** Supabase-backed provider data for configured users. */
@@ -106,6 +108,7 @@ function HomeExperienceInner({
   publicationStatus,
   isSuperAdmin,
   demoEdit,
+  featuredDemos,
   resumeGuestPublish = false,
 }: HomeExperienceProps) {
   const router = useRouter();
@@ -349,6 +352,7 @@ function HomeExperienceInner({
         }}
       >
         <LandingPage
+          featuredDemos={featuredDemos}
           afterHero={
             effectiveConfigured ? (
               <DashboardPanel onOpen={() => openApp()} email={email} />

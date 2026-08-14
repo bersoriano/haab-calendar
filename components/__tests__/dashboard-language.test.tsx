@@ -74,6 +74,7 @@ function renderDashboard(options: {
       demoEdit={
         configured ? { label: "Ferias del Sur", publicPath: "/events/ferias" } : undefined
       }
+      featuredDemos={[]}
       initialLanguage={options.initialLanguage}
       viewerLanguage={options.viewerLanguage}
       dashboardStore={configured ? configuredStore(options.dashboardLanguage) : undefined}

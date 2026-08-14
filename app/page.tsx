@@ -11,12 +11,14 @@ import { getServerLanguage } from "@/lib/language/server";
 import type { LandingVertical } from "@/components/landing/landing-ui";
 import type { ModuleStore } from "@/lib/types";
 import { isGuestPublishResume } from "@/lib/guest-builder";
+import { pickFeaturedDemos } from "@/lib/demo-gallery";
 
 const LANDING_VERTICALS: LandingVertical[] = [
   "healthcare",
   "spaces",
   "professional",
   "events",
+  "restaurant",
 ];
 
 function parseVertical(value?: string): LandingVertical | undefined {
@@ -94,6 +96,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       email={email}
       isSuperAdmin={isSuperAdmin}
       initialLanguage={resolvedLanguage}
+      featuredDemos={pickFeaturedDemos()}
       initialVertical={parseVertical(vertical)}
       initialPageName={name}
       dashboardStore={dashboardStore}
