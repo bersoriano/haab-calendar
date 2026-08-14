@@ -666,7 +666,7 @@ export function LiveExamples() {
   const { lang, t } = useLanguage();
   // One entry per DEMO_PAGES row, in the same order. The modulo below keeps a
   // newly seeded demo from rendering an empty glyph before this list catches up.
-  const glyphs = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G"];
+  const glyphs = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G", "M"];
   const tones = [
     "teal",
     "blue",
@@ -679,6 +679,7 @@ export function LiveExamples() {
     "gold",
     "blue",
     "teal",
+    "gold",
   ] as const;
 
   return (

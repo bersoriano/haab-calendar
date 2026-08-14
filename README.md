@@ -34,7 +34,7 @@ See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-
   Provider workspace plus the requested screen-by-screen and flow overview.
 - `/[vertical]/[providerSlug]`
   Public provider profile booking page. Supported vertical segments are
-  `doctors`, `professionals`, `spaces`, and `events`.
+  `doctors`, `professionals`, `spaces`, `events`, and `restaurants`.
 - `/[vertical]/[providerSlug]/[serviceSlug]`
   Public service-specific booking page.
 - `/[vertical]/[providerSlug]/manage/[token]`
@@ -59,11 +59,15 @@ idempotent and gives each example its own non-login owner account.
 - Hair salon: `/professionals/copperline-hair-studio`
 - Car service, one bay: `/professionals/northgate-auto-service`
 - Personal golf coaching: `/professionals/fairway-lab-golf`
+- Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
 
-Every example above is a single-resource business — one room, one chair, one
-bay, one coach — because a booked appointment slot blocks that time across all
-of a provider's services. Restaurant covers and hotel stays are deliberately
-absent; see the note at the end of this section.
+Casa Mirador is the exception to the rule below: its services sell a fixed
+number of tables at each seating, so a reservation takes one table rather than
+the hour. Its dining room and terrace hold separate counts, which is why filling
+the dining room at 20:00 leaves the terrace bookable. Every other example is a
+single-resource business — one room, one chair, one bay, one coach — because a
+booked appointment slot blocks that time across all of a provider's services. Hotel stays are deliberately absent; see the note at
+the end of this section.
 
 The two race entries are dated relative to the seed run, so re-seeding always
 leaves them in the future. Every example is fictional, including the phone
@@ -75,15 +79,9 @@ this).
 
 ### Verticals with no example, and why
 
-Two common booking businesses have no example page because the booking model
-cannot represent them honestly today:
+One common booking business has no example page because the booking model
+cannot represent it honestly today:
 
-- **Restaurant reservations.** A table booking needs a party size and many
-  parties seated in the same time slot. `getAvailableSlots` treats an
-  appointment slot as exclusive across every service a provider offers, and
-  `getSpotsLeft` counts one spot per booking with no quantity, so a single
-  20:00 reservation would close 20:00 for the whole restaurant. Supporting
-  this needs per-service concurrency and a party-size field.
 - **Hotel accommodation.** A stay is a date range. A booking carries one
   `dateKey`, and `full-day` means one whole date, not check-in through
   check-out, so a three-night stay can only be sold as three separate

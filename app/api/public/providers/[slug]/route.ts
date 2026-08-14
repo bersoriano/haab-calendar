@@ -57,6 +57,8 @@ type PublicServiceRow = {
   start_time: string | null;
   end_time: string | null;
   max_spots: number | null;
+  capacity_scope: "date" | "slot" | null;
+  max_party_size: number | null;
   location_prices: Partial<Record<LocationKey, string>> | null;
   linked_address_1: boolean | null;
   linked_address_2: boolean | null;
@@ -84,6 +86,8 @@ function toPublicService(row: PublicServiceRow): Service {
     startTime: row.start_time?.slice(0, 5),
     endTime: row.end_time?.slice(0, 5),
     maxSpots: row.max_spots ?? undefined,
+    capacityScope: row.capacity_scope ?? undefined,
+    maxPartySize: row.max_party_size ?? undefined,
     cost: row.cost ?? "",
     locationPrices: row.location_prices ?? undefined,
     notes: row.notes ?? "",

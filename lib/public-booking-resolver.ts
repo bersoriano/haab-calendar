@@ -32,7 +32,7 @@ import type {
 export const PUBLIC_PROVIDER_SELECT =
   "id, full_name, business_name, slug, vertical, language, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 export const PUBLIC_SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 
 type PublicProviderRow = {
   id: string;
@@ -73,6 +73,8 @@ type PublicServiceRow = {
   start_time: string | null;
   end_time: string | null;
   max_spots: number | null;
+  capacity_scope: "date" | "slot" | null;
+  max_party_size: number | null;
   location_prices: Partial<Record<LocationKey, string>> | null;
   linked_address_1: boolean | null;
   linked_address_2: boolean | null;
@@ -175,6 +177,8 @@ function toPublicService(row: PublicServiceRow): Service {
     startTime: row.start_time?.slice(0, 5),
     endTime: row.end_time?.slice(0, 5),
     maxSpots: row.max_spots ?? undefined,
+    capacityScope: row.capacity_scope ?? undefined,
+    maxPartySize: row.max_party_size ?? undefined,
     cost: row.cost ?? "",
     locationPrices: row.location_prices ?? undefined,
     notes: row.notes ?? "",

@@ -167,7 +167,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Producto real, no una maqueta",
       title: "Abre una. Resérvala como lo haría un cliente.",
-      body: "Once páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
+      body: "Doce páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
       liveBadge: "En vivo",
       items: [
         {
@@ -236,8 +236,14 @@ export const translations = {
           proof: "Clases uno a uno de golf con horarios de mañana y duración por tipo de sesión.",
           cta: "Reservar una clase",
         },
+        {
+          vertical: "Restaurante",
+          title: "Casa Mirador",
+          proof: "Doce mesas por turno: cada reserva descuenta una, no cierra el horario.",
+          cta: "Reservar una mesa",
+        },
       ],
-      note: "No necesitas iniciar sesión. Las once páginas usan el flujo público real de Haab.",
+      note: "No necesitas iniciar sesión. Las doce páginas usan el flujo público real de Haab.",
     },
     socialProof: {
       badge: "Producto en acceso anticipado",
@@ -700,7 +706,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Real product, not a mockup",
       title: "Open one. Book it like a client would.",
-      body: "Eleven public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
+      body: "Twelve public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
       liveBadge: "Live",
       items: [
         {
@@ -769,8 +775,14 @@ export const translations = {
           proof: "One-on-one golf lessons on early hours, priced by session length.",
           cta: "Book a lesson",
         },
+        {
+          vertical: "Restaurant",
+          title: "Casa Mirador",
+          proof: "Twelve tables per seating — each reservation takes one, not the hour.",
+          cta: "Reserve a table",
+        },
       ],
-      note: "No sign-in required. All eleven pages use Haab's real public booking flow.",
+      note: "No sign-in required. All twelve pages use Haab's real public booking flow.",
     },
     socialProof: {
       badge: "Early-access product",

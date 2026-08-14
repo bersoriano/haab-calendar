@@ -103,6 +103,13 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     ownerEmail: "public-examples+golf@haab-calendar.invalid",
     label: "Fairway Lab Golf",
   },
+  {
+    key: "restaurants",
+    vertical: "restaurant",
+    providerSlug: "casa-mirador",
+    ownerEmail: "public-examples+restaurants@haab-calendar.invalid",
+    label: "Casa Mirador",
+  },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {
