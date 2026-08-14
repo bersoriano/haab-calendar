@@ -56,6 +56,11 @@ export const translations = {
           tagline: "Para carreras, talleres, clases y reuniones",
           start: "Empezar con eventos →",
         },
+        restaurant: {
+          label: "Restaurantes",
+          tagline: "Para comedores que reservan mesas",
+          start: "Empezar con restaurantes →",
+        },
       },
     },
     auth: {
@@ -583,6 +588,11 @@ export const translations = {
           label: "Events",
           tagline: "For races, workshops, classes, and gatherings",
           start: "Start with Events →",
+        },
+        restaurant: {
+          label: "Restaurants",
+          tagline: "For dining rooms taking table reservations",
+          start: "Start with Restaurants →",
         },
       },
     },

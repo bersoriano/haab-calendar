@@ -13,6 +13,8 @@ const ICON_PATHS: Record<VerticalId, string> = {
     "M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2h4a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2zm2 0h2V5h-2z",
   events:
     "M7 4v2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4h-2v2H9V4zM5 11h14v8H5z",
+  restaurant:
+    "M6 3v7a3 3 0 0 0 2 2.83V21h2v-8.17A3 3 0 0 0 12 10V3h-1.5v6h-1V3H8v6H7V3zm10 0c-1.66 0-3 2.24-3 5 0 2.21.9 4.07 2 4.7V21h2V3z",
 };
 
 const ACCENT_GRADIENTS: Record<VerticalId, string> = {
@@ -20,6 +22,7 @@ const ACCENT_GRADIENTS: Record<VerticalId, string> = {
   spaces: "from-[#1f658f] to-[#1a73e8]",
   professional: "from-[#005bbf] to-[#1f658f]",
   events: "from-[#00bfa5] to-[#1a73e8]",
+  restaurant: "from-[#1a73e8] to-[#005bbf]",
 };
 
 export function VerticalPicker({

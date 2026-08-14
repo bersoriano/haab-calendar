@@ -894,3 +894,218 @@ describe("full-day availability vs. blocked windows outside opening hours", () =
     expect(isDateAvailable(MONDAY_KEY, svcFullDay, availability, [])).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-slot capacity (restaurants: N tables at each seating)
+//
+// A capacity-bearing service hands out `maxSpots` units at every slot rather
+// than one exclusive booking. Its own bookings decrement the slot; bookings
+// from other services block it only when they are exclusive, mirroring the
+// database, where shared rows sit outside the overlap constraint.
+// ---------------------------------------------------------------------------
+
+/** 19:00-22:00 on Mondays, closed otherwise. */
+const dinnerAvailability: WeeklyAvailability = {
+  ...baseAvailability,
+  monday: { enabled: true, startTime: "19:00", endTime: "22:00" },
+};
+
+const svcTables: Service = {
+  id: "svc_tables",
+  name: "Dinner table",
+  bookingType: "appointment",
+  durationMinutes: 90,
+  description: "",
+  capacityScope: "slot",
+  maxSpots: 2,
+};
+
+function makeTableBooking(overrides: Partial<BookingRecord>): BookingRecord {
+  return makeBooking({
+    serviceId: svcTables.id,
+    serviceName: svcTables.name,
+    sharedCapacity: true,
+    startTime: "19:00",
+    endTime: "20:30",
+    ...overrides,
+  });
+}
+
+describe("per-slot capacity", () => {
+  it("offers a seating per slot in the day's grid", () => {
+    useToday();
+    expect(getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, [])).toEqual([
+      "19:00",
+      "20:30",
+    ]);
+  });
+
+  it("keeps a seating open while tables remain", () => {
+    useToday();
+    const bookings = [makeTableBooking({ id: "bk_1" })];
+
+    expect(getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, bookings)).toEqual([
+      "19:00",
+      "20:30",
+    ]);
+  });
+
+  it("closes only the seating whose tables ran out", () => {
+    useToday();
+    const bookings = [
+      makeTableBooking({ id: "bk_1" }),
+      makeTableBooking({ id: "bk_2" }),
+    ];
+
+    expect(getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, bookings)).toEqual([
+      "20:30",
+    ]);
+  });
+
+  it("counts each seating separately", () => {
+    useToday();
+    const bookings = [
+      makeTableBooking({ id: "bk_1" }),
+      makeTableBooking({ id: "bk_2" }),
+    ];
+
+    expect(getSpotsLeft(svcTables, MONDAY_KEY, bookings, undefined, [], undefined, "19:00")).toBe(
+      0,
+    );
+    expect(getSpotsLeft(svcTables, MONDAY_KEY, bookings, undefined, [], undefined, "20:30")).toBe(
+      2,
+    );
+  });
+
+  it("counts holds against a seating's tables", () => {
+    useToday();
+    const holds = [
+      {
+        id: "hold_1",
+        serviceId: svcTables.id,
+        bookingType: "appointment" as const,
+        dateKey: MONDAY_KEY,
+        startTime: "19:00",
+        endTime: "20:30",
+        createdAt: "",
+        expiresAt: 0,
+        sharedCapacity: true,
+      },
+    ];
+
+    expect(
+      getSpotsLeft(svcTables, MONDAY_KEY, [], undefined, holds, undefined, "19:00"),
+    ).toBe(1);
+  });
+
+  it("frees the origin seating when its own booking is the one being moved", () => {
+    useToday();
+    const bookings = [
+      makeTableBooking({ id: "bk_1" }),
+      makeTableBooking({ id: "bk_2" }),
+    ];
+
+    expect(
+      getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, bookings, "bk_2"),
+    ).toEqual(["19:00", "20:30"]);
+  });
+
+  it("closes a seating an exclusive booking from another service runs across", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_private",
+        serviceId: "svc_private",
+        dateKey: MONDAY_KEY,
+        startTime: "19:30",
+        endTime: "21:00",
+        sharedCapacity: false,
+      }),
+    ];
+
+    expect(getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, bookings)).toEqual(
+      [],
+    );
+  });
+
+  it("ignores a shared booking from another service, which runs its own inventory", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_counter",
+        serviceId: "svc_counter",
+        dateKey: MONDAY_KEY,
+        startTime: "19:00",
+        endTime: "20:30",
+        sharedCapacity: true,
+      }),
+    ];
+
+    expect(getAvailableSlots(MONDAY_KEY, svcTables, dinnerAvailability, bookings)).toEqual([
+      "19:00",
+      "20:30",
+    ]);
+  });
+
+  it("measures the day in tables rather than seatings", () => {
+    useToday();
+    const bookings = [makeTableBooking({ id: "bk_1" })];
+
+    // Two seatings x two tables = four, one of them taken.
+    expect(
+      getDayAvailability(MONDAY_KEY, svcTables, dinnerAvailability, bookings),
+    ).toMatchObject({ capacity: 4, free: 3, level: "open" });
+  });
+
+  it("reads the day as full once every table is gone", () => {
+    useToday();
+    const bookings = [
+      makeTableBooking({ id: "bk_1" }),
+      makeTableBooking({ id: "bk_2" }),
+      makeTableBooking({ id: "bk_3", startTime: "20:30", endTime: "22:00" }),
+      makeTableBooking({ id: "bk_4", startTime: "20:30", endTime: "22:00" }),
+    ];
+
+    expect(
+      getDayAvailability(MONDAY_KEY, svcTables, dinnerAvailability, bookings),
+    ).toMatchObject({ capacity: 4, free: 0, level: "full" });
+  });
+});
+
+describe("shared bookings and exclusive services", () => {
+  it("no longer closes an event's window for another shared service", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_shared",
+        serviceId: "svc_other_class",
+        dateKey: TUESDAY_KEY,
+        startTime: "18:00",
+        endTime: "19:00",
+        sharedCapacity: true,
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      true,
+    );
+  });
+
+  it("still closes an event's window for an exclusive booking", () => {
+    useToday();
+    const bookings = [
+      makeBooking({
+        id: "bk_exclusive",
+        serviceId: "svc_1",
+        dateKey: TUESDAY_KEY,
+        startTime: "18:00",
+        endTime: "19:00",
+        sharedCapacity: false,
+      }),
+    ];
+
+    expect(isDateAvailable(TUESDAY_KEY, svcWeeklyTue, baseAvailability, bookings)).toBe(
+      false,
+    );
+  });
+});

@@ -28,7 +28,7 @@ describe("getVerticalCopy", () => {
 });
 
 describe("chooseAnotherService", () => {
-  const VERTICALS = ["healthcare", "professional", "spaces", "events"] as const;
+  const VERTICALS = ["healthcare", "professional", "spaces", "events", "restaurant"] as const;
 
   // It used to be rendered as `chooseAnother` + `service`, two JSX siblings.
   // That reads correctly only while every vertical's Spanish noun is masculine,

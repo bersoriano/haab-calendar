@@ -85,8 +85,27 @@ export function weeklyMatchesDate(service: Service, dateKey: string) {
   return (service.weekdays ?? []).includes(weekday);
 }
 
-// Remaining capacity for a service on a given date. Returns Infinity when the
-// service has no maxSpots cap (every non-events service today).
+// Whether a service hands out its `maxSpots` at every slot rather than once for
+// the whole date — a restaurant's tables at each seating.
+export function hasSlotCapacity(service: Service) {
+  return (
+    service.capacityScope === "slot" &&
+    typeof service.maxSpots === "number" &&
+    Number.isFinite(service.maxSpots)
+  );
+}
+
+// A booking or hold only takes time away from other services when it is
+// exclusive. Shared rows sit outside the database's overlap constraint — their
+// own service's capacity governs them — so they neither block nor are blocked.
+function isExclusiveOccupant(occupant: { sharedCapacity?: boolean }) {
+  return occupant.sharedCapacity !== true;
+}
+
+// Remaining capacity for a service. Returns Infinity when the service has no
+// maxSpots cap. `slotStartTime` narrows the count to one seating for a service
+// whose capacity is per slot; it is ignored for per-date capacity, where a
+// single or weekly occurrence has one window per date anyway.
 export function getSpotsLeft(
   service: Service,
   dateKey: string,
@@ -94,23 +113,29 @@ export function getSpotsLeft(
   ignoredBookingId?: string,
   bookingHolds: BookingHoldRecord[] = [],
   ignoredHoldId?: string,
+  slotStartTime?: string,
 ) {
   if (typeof service.maxSpots !== "number" || !Number.isFinite(service.maxSpots)) {
     return Infinity;
   }
+
+  const matchesSlot = (startTime?: string) =>
+    !hasSlotCapacity(service) || !slotStartTime || startTime === slotStartTime;
 
   const taken = bookings.filter(
     (booking) =>
       booking.serviceId === service.id &&
       booking.dateKey === dateKey &&
       booking.id !== ignoredBookingId &&
+      matchesSlot(booking.startTime) &&
       isActiveBooking(booking),
   ).length;
   const held = bookingHolds.filter(
     (hold) =>
       hold.serviceId === service.id &&
       hold.dateKey === dateKey &&
-      hold.id !== ignoredHoldId,
+      hold.id !== ignoredHoldId &&
+      matchesSlot(hold.startTime),
   ).length;
 
   return service.maxSpots - taken - held;
@@ -147,8 +172,9 @@ function isEventWindowTaken(
     bookingType: BookingType;
     startTime?: string;
     endTime?: string;
+    sharedCapacity?: boolean;
   }) => {
-    if (occupant.serviceId === service.id) {
+    if (occupant.serviceId === service.id || !isExclusiveOccupant(occupant)) {
       return false;
     }
 
@@ -274,9 +300,18 @@ export function getAvailableSlots(
     return [];
   }
 
-  const dateBookings = getBookingsForDate(bookings, dateKey, ignoredBookingId);
-  const dateHolds = getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId);
+  // Only exclusive occupants take time off this service's grid. A capacity
+  // service's own bookings are shared, so they decrement the seating below
+  // instead of removing it, and another capacity service runs its own
+  // inventory alongside this one.
+  const dateBookings = getBookingsForDate(bookings, dateKey, ignoredBookingId).filter(
+    isExclusiveOccupant,
+  );
+  const dateHolds = getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId).filter(
+    isExclusiveOccupant,
+  );
   const blockedWindows = daySchedule.blockedWindows ?? [];
+  const capacityPerSlot = hasSlotCapacity(service);
 
   if (
     dateBookings.some((booking) => booking.bookingType === "full-day") ||
@@ -312,11 +347,24 @@ export function getAvailableSlots(
       return overlapExists(cursor, slotEnd, block.startTime, block.endTime);
     });
 
+    const soldOut =
+      capacityPerSlot &&
+      getSpotsLeft(
+        service,
+        dateKey,
+        bookings,
+        ignoredBookingId,
+        bookingHolds,
+        ignoredHoldId,
+        cursor,
+      ) <= 0;
+
     if (
       !hasSlotStarted(dateKey, cursor, clock) &&
       !blockedByBooking &&
       !blockedByHold &&
-      !blockedByAvailability
+      !blockedByAvailability &&
+      !soldOut
     ) {
       slots.push(cursor);
     }
@@ -457,13 +505,13 @@ export function getDayAvailability(
   // Appointments spread over the day's schedule, so the slot grid is the
   // denominator and blocked or elapsed slots simply shrink `free`.
   if (service.bookingType === "appointment") {
-    const capacity = getScheduleCapacity(service, daySchedule);
+    const slotCapacity = getScheduleCapacity(service, daySchedule);
 
-    if (capacity <= 0) {
+    if (slotCapacity <= 0) {
       return CLOSED_DAY;
     }
 
-    const free = getAvailableSlots(
+    const openSlots = getAvailableSlots(
       dateKey,
       service,
       availability,
@@ -472,9 +520,34 @@ export function getDayAvailability(
       bookingHolds,
       ignoredHoldId,
       effectiveClockOptions,
-    ).length;
+    );
 
-    return toDayAvailability(capacity, free);
+    // A service selling tables is measured in tables: a night with one left at
+    // each of three seatings is tight, not open.
+    if (hasSlotCapacity(service)) {
+      const perSlot = service.maxSpots ?? 0;
+      const free = openSlots.reduce(
+        (total, slot) =>
+          total +
+          Math.max(
+            0,
+            getSpotsLeft(
+              service,
+              dateKey,
+              bookings,
+              ignoredBookingId,
+              bookingHolds,
+              ignoredHoldId,
+              slot,
+            ),
+          ),
+        0,
+      );
+
+      return toDayAvailability(slotCapacity * perSlot, free);
+    }
+
+    return toDayAvailability(slotCapacity, openSlots.length);
   }
 
   // Full-day and anything else is all-or-nothing: one notional slot per day.

@@ -1290,18 +1290,252 @@ export const professionalCopyEs: VerticalCopy = {
   },
 };
 
+export const restaurantCopy: VerticalCopy = {
+  service: "table",
+  Service: "Table",
+  services: "tables",
+  Services: "Tables",
+  booking: "reservation",
+  Booking: "Reservation",
+  bookings: "reservations",
+  Bookings: "Reservations",
+  client: "guest",
+  Client: "Guest",
+  clients: "guests",
+  Clients: "Guests",
+
+  bookVerb: "reserve",
+  bookingPage: "reservation page",
+  publicBookingUrl: "public reservation URL",
+  bookingWorkspace: "Reservations workspace",
+  bookingSummary: "Reservation summary",
+  manageBooking: "Manage reservation",
+  cancelBooking: "Cancel Reservation",
+  rescheduleBooking: "Reschedule Reservation",
+  bookFullDay: "Reserve the whole day",
+
+  phrases: {
+    setupTitle: "Set up your reservation page",
+    setupDoneTitle: "Your reservation page is ready",
+    providerInfoBody:
+      "These details feed reservation confirmations, branding, and your public reservation URL.",
+    availabilityBody:
+      "Seatings are generated from these hours. Close the afternoon with a blocked time to separate lunch from dinner.",
+
+    addServiceFirstError:
+      "Add at least one table before publishing your reservation page.",
+    serviceNameRequiredError:
+      "Add a table name and short description before saving it.",
+    keepOneServiceError:
+      "Keep at least one table. Add another before removing this one.",
+    cancelActiveFirstError:
+      "Cancel active reservations for this table before removing it.",
+    enableWeekdayError: "Enable at least one day so guests can reserve.",
+    chooseServiceFirstError: "Choose a table before confirming the reservation.",
+    pickDateFirstError: "Pick a date before confirming the reservation.",
+    clientFieldsRequiredError:
+      "Guest name, email, and phone number are required.",
+
+    chooseServiceTitle: "Choose a table",
+    chooseAnotherService: "Choose another table",
+    chooseServiceBody:
+      "Every card shows how long the table is held and how many are left at each seating.",
+    onlyOneServiceBody:
+      "Only one table is available, so this step is skipped automatically.",
+    serviceUnavailableBody:
+      "This seating may free up, but you can still try to reserve it.",
+    notesPlaceholder: "Allergies, a high chair, or anything else we should know?",
+    bookingSummaryBodyReview:
+      "Review the live reservation details here before confirming.",
+    bookingSummaryBodySuccess:
+      "The confirmed reservation details remain visible here.",
+    aboutServiceTitle: "About this table",
+    serviceDetailsTitle: "Table details",
+
+    upcomingTitle: "Upcoming reservations",
+    upcomingEmptyTitle: "No reservations in the next 7 days",
+    upcomingEmptyBody: "New reservations appear here automatically.",
+    allBookingsTitle: "All reservations",
+    noBookingsMatchTitle: "No reservations match the current filters",
+    bookingsSoonDetail: "Reservations starting soon",
+    activeBookingsDetail: "Currently active reservations",
+    totalBookingsLabel: "Total reservations",
+    servicesStatDetail: "Tables offered per seating",
+    searchPlaceholder: "Search guest, table, email, or phone",
+
+    addBookingHint: "Click an available day to add a reservation.",
+
+    cancelExplain: "Cancelling returns the table to that seating immediately.",
+    keepBookingButton: "Keep reservation",
+    cancelBookingButton: "Cancel reservation",
+    tryBookingButton: "Try reserving",
+
+    loadingBookingTitle: "Loading your reservation…",
+    bookingNotFoundTitle: "We can't find this reservation on this device",
+    bookingNotFoundBody:
+      "Reservations are stored locally in the browser they were created in. If you reserved from a different browser or device, please open this link there. If you've cleared your browser data, the reservation is no longer accessible from this device.",
+    bookNewButton: "Make a new reservation",
+
+    serviceEditorBody:
+      "Each table is one seating type. Set how many tables you offer at each seating and the largest party one takes.",
+    noServicesTitle: "No tables yet",
+    noServicesBody: "Add a table so guests can start reserving.",
+    serviceDescPlaceholder:
+      "Explain what the seating includes in one or two lines.",
+    newServiceEyebrow: "New table",
+    editServiceEyebrow: "Edit table",
+    newServiceTitle: "Add a table",
+    editServiceTitle: "Update this table",
+    addServiceButton: "Add table",
+    saveServiceButton: "Save table",
+    typeOfServiceLabel: "Type of table",
+
+    clientLabel: "Guest",
+
+    scanQrBody: "Scan the code with your phone camera to add this reservation to your calendar.",
+    calendarQrLabel: "QR code to add this reservation to a calendar",
+
+    eventDateLabel: "Date and time",
+    singleOccurrenceHelper: "This reservation happens on a single fixed date.",
+    spotsLeftSuffix: "tables left",
+    fullyBookedLabel: "Fully booked",
+    pickEventDateError: "Pick a date before publishing this reservation.",
+    pickWeekdaysError: "Pick at least one weekday and a start time.",
+    maxSpotsRequiredError: "Set how many tables you offer at each seating.",
+  },
+};
+
+export const restaurantCopyEs: VerticalCopy = {
+  service: "mesa",
+  Service: "Mesa",
+  services: "mesas",
+  Services: "Mesas",
+  booking: "reserva",
+  Booking: "Reserva",
+  bookings: "reservas",
+  Bookings: "Reservas",
+  client: "comensal",
+  Client: "Comensal",
+  clients: "comensales",
+  Clients: "Comensales",
+
+  bookVerb: "reservar",
+  bookingPage: "página de reservas",
+  publicBookingUrl: "URL pública de reservas",
+  bookingWorkspace: "Espacio de reservas",
+  bookingSummary: "Resumen de la reserva",
+  manageBooking: "Administrar reserva",
+  cancelBooking: "Cancelar reserva",
+  rescheduleBooking: "Reagendar reserva",
+  bookFullDay: "Reservar el día completo",
+
+  phrases: {
+    setupTitle: "Configure su página de reservas",
+    setupDoneTitle: "Su página de reservas está lista",
+    providerInfoBody:
+      "Estos datos aparecen en las confirmaciones, la identidad de la página y su URL pública de reservas.",
+    availabilityBody:
+      "Los turnos se generan a partir de este horario. Bloquee la tarde para separar la comida de la cena.",
+
+    addServiceFirstError:
+      "Agregue al menos una mesa antes de publicar su página de reservas.",
+    serviceNameRequiredError:
+      "Agregue el nombre de la mesa y una descripción breve antes de guardarla.",
+    keepOneServiceError:
+      "Conserve al menos una mesa. Agregue otra antes de eliminar esta.",
+    cancelActiveFirstError:
+      "Cancele las reservas activas de esta mesa antes de eliminarla.",
+    enableWeekdayError: "Habilite al menos un día para que los comensales reserven.",
+    chooseServiceFirstError: "Elija una mesa antes de confirmar la reserva.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la reserva.",
+    clientFieldsRequiredError:
+      "El nombre, el correo y el teléfono del comensal son obligatorios.",
+
+    chooseServiceTitle: "Elija una mesa",
+    // "mesa" es femenino: el artículo va escrito aquí, no armado con el sustantivo.
+    chooseAnotherService: "Elija otra mesa",
+    chooseServiceBody:
+      "Cada tarjeta indica cuánto tiempo se reserva la mesa y cuántas quedan en cada turno.",
+    onlyOneServiceBody:
+      "Solo hay una mesa disponible, así que este paso se omite automáticamente.",
+    serviceUnavailableBody:
+      "Este turno podría liberarse, pero aún puede intentar reservarlo.",
+    notesPlaceholder: "¿Alergias, silla para bebé o algo más que debamos saber?",
+    bookingSummaryBodyReview:
+      "Revise aquí los datos de la reserva antes de confirmar.",
+    bookingSummaryBodySuccess:
+      "Los datos de la reserva confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca de esta mesa",
+    serviceDetailsTitle: "Detalles de la mesa",
+
+    upcomingTitle: "Próximas reservas",
+    upcomingEmptyTitle: "Sin reservas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas reservas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las reservas",
+    noBookingsMatchTitle: "Ninguna reserva coincide con los filtros actuales",
+    bookingsSoonDetail: "Reservas que comienzan pronto",
+    activeBookingsDetail: "Reservas activas en este momento",
+    totalBookingsLabel: "Reservas totales",
+    servicesStatDetail: "Mesas ofrecidas por turno",
+    searchPlaceholder: "Busque comensal, mesa, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una reserva.",
+
+    cancelExplain: "Cancelar devuelve la mesa a ese turno de inmediato.",
+    keepBookingButton: "Conservar reserva",
+    cancelBookingButton: "Cancelar reserva",
+    tryBookingButton: "Intentar reservar",
+
+    loadingBookingTitle: "Cargando su reserva…",
+    bookingNotFoundTitle: "No encontramos esta reserva en este dispositivo",
+    bookingNotFoundBody:
+      "Las reservas se guardan localmente en el navegador donde se crearon. Si reservó desde otro navegador o dispositivo, abra este enlace ahí. Si borró los datos del navegador, la reserva ya no está disponible en este dispositivo.",
+    bookNewButton: "Hacer una nueva reserva",
+
+    serviceEditorBody:
+      "Cada mesa es un tipo de turno. Indique cuántas mesas ofrece en cada turno y el grupo más grande que acepta una.",
+    noServicesTitle: "Aún no hay mesas",
+    noServicesBody: "Agregue una mesa para que los comensales puedan reservar.",
+    serviceDescPlaceholder:
+      "Explique en una o dos líneas qué incluye el turno.",
+    newServiceEyebrow: "Nueva mesa",
+    editServiceEyebrow: "Editar mesa",
+    newServiceTitle: "Agregar una mesa",
+    editServiceTitle: "Actualizar esta mesa",
+    addServiceButton: "Agregar mesa",
+    saveServiceButton: "Guardar mesa",
+    typeOfServiceLabel: "Tipo de mesa",
+
+    clientLabel: "Comensal",
+
+    scanQrBody:
+      "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
+    calendarQrLabel: "Código QR para agregar esta reserva a un calendario",
+
+    eventDateLabel: "Fecha y hora",
+    singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
+    spotsLeftSuffix: "mesas disponibles",
+    fullyBookedLabel: "Sin mesas",
+    pickEventDateError: "Elija una fecha antes de publicar esta reserva.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
+    maxSpotsRequiredError: "Indique cuántas mesas ofrece en cada turno.",
+  },
+};
+
 const COPY: Record<Lang, Record<VerticalId, VerticalCopy>> = {
   en: {
     healthcare: healthcareCopy,
     events: eventsCopy,
     spaces: spacesCopy,
     professional: professionalCopy,
+    restaurant: restaurantCopy,
   },
   es: {
     healthcare: healthcareCopyEs,
     events: eventsCopyEs,
     spaces: spacesCopyEs,
     professional: professionalCopyEs,
+    restaurant: restaurantCopyEs,
   },
 };
 

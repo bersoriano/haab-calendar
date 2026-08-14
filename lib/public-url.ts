@@ -4,7 +4,13 @@ export const PROVIDER_SLUG_MAX_LENGTH = 48;
 export const SERVICE_SLUG_MAX_LENGTH = 64;
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export type PublicVerticalSegment = "doctors" | "professionals" | "spaces" | "venues" | "events";
+export type PublicVerticalSegment =
+  | "doctors"
+  | "professionals"
+  | "spaces"
+  | "venues"
+  | "events"
+  | "restaurants";
 export type ProviderPlanTier = "free" | "premium";
 
 export type SlugValidationResult =
@@ -20,6 +26,7 @@ const VERTICAL_TO_PUBLIC_SEGMENT: Record<VerticalId, PublicVerticalSegment> = {
   professional: "professionals",
   spaces: "spaces",
   events: "events",
+  restaurant: "restaurants",
 };
 
 const PUBLIC_SEGMENT_TO_VERTICAL: Record<PublicVerticalSegment, VerticalId> = {
@@ -28,6 +35,7 @@ const PUBLIC_SEGMENT_TO_VERTICAL: Record<PublicVerticalSegment, VerticalId> = {
   spaces: "spaces",
   venues: "spaces",
   events: "events",
+  restaurants: "restaurant",
 };
 
 const RESERVED_PROVIDER_SLUGS = new Set([

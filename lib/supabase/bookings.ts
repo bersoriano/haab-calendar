@@ -37,11 +37,11 @@ import type {
 const PROVIDER_SELECT =
   "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
-  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, details, details_schema_key, details_schema_version, service_snapshot, created_at, updated_at";
+  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
-  "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at";
+  "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, allows_shared_capacity";
 
 type ProviderRow = {
   id: string;
@@ -86,6 +86,8 @@ type ServiceRow = {
   start_time: string | null;
   end_time: string | null;
   max_spots: number | null;
+  capacity_scope: "date" | "slot" | null;
+  max_party_size: number | null;
   location_prices: Partial<Record<LocationKey, string>> | null;
   linked_address_1: boolean | null;
   linked_address_2: boolean | null;
@@ -113,6 +115,7 @@ type BookingRow = {
   status: BookingStatus;
   notes: string | null;
   location_snapshot: string | null;
+  allows_shared_capacity: boolean | null;
   details: Record<string, unknown> | null;
   details_schema_key: string | null;
   details_schema_version: number | null;
@@ -132,6 +135,7 @@ type BookingHoldRow = {
   expires_at: string;
   extension_count?: number;
   created_at: string;
+  allows_shared_capacity?: boolean | null;
 };
 
 export type ConfirmPublicBookingInput = {
@@ -143,6 +147,8 @@ export type ConfirmPublicBookingInput = {
   clientName: string;
   clientEmail: string;
   clientPhone: string;
+  /** Restaurants: guests in the party. Validated against the table's cap. */
+  partySize?: number;
   notes?: string;
   location?: string;
   locationKey?: LocationKey;
@@ -268,6 +274,8 @@ function toService(row: ServiceRow): Service {
     startTime: toTimeKey(row.start_time),
     endTime: toTimeKey(row.end_time),
     maxSpots: row.max_spots ?? undefined,
+    capacityScope: row.capacity_scope ?? undefined,
+    maxPartySize: row.max_party_size ?? undefined,
     cost: row.cost ?? undefined,
     locationPrices: row.location_prices ?? undefined,
     notes: row.notes ?? undefined,
@@ -278,6 +286,15 @@ function toService(row: ServiceRow): Service {
     customAddress: row.custom_address ?? undefined,
     customPhone: row.custom_phone ?? undefined,
   };
+}
+
+/** Restaurants: a party consumes one table whatever its size, so the guest
+ * count never enters the capacity arithmetic and rides in `details`. */
+function readPartySize(details: BookingRow["details"]) {
+  const value = isPlainRecord(details) ? details.partySize : undefined;
+  return typeof value === "number" && Number.isFinite(value) && value > 0
+    ? Math.floor(value)
+    : undefined;
 }
 
 /** The client's post-booking note lives in `details`, so it needs no column. */
@@ -301,6 +318,8 @@ function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
     notes: row.notes ?? "",
     clientNote: readClientNote(row.details),
     capacitySnapshot: row.capacity_snapshot ?? undefined,
+    sharedCapacity: row.allows_shared_capacity ?? false,
+    partySize: readPartySize(row.details),
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
     status: row.status,
@@ -321,6 +340,7 @@ function toBookingHoldRecord(row: BookingHoldRow): BookingHoldRecord {
     createdAt: row.created_at,
     expiresAt: new Date(row.expires_at).getTime(),
     extensionCount: row.extension_count ?? 0,
+    sharedCapacity: row.allows_shared_capacity ?? false,
   };
 }
 
@@ -329,6 +349,27 @@ function getBookingEndTime(service: Service, time?: string) {
     return undefined;
   }
   return addMinutes(time, service.durationMinutes);
+}
+
+/**
+ * A party takes one table whatever its size, so this never affects capacity —
+ * it only keeps a booking inside what the table can seat.
+ */
+function validatePartySize(service: Service, partySize?: number) {
+  if (partySize === undefined) {
+    return;
+  }
+
+  if (!Number.isInteger(partySize) || partySize < 1) {
+    throw new PublicBookingWriteError("Enter how many guests are coming.", 400);
+  }
+
+  if (typeof service.maxPartySize === "number" && partySize > service.maxPartySize) {
+    throw new PublicBookingWriteError(
+      `This table seats up to ${service.maxPartySize} guests. Call us for a larger party.`,
+      400,
+    );
+  }
 }
 
 function validateDateWindow(provider: ProviderRow, dateKey: string) {
@@ -436,7 +477,8 @@ function isCapacityViolation(error: unknown) {
     isPlainRecord(error) &&
     error.code === "23514" &&
     typeof error.message === "string" &&
-    error.message.includes("Event capacity is full")
+    (error.message.includes("HAAB_CAPACITY_FULL") ||
+      error.message.includes("Event capacity is full"))
   );
 }
 
@@ -724,7 +766,7 @@ export async function createPublicBookingHold(
     if (isUniqueViolation(error) || isExclusionViolation(error) || isCapacityViolation(error)) {
       throw new PublicBookingWriteError(
         isCapacityViolation(error)
-          ? "That event just reached capacity. Choose another date."
+          ? "That selection just reached capacity. Choose another time."
           : "That time is currently being held. Choose another slot.",
         409,
         error,
@@ -814,8 +856,16 @@ export async function confirmPublicBooking(
   const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
   const serviceRow = await getServiceForBooking(supabase, provider.id, input.serviceId);
   const service = toService(serviceRow);
-  const details = safeDetails(input.details);
-  const detailsSchemaKey = input.detailsSchemaKey?.trim() || "base";
+  validatePartySize(service, input.partySize);
+
+  const details =
+    input.partySize === undefined
+      ? safeDetails(input.details)
+      : { ...safeDetails(input.details), partySize: input.partySize };
+
+  const detailsSchemaKey =
+    input.detailsSchemaKey?.trim() ||
+    (input.partySize === undefined ? "base" : "restaurant");
   const detailsSchemaVersion =
     Number.isInteger(input.detailsSchemaVersion) && input.detailsSchemaVersion
       ? input.detailsSchemaVersion
@@ -908,7 +958,7 @@ export async function confirmPublicBooking(
     if (isUniqueViolation(error) || isCapacityViolation(error)) {
       throw new PublicBookingWriteError(
         isCapacityViolation(error)
-          ? "That event just reached capacity. Choose another date."
+          ? "That selection just reached capacity. Choose another time."
           : "That time was just booked. Choose another slot.",
         409,
         error,

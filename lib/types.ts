@@ -17,7 +17,21 @@ export type WeekdayKey =
 export type SetupStep = 1 | 2 | 3 | 4;
 export type BookingStep = 1 | 2 | 3 | 4;
 
-export const VERTICAL_IDS = ["healthcare", "spaces", "professional", "events"] as const;
+/**
+ * Whether a service's `maxSpots` is capacity for the whole date or for each
+ * slot on it. Events sell a date (one occurrence, one window); a restaurant
+ * sells each seating separately. Undefined reads as "date", which is how every
+ * service behaved before restaurants existed.
+ */
+export type CapacityScope = "date" | "slot";
+
+export const VERTICAL_IDS = [
+  "healthcare",
+  "spaces",
+  "professional",
+  "events",
+  "restaurant",
+] as const;
 export type VerticalId = (typeof VERTICAL_IDS)[number];
 
 export type ProviderInfo = {
@@ -67,7 +81,9 @@ export type Service = {
   weekdays?: WeekdayKey[]; // weekly mode: days the event recurs on
   startTime?: string; // "HH:MM", single/weekly window start
   endTime?: string; // "HH:MM", single/weekly window end
-  maxSpots?: number; // events: maximum capacity in spots
+  maxSpots?: number; // units of capacity: spots for events, tables per seating
+  capacityScope?: CapacityScope; // undefined === "date"
+  maxPartySize?: number; // restaurants: largest party one table takes
   cost?: string;
   // Per-location price overrides (free text). Base price is `cost`.
   locationPrices?: Partial<Record<LocationKey, string>>;
@@ -109,6 +125,15 @@ export type BookingRecord = {
   /** Left by the client from the private management link, after booking. */
   clientNote?: string;
   capacitySnapshot?: string;
+  /**
+   * Whether this row was written against a capacity-bearing service. Mirrors
+   * `bookings.allows_shared_capacity`, which is excluded from the database's
+   * overlap constraint — so a shared booking neither blocks another service nor
+   * is blocked by one, and its own service's capacity governs it instead.
+   */
+  sharedCapacity?: boolean;
+  /** Restaurants: guests in the party. Stored in the booking details payload. */
+  partySize?: number;
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
@@ -127,6 +152,8 @@ export type BookingHoldRecord = {
   createdAt: string;
   expiresAt: number;
   extensionCount?: number;
+  /** See BookingRecord.sharedCapacity. */
+  sharedCapacity?: boolean;
 };
 
 export type ModuleStore = {
@@ -161,6 +188,8 @@ export type ServiceDraft = {
   startTime: string;
   endTime: string;
   maxSpots: string;
+  capacityScope?: CapacityScope;
+  maxPartySize: string;
   cost: string;
   locationPrices?: { address1: string; address2: string; custom: string };
   notes: string;
@@ -181,6 +210,8 @@ export type BookingFlow = {
   clientName: string;
   clientEmail: string;
   clientPhone: string;
+  /** Restaurants: guests in the party, collected on the details step. */
+  partySize: string;
   notes: string;
   successBookingId?: string;
 };

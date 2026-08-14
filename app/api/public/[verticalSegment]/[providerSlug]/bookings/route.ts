@@ -22,6 +22,7 @@ type PublicBookingBody = {
   clientName?: unknown;
   clientEmail?: unknown;
   clientPhone?: unknown;
+  partySize?: unknown;
   notes?: unknown;
   location?: unknown;
   locationKey?: unknown;
@@ -110,6 +111,7 @@ export async function POST(
       clientName,
       clientEmail,
       clientPhone,
+      partySize: readPositiveInteger(body.partySize),
       notes: readOptionalString(body.notes),
       location: readOptionalString(body.location),
       locationKey: readLocationKey(body.locationKey),

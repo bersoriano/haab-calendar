@@ -107,6 +107,11 @@ function toServicePayload(providerId: string, service: Service, sortOrder: numbe
       typeof service.maxSpots === "number" && Number.isFinite(service.maxSpots)
         ? Math.floor(service.maxSpots)
         : null,
+    capacity_scope: service.capacityScope === "slot" ? "slot" : "date",
+    max_party_size:
+      typeof service.maxPartySize === "number" && Number.isFinite(service.maxPartySize)
+        ? Math.floor(service.maxPartySize)
+        : null,
     location_prices: toLocationPricesPayload(service.locationPrices),
     linked_address_1: Boolean(service.linkedAddress1),
     linked_address_2: Boolean(service.linkedAddress2),

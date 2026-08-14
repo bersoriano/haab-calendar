@@ -1626,6 +1626,10 @@ export function HaabBookingModule({
       endTime: service.endTime ?? "",
       maxSpots:
         typeof service.maxSpots === "number" ? String(service.maxSpots) : "",
+      capacityScope:
+        service.capacityScope ?? (vertical === "restaurant" ? "slot" : undefined),
+      maxPartySize:
+        typeof service.maxPartySize === "number" ? String(service.maxPartySize) : "",
       cost: service.cost ?? "",
       locationPrices: {
         address1: service.locationPrices?.address1 ?? "",

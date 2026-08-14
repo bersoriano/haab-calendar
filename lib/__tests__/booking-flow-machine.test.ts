@@ -18,6 +18,7 @@ function makeFlow(overrides: Partial<BookingFlow> = {}): BookingFlow {
     clientName: "",
     clientEmail: "",
     clientPhone: "",
+  partySize: "",
     notes: "",
     ...overrides,
   };
