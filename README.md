@@ -26,7 +26,10 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 
 ## Booking Process
 
-See [`docs/booking-process.md`](docs/booking-process.md) for the current end-to-end lifecycle: availability, holds, offline/reconnect behavior, confirmation, ICS/QR output, manage links, rescheduling, cancellation, security boundaries, and verification.
+See [`docs/booking-engine.md`](docs/booking-engine.md) for diagrams of what
+removes a candidate slot, who wins the race for the last one, and which database
+constraint enforces which kind of service. See
+[`docs/booking-process.md`](docs/booking-process.md) for the end-to-end lifecycle: availability, holds, offline/reconnect behavior, confirmation, ICS/QR output, manage links, rescheduling, cancellation, security boundaries, and verification.
 
 ## Routes
 
