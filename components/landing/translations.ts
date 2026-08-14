@@ -162,7 +162,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Producto real, no una maqueta",
       title: "Abre una. Resérvala como lo haría un cliente.",
-      body: "Seis páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
+      body: "Once páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
       liveBadge: "En vivo",
       items: [
         {
@@ -201,8 +201,38 @@ export const translations = {
           proof: "Citas de manicure y pestañas con duración, precio y horarios reales.",
           cta: "Agendar una cita",
         },
+        {
+          vertical: "Dental",
+          title: "Brightpoint Dental",
+          proof: "Limpiezas y urgencias dentales con horario partido y consultorio único.",
+          cta: "Agendar una limpieza",
+        },
+        {
+          vertical: "Veterinaria",
+          title: "Clínica Veterinaria Patitas",
+          proof: "Consultas, vacunas y limpieza dental para mascotas con precios visibles.",
+          cta: "Agendar una consulta",
+        },
+        {
+          vertical: "Peluquería",
+          title: "Copperline Hair Studio",
+          proof: "Corte, color y peinado en una silla: cada cita bloquea su propio horario.",
+          cta: "Reservar una silla",
+        },
+        {
+          vertical: "Taller mecánico",
+          title: "Northgate Auto Service",
+          proof: "Cambio de aceite, frenos y neumáticos con una bahía y un auto por turno.",
+          cta: "Apartar la bahía",
+        },
+        {
+          vertical: "Entrenamiento de golf",
+          title: "Fairway Lab Golf",
+          proof: "Clases uno a uno de golf con horarios de mañana y duración por tipo de sesión.",
+          cta: "Reservar una clase",
+        },
       ],
-      note: "No necesitas iniciar sesión. Las seis páginas usan el flujo público real de Haab.",
+      note: "No necesitas iniciar sesión. Las once páginas usan el flujo público real de Haab.",
     },
     socialProof: {
       badge: "Producto en acceso anticipado",
@@ -660,7 +690,7 @@ export const translations = {
     liveExamples: {
       eyebrow: "Real product, not a mockup",
       title: "Open one. Book it like a client would.",
-      body: "Six public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
+      body: "Eleven public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
       liveBadge: "Live",
       items: [
         {
@@ -699,8 +729,38 @@ export const translations = {
           proof: "Nail and lash appointments with real durations, prices, and hours.",
           cta: "Book an appointment",
         },
+        {
+          vertical: "Dental",
+          title: "Brightpoint Dental",
+          proof: "Cleanings and urgent visits with a lunch break and one treatment room.",
+          cta: "Book a cleaning",
+        },
+        {
+          vertical: "Veterinary",
+          title: "Clínica Veterinaria Patitas",
+          proof: "Pet check-ups, vaccines, and dental work with prices stated up front.",
+          cta: "Book a check-up",
+        },
+        {
+          vertical: "Hair salon",
+          title: "Copperline Hair Studio",
+          proof: "Cut, colour, and blow-dry in one chair — each booking holds its own slot.",
+          cta: "Book the chair",
+        },
+        {
+          vertical: "Auto service",
+          title: "Northgate Auto Service",
+          proof: "Oil, brakes, and tires with one bay and one vehicle per slot.",
+          cta: "Book the bay",
+        },
+        {
+          vertical: "Golf coaching",
+          title: "Fairway Lab Golf",
+          proof: "One-on-one golf lessons on early hours, priced by session length.",
+          cta: "Book a lesson",
+        },
       ],
-      note: "No sign-in required. All six pages use Haab's real public booking flow.",
+      note: "No sign-in required. All eleven pages use Haab's real public booking flow.",
     },
     socialProof: {
       badge: "Early-access product",

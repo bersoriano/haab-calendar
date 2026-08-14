@@ -68,6 +68,41 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     ownerEmail: "public-examples+nails@haab-calendar.invalid",
     label: "Nube Rosa Nail Studio",
   },
+  {
+    key: "dentists",
+    vertical: "healthcare",
+    providerSlug: "brightpoint-dental",
+    ownerEmail: "public-examples+dentists@haab-calendar.invalid",
+    label: "Brightpoint Dental",
+  },
+  {
+    key: "vets",
+    vertical: "healthcare",
+    providerSlug: "clinica-veterinaria-patitas",
+    ownerEmail: "public-examples+vets@haab-calendar.invalid",
+    label: "Clínica Veterinaria Patitas",
+  },
+  {
+    key: "salons",
+    vertical: "professional",
+    providerSlug: "copperline-hair-studio",
+    ownerEmail: "public-examples+salons@haab-calendar.invalid",
+    label: "Copperline Hair Studio",
+  },
+  {
+    key: "autoshops",
+    vertical: "professional",
+    providerSlug: "northgate-auto-service",
+    ownerEmail: "public-examples+autoshops@haab-calendar.invalid",
+    label: "Northgate Auto Service",
+  },
+  {
+    key: "golf",
+    vertical: "professional",
+    providerSlug: "fairway-lab-golf",
+    ownerEmail: "public-examples+golf@haab-calendar.invalid",
+    label: "Fairway Lab Golf",
+  },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {

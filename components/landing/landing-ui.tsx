@@ -664,8 +664,22 @@ export function Hero() {
 
 export function LiveExamples() {
   const { lang, t } = useLanguage();
-  const glyphs = ["+", "S", "P", "E", "K", "N"];
-  const tones = ["teal", "blue", "blue", "gold", "teal", "gold"] as const;
+  // One entry per DEMO_PAGES row, in the same order. The modulo below keeps a
+  // newly seeded demo from rendering an empty glyph before this list catches up.
+  const glyphs = ["+", "S", "P", "E", "K", "N", "D", "V", "H", "A", "G"];
+  const tones = [
+    "teal",
+    "blue",
+    "blue",
+    "gold",
+    "teal",
+    "gold",
+    "blue",
+    "teal",
+    "gold",
+    "blue",
+    "teal",
+  ] as const;
 
   return (
     <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-14 sm:px-8 sm:py-16">
@@ -689,7 +703,10 @@ export function LiveExamples() {
               className="group flex min-h-56 flex-col rounded-[24px] border border-[var(--line)] bg-white p-5 shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_24px_56px_rgba(15,23,42,0.11)]"
             >
               <div className="flex items-center justify-between gap-3">
-                <BrandGlyph label={glyphs[index]} tone={tones[index]} />
+                <BrandGlyph
+                  label={glyphs[index % glyphs.length]}
+                  tone={tones[index % tones.length]}
+                />
                 <span className="rounded-full bg-[var(--teal-soft)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
                   {t.liveExamples.liveBadge}
                 </span>
