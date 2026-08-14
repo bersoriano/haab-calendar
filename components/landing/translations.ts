@@ -294,7 +294,7 @@ export const translations = {
           body: "Tu bio, tus correos, un código QR en la puerta.",
         },
         {
-          title: "Silencio.",
+          title: "Piloto automático.",
           body: "Ellos reservan, ellos reagendan, a ti te llega una cita al calendario.",
         },
       ],
@@ -396,10 +396,6 @@ export const translations = {
           title: "Tu página la publicas tú.",
           body: "Nada es público hasta que lo publicas, y puedes bajarlo desde tu panel sin borrar tu trabajo.",
         },
-        {
-          title: "Te vamos a decir qué falta.",
-          body: "Los pagos y la sincronización con calendarios externos todavía no están hechos. Si algo no está listo, no aparece en esta página.",
-        },
       ],
     },
     faq: {
@@ -408,11 +404,11 @@ export const translations = {
       items: [
         {
           q: "¿Qué funciona hoy?",
-          a: "Páginas públicas, disponibilidad en vivo, apartados, confirmaciones, cupo de eventos y enlaces de autoservicio. Haab está en acceso anticipado: pagos y sincronización con calendarios externos todavía no.",
+          a: "Páginas públicas de reservas, disponibilidad en vivo, apartados de diez minutos, confirmaciones, cupo de eventos y un enlace privado de autoservicio en cada reserva.",
         },
         {
           q: "¿Puedo aceptar registros para una clase o evento?",
-          a: "Sí. Los eventos descuentan lugares confirmados y apartados de tu cupo. El cobro todavía no está incluido.",
+          a: "Sí. Los eventos descuentan lugares confirmados y apartados de tu cupo, así que una clase se cierra sola cuando se llena.",
         },
         {
           q: "¿Reservas de día completo, no solo citas?",
@@ -420,11 +416,11 @@ export const translations = {
         },
         {
           q: "¿Las reservas se pueden agregar a un calendario?",
-          a: "Sí. Cada confirmación incluye archivo de calendario y código QR. La sincronización bidireccional con calendarios externos aún no está disponible.",
+          a: "Sí. Cada confirmación incluye archivo de calendario y código QR, así que la reserva llega al calendario que ya usas.",
         },
         {
           q: "¿Cuánto cuesta?",
-          a: "Nada durante el acceso anticipado. Los planes de pago no están definidos.",
+          a: "Nada durante el acceso anticipado.",
         },
       ],
     },
@@ -464,7 +460,7 @@ export const translations = {
       ],
     },
     finalCta: {
-      title: "Un enlace. Después, silencio.",
+      title: "Un enlace. Después, piloto automático.",
       body: "Nombra tu página y compártela hoy.",
       ctaPrimary: "Crear mi página",
       fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
@@ -835,7 +831,7 @@ export const translations = {
           body: "Your bio, your emails, a QR code on the door.",
         },
         {
-          title: "Go quiet.",
+          title: "Switch on autopilot.",
           body: "They book, they reschedule, you get a calendar entry.",
         },
       ],
@@ -937,10 +933,6 @@ export const translations = {
           title: "Your page is yours to publish.",
           body: "Nothing is public until you publish it, and you can take it down again from your dashboard without deleting your work.",
         },
-        {
-          title: "We will tell you what is missing.",
-          body: "Payments and two-way calendar sync are not built yet. When something is not ready, it is not on this page.",
-        },
       ],
     },
     faq: {
@@ -949,11 +941,11 @@ export const translations = {
       items: [
         {
           q: "What works today?",
-          a: "Public pages, live availability, holds, confirmations, event capacity, and self-service links. Haab is in early access — payments and external calendar sync are not in yet.",
+          a: "Public booking pages, live availability, ten-minute holds, confirmations, event capacity, and a private self-service link on every booking.",
         },
         {
           q: "Can I take registrations for a class or event?",
-          a: "Yes. Events count confirmed and held spots against your capacity. Payment processing is not included yet.",
+          a: "Yes. Events count confirmed and held spots against your capacity, so a class closes itself when it fills.",
         },
         {
           q: "Full-day bookings, not just appointments?",
@@ -961,11 +953,11 @@ export const translations = {
         },
         {
           q: "Can bookings be added to a calendar?",
-          a: "Yes. Every confirmation includes a calendar file and a QR code. Two-way sync with external calendars is not available yet.",
+          a: "Yes. Every confirmation includes a calendar file and a QR code, so a booking lands in the calendar you already use.",
         },
         {
           q: "What does it cost?",
-          a: "Nothing during early access. Paid plans are not final.",
+          a: "Nothing during early access.",
         },
       ],
     },
@@ -1005,7 +997,7 @@ export const translations = {
       ],
     },
     finalCta: {
-      title: "One link. Then silence.",
+      title: "One link. Then autopilot.",
       body: "Name your page and share it today.",
       ctaPrimary: "Create your page",
       fineprint: "Free while in early access. No card.",

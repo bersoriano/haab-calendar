@@ -646,7 +646,7 @@ export function Trust() {
     <section id="trust" className="scroll-mt-20 border-y border-[var(--line)] bg-white/55 px-5 py-16 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-[1280px]">
         <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} />
-        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-2">
+        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-3">
           {t.trust.items.map((item) => (
             <div key={item.title} className="bg-[var(--surface-lowest)] p-6 sm:p-7">
               <h3 className="text-base font-semibold tracking-[-0.01em] text-[var(--ink)]">
