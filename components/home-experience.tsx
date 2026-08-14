@@ -517,13 +517,6 @@ function VerticalsPanel({
   onSelectVertical: (vertical: LandingVertical) => void;
 }) {
   const { t } = useLanguage();
-  const tones = [
-    "from-[rgba(13,148,136,0.16)] to-[rgba(26,115,232,0.06)] text-[var(--teal)]",
-    "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]",
-    "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]",
-    "from-[rgba(217,119,6,0.16)] to-[rgba(26,115,232,0.05)] text-[#b45309]",
-  ];
-
   return (
     <section id="verticals" className="scroll-mt-20 px-5 py-16 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-[1280px]">
@@ -538,8 +531,8 @@ function VerticalsPanel({
             {t.useCases.body}
           </p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {VERTICALS.map((v, i) => {
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {VERTICALS.map((v) => {
             const verticalCopy = t.home.verticals[v.id];
 
             return (
@@ -547,15 +540,9 @@ function VerticalsPanel({
                 key={v.id}
                 type="button"
                 onClick={() => onSelectVertical(v.id as LandingVertical)}
-                className="flex flex-col gap-4 rounded-[24px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left shadow-[0_14px_34px_rgba(15,23,42,0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
+                className="flex flex-col gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left transition hover:border-[rgba(26,115,232,0.28)]"
               >
-                <span
-                  aria-hidden="true"
-                  className={`grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${tones[i % tones.length]}`}
-                >
-                  {verticalCopy.label.charAt(0)}
-                </span>
-                <span className="text-lg font-semibold text-[var(--ink)]">
+                <span className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
                   {verticalCopy.label}
                 </span>
                 <span className="text-[15px] leading-7 text-[var(--muted)]">

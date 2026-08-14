@@ -247,39 +247,6 @@ export const translations = {
       back: "← Volver al inicio",
       note: "Ninguna requiere cuenta. Todas usan el flujo público real de Haab.",
     },
-    socialProof: {
-      badge: "Producto en acceso anticipado",
-      earlyAccess: "El flujo público principal funciona hoy; seguimos ampliando el producto.",
-      stats: [
-        { value: "0", label: "Cuentas que un cliente necesita crear" },
-        { value: "10 min", label: "Apartado mientras completa sus datos" },
-        { value: "3", label: "Modos: citas, día completo y boletos" },
-      ],
-      heading: "Casos de uso que puedes gestionar hoy",
-      customers: [
-        { name: "Consultorios médicos", detail: "Salud" },
-        { name: "Canchas y clubes", detail: "Espacios" },
-        { name: "Asesores y consultores", detail: "Servicios pro" },
-        { name: "Salones de eventos", detail: "Espacios" },
-        { name: "Coworking y oficinas", detail: "Espacios" },
-        { name: "Carreras y eventos comunitarios", detail: "Eventos" },
-      ],
-      footer:
-        "Haab está en acceso anticipado: reservas, apartados, confirmaciones y autoservicio ya funcionan; todavía estamos construyendo más integraciones y herramientas de administración.",
-    },
-    problem: {
-      eyebrow: "La realidad de hoy",
-      title: "Reservar se complica cuando cada cambio se vuelve una conversación.",
-      body: "Disponibilidad por mensajes, capturas de calendario y cambios manuales funcionan hasta que dos personas quieren el mismo horario o un cliente necesita reagendar. Haab convierte ese proceso en un enlace público con reglas claras.",
-      pains: [
-        "Mensajes de ida y vuelta para cerrar una sola cita.",
-        "Reservas duplicadas porque dos personas tomaron el «mismo» horario libre.",
-        "Confirmaciones que se pierden fuera del calendario del cliente.",
-        "Reagendados y cancelaciones que terminan todos en tus manos.",
-        "Cupos de clases y eventos que tienes que contar a mano.",
-      ],
-      closing: "Haab reemplaza esa coordinación con disponibilidad en vivo y autoservicio.",
-    },
     how: {
       eyebrow: "Cómo funciona",
       title: "Publica una vez. Y deja de contestar mensajes de reservas.",
@@ -321,33 +288,6 @@ export const translations = {
         },
       ],
     },
-    differentiators: {
-      eyebrow: "Lo que lo hace diferente",
-      title: "Diferencias concretas que puedes probar hoy.",
-      blocks: [
-        {
-          tag: "Apartado de reservas",
-          heading: "El horario queda protegido mientras terminan.",
-          body: "Un apartado de 10 minutos reserva la selección mientras el cliente ingresa sus datos. El contador muestra el tiempo restante, los apartados vencidos se liberan y las validaciones del servidor protegen la misma disponibilidad antes de confirmar.",
-        },
-        {
-          tag: "Autoservicio sin cuenta",
-          heading: "Pueden reagendar o cancelar sin crear una cuenta.",
-          body: "Cada confirmación trae un enlace privado de administración. El cliente puede abrirlo más tarde para cambiar la fecha o cancelar; Haab actualiza esa reserva y vuelve a calcular la disponibilidad.",
-        },
-      ],
-    },
-    industryLanguage: {
-      eyebrow: "Adaptado a tu sector",
-      title: "La misma página, en el idioma de tu negocio.",
-      body: "Elige tu sector y todo se reescribe solo: lo que se reserva, cómo se llaman tus clientes y cada confirmación. Sin sonar a software genérico.",
-      verticals: [
-        { label: "Salud", client: "Pacientes", booking: "Citas" },
-        { label: "Espacios", client: "Huéspedes", booking: "Reservas" },
-        { label: "Servicios pro", client: "Clientes", booking: "Sesiones" },
-        { label: "Eventos", client: "Asistentes", booking: "Registros" },
-      ],
-    },
     useCases: {
       eyebrow: "Casos de uso",
       title: "Elige qué reservas. Tu página llega lista.",
@@ -374,11 +314,6 @@ export const translations = {
       note:
         "Gana el más parecido. Todo se edita en la configuración.",
       cta: "Crear mi página",
-    },
-    mobile: {
-      eyebrow: "Hecho primero para el teléfono",
-      title: "Diseñado para completar una reserva desde el teléfono.",
-      body: "Fechas cómodas para tocar, horarios legibles, acciones de confirmación visibles y una cuenta regresiva clara. El mismo flujo se adapta desde una pantalla pequeña hasta un escritorio.",
     },
     trust: {
       eyebrow: "Confianza",
@@ -424,41 +359,6 @@ export const translations = {
         },
       ],
     },
-    testimonials: {
-      eyebrow: "Disponible hoy",
-      title: "Lo que puedes verificar en los ejemplos en vivo.",
-      items: [
-        {
-          quote: "Un cliente completa la reserva sin registrarse ni crear contraseña.",
-          name: "Reserva sin cuenta",
-          role: "Comportamiento real del producto",
-        },
-        {
-          quote: "Un apartado activo reduce la disponibilidad antes de la confirmación.",
-          name: "Apartado de 10 minutos",
-          role: "Comportamiento real del producto",
-        },
-        {
-          quote: "Cada confirmación incluye una ruta privada para reagendar o cancelar.",
-          name: "Autoservicio",
-          role: "Comportamiento real del producto",
-        },
-      ],
-      note: "Estas son capacidades verificables del producto, no testimonios ni métricas de clientes.",
-    },
-    pricing: {
-      eyebrow: "Acceso anticipado",
-      title: "Usa el flujo principal mientras seguimos construyendo.",
-      body: "Haab está en acceso anticipado. Las páginas públicas, apartados, confirmaciones, cupo y autoservicio funcionan hoy. Los precios y algunas integraciones todavía se están definiendo.",
-      startFree: "Crear una página de acceso anticipado",
-      viewPricing: "Ver una página en vivo",
-      features: [
-        "Una página pública de reservas",
-        "Apartados y confirmaciones de reservas",
-        "Archivo de calendario y código QR",
-        "Enlaces de autoservicio para clientes",
-      ],
-    },
     finalCta: {
       title: "Un enlace. Después, piloto automático.",
       body: "Nombra tu página y compártela hoy.",
@@ -487,54 +387,6 @@ export const translations = {
       },
       copyright: "© 2026 Haab Calendar. Software de reservas en acceso anticipado.",
       createLink: "Crear mi página →",
-    },
-    visuals: {
-      weekdays: ["D", "L", "M", "M", "J", "V", "S"],
-      serviceSetup: {
-        steps: ["Servicio", "Horario", "Reglas", "Publicar"],
-        serviceLabel: "Servicio",
-        serviceValue: "Consulta de estrategia",
-        durationLabel: "Duración",
-        durationValue: "45 minutos",
-        capacityLabel: "Capacidad",
-        capacityValue: "1 cliente",
-        modeLabel: "Modo",
-        modeValue: "Citas",
-        readyToPublish: "Listo para publicar",
-        setupTime: "Configuración principal",
-      },
-      shareLink: {
-        yourPage: "Tu página de reservas",
-        chips: ["Bio", "Correo", "QR", "Sitio web"],
-      },
-      automation: {
-        confirmedAt: "Confirmado a las 2:00 PM",
-        cards: [
-          ["Horario apartado", "Protegido por 10 minutos"],
-          ["Archivo de calendario", "Listo para el cliente"],
-          ["Enlace autoservicio", "Reagenda sin correos de ida y vuelta"],
-        ],
-      },
-      hold: {
-        expires: "El apartado expira en 8:42",
-        protected: "Horario protegido",
-      },
-      selfService: [
-        ["Enlace de administración", "En cada confirmación, sin cuenta"],
-        ["El cliente reagenda", "Tu calendario se actualiza al instante"],
-      ],
-      useCaseBadge: "Reservable",
-      useCaseLines: {
-        healthcare: ["Primera vez · $120", "Seguimiento · $60", "30 y 15 min"],
-        spaces: ["Cancha · $40/hr", "Salón día completo", "Hasta 100"],
-        professional: ["Estrategia · $200", "Consulta · $90", "1 cliente"],
-        events: ["Carrera · $590", "Quedan 50 lugares", "Evento con fecha"],
-      },
-      mobile: {
-        calendar: { name: "Sarah Chen", service: "Consulta de marketing", cta: "Elige un horario" },
-        slots: { date: "11 de marzo", openings: "4 disponibles", held: "Apartado por 8:42", cta: "Revisar y reservar" },
-        confirm: { title: "Confirmado", when: "Lun, 11 mar · 2:00 PM", cta: "Agregar al calendario" },
-      },
     },
   },
 
@@ -784,39 +636,6 @@ export const translations = {
       back: "← Back to home",
       note: "None of them need an account. All use Haab's real public booking flow.",
     },
-    socialProof: {
-      badge: "Early-access product",
-      earlyAccess: "The core public booking flow works today; the product is still expanding.",
-      stats: [
-        { value: "0", label: "Accounts a client needs to create" },
-        { value: "10 min", label: "Soft hold while details are completed" },
-        { value: "3", label: "Modes: appointments, full-day, and tickets" },
-      ],
-      heading: "Use cases you can manage today",
-      customers: [
-        { name: "Clinics & practices", detail: "Healthcare" },
-        { name: "Courts & clubs", detail: "Spaces" },
-        { name: "Advisors & consultants", detail: "Professional" },
-        { name: "Event venues", detail: "Spaces" },
-        { name: "Coworking & offices", detail: "Spaces" },
-        { name: "Races & community events", detail: "Events" },
-      ],
-      footer:
-        "Haab is in early access: booking, holds, confirmation, and self-service work today; more integrations and administration tools are still being built.",
-    },
-    problem: {
-      eyebrow: "The reality today",
-      title: "Booking gets messy when every change becomes a conversation.",
-      body: "Sharing availability through messages, calendar screenshots, and manual updates works until two people want the same time or a client needs to reschedule. Haab turns that process into one public link with clear booking rules.",
-      pains: [
-        "Back-and-forth messages just to land one appointment.",
-        "Double-bookings because two people grabbed the “same” open slot.",
-        "Confirmations that never reach the client's calendar.",
-        "Reschedules and cancellations that all land back on you.",
-        "Class and event capacity you still count by hand.",
-      ],
-      closing: "Haab replaces that coordination with live availability and self-service.",
-    },
     how: {
       eyebrow: "How it works",
       title: "Publish once. Then stop answering booking messages.",
@@ -858,33 +677,6 @@ export const translations = {
         },
       ],
     },
-    differentiators: {
-      eyebrow: "What makes it different",
-      title: "Concrete differences you can try today.",
-      blocks: [
-        {
-          tag: "Booking holds",
-          heading: "The slot stays protected while they finish.",
-          body: "A 10-minute hold reserves the selection while the client enters their details. The countdown shows the remaining time, expired holds are released, and server checks protect the same availability again before confirmation.",
-        },
-        {
-          tag: "No-login self-service",
-          heading: "They can reschedule or cancel without creating an account.",
-          body: "Every confirmation carries a private management link. Clients can return later to change the date or cancel; Haab updates the booking and recalculates availability.",
-        },
-      ],
-    },
-    industryLanguage: {
-      eyebrow: "Shaped to your industry",
-      title: "The same page, in your business's language.",
-      body: "Pick your industry and everything re-labels itself: what gets booked, what your clients are called, and every confirmation. No generic-software feel.",
-      verticals: [
-        { label: "Healthcare", client: "Patients", booking: "Appointments" },
-        { label: "Spaces", client: "Guests", booking: "Reservations" },
-        { label: "Professional", client: "Clients", booking: "Sessions" },
-        { label: "Events", client: "Attendees", booking: "Registrations" },
-      ],
-    },
     useCases: {
       eyebrow: "Use cases",
       title: "Pick what you book. Your page arrives filled in.",
@@ -911,11 +703,6 @@ export const translations = {
       note:
         "Closest match wins. Everything is editable during setup.",
       cta: "Create your page",
-    },
-    mobile: {
-      eyebrow: "Built phone-first",
-      title: "Designed to complete a booking on a phone.",
-      body: "Tap-friendly dates, readable time slots, visible confirmation actions, and a clear countdown. The same booking flow adapts from a small screen to a desktop.",
     },
     trust: {
       eyebrow: "Trust",
@@ -961,41 +748,6 @@ export const translations = {
         },
       ],
     },
-    testimonials: {
-      eyebrow: "Available today",
-      title: "What you can verify in the live examples.",
-      items: [
-        {
-          quote: "A client completes a booking without signing up or creating a password.",
-          name: "No-account booking",
-          role: "Live product behavior",
-        },
-        {
-          quote: "An active hold reduces availability before the booking is confirmed.",
-          name: "10-minute soft hold",
-          role: "Live product behavior",
-        },
-        {
-          quote: "Every confirmation includes a private route to reschedule or cancel.",
-          name: "Self-service management",
-          role: "Live product behavior",
-        },
-      ],
-      note: "These are verifiable product capabilities, not customer testimonials or performance metrics.",
-    },
-    pricing: {
-      eyebrow: "Early access",
-      title: "Use the core booking flow while we keep building.",
-      body: "Haab is in early access. Public pages, holds, confirmations, capacity, and self-service work today. Pricing and some integrations are still being defined.",
-      startFree: "Create an early-access page",
-      viewPricing: "See a live page",
-      features: [
-        "One public booking page",
-        "Booking holds and confirmations",
-        "Calendar file and QR code",
-        "Client self-service links",
-      ],
-    },
     finalCta: {
       title: "One link. Then autopilot.",
       body: "Name your page and share it today.",
@@ -1024,54 +776,6 @@ export const translations = {
       },
       copyright: "© 2026 Haab Calendar. Early-access booking software.",
       createLink: "Create your page →",
-    },
-    visuals: {
-      weekdays: ["S", "M", "T", "W", "T", "F", "S"],
-      serviceSetup: {
-        steps: ["Service", "Hours", "Rules", "Publish"],
-        serviceLabel: "Service",
-        serviceValue: "Strategy consult",
-        durationLabel: "Duration",
-        durationValue: "45 minutes",
-        capacityLabel: "Capacity",
-        capacityValue: "1 client",
-        modeLabel: "Mode",
-        modeValue: "Appointments",
-        readyToPublish: "Ready to publish",
-        setupTime: "Core setup",
-      },
-      shareLink: {
-        yourPage: "Your booking page",
-        chips: ["Bio", "Email", "QR", "Website"],
-      },
-      automation: {
-        confirmedAt: "Confirmed at 2:00 PM",
-        cards: [
-          ["Slot held", "Protected for 10 minutes"],
-          ["Calendar file", "Ready for the client"],
-          ["Self-service link", "Reschedule without inbox ping-pong"],
-        ],
-      },
-      hold: {
-        expires: "Hold expires in 8:42",
-        protected: "Slot protected",
-      },
-      selfService: [
-        ["Management link", "In every confirmation, no account"],
-        ["Client reschedules", "Your calendar updates instantly"],
-      ],
-      useCaseBadge: "Bookable",
-      useCaseLines: {
-        healthcare: ["New patient · $120", "Follow-up · $60", "30 & 15 min"],
-        spaces: ["Court · $40/hr", "Full-day venue", "Up to 100"],
-        professional: ["Strategy · $200", "Quick consult · $90", "1 client"],
-        events: ["Race · $590", "50 spots left", "Dated event"],
-      },
-      mobile: {
-        calendar: { name: "Sarah Chen", service: "Marketing Consult", cta: "Pick a time" },
-        slots: { date: "March 11", openings: "4 openings", held: "Held for 8:42", cta: "Review & book" },
-        confirm: { title: "Confirmed", when: "Mon, Mar 11 · 2:00 PM", cta: "Add to calendar" },
-      },
     },
   },
 };
