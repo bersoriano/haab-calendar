@@ -220,6 +220,14 @@ function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
 }
 
+/**
+ * Section links are same-page anchors on the landing page. Anywhere else they
+ * have to name the landing page first, or they scroll nowhere.
+ */
+function sectionAnchor(goHome: boolean, lang: "en" | "es") {
+  return (id: string) => (goHome ? `/?lang=${lang}#${id}` : `#${id}`);
+}
+
 export function galleryPath(lang: "en" | "es") {
   return `/gallery?lang=${lang}`;
 }
@@ -337,17 +345,21 @@ function useHeroPassed(alwaysShowCta: boolean) {
 export function StickyNav({
   alwaysShowCta = false,
   showUseCases = true,
+  anchorsGoHome = false,
 }: {
   alwaysShowCta?: boolean;
   showUseCases?: boolean;
+  /** Set on pages that reuse this nav but carry none of its sections. */
+  anchorsGoHome?: boolean;
 } = {}) {
   const { lang, setLang, t } = useLanguage();
+  const anchor = sectionAnchor(anchorsGoHome, lang);
   const heroPassed = useHeroPassed(alwaysShowCta);
   const navLinks = [
-    { href: "#live-examples", label: t.nav.links.examples },
-    { href: "#how", label: t.nav.links.how },
-    ...(showUseCases ? [{ href: "#verticals", label: t.nav.links.useCases }] : []),
-    { href: "#faq", label: t.nav.links.faq },
+    { href: anchor("live-examples"), label: t.nav.links.examples },
+    { href: anchor("how"), label: t.nav.links.how },
+    ...(showUseCases ? [{ href: anchor("verticals"), label: t.nav.links.useCases }] : []),
+    { href: anchor("faq"), label: t.nav.links.faq },
   ];
 
   return (
@@ -727,12 +739,19 @@ export function FinalCTA() {
   );
 }
 
-export function Footer({ showUseCases = true }: { showUseCases?: boolean } = {}) {
+export function Footer({
+  showUseCases = true,
+  anchorsGoHome = false,
+}: {
+  showUseCases?: boolean;
+  anchorsGoHome?: boolean;
+} = {}) {
   const { lang, t } = useLanguage();
+  const anchor = sectionAnchor(anchorsGoHome, lang);
   return (
     <footer className="border-t border-[var(--line)] bg-white/65 px-5 py-12 sm:px-8">
       <div className="mx-auto max-w-[1280px]">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           <div>
             <Link href="/" className="flex items-center gap-2">
               <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-sm font-bold text-white">
@@ -750,18 +769,18 @@ export function Footer({ showUseCases = true }: { showUseCases?: boolean } = {})
             </p>
             <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
               <li>
-                <a href="#how" className="hover:text-[var(--ink)]">
+                <a href={anchor("how")} className="hover:text-[var(--ink)]">
                   {t.footer.product.how}
                 </a>
               </li>
               <li>
-                <a href="#features" className="hover:text-[var(--ink)]">
+                <a href={anchor("features")} className="hover:text-[var(--ink)]">
                   {t.footer.product.features}
                 </a>
               </li>
               {showUseCases ? (
                 <li>
-                  <a href="#verticals" className="hover:text-[var(--ink)]">
+                  <a href={anchor("verticals")} className="hover:text-[var(--ink)]">
                     {t.footer.product.useCases}
                   </a>
                 </li>
@@ -780,36 +799,9 @@ export function Footer({ showUseCases = true }: { showUseCases?: boolean } = {})
             </p>
             <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
               <li>
-                <Link href="/about" className="hover:text-[var(--ink)]">
-                  {t.footer.company.about}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="hover:text-[var(--ink)]">
-                  {t.footer.company.contact}
-                </Link>
-              </li>
-              <li>
-                <a href="#early-access" className="hover:text-[var(--ink)]">
+                <a href={anchor("early-access")} className="hover:text-[var(--ink)]">
                   {t.footer.company.pricing}
                 </a>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ink)]">
-              {t.footer.legalHeading}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
-              <li>
-                <Link href="/privacy" className="hover:text-[var(--ink)]">
-                  {t.footer.legal.privacy}
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="hover:text-[var(--ink)]">
-                  {t.footer.legal.terms}
-                </Link>
               </li>
             </ul>
           </div>

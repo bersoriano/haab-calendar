@@ -376,14 +376,7 @@ export const translations = {
       },
       companyHeading: "Empresa",
       company: {
-        about: "Acerca de",
-        contact: "Contacto",
         pricing: "Acceso anticipado",
-      },
-      legalHeading: "Legal",
-      legal: {
-        privacy: "Privacidad",
-        terms: "Términos",
       },
       copyright: "© 2026 Haab Calendar. Software de reservas en acceso anticipado.",
       createLink: "Crear mi página →",
@@ -765,14 +758,7 @@ export const translations = {
       },
       companyHeading: "Company",
       company: {
-        about: "About",
-        contact: "Contact",
         pricing: "Early access",
-      },
-      legalHeading: "Legal",
-      legal: {
-        privacy: "Privacy",
-        terms: "Terms",
       },
       copyright: "© 2026 Haab Calendar. Early-access booking software.",
       createLink: "Create your page →",

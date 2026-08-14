@@ -32,3 +32,15 @@ describe("the Use cases anchor", () => {
     expect(html).toContain('href="#features"');
   });
 });
+
+describe("links that leave the landing page", () => {
+  it("points at no route that does not exist", () => {
+    const html = render(true);
+    const internal = [...html.matchAll(/href="(\/[a-z-]*)"/g)].map((m) => m[1]);
+    const routes = new Set(["/", "/gallery", "/login", "/try-booking"]);
+
+    for (const href of new Set(internal)) {
+      expect(routes.has(href), `${href} has no page.tsx`).toBe(true);
+    }
+  });
+});
