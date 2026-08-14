@@ -108,7 +108,7 @@ export const translations = {
         "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
     },
     hero: {
-      title: "Un enlace. Sin cuentas para tus clientes. Sin reservas duplicadas.",
+      title: "Un enlace. Sin registrarse. Sin reservas duplicadas.",
       body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
       ctaPrimary: "Crear mi página",
       ctaSecondary: "Ver una página real",
@@ -362,6 +362,7 @@ export const translations = {
     finalCta: {
       title: "Un enlace. Después, piloto automático.",
       body: "Nombra tu página y compártela hoy.",
+      ownerBody: "Tu página está en vivo. Comparte el enlace y déjala correr.",
       ctaPrimary: "Crear mi página",
       fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
     },
@@ -490,7 +491,7 @@ export const translations = {
         "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
     },
     hero: {
-      title: "One link. No client accounts. No double bookings.",
+      title: "One link. No registration needed. No double bookings.",
       body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your clients never make an account, and you never confirm a time by hand.",
       ctaPrimary: "Create your page",
       ctaSecondary: "See a real page",
@@ -744,6 +745,7 @@ export const translations = {
     finalCta: {
       title: "One link. Then autopilot.",
       body: "Name your page and share it today.",
+      ownerBody: "Your page is live. Share the link and let it run.",
       ctaPrimary: "Create your page",
       fineprint: "Free while in early access. No card.",
     },

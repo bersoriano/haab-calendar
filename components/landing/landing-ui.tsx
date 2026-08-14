@@ -109,6 +109,18 @@ export function LandingActionsProvider({
   );
 }
 
+/**
+ * The primary action's label. `onStart` already sends an owner with a page to
+ * their dashboard, so the wording follows the destination instead of always
+ * offering to create something that exists.
+ */
+function usePrimaryCtaLabel() {
+  const { hasPage } = useLandingActions();
+  const { t } = useLanguage();
+
+  return hasPage ? t.nav.dashboard : t.hero.ctaPrimary;
+}
+
 function useLandingActions() {
   return useContext(LandingActionsContext);
 }
@@ -353,6 +365,7 @@ export function StickyNav({
   anchorsGoHome?: boolean;
 } = {}) {
   const { lang, setLang, t } = useLanguage();
+  const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
   const heroPassed = useHeroPassed(alwaysShowCta);
   const navLinks = [
@@ -389,6 +402,7 @@ export function StickyNav({
             <LanguageSwitcher lang={lang} onChange={setLang} />
           </div>
           <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
+          {hasPage ? null : (
           <StartButton
             className={cn(
               "inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ink)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5",
@@ -399,6 +413,7 @@ export function StickyNav({
             <span className="sm:hidden">{t.nav.createPageShort}</span>
             <span className="hidden sm:inline">{t.nav.createPageLong}</span>
           </StartButton>
+          )}
           <details className="group relative xl:hidden">
             <summary
               aria-label={t.nav.openMenu}
@@ -437,9 +452,11 @@ export function StickyNav({
 
 function HeroAccountLine() {
   const entry = useAccountEntry();
+  const { hasPage } = useLandingActions();
   const { t } = useLanguage();
 
-  if (!entry) {
+  // The primary button already says this for an owner.
+  if (!entry || hasPage) {
     return null;
   }
 
@@ -453,6 +470,8 @@ function HeroAccountLine() {
 
 export function Hero() {
   const { t } = useLanguage();
+  const { hasPage } = useLandingActions();
+  const primaryLabel = usePrimaryCtaLabel();
   return (
     <section className="relative overflow-hidden border-b border-[var(--line)] bg-[linear-gradient(145deg,#f5f7fb_0%,#edf4ff_54%,#e9f8f5_100%)]">
       <div className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(26,115,232,0.16),transparent_68%)]" />
@@ -479,13 +498,15 @@ export function Hero() {
             {t.hero.body}
           </p>
           <div id="hero-cta-anchor" className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <StartButton className={primaryButtonClass}>{t.hero.ctaPrimary}</StartButton>
+            <StartButton className={primaryButtonClass}>{primaryLabel}</StartButton>
             <DemoButton className={secondaryLinkClass}>
               <span className="haab-live-dot mr-2 h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
               {t.hero.ctaSecondary}
             </DemoButton>
           </div>
-          <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
+          {hasPage ? null : (
+            <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
+          )}
           {/* Second placement, at the exact moment someone realises the primary
               CTA is not for them: they already have a page. */}
           <HeroAccountLine />
@@ -703,11 +724,6 @@ export function FAQ() {
             </details>
           ))}
         </div>
-        <div className="mt-10 flex justify-center">
-          <StartButton className={primaryButtonClass}>
-            {t.how.cta}
-          </StartButton>
-        </div>
       </div>
     </section>
   );
@@ -717,6 +733,8 @@ export function FAQ() {
 
 export function FinalCTA() {
   const { t } = useLanguage();
+  const { hasPage } = useLandingActions();
+  const primaryLabel = usePrimaryCtaLabel();
   return (
     <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(26,115,232,0.95),rgba(79,142,241,0.92))]" />
@@ -726,13 +744,15 @@ export function FinalCTA() {
           {t.finalCta.title}
         </h2>
         <p className="mt-5 text-lg leading-8 text-white/85">
-          {t.finalCta.body}
+          {hasPage ? t.finalCta.ownerBody : t.finalCta.body}
         </p>
         <div className="mt-9 flex flex-col items-center gap-4">
           <StartButton className="inline-flex items-center justify-center rounded-lg bg-white px-8 py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white/90">
-            {t.finalCta.ctaPrimary}
+            {primaryLabel}
           </StartButton>
-          <p className="text-sm !text-white/70">{t.finalCta.fineprint}</p>
+          {hasPage ? null : (
+            <p className="text-sm !text-white/70">{t.finalCta.fineprint}</p>
+          )}
         </div>
       </div>
     </section>
@@ -747,6 +767,7 @@ export function Footer({
   anchorsGoHome?: boolean;
 } = {}) {
   const { lang, t } = useLanguage();
+  const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
   return (
     <footer className="border-t border-[var(--line)] bg-white/65 px-5 py-12 sm:px-8">
@@ -808,9 +829,11 @@ export function Footer({
         </div>
         <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-[var(--line)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center">
           <p>{t.footer.copyright}</p>
-          <StartButton className="font-semibold text-[var(--primary)] hover:underline">
-            {t.footer.createLink}
-          </StartButton>
+          {hasPage ? null : (
+            <StartButton className="font-semibold text-[var(--primary)] hover:underline">
+              {t.footer.createLink}
+            </StartButton>
+          )}
         </div>
       </div>
     </footer>
