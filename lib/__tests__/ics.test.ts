@@ -220,3 +220,33 @@ describe("buildIcsContent — Spanish confirmation export", () => {
     expect(ics).toContain("Booking Module//ES");
   });
 });
+
+describe("party size in the calendar entry", () => {
+  it("names the guest count above the notes", () => {
+    const ics = buildIcsContent(
+      makeAppointmentBooking({ serviceName: "Dinner table", partySize: 4 }),
+      provider,
+      "",
+    );
+
+    expect(ics).toContain("Guests: 4");
+    expect(ics.indexOf("Guests: 4")).toBeLessThan(ics.indexOf("Notes:"));
+  });
+
+  it("says it in Spanish", () => {
+    const ics = buildIcsContent(
+      makeAppointmentBooking({ partySize: 2 }),
+      provider,
+      "",
+      "es",
+    );
+
+    expect(ics).toContain("Comensales: 2");
+  });
+
+  it("leaves the line out when the booking has no party", () => {
+    const ics = buildIcsContent(makeAppointmentBooking(), provider, "");
+
+    expect(ics).not.toContain("Guests:");
+  });
+});

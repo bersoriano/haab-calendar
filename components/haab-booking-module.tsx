@@ -109,6 +109,7 @@ import {
   isSingleOccurrence,
   isWeeklyOccurrence,
   getSpotsLeft,
+  hasSlotCapacity,
 } from "@/lib/availability";
 import type { AvailabilityClock, DayAvailabilityLevel } from "@/lib/availability";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
@@ -2468,6 +2469,12 @@ export function HaabBookingModule({
       return;
     }
 
+    // A table is held for a party, so its size is part of the reservation.
+    if (hasSlotCapacity(validationService) && !bookingFlow.partySize.trim()) {
+      setBookingError(t.admin.partySizeRequiredError);
+      return;
+    }
+
     if (
       validationService.bookingType === "appointment" &&
       !getAvailableSlots(
@@ -2517,6 +2524,11 @@ export function HaabBookingModule({
     const bookingLocationAddress =
       addressForLocationKey(bookingFlow.locationKey) ??
       (validationLocations.length === 1 ? validationLocations[0].address : undefined);
+    const parsedPartySize = Number.parseInt(bookingFlow.partySize, 10);
+    const partySizeForBooking =
+      hasSlotCapacity(validationService) && Number.isFinite(parsedPartySize) && parsedPartySize > 0
+        ? parsedPartySize
+        : undefined;
     const nextBooking: BookingRecord = {
       id: createId("booking"),
       serviceId: validationService.id,
@@ -2529,6 +2541,10 @@ export function HaabBookingModule({
       clientEmail: bookingFlow.clientEmail.trim(),
       clientPhone: bookingFlow.clientPhone.trim(),
       notes: bookingFlow.notes.trim(),
+      // A capacity service's own bookings decrement the seating rather than
+      // taking it, offline exactly as the database records it on the server.
+      sharedCapacity: hasSlotCapacity(validationService) || undefined,
+      partySize: partySizeForBooking,
       capacitySnapshot:
         typeof validationService.maxSpots === "number"
           ? formatCapacityLabel(validationService)
@@ -2561,13 +2577,14 @@ export function HaabBookingModule({
               clientName: bookingFlow.clientName.trim(),
               clientEmail: bookingFlow.clientEmail.trim(),
               clientPhone: bookingFlow.clientPhone.trim(),
+              partySize: partySizeForBooking,
               notes: bookingFlow.notes.trim(),
               location: bookingLocationAddress,
               locationKey: bookingFlow.locationKey,
               details: {
                 locationKey: bookingFlow.locationKey ?? null,
               },
-              detailsSchemaKey: "base",
+              detailsSchemaKey: partySizeForBooking === undefined ? "base" : "restaurant",
               detailsSchemaVersion: 1,
               idempotencyKey:
                 typeof crypto.randomUUID === "function" ? crypto.randomUUID() : createId("idem"),
@@ -3500,6 +3517,9 @@ export function HaabBookingModule({
                     </div>
                     <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                       {booking.serviceName}
+                      {typeof booking.partySize === "number"
+                        ? ` · ${booking.partySize} ${t.admin.guestsSuffix}`
+                        : ""}
                     </p>
                     <p className="mt-1 text-sm text-[var(--muted)]">
                       {formatDateLabel(booking.dateKey, lang)} ·{" "}
@@ -4787,6 +4807,25 @@ export function HaabBookingModule({
                           className={publicFieldClass}
                         />
                       </label>
+                      {selectedService && hasSlotCapacity(selectedService) ? (
+                        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                          <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                            {t.admin.partySizeLabel}
+                          </span>
+                          <input
+                            value={bookingFlow.partySize}
+                            onChange={(event) =>
+                              updateBookingFlow(
+                                "partySize",
+                                event.target.value.replace(/[^0-9]/g, ""),
+                              )
+                            }
+                            inputMode="numeric"
+                            placeholder={t.admin.partySizePlaceholder}
+                            className={publicFieldClass}
+                          />
+                        </label>
+                      ) : null}
                       <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
                         <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
                           {t.publicFlow.notes}
@@ -5157,6 +5196,12 @@ export function HaabBookingModule({
                             : t.publicFlow.notSelected
                         }
                       />
+                      {hasSlotCapacity(selectedService) ? (
+                        <SummaryField
+                          label={t.admin.partySizeLabel}
+                          value={bookingFlow.partySize || t.publicFlow.notEnteredYet}
+                        />
+                      ) : null}
                       {selectedService.medicalSpecialty ? (
                         <SummaryField
                           label={t.publicFlow.specialty}

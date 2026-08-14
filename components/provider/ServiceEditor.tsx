@@ -65,6 +65,9 @@ export function ServiceEditor({
   const showMedicalSpecialty =
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
   const isEvents = vertical === "events";
+  // A restaurant sells its capacity at every seating, so it shows the same
+  // numeric field events use — relabelled — plus the cap on one table's party.
+  const isRestaurant = vertical === "restaurant";
   const isSingleOccurrence = serviceDraft.occurrenceMode === "single";
   const isWeeklyOccurrence = serviceDraft.occurrenceMode === "weekly";
   const isEventsSingle = isEvents && isSingleOccurrence;
@@ -457,7 +460,7 @@ export function ServiceEditor({
               className={cn(adminFieldClass, "disabled:opacity-45")}
             />
           </label>
-          {!isEvents ? (
+          {!isEvents && !isRestaurant ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
               {t.admin.capacityLabel}
               <input
@@ -471,9 +474,9 @@ export function ServiceEditor({
               />
             </label>
           ) : null}
-          {isEvents ? (
+          {isEvents || isRestaurant ? (
             <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.maxSpotsLabel}
+              {isRestaurant ? t.admin.tablesPerSeatingLabel : t.admin.maxSpotsLabel}
               <input
                 disabled={disabled}
                 value={serviceDraft.maxSpots}
@@ -484,7 +487,25 @@ export function ServiceEditor({
                   }))
                 }
                 inputMode="numeric"
-                placeholder="50"
+                placeholder={isRestaurant ? "12" : "50"}
+                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
+              />
+            </label>
+          ) : null}
+          {isRestaurant ? (
+            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              {t.admin.maxPartySizeLabel}
+              <input
+                disabled={disabled}
+                value={serviceDraft.maxPartySize}
+                onChange={(event) =>
+                  onDraftChange((current) => ({
+                    ...current,
+                    maxPartySize: event.target.value.replace(/[^0-9]/g, ""),
+                  }))
+                }
+                inputMode="numeric"
+                placeholder="8"
                 className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
             </label>

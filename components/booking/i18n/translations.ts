@@ -347,6 +347,12 @@ export type BookingDict = {
     descriptionLabel: string;
     capacityLabel: string;
     maxSpotsLabel: string;
+    tablesPerSeatingLabel: string;
+    maxPartySizeLabel: string;
+    partySizeLabel: string;
+    partySizeRequiredError: string;
+    partySizePlaceholder: string;
+    guestsSuffix: string;
     notesLabel: string;
     totalLabel: string;
     locationSection: string;
@@ -818,6 +824,12 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       descriptionLabel: "Description",
       capacityLabel: "Capacity",
       maxSpotsLabel: "Maximum spots",
+      tablesPerSeatingLabel: "Tables per seating",
+      maxPartySizeLabel: "Max party size",
+      partySizeLabel: "Guests",
+      partySizeRequiredError: "Tell us how many guests are coming.",
+      partySizePlaceholder: "2",
+      guestsSuffix: "guests",
       notesLabel: "Notes",
       totalLabel: "Total",
       locationSection: "Location",
@@ -1299,6 +1311,12 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       descriptionLabel: "Descripción",
       capacityLabel: "Capacidad",
       maxSpotsLabel: "Lugares máximos",
+      tablesPerSeatingLabel: "Mesas por turno",
+      maxPartySizeLabel: "Grupo máximo",
+      partySizeLabel: "Comensales",
+      partySizeRequiredError: "Indique cuántos comensales asistirán.",
+      partySizePlaceholder: "2",
+      guestsSuffix: "comensales",
       notesLabel: "Notas",
       totalLabel: "Total",
       locationSection: "Ubicación",

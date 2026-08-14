@@ -58,3 +58,22 @@ describe("chooseAnotherService", () => {
     expect(copy.phrases.chooseAnotherService).toContain(gender);
   });
 });
+
+describe("restaurant copy", () => {
+  it("talks about tables and reservations, not services and bookings", () => {
+    const copy = getVerticalCopy("restaurant");
+
+    expect(copy.service).toBe("table");
+    expect(copy.booking).toBe("reservation");
+    expect(copy.client).toBe("guest");
+    expect(copy.phrases.spotsLeftSuffix).toBe("tables left");
+  });
+
+  it("agrees with the feminine Spanish noun", () => {
+    const copy = getVerticalCopy("restaurant", "es");
+
+    expect(copy.service).toBe("mesa");
+    expect(copy.phrases.chooseAnotherService).toBe("Elija otra mesa");
+    expect(copy.phrases.spotsLeftSuffix).toBe("mesas disponibles");
+  });
+});

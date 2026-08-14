@@ -26,6 +26,7 @@ export function buildIcsContent(
       ? {
           client: "Cliente",
           phone: "Teléfono",
+          guests: "Comensales",
           notes: "Notas",
           notAvailable: "No aplica",
           manage: "Gestionar esta reserva",
@@ -34,13 +35,17 @@ export function buildIcsContent(
       : {
           client: "Client",
           phone: "Phone",
+          guests: "Guests",
           notes: "Notes",
           notAvailable: "N/A",
           manage: "Manage this booking",
           productLanguage: "EN",
         };
   const safeSummary = escapeIcsText(booking.serviceName);
-  const baseDescription = `${labels.client}: ${booking.clientName}\n${labels.phone}: ${booking.clientPhone}\n${labels.notes}: ${booking.notes || labels.notAvailable}`;
+  // Party size is what the owner reads at service time, so it goes above notes.
+  const guestsLine =
+    typeof booking.partySize === "number" ? `${labels.guests}: ${booking.partySize}\n` : "";
+  const baseDescription = `${labels.client}: ${booking.clientName}\n${labels.phone}: ${booking.clientPhone}\n${guestsLine}${labels.notes}: ${booking.notes || labels.notAvailable}`;
   const safeDescription = escapeIcsText(
     manageUrl ? `${baseDescription}\n${labels.manage}: ${manageUrl}` : baseDescription,
   );
