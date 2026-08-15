@@ -110,6 +110,7 @@ type PublicScheduleBookingRow = {
   status: "confirmed" | "rescheduled";
   created_at: string;
   updated_at: string;
+  allows_shared_capacity: boolean | null;
 };
 
 type PublicScheduleHoldRow = {
@@ -121,6 +122,7 @@ type PublicScheduleHoldRow = {
   end_time: string | null;
   created_at: string;
   expires_at: string;
+  allows_shared_capacity: boolean | null;
 };
 
 export type PublicBookingResolved = {
@@ -235,6 +237,7 @@ function toPublicScheduleBooking(row: PublicScheduleBookingRow): BookingRecord {
     notes: "",
     cost: "",
     status: row.status,
+    sharedCapacity: row.allows_shared_capacity ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     manageToken: "",
@@ -251,6 +254,7 @@ function toPublicScheduleHold(row: PublicScheduleHoldRow): BookingHoldRecord {
     endTime: row.end_time?.slice(0, 5),
     createdAt: row.created_at,
     expiresAt: new Date(row.expires_at).getTime(),
+    sharedCapacity: row.allows_shared_capacity ?? false,
   };
 }
 
@@ -268,7 +272,7 @@ export async function loadPublicSchedule(
     admin
       .from("bookings")
       .select(
-        "id, service_id, service_name, booking_type, date, start_time, end_time, status, created_at, updated_at",
+        "id, service_id, service_name, booking_type, date, start_time, end_time, status, created_at, updated_at, allows_shared_capacity",
       )
       .eq("provider_id", providerId)
       .gte("date", dateFrom)
@@ -278,7 +282,7 @@ export async function loadPublicSchedule(
     admin
       .from("booking_holds")
       .select(
-        "id, service_id, booking_type, date, start_time, end_time, created_at, expires_at",
+        "id, service_id, booking_type, date, start_time, end_time, created_at, expires_at, allows_shared_capacity",
       )
       .eq("provider_id", providerId)
       .gte("date", dateFrom)

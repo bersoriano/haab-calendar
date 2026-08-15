@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  normalizeBookings,
   normalizeStore,
   normalizeProvider,
   pruneBookingHolds,
@@ -454,5 +455,47 @@ describe("normalizeStore — per-location pricing", () => {
     // empty override dropped, real one kept
     expect(normalized.services[0].locationPrices).toEqual({ address2: "$75" });
     expect(normalized.bookings[0].location).toBe("B");
+  });
+});
+
+describe("normalizeBookings keeps what availability depends on", () => {
+  // The normalizer rebuilds each booking field by field, so a field added to
+  // BookingRecord but not to the rebuild is dropped between the server payload
+  // and the page. That is invisible in types and fatal to capacity services.
+  const base = {
+    id: "bk1",
+    serviceId: "svc",
+    serviceName: "Dinner table",
+    bookingType: "appointment" as const,
+    dateKey: "2026-08-21",
+    startTime: "20:00",
+    endTime: "21:30",
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    notes: "",
+    cost: "",
+    status: "confirmed" as const,
+    createdAt: "",
+    updatedAt: "",
+    manageToken: "",
+  };
+
+  it("carries sharedCapacity through", () => {
+    const [normalized] = normalizeBookings([{ ...base, sharedCapacity: true }]);
+
+    expect(normalized.sharedCapacity).toBe(true);
+  });
+
+  it("defaults a booking with no flag to exclusive", () => {
+    const [normalized] = normalizeBookings([base]);
+
+    expect(normalized.sharedCapacity).toBe(false);
+  });
+
+  it("carries party size through", () => {
+    const [normalized] = normalizeBookings([{ ...base, partySize: 4 }]);
+
+    expect(normalized.partySize).toBe(4);
   });
 });

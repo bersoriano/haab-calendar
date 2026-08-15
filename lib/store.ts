@@ -379,6 +379,11 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       cost: booking.cost ?? "",
       location: booking.location,
       status: booking.status,
+      // Rebuilt field by field, so anything omitted here is silently dropped:
+      // without sharedCapacity every capacity booking reads as exclusive and
+      // the first party to take a seating hides it from everyone else.
+      sharedCapacity: booking.sharedCapacity ?? false,
+      partySize: booking.partySize,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       manageToken: booking.manageToken ?? "",
