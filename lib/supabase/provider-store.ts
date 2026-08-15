@@ -123,20 +123,61 @@ function toServicePayload(providerId: string, service: Service, sortOrder: numbe
   };
 }
 
-async function getExistingProviderId(supabase: SupabaseClient, ownerUserId: string) {
+/** Postgres unique violation. */
+const UNIQUE_VIOLATION = "23505";
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === UNIQUE_VIOLATION
+  );
+}
+
+/**
+ * The owner's provider, or undefined.
+ *
+ * One row per owner is enforced by providers_owner_user_id_unique, so this asks
+ * for exactly that and lets a second row be an error rather than quietly
+ * picking the oldest — which is what this did before, and which hid the
+ * duplicates the constraint now prevents.
+ */
+async function getProviderByOwner(supabase: SupabaseClient, ownerUserId: string) {
   const { data, error } = await supabase
     .from("providers")
     .select(PROVIDER_ID_SELECT)
     .eq("owner_user_id", ownerUserId)
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .returns<ProviderIdRow[]>();
+    .maybeSingle<ProviderIdRow>();
 
   if (error) {
     throw new ProviderStoreWriteError("Could not load your booking profile.", 500, error);
   }
 
-  return data?.[0]?.id;
+  return data?.id;
+}
+
+async function updateProviderById(
+  supabase: SupabaseClient,
+  providerId: string,
+  payload: Record<string, unknown>,
+  profileRole: string,
+) {
+  const { data, error } = await supabase
+    .from("providers")
+    .update(payload)
+    .eq("id", providerId)
+    .select(PROVIDER_ID_SELECT)
+    .single<ProviderIdRow>();
+
+  if (error) {
+    throw new ProviderStoreWriteError(
+      `Could not update your ${profileRole} profile.`,
+      500,
+      error,
+    );
+  }
+
+  return data.id;
 }
 
 async function upsertProvider(options: {
@@ -149,7 +190,7 @@ async function upsertProvider(options: {
   const vertical = requireVertical(options.store.vertical);
   const profileRole = vertical === "events" ? "organizer" : "provider";
   const profileRoleTitle = profileRole === "organizer" ? "Organizer" : "Provider";
-  const existingProviderId = await getExistingProviderId(options.supabase, options.ownerUserId);
+  const existingProviderId = await getProviderByOwner(options.supabase, options.ownerUserId);
   const email = requireText(
     provider.email || options.ownerEmail || "",
     `${profileRoleTitle} email is required.`,
@@ -182,22 +223,12 @@ async function upsertProvider(options: {
   };
 
   if (existingProviderId) {
-    const { data, error } = await options.supabase
-      .from("providers")
-      .update(editablePayload)
-      .eq("id", existingProviderId)
-      .select(PROVIDER_ID_SELECT)
-      .single<ProviderIdRow>();
-
-    if (error) {
-      throw new ProviderStoreWriteError(
-        `Could not update your ${profileRole} profile.`,
-        500,
-        error,
-      );
-    }
-
-    return data.id;
+    return updateProviderById(
+      options.supabase,
+      existingProviderId,
+      editablePayload,
+      profileRole,
+    );
   }
 
   const { data, error } = await options.supabase
@@ -210,6 +241,18 @@ async function upsertProvider(options: {
     .single<ProviderIdRow>();
 
   if (error) {
+    // Two first-time setups can both see no provider and both insert. One wins;
+    // the loser lands here. Recover only when a row for *this owner* now
+    // exists — any other unique violation (a slug collision, say) is a real
+    // failure and must not be swallowed.
+    if (isUniqueViolation(error)) {
+      const raced = await getProviderByOwner(options.supabase, options.ownerUserId);
+
+      if (raced) {
+        return updateProviderById(options.supabase, raced, editablePayload, profileRole);
+      }
+    }
+
     throw new ProviderStoreWriteError(
       `Could not create your ${profileRole} profile.`,
       500,

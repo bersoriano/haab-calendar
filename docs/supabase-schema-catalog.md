@@ -114,10 +114,18 @@ not contain an Auth owner ID.
 
 Stores one provider profile, its public URL scope, and its weekly availability.
 
+**Exactly one provider row exists per `auth.users` owner.** `owner_user_id`
+carries a unique constraint (`providers_owner_user_id_unique`), so the database
+rejects a second profile for the same owner rather than leaving the application
+to pick between them. The provider id — not the user id — is the identity of a
+workspace or business, and is what future billing attaches to. Owning several
+providers from one account is not something the product supports: there is no
+workspace switcher, and every read path assumes a single row.
+
 | Column | Type | App interface field | Notes |
 | --- | --- | --- | --- |
 | `id` | `uuid` | internal provider id | Primary key. |
-| `owner_user_id` | `uuid` | authenticated user | References `auth.users(id)` with cascade delete. |
+| `owner_user_id` | `uuid` | authenticated user | References `auth.users(id)` with cascade delete. Unique: one provider per owner. |
 | `full_name` | `text` | `ProviderInfo.fullName` | Required. |
 | `business_name` | `text` | `ProviderInfo.businessName` | Required and used for generated slugs. |
 | `email` | `text` | `ProviderInfo.email` | Provider private/admin email. Not exposed by public views. |
