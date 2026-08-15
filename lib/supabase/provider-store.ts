@@ -153,12 +153,10 @@ async function upsertProvider(options: {
     provider.email || options.ownerEmail || "",
     `${profileRoleTitle} email is required.`,
   );
-  const payload = {
-    owner_user_id: options.ownerUserId,
+  const editablePayload = {
     full_name: requireText(provider.fullName, `${profileRoleTitle} name is required.`),
     business_name: requireText(provider.businessName, "Business name is required."),
     email,
-    slug: provider.publicSlug,
     vertical,
     language: provider.language,
     dashboard_language: provider.dashboardLanguage ?? null,
@@ -184,7 +182,7 @@ async function upsertProvider(options: {
   if (existingProviderId) {
     const { data, error } = await options.supabase
       .from("providers")
-      .update(payload)
+      .update(editablePayload)
       .eq("id", existingProviderId)
       .select(PROVIDER_ID_SELECT)
       .single<ProviderIdRow>();
@@ -202,7 +200,10 @@ async function upsertProvider(options: {
 
   const { data, error } = await options.supabase
     .from("providers")
-    .insert(payload)
+    .insert({
+      ...editablePayload,
+      owner_user_id: options.ownerUserId,
+    })
     .select(PROVIDER_ID_SELECT)
     .single<ProviderIdRow>();
 

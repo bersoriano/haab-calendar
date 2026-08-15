@@ -86,7 +86,13 @@ redirected through the backend.
 ## Implementation Notes
 
 - Slug history is stored in separate tables rather than JSON arrays so redirects can be indexed and conflict-checked.
-- Custom provider slugs are marked premium-only with `providers.plan_tier = 'premium'`; free-plan rows cannot set `custom_slug`.
+- Canonical `providers.slug`, `providers.custom_slug`, and `providers.plan_tier`
+  are server-managed. Authenticated provider clients cannot insert or update
+  these columns directly; database triggers generate canonical slugs for normal
+  provider inserts.
+- Future custom-slug changes must pass through a trusted server endpoint that
+  verifies entitlement before using service-role access. `providers.plan_tier`
+  is transitional metadata, not the final billing or entitlement architecture.
 - Service slugs are unique per provider because the provider path scopes the service URL.
 - `/public/{slug}` remains only as a standalone local demo path.
 - The current backend public DTO intentionally returns empty bookings and holds; booking-critical writes and manage-token reads still belong to later server-authoritative backend work.
