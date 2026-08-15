@@ -129,6 +129,7 @@ import {
   type BookingFlowEvent,
   type BookingFlowNotice,
 } from "@/lib/booking-flow-machine";
+import { getServiceSelectCta } from "@/lib/service-select-cta";
 import {
   scrollPublicBookingStepToTop,
   shouldCollapsePublicProgressIndicator,
@@ -4037,7 +4038,7 @@ export function HaabBookingModule({
                     }}
                     aria-label={`${formatDateLabel(dateKey, lang)}, ${availabilityLabel}`}
                     className={cn(
-                      "flex aspect-square min-h-0 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:aspect-auto sm:min-h-[88px] sm:items-stretch sm:justify-start sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
+                      "flex min-h-12 flex-col items-center justify-center gap-1 rounded-2xl p-1.5 text-center transition sm:min-h-[88px] sm:items-stretch sm:justify-start sm:rounded-[24px] sm:p-3 sm:text-left md:min-h-[104px]",
                       daySurfaceClass,
                       dayEdgeClass,
                       available &&
@@ -4722,6 +4723,51 @@ export function HaabBookingModule({
                       </div>
                     );
                   })()}
+                  {(() => {
+                    // A weekly service has a different count on every date, so
+                    // only a fixed occurrence can state one on the card.
+                    if (service.occurrenceMode !== "single" || !service.occurrenceDate) {
+                      return null;
+                    }
+
+                    const left = getSpotsLeft(
+                      service,
+                      service.occurrenceDate,
+                      bookings,
+                      undefined,
+                      activeBookingHolds,
+                    );
+
+                    if (!Number.isFinite(left) || typeof service.maxSpots !== "number") {
+                      return null;
+                    }
+
+                    const remaining = Math.max(0, left);
+                    const scarce = remaining > 0 && remaining <= service.maxSpots * 0.25;
+
+                    return (
+                      <span
+                        className={cn(
+                          "mt-3 text-sm font-semibold tabular-nums",
+                          remaining === 0
+                            ? "text-[var(--muted)]"
+                            : scarce
+                              ? "text-[#92400e]"
+                              : "text-[var(--muted)]",
+                        )}
+                      >
+                        {remaining === 0
+                          ? copy.phrases.fullyBookedLabel
+                          : `${remaining} ${copy.phrases.spotsLeftSuffix}`}
+                      </span>
+                    );
+                  })()}
+                  {/* Pinned to the bottom so every card ends the same way
+                      whatever its body holds, and so the tap has a name. */}
+                  <span className="mt-auto flex items-center gap-1.5 pt-5 text-sm font-semibold text-[var(--accent-strong)]">
+                    {getServiceSelectCta(service, copy)}
+                    <span aria-hidden="true">→</span>
+                  </span>
                 </button>
               ))}
             </div>
@@ -4838,6 +4884,23 @@ export function HaabBookingModule({
                           value={bookingFlow.clientName}
                           onChange={(event) => updateBookingFlow("clientName", event.target.value)}
                           placeholder={t.publicFlow.namePlaceholder}
+                          autoComplete="name"
+                          enterKeyHint="next"
+                          className={publicFieldClass}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
+                          {t.publicFlow.phoneNumber}
+                        </span>
+                        <input
+                          value={bookingFlow.clientPhone}
+                          onChange={(event) => updateBookingFlow("clientPhone", event.target.value)}
+                          placeholder={t.publicFlow.phonePlaceholder}
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          enterKeyHint="next"
                           className={publicFieldClass}
                         />
                       </label>
@@ -4850,17 +4913,12 @@ export function HaabBookingModule({
                           onChange={(event) => updateBookingFlow("clientEmail", event.target.value)}
                           placeholder={t.publicFlow.emailPlaceholder}
                           type="email"
-                          className={publicFieldClass}
-                        />
-                      </label>
-                      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                        <span className={cn("text-[var(--muted)]", compactMetaTextClass)}>
-                          {t.publicFlow.phoneNumber}
-                        </span>
-                        <input
-                          value={bookingFlow.clientPhone}
-                          onChange={(event) => updateBookingFlow("clientPhone", event.target.value)}
-                          placeholder={t.publicFlow.phonePlaceholder}
+                          inputMode="email"
+                          autoComplete="email"
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          enterKeyHint="next"
                           className={publicFieldClass}
                         />
                       </label>
@@ -5391,6 +5449,15 @@ export function HaabBookingModule({
 
                   return (
                     <>
+                      {successfulBooking.manageToken && successfulManageUrl ? (
+                        <PrivateLinkCard
+                          url={successfulManageUrl}
+                          lang={lang}
+                          copied={copiedManageLink}
+                          onCopy={() => void copyManageLink()}
+                        />
+                      ) : null}
+
                       <BookingPass
                         confirmationLabel={
                           isSuccessfulBookingCancelled
@@ -5437,15 +5504,6 @@ export function HaabBookingModule({
                         copy={copy}
                         lang={lang}
                       />
-
-                      {successfulBooking.manageToken && successfulManageUrl ? (
-                        <PrivateLinkCard
-                          url={successfulManageUrl}
-                          lang={lang}
-                          copied={copiedManageLink}
-                          onCopy={() => void copyManageLink()}
-                        />
-                      ) : null}
 
                       <div className="flex flex-wrap items-center justify-center gap-3">
                         {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (

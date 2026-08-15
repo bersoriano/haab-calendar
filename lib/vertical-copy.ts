@@ -51,6 +51,10 @@ export interface VerticalCopy {
     // Every Spanish noun here happens to be masculine today; a feminine one
     // (una clase, una cancha) would make a shared "otro" wrong.
     chooseAnotherService: string;
+    // Action cue on a service card, per booking mode. Names what a tap does.
+    selectAppointmentCta: string;
+    selectFullDayCta: string;
+    selectCapacityCta: string;
     chooseServiceBody: string;
     onlyOneServiceBody: string;
     serviceUnavailableBody: string;
@@ -166,6 +170,9 @@ export const defaultCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose a service",
     chooseAnotherService: "Choose another service",
+    selectAppointmentCta: "Choose this time",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a spot",
     chooseServiceBody:
       "Every card clearly shows whether it books a timed appointment or an entire day.",
     onlyOneServiceBody:
@@ -282,6 +289,9 @@ export const defaultCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un servicio",
     chooseAnotherService: "Elegir otro servicio",
+    selectAppointmentCta: "Elegir este horario",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar un lugar",
     chooseServiceBody:
       "Cada tarjeta muestra claramente si reserva una cita con horario o un día completo.",
     onlyOneServiceBody:
@@ -400,6 +410,9 @@ export const healthcareCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose a medical service",
     chooseAnotherService: "Choose another medical service",
+    selectAppointmentCta: "Choose this time",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a spot",
     chooseServiceBody:
       "Every card shows whether it schedules a timed appointment or reserves an entire day.",
     onlyOneServiceBody:
@@ -518,6 +531,9 @@ export const healthcareCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un servicio médico",
     chooseAnotherService: "Elegir otro servicio médico",
+    selectAppointmentCta: "Elegir este horario",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar un lugar",
     chooseServiceBody:
       "Cada tarjeta muestra si agenda una cita con horario o reserva un día completo.",
     onlyOneServiceBody:
@@ -635,6 +651,9 @@ export const eventsCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose an event",
     chooseAnotherService: "Choose another event",
+    selectAppointmentCta: "Choose a session",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a spot",
     chooseServiceBody:
       "Compare each event's schedule, location, price, and spots before registering.",
     onlyOneServiceBody:
@@ -754,6 +773,9 @@ export const eventsCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un evento",
     chooseAnotherService: "Elegir otro evento",
+    selectAppointmentCta: "Elegir una sesión",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar un lugar",
     chooseServiceBody:
       "Compare el horario, la ubicación, el precio y los lugares de cada evento antes de registrarse.",
     onlyOneServiceBody:
@@ -873,6 +895,9 @@ export const spacesCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose a space",
     chooseAnotherService: "Choose another space",
+    selectAppointmentCta: "Choose this time",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a spot",
     chooseServiceBody:
       "Every card shows whether it reserves an hourly slot or the full day.",
     onlyOneServiceBody:
@@ -989,6 +1014,9 @@ export const spacesCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un espacio",
     chooseAnotherService: "Elegir otro espacio",
+    selectAppointmentCta: "Elegir este horario",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar un lugar",
     chooseServiceBody:
       "Cada tarjeta muestra si reserva un horario por hora o el día completo.",
     onlyOneServiceBody:
@@ -1106,6 +1134,9 @@ export const professionalCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose a service",
     chooseAnotherService: "Choose another service",
+    selectAppointmentCta: "Choose this time",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a spot",
     chooseServiceBody:
       "Every card shows whether it schedules a timed session or books an entire day.",
     onlyOneServiceBody:
@@ -1222,6 +1253,9 @@ export const professionalCopyEs: VerticalCopy = {
 
     chooseServiceTitle: "Elija un servicio",
     chooseAnotherService: "Elegir otro servicio",
+    selectAppointmentCta: "Elegir este horario",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar un lugar",
     chooseServiceBody:
       "Cada tarjeta muestra si agenda una sesión con horario o reserva un día completo.",
     onlyOneServiceBody:
@@ -1338,6 +1372,9 @@ export const restaurantCopy: VerticalCopy = {
 
     chooseServiceTitle: "Choose a table",
     chooseAnotherService: "Choose another table",
+    selectAppointmentCta: "Choose this seating",
+    selectFullDayCta: "Reserve the day",
+    selectCapacityCta: "Take a table",
     chooseServiceBody:
       "Every card shows how long the table is held and how many are left at each seating.",
     onlyOneServiceBody:
@@ -1454,6 +1491,9 @@ export const restaurantCopyEs: VerticalCopy = {
     chooseServiceTitle: "Elija una mesa",
     // "mesa" es femenino: el artículo va escrito aquí, no armado con el sustantivo.
     chooseAnotherService: "Elija otra mesa",
+    selectAppointmentCta: "Elegir este turno",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Tomar una mesa",
     chooseServiceBody:
       "Cada tarjeta indica cuánto tiempo se reserva la mesa y cuántas quedan en cada turno.",
     onlyOneServiceBody:
