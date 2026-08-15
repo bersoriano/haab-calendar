@@ -13,6 +13,7 @@ import {
   useDeferredValue,
   useEffect,
   useEffectEvent,
+  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -128,6 +129,10 @@ import {
   type BookingFlowEvent,
   type BookingFlowNotice,
 } from "@/lib/booking-flow-machine";
+import {
+  scrollPublicBookingStepToTop,
+  shouldCollapsePublicProgressIndicator,
+} from "@/lib/public-booking-step-scroll";
 import {
   adminBarClass,
   adminChoiceQuietClass,
@@ -417,6 +422,9 @@ export function HaabBookingModule({
   const hasScrolledToSlotsRef = useRef(false);
   const [isStickyHeaderStuck, setIsStickyHeaderStuck] = useState(false);
   const [isPublicFlowFadingOut, setIsPublicFlowFadingOut] = useState(false);
+  const [isPublicStepTransitionActive, setIsPublicStepTransitionActive] = useState(false);
+  const isPublicStepScrollActiveRef = useRef(false);
+  const previousPublicBookingStepRef = useRef<BookingStep | null>(null);
   const attachStickyHeaderSentinel = useCallback((node: HTMLDivElement | null) => {
     stickyHeaderSentinelRef.current = node;
     if (stickyHeaderObserverRef.current) {
@@ -428,6 +436,9 @@ export function HaabBookingModule({
     }
     const observer = new IntersectionObserver(
       ([entry]) => {
+        if (isPublicStepScrollActiveRef.current) {
+          return;
+        }
         setIsStickyHeaderStuck(!entry.isIntersecting);
       },
       { root: null, threshold: 0, rootMargin: "0px" },
@@ -875,8 +886,11 @@ export function HaabBookingModule({
   const publicElevatedPanelClass = isDedicatedPublicPage
     ? "min-w-0 rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
     : "min-w-0 rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
-  const isStickyHeaderActive =
-    isStickyHeaderStuck && resolvedBookingFlow.step === 2;
+  const isStickyHeaderActive = shouldCollapsePublicProgressIndicator({
+    currentStep: resolvedBookingFlow.step,
+    isStepTransitionActive: isPublicStepTransitionActive,
+    isStickyHeaderStuck,
+  });
   const stickyBarPanelClass = isDedicatedPublicPage
     ? isStickyHeaderActive
       ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
@@ -1065,16 +1079,59 @@ export function HaabBookingModule({
     };
   }, []);
 
-  useEffect(() => {
-    if (resolvedBookingFlow.step !== 2 || typeof window === "undefined") {
+  useLayoutEffect(() => {
+    const previousStep = previousPublicBookingStepRef.current;
+    previousPublicBookingStepRef.current = resolvedBookingFlow.step;
+
+    if (resolvedBookingFlow.step === 2) {
+      hasScrolledToSlotsRef.current = false;
+    }
+
+    if (surface !== "public" || typeof window === "undefined") {
       return;
     }
-    hasScrolledToSlotsRef.current = false;
-    // Jump instantly to the top. A smooth scroll here passes through scrolled
-    // positions, which makes the sticky progress header collapse mid-scroll and
-    // then expand on arrival — a visible flicker when entering the booking flow.
-    window.scrollTo({ top: 0, behavior: "instant" });
-  }, [resolvedBookingFlow.step]);
+
+    if (previousStep === null || previousStep === resolvedBookingFlow.step) {
+      return;
+    }
+
+    isPublicStepScrollActiveRef.current = true;
+    setIsPublicStepTransitionActive(true);
+    setIsStickyHeaderStuck(false);
+
+    scrollPublicBookingStepToTop({
+      previousStep,
+      nextStep: resolvedBookingFlow.step,
+      scrollTo: (options) => window.scrollTo(options),
+    });
+
+    let finished = false;
+    let frameId = 0;
+    let timeoutId = 0;
+    const finishTransition = () => {
+      if (finished) return;
+      finished = true;
+      window.removeEventListener("scrollend", finishTransition);
+      window.clearTimeout(timeoutId);
+      isPublicStepScrollActiveRef.current = false;
+      setIsStickyHeaderStuck(false);
+      setIsPublicStepTransitionActive(false);
+    };
+
+    if (window.scrollY <= 0) {
+      frameId = window.requestAnimationFrame(finishTransition);
+    } else {
+      timeoutId = window.setTimeout(finishTransition, 700);
+      if ("onscrollend" in window) {
+        window.addEventListener("scrollend", finishTransition, { once: true });
+      }
+    }
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      finishTransition();
+    };
+  }, [resolvedBookingFlow.step, surface]);
 
   useEffect(() => {
     if (!resolvedBookingFlow.dateKey) {
