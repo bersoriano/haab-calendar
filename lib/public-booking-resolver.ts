@@ -422,6 +422,43 @@ function buildResolvedResult(options: {
   } satisfies PublicBookingResolved;
 }
 
+/**
+ * Current availability for one published provider, for the page to poll.
+ *
+ * Everything here runs on the server with the admin client and comes back
+ * through the same sanitiser the initial page render uses, so a browser only
+ * ever learns that a time is taken — never who took it. Anon has no read on
+ * `bookings` and must not: the rows carry client names and phone numbers.
+ */
+export async function loadPublicAvailability(options: {
+  vertical: VerticalId;
+  providerSlug: string;
+}) {
+  const supabase = createPublicClient();
+  const provider = await getProviderByScopedSlug(
+    supabase,
+    options.vertical,
+    options.providerSlug,
+  );
+
+  if (!provider) {
+    return null;
+  }
+
+  const schedule = await loadPublicSchedule(
+    provider.id,
+    provider.booking_window_days,
+    provider.timezone,
+  );
+
+  return {
+    ...schedule,
+    // The page runs the hold countdown against its own clock; this lets it
+    // notice drift without trusting the device.
+    serverTime: new Date().toISOString(),
+  };
+}
+
 export async function resolvePublicBookingUrl(options: {
   verticalSegment: string;
   providerSlug: string;

@@ -658,6 +658,8 @@ export function HaabBookingModule({
     document.documentElement.lang = lang;
   }, [hydrated, lang, surface]);
 
+
+
   function choosePublicLanguage(nextLanguage: Lang) {
     setPublicLanguage(nextLanguage);
     setBookingError(null);
@@ -770,6 +772,84 @@ export function HaabBookingModule({
         ? (2 as BookingStep)
         : bookingFlow.step,
   };
+
+  // Keep the public grid honest while the visitor is looking at it.
+  //
+  // This polls rather than subscribing: availability is assembled on the server
+  // with the admin client and stripped of client name, email, phone and notes
+  // before it leaves. The bookings table itself carries that data, and anon has
+  // no read on it, so a browser subscription is not an option we want.
+  //
+  // Only while choosing. Once a hold exists the visitor's own slot is settled
+  // and replacing the grid underneath them buys nothing.
+  useEffect(() => {
+    if (!integratedMode || !isDedicatedPublicPage || !vertical || !businessSlug) {
+      return;
+    }
+
+    if (resolvedBookingFlow.step > 2) {
+      return;
+    }
+
+    let disposed = false;
+    let inFlight = false;
+    const url = `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(
+      businessSlug,
+    )}/availability`;
+
+    const refresh = async () => {
+      if (disposed || inFlight || document.visibilityState !== "visible") {
+        return;
+      }
+
+      inFlight = true;
+
+      try {
+        const response = await fetch(url, { cache: "no-store" });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          bookings?: BookingRecord[];
+          bookingHolds?: BookingHoldRecord[];
+        };
+
+        if (disposed || !Array.isArray(payload.bookings)) {
+          return;
+        }
+
+        actions.replaceIntegratedBookings(payload.bookings);
+        actions.commitBookingHolds(payload.bookingHolds ?? []);
+      } catch {
+        // Offline or a blip: the next tick tries again and the server is the
+        // authority at hold and confirm regardless.
+      } finally {
+        inFlight = false;
+      }
+    };
+
+    const intervalId = window.setInterval(() => void refresh(), 20_000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("online", refresh);
+    document.addEventListener("visibilitychange", refresh);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("online", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [
+    actions,
+    businessSlug,
+    integratedMode,
+    isDedicatedPublicPage,
+    resolvedBookingFlow.step,
+    vertical,
+  ]);
   const selectedService = services.find(
     (service) => service.id === resolvedBookingFlow.serviceId,
   );
