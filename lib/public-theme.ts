@@ -99,17 +99,25 @@ const SUMMER: PublicThemeStyle = {
 };
 
 /**
- * Night beach: deep indigo ground, neon pink and cyan on top. The only dark
- * theme, so it also flips the page's panel surfaces — neon on white would be
- * a different look entirely, and a worse one.
+ * Night beach: deep indigo ground lit from three corners — pink, cyan, violet.
+ * The only dark theme, so it also flips the page's panel surfaces; neon on
+ * white would be a different look entirely, and a worse one.
+ *
+ * Order matters. The vignette is painted first and the colour on top of it,
+ * because a dark wash laid over the gradients flattens exactly what makes this
+ * theme worth having.
  */
 const MIAMI: PublicThemeStyle = {
   base: "#080b16",
   dark: true,
   layers: [
-    "radial-gradient(120% 95% at 10% 0%, rgba(236,72,153,0.34), transparent 55%)",
-    "radial-gradient(110% 85% at 96% 10%, rgba(34,211,238,0.28), transparent 58%)",
-    "linear-gradient(175deg, rgba(8,11,22,0.35), rgba(8,11,22,0.78) 52%, rgba(4,6,14,0.94) 100%)",
+    "linear-gradient(175deg, rgba(8,11,22,0.2), rgba(6,9,18,0.72) 60%, rgba(4,6,14,0.92) 100%)",
+    "radial-gradient(120% 95% at 8% -8%, rgba(255,45,149,0.55), transparent 56%)",
+    "radial-gradient(110% 88% at 98% 4%, rgba(34,211,238,0.45), transparent 58%)",
+    // The third corner. Violet is the theme's own secondary, so the page is lit
+    // by its palette rather than by a colour that appears nowhere else.
+    "radial-gradient(105% 85% at -6% 104%, rgba(168,85,247,0.42), transparent 60%)",
+    "radial-gradient(80% 60% at 60% 118%, rgba(34,211,238,0.16), transparent 62%)",
   ],
   tokens: {
     "--background": "#080b16",
