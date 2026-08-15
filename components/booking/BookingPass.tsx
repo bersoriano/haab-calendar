@@ -87,12 +87,12 @@ export function BookingPass({
   qrDataUrl,
   qrError,
   onOpenQr,
-  onDownloadIcs,
   confirmationLabel,
   location,
   description,
   notes,
   details,
+  whatHappensNext,
   copy,
   lang = "en",
 }: {
@@ -114,7 +114,6 @@ export function BookingPass({
   qrDataUrl?: string;
   qrError?: string;
   onOpenQr: () => void;
-  onDownloadIcs: () => void;
   /**
    * The moment, carried by the ticket itself: "Booking confirmed", "Booking
    * cancelled", "Booking updated". Badged on the stub above the code. Omit it
@@ -132,6 +131,12 @@ export function BookingPass({
    * ticket has no section headings to lean on.
    */
   details: PassField[];
+  /**
+   * What to do before the day, in this vertical's words. Sits with the name of
+   * the place and the thing booked, because that is the part a visitor reads
+   * before deciding they are finished with the page.
+   */
+  whatHappensNext?: string;
   copy: VerticalCopy;
   lang?: Lang;
 }) {
@@ -169,6 +174,11 @@ export function BookingPass({
               {providerName}
             </p>
             <p className={cn("mt-1 truncate", microLabel)}>{serviceName}</p>
+            {whatHappensNext && !isCancelled ? (
+              <p className="mt-3 text-[0.9375rem] leading-6 text-[var(--muted)]">
+                {whatHappensNext}
+              </p>
+            ) : null}
           </div>
 
           {/* The pair, on the same column system as every field below it. */}
@@ -325,15 +335,6 @@ export function BookingPass({
             </div>
           </div>
 
-          {!isCancelled ? (
-            <button
-              type="button"
-              onClick={onDownloadIcs}
-              className="mt-auto w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
-            >
-              {t.publicFlow.addToCalendar}
-            </button>
-          ) : null}
         </div>
       </div>
 

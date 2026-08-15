@@ -89,6 +89,7 @@ import {
   getBookingStatusLabel,
   statusTone,
   bookingTypeTone,
+  formatCountdown,
 } from "@/lib/format";
 import {
   createEmptyStore,
@@ -5553,12 +5554,6 @@ export function HaabBookingModule({
 
                   return (
                     <>
-                      {!isSuccessfulBookingCancelled ? (
-                        <p className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-lowest)] px-5 py-4 text-[0.9375rem] leading-6 text-[var(--muted)]">
-                          {copy.phrases.whatHappensNext}
-                        </p>
-                      ) : null}
-
                       {successfulBooking.manageToken && successfulManageUrl ? (
                         <PrivateLinkCard
                           url={successfulManageUrl}
@@ -5566,6 +5561,32 @@ export function HaabBookingModule({
                           copied={copiedManageLink}
                           onCopy={() => void copyManageLink()}
                         />
+                      ) : null}
+
+                      {!isSuccessfulBookingCancelled ? (
+                        <div className="flex flex-wrap items-center gap-3">
+                          <ActionButton
+                            tone="primary"
+                            className={cn(
+                              "min-w-[190px]",
+                              isDedicatedPublicPage && publicPillButtonClass,
+                            )}
+                            onClick={() => downloadBookingCalendarFile(successfulBooking)}
+                          >
+                            {t.publicFlow.addToCalendar}
+                          </ActionButton>
+                          <ActionButton
+                            tone="ghost"
+                            className={cn(
+                              "min-w-[150px]",
+                              isDedicatedPublicPage &&
+                                cn(publicPillButtonClass, publicGhostButtonClass),
+                            )}
+                            onClick={() => setIsCalendarQrModalOpen(true)}
+                          >
+                            {t.publicFlow.showQrCode}
+                          </ActionButton>
+                        </div>
                       ) : null}
 
                       <BookingPass
@@ -5599,7 +5620,6 @@ export function HaabBookingModule({
                         qrDataUrl={qrForBooking?.url || undefined}
                         qrError={qrForBooking?.error || undefined}
                         onOpenQr={() => setIsCalendarQrModalOpen(true)}
-                        onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
                         location={passLocation}
                         notes={passNotes}
                         description={
@@ -5611,6 +5631,7 @@ export function HaabBookingModule({
                             : undefined
                         }
                         details={passDetails}
+                        whatHappensNext={copy.phrases.whatHappensNext}
                         copy={copy}
                         lang={lang}
                       />
@@ -5679,11 +5700,29 @@ export function HaabBookingModule({
           <div className="sticky bottom-0 z-30 mt-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
             <div
               className={cn(
-                "flex gap-3 rounded-[24px] px-4 py-3",
+                "flex flex-col gap-2 rounded-[24px] px-4 py-3",
                 publicElevatedPanelClass,
                 "!p-3",
               )}
             >
+              {/* On a phone the keyboard covers the hold panel the moment the
+                  first field is tapped, which is exactly when the visitor wants
+                  to know the time is still theirs. So the countdown rides down
+                  here with the action. */}
+              {isPublicDetailsStep && bookingHold && !isBookingHoldExpired ? (
+                <p
+                  className={cn(
+                    "flex items-center justify-between px-1 text-[0.8125rem] font-semibold",
+                    isBookingHoldWarning(bookingHoldRemainingMs)
+                      ? "text-[#92400e]"
+                      : "text-[var(--muted)]",
+                  )}
+                >
+                  <span>{fillTemplate(t.public.holdLabelFor, { booking: copy.booking, Booking: copy.Booking })}</span>
+                  <span className="tabular-nums">{formatCountdown(bookingHoldRemainingMs)}</span>
+                </p>
+              ) : null}
+              <div className="flex gap-3">
               {isPublicSelectionStep ? (
                 // With slots, the tap on a time *is* the action — a second
                 // "continue" button could never enable, so it becomes a hint and
@@ -5739,6 +5778,7 @@ export function HaabBookingModule({
                   </ActionButton>
                 </>
               )}
+              </div>
             </div>
           </div>
         ) : null}

@@ -41,7 +41,6 @@ function renderPass(overrides: Partial<BookingRecord> = {}, extra: Record<string
       issuedLabel="Aug 6"
       qrDataUrl="data:image/png;base64,AAA"
       onOpenQr={() => undefined}
-      onDownloadIcs={() => undefined}
       details={[
         { label: "Location", value: "245 West 29th Street, New York, NY" },
         { label: "Specialty", value: "Family medicine" },
@@ -83,7 +82,9 @@ describe("booking pass", () => {
     expect(stub).toContain("B54969BF14");
     expect(stub).toContain("Aug 6");
     expect(stub).toContain("data:image/png;base64,AAA");
-    expect(stub).toContain("Add to calendar");
+    // The calendar action lives above the pass now, promoted next to the
+    // private link, so the stub carries the QR and the reference only.
+    expect(stub).not.toContain("Add to calendar");
   });
 
   it("swaps the time for the full-day label when there is no clock time", () => {
@@ -120,7 +121,6 @@ describe("booking pass", () => {
         reference="B54969BF14"
         issuedLabel="6 ago"
         onOpenQr={() => undefined}
-        onDownloadIcs={() => undefined}
         details={[]}
         copy={getVerticalCopy("healthcare", "es")}
         lang="es"
@@ -153,5 +153,23 @@ describe("booking pass", () => {
 
     expect(html).toContain("4:30 PM");
     expect(html).not.toContain("Specialty");
+  });
+});
+
+describe("what happens next", () => {
+  it("sits with the provider and service names, above the booked facts", () => {
+    const html = renderPass({}, { whatHappensNext: "Bring your ID and arrive early." });
+    const beforeDate = html.slice(0, html.indexOf("Date"));
+
+    expect(beforeDate).toContain("Bring your ID and arrive early.");
+  });
+
+  it("is left out of a cancelled pass", () => {
+    const html = renderPass(
+      { status: "cancelled" },
+      { whatHappensNext: "Bring your ID and arrive early." },
+    );
+
+    expect(html).not.toContain("Bring your ID and arrive early.");
   });
 });

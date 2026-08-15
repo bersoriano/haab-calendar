@@ -29,7 +29,10 @@ export function PrivateLinkCard({
     <section
       aria-label={t.publicFlow.managementUrlLabel}
       className={cn(
-        "rounded-[28px] bg-[linear-gradient(135deg,rgba(26,115,232,0.08),rgba(104,250,221,0.14))] p-5 ring-1 ring-[rgba(26,115,232,0.16)]",
+        // Opaque rather than a translucent tint: this block sits over the public
+        // page's own gradient, where a wash disappears and the one durable thing
+        // on the screen stops looking like a section of its own.
+        "rounded-[28px] bg-[linear-gradient(135deg,#eaf2fe,#e7faf5)] p-5 ring-1 ring-[rgba(26,115,232,0.22)] shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
         className,
       )}
     >
