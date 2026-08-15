@@ -4914,6 +4914,12 @@ export function HaabBookingModule({
               ref={publicPrimaryPanelRef}
               className={cn(
                 "order-1 lg:order-none",
+                // The calendar sets the height of this row, so it must not be
+                // stretched by the column beside it. Without this the slot list
+                // grows the row, the calendar is pulled to match, and the
+                // measurement below reads that stretched box back as the cap —
+                // the taller the list, the taller the calendar.
+                isPublicSelectionStep && "lg:self-start",
                 publicPrimaryPanelClass,
               )}
               style={
