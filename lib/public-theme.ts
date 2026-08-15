@@ -122,6 +122,7 @@ const MIAMI: PublicThemeStyle = {
     "--surface-lowest": "#131a2c",
     "--surface-highest": "#1b2440",
     "--primary": "#ff2d95",
+    "--on-primary": "#0b0f1a",
     "--primary-container": "#ff5cae",
     "--accent": "#22d3ee",
     "--accent-strong": "#67e8f9",

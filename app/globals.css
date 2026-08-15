@@ -12,6 +12,7 @@
   --line: #c1c6d6;
   --outline-ghost: rgba(193, 198, 214, 0.15);
   --primary: #005bbf;
+  --on-primary: #ffffff;
   --primary-container: #1a73e8;
   --accent: #1a73e8;
   --accent-strong: #005bbf;
@@ -83,9 +84,14 @@ body {
   isolation: isolate;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+/* Unlayered rules beat Tailwind's layered utilities whatever their
+   specificity, so a bare `a { color }` here silently outranks every
+   `text-[...]` class on a link. Layered so utilities win normally. */
+@layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 }
 
 button,

@@ -156,7 +156,7 @@ export function BookingPass({
   return (
     <article
       aria-label={t.publicFlow.passEyebrow}
-      className="overflow-hidden rounded-[30px] bg-white ring-1 ring-[rgba(15,23,42,0.08)] shadow-[0_30px_70px_rgba(15,23,42,0.10)]"
+      className="overflow-hidden rounded-[30px] bg-[var(--surface-lowest)] ring-1 ring-[rgba(15,23,42,0.08)] shadow-[0_30px_70px_rgba(15,23,42,0.10)]"
     >
       {/* Livery band. The one place the pass carries colour. */}
       <div
@@ -310,7 +310,7 @@ export function BookingPass({
               type="button"
               onClick={onOpenQr}
               aria-label={copy.phrases.calendarQrLabel}
-              className="flex aspect-square w-full max-w-[168px] items-center justify-center overflow-hidden rounded-2xl bg-white p-2 ring-1 ring-[rgba(15,23,42,0.1)] transition hover:ring-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              className="flex aspect-square w-full max-w-[168px] items-center justify-center overflow-hidden rounded-2xl bg-[var(--surface-lowest)] p-2 ring-1 ring-[rgba(15,23,42,0.1)] transition hover:ring-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
               {qrDataUrl ? (
                 <span
@@ -342,7 +342,7 @@ export function BookingPass({
             <button
               type="button"
               onClick={onDownloadIcs}
-              className="mt-auto w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+              className="mt-auto w-full rounded-full bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
             >
               {t.publicFlow.addToCalendar}
             </button>

@@ -29,17 +29,17 @@ export function PrivateLinkCard({
     <section
       aria-label={t.publicFlow.managementUrlLabel}
       className={cn(
-        // Opaque rather than a translucent tint: this block sits over the public
-        // page's own gradient, where a wash disappears and the one durable thing
-        // on the screen stops looking like a section of its own.
-        "rounded-[28px] bg-[linear-gradient(135deg,#eaf2fe,#e7faf5)] p-5 ring-1 ring-[rgba(26,115,232,0.22)] shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
+        // The same glass as the page header, so the two read as one surface and
+        // both follow whatever theme is set. A fixed colour here sat outside
+        // the palette and stayed light even on the dark theme.
+        "rounded-[28px] border border-[rgba(255,255,255,0.6)] bg-[var(--panel-glass-55)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] [-webkit-backdrop-filter:blur(20px)]",
         className,
       )}
     >
       <div className="flex items-start gap-3">
         <span
           aria-hidden="true"
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-[var(--accent-strong)] ring-1 ring-[rgba(255,255,255,0.9)]"
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--panel-glass-72)] text-[var(--accent-strong)] ring-1 ring-[rgba(255,255,255,0.9)]"
         >
           <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden>
             <path
@@ -68,13 +68,13 @@ export function PrivateLinkCard({
           value={url}
           aria-label={t.publicFlow.managementUrlLabel}
           onFocus={(event) => event.currentTarget.select()}
-          className="w-full min-w-0 flex-1 rounded-2xl border border-[rgba(255,255,255,0.9)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)] sm:min-w-[240px]"
+          className="w-full min-w-0 flex-1 rounded-2xl border border-[rgba(255,255,255,0.9)] bg-[var(--surface-lowest)] px-4 py-2.5 text-sm font-medium text-[var(--ink)] [font-family:var(--font-plex-mono)] sm:min-w-[240px]"
         />
         {onCopy ? (
           <button
             type="button"
             onClick={onCopy}
-            className="min-h-11 shrink-0 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="min-h-11 shrink-0 rounded-full bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90"
           >
             {copied ? t.publicFlow.copied : t.publicFlow.copyLink}
           </button>
@@ -82,7 +82,7 @@ export function PrivateLinkCard({
         {showOpenLink ? (
           <a
             href={url}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.5)] transition hover:bg-[var(--surface-soft)]"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[var(--surface-lowest)] px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[var(--line)] transition hover:bg-[var(--surface-soft)]"
           >
             {t.publicFlow.openPrivateLink}
           </a>

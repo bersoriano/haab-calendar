@@ -103,10 +103,10 @@ describe("LanguageSwitcher", () => {
     const floatingContainer = containerClasses(floatingHtml);
     const insetContainer = containerClasses(insetHtml);
 
-    expect(floatingContainer).toContain("bg-white/70");
+    expect(floatingContainer).toContain("bg-[var(--panel-glass-72)]");
     expect(floatingContainer).not.toContain("bg-[rgba(15,23,42,0.05)]");
     expect(insetContainer).toContain("bg-[rgba(15,23,42,0.05)]");
-    expect(insetContainer).not.toContain("bg-white/70");
+    expect(insetContainer).not.toContain("bg-[var(--panel-glass-72)]");
 
     // Geometry: the sizing/shape utilities are shared and must not drift
     // between tones, for both the active and inactive option.
@@ -138,8 +138,8 @@ describe("LanguageSwitcher", () => {
     const insetActive = pillClasses(insetHtml, "English");
 
     expect(floatingActive).toContain("bg-[var(--primary)]");
-    expect(floatingActive).not.toContain("bg-white");
-    expect(insetActive).toContain("bg-white");
+    expect(floatingActive).not.toContain("bg-[var(--surface-lowest)]");
+    expect(insetActive).toContain("bg-[var(--surface-lowest)]");
     expect(insetActive).not.toContain("bg-[var(--primary)]");
   });
 });

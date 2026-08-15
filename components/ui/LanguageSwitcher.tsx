@@ -37,7 +37,7 @@ export function LanguageSwitcher({
         "inline-flex rounded-full p-1",
         isInset
           ? "border border-[rgba(15,23,42,0.07)] bg-[rgba(15,23,42,0.05)] shadow-[inset_0_1px_2px_rgba(15,23,42,0.07)]"
-          : "border border-white/80 bg-white/70 shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
+          : "border border-[var(--line)] bg-[var(--panel-glass-72)] shadow-[0_12px_28px_rgba(15,23,42,0.08)] backdrop-blur-xl",
         className,
       )}
     >
@@ -53,9 +53,9 @@ export function LanguageSwitcher({
           "min-h-9 rounded-full px-2.5 text-xs font-semibold transition sm:min-h-10 sm:px-4 sm:text-sm",
           active
             ? isInset
-              ? "bg-white text-[var(--ink)] shadow-[0_1px_2px_rgba(15,23,42,0.14),0_4px_10px_rgba(15,23,42,0.08)]"
+              ? "bg-[var(--surface-lowest)] text-[var(--ink)] shadow-[0_1px_2px_rgba(15,23,42,0.14),0_4px_10px_rgba(15,23,42,0.08)]"
               : "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
-            : "text-[var(--muted)] hover:bg-white/70 hover:text-[var(--ink)]",
+            : "text-[var(--muted)] hover:bg-[var(--panel-glass-72)] hover:text-[var(--ink)]",
         );
 
         if (hrefFor) {

@@ -191,7 +191,7 @@ export function BookingHoldCountdownBar({
               type="button"
               disabled={!isOnline || isExtending}
               onClick={onExtend}
-              className="mt-3 min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-3 min-h-11 rounded-full bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isExtending ? t.public.extendingHold : t.public.addFiveMinutes}
             </button>
@@ -222,7 +222,7 @@ export function BookingHoldCountdownBar({
                 type="button"
                 disabled={isRetryingHold || !isOnline}
                 onClick={onRetryHold}
-                className="min-h-11 rounded-full bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-11 rounded-full bg-[var(--primary)] px-5 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isRetryingHold ? t.public.holdingAgain : t.public.holdAgain}
               </button>
