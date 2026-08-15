@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 import { isDemoOwnerEmail } from "@/lib/demo-pages";
+import { resolveEntitlements, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { buildProviderPath } from "@/lib/public-url";
 import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -22,11 +23,20 @@ type PublicationSettingRow = {
 };
 
 type ProviderSummaryRow = {
+  id: string;
   owner_user_id: string;
   business_name: string;
   slug: string;
   vertical: VerticalId;
   setup_complete: boolean;
+  plan_tier: string | null;
+};
+
+type OverrideRow = {
+  provider_id: string;
+  feature_key: string;
+  enabled: boolean;
+  expires_at: string | null;
 };
 
 export type PublicationStatus = {
@@ -47,6 +57,15 @@ export type ManagedUserSummary = {
     businessName: string;
     setupComplete: boolean;
     publicPath: string;
+  };
+  /**
+   * Absent when the owner has not created a provider yet — there is nothing to
+   * hold entitlements against until they do.
+   */
+  provider?: {
+    id: string;
+    planTier: string | null;
+    entitlements: ProviderEntitlements;
   };
   superAdmin: boolean;
   demoOwner: boolean;
@@ -123,27 +142,46 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
   await requireSuperAdmin();
   const { admin, users } = await listAllAuthUsers();
 
-  const [{ data: settings, error: settingsError }, { data: providers, error: providersError }] =
-    await Promise.all([
+  const [
+    { data: settings, error: settingsError },
+    { data: providers, error: providersError },
+    { data: overrides, error: overridesError },
+  ] = await Promise.all([
       admin
         .from("user_publication_settings")
         .select("user_id, publishing_enabled, dashboard_message, updated_at")
         .returns<PublicationSettingRow[]>(),
       admin
         .from("providers")
-        .select("owner_user_id, business_name, slug, vertical, setup_complete")
+        .select("id, owner_user_id, business_name, slug, vertical, setup_complete, plan_tier")
         .returns<ProviderSummaryRow[]>(),
+      // Every override in one read rather than one read per provider: the list
+      // resolves entitlements in memory from these three result sets.
+      admin
+        .from("provider_feature_overrides")
+        .select("provider_id, feature_key, enabled, expires_at")
+        .returns<OverrideRow[]>(),
     ]);
 
   if (settingsError) throw settingsError;
   if (providersError) throw providersError;
+  if (overridesError) throw overridesError;
 
   const settingsByUserId = new Map(
     (settings ?? []).map((setting) => [setting.user_id, setting]),
   );
+  // One provider per owner is a database invariant, so this mapping cannot
+  // silently drop a row (see providers_owner_user_id_unique).
   const providerByUserId = new Map(
     (providers ?? []).map((provider) => [provider.owner_user_id, provider]),
   );
+
+  const overridesByProviderId = new Map<string, OverrideRow[]>();
+  for (const override of overrides ?? []) {
+    const existing = overridesByProviderId.get(override.provider_id) ?? [];
+    existing.push(override);
+    overridesByProviderId.set(override.provider_id, existing);
+  }
 
   return users
     .map((user) => {
@@ -165,6 +203,21 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
               businessName: provider.business_name,
               setupComplete: provider.setup_complete,
               publicPath: buildProviderPath(provider.vertical, provider.slug),
+            }
+          : undefined,
+        provider: provider
+          ? {
+              id: provider.id,
+              planTier: provider.plan_tier,
+              entitlements: resolveEntitlements({
+                providerId: provider.id,
+                planTier: provider.plan_tier,
+                overrides: (overridesByProviderId.get(provider.id) ?? []).map((row) => ({
+                  featureKey: row.feature_key,
+                  enabled: row.enabled,
+                  expiresAt: row.expires_at,
+                })),
+              }),
             }
           : undefined,
         superAdmin: isSuperAdminEmail(user.email),

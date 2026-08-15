@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { DeleteAccountDialog } from "@/components/super-admin/DeleteAccountDialog";
+import { ProviderFeatureOverrides } from "@/components/super-admin/ProviderFeatureOverrides";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
 
 function formatUtcDate(value?: string) {
@@ -170,7 +171,7 @@ export function UserPublicationTable({
       {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
       <div className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.07)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1080px] border-collapse text-left">
+          <table className="w-full min-w-[1320px] border-collapse text-left">
             <thead className="bg-[var(--surface)] text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
               <tr>
                 <th className="px-6 py-4 font-semibold">Account</th>
@@ -178,6 +179,7 @@ export function UserPublicationTable({
                 <th className="px-6 py-4 font-semibold">Email status</th>
                 <th className="px-6 py-4 font-semibold">Last sign-in</th>
                 <th className="px-6 py-4 font-semibold">Publication</th>
+                <th className="px-6 py-4 font-semibold">Features</th>
                 <th className="px-6 py-4 text-right font-semibold">Action</th>
               </tr>
             </thead>
@@ -272,6 +274,18 @@ export function UserPublicationTable({
                         {rowFeedback.message}
                       </p>
                     ) : null}
+                  </td>
+                  <td className="px-6 py-5">
+                    {user.provider ? (
+                      <ProviderFeatureOverrides
+                        ownerEmail={user.email}
+                        entitlements={user.provider.entitlements}
+                      />
+                    ) : (
+                      <span className="text-sm text-[var(--muted)]">
+                        No provider yet
+                      </span>
+                    )}
                   </td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex flex-col items-end gap-2">

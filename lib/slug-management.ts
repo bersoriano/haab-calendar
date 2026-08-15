@@ -1,3 +1,4 @@
+import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import {
   generateSlug,
   validateCustomProviderSlug,
@@ -172,7 +173,8 @@ export async function prepareProviderSlugChange(
   options: {
     vertical: VerticalId;
     requestedSlug: string;
-    planTier: ProviderPlanTier;
+    /** A resolved snapshot honours manual overrides; a plan tier does not. */
+    planTier: ProviderPlanTier | ProviderEntitlements;
     currentProviderId?: string;
   },
 ) {

@@ -75,6 +75,7 @@ app/                              # Next.js routes (thin — just mount the modu
 | **Composition** | `surfaceMode` (`adaptive` / `public-only`) + `initialSurface` | Mount only the public booking surface, or the full admin+public app. |
 | **Routing** | `requestedPublicSlug`, `manageBookingToken` props | Host owns routes and passes context in. |
 | **Seed data** | `config/templates.ts` | Replace/extend the quick-start service templates per child. |
+| **Entitlements** | `lib/entitlements/catalog.ts` + `resolveEntitlements` | Add or re-map paid features per child by editing the catalog; gates read the resolved snapshot rather than a plan string. |
 
 Planned seams (Phase 5/6, not yet built): component **slot/override** props on the public components, and **feature flags**. See the decomposition plan.
 
@@ -89,6 +90,42 @@ The hook remains the persistence boundary for standalone/demo state and the inte
 Two persistence modes both flow through the hook:
 - **standalone** — store in `localStorage[storageKey]`, with multi-tab sync through the `storage` event.
 - **integrated** (`injectedConfig` present) — initial public data comes from the route resolver, while public holds/bookings/manage mutations are accepted by server Route Handlers and mirrored into `shadowBookings`/`shadowBookingHolds` after success. Canonical hierarchical public routes use this mode.
+
+---
+
+## 4b. Entitlements
+
+What a provider may use is resolved, not stored as a flag on the session.
+
+```
+lib/entitlements/
+  catalog.ts            # FEATURE_KEYS, plan tiers, plan → feature map, labels
+  resolve.ts            # resolveEntitlements() — pure, clock injected
+  server.ts             # server-only reads and the two audited mutations
+  override-request.ts   # request payloads for the super-admin UI
+```
+
+- **Plan first, override second.** `resolveEntitlements({ providerId, planTier, overrides, now })`
+  starts from the plan's features and lets an *active* override win in either
+  direction. An override with a null expiry is permanent; a past expiry is not a
+  decision, so the plan answers again. An unparseable expiry fails closed, and a
+  persisted key no longer in the catalog is ignored.
+- **Pure and testable.** The resolver takes its clock as an argument, so the
+  expiry boundary is asserted rather than left to when the suite runs.
+- **Never cached into a token.** Overrides change out of band; entitlements are
+  resolved per request. Putting them in a JWT or `user_metadata` would keep
+  granting access after a revoke, and would place the decision in state the user
+  partly controls.
+- **Mutations are super-admin only and audited.** `setProviderFeatureOverride` /
+  `clearProviderFeatureOverride` call `requireSuperAdmin()` first and record its
+  verified user as the actor. Each calls an RPC that writes the state change and
+  its audit row in one statement. Providers hold no grant on either table.
+- **Gates consume the snapshot.** `canUseCustomProviderSlug` accepts a resolved
+  snapshot (preferred) or a bare plan tier for callers that have no snapshot.
+
+Adding a feature: add the key to `FEATURE_KEYS`, map it in `PLAN_FEATURES`, give
+it a label, and read it through `hasEntitlement` / `requireEntitlement` at the
+gate. No migration is needed — override rows are keyed by text.
 
 ---
 

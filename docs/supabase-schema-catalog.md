@@ -543,6 +543,56 @@ const { data: redirect } = await supabase
   .maybeSingle();
 ```
 
+### `public.provider_feature_overrides`
+
+Manual, support-issued exceptions to what a provider's plan grants. One row per
+provider and feature; an override can grant a feature the plan omits or withhold
+one it includes.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. |
+| `provider_id` | `uuid` | Provider scope. Cascades on provider delete. |
+| `feature_key` | `text` | Key from the entitlement catalog. Trimmed, 1–100 chars. |
+| `enabled` | `boolean` | `true` grants, `false` withholds. |
+| `expires_at` | `timestamptz` | Null means permanent. The exact instant counts as expired. |
+| `reason` | `text` | Required, 1–500 chars. |
+| `created_by_user_id` | `uuid` | Super admin who last wrote the row. Null once that account is deleted. |
+| `created_at` | `timestamptz` | Row creation timestamp. |
+| `updated_at` | `timestamptz` | Maintained by `private.set_updated_at()`. |
+
+Unique on `(provider_id, feature_key)`. RLS is enabled with **no policies**, and
+all grants are revoked from `public`, `anon`, and `authenticated`: only the
+service role reaches these rows. Providers must never be able to write the state
+that governs their own paid access.
+
+### `public.provider_feature_override_events`
+
+Append-only audit of every override change, written in the same statement as the
+change itself.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. |
+| `provider_id` | `uuid` | Provider scope. |
+| `feature_key` | `text` | Feature the action targeted. |
+| `action` | `text` | `set` or `cleared`. |
+| `enabled` | `boolean` | Present for `set`, null for `cleared` (enforced by check). |
+| `expires_at` | `timestamptz` | Expiry recorded at the time of the action. |
+| `reason` | `text` | Required, 1–500 chars. |
+| `actor_user_id` | `uuid` | Verified super admin. Never taken from a request body. |
+| `created_at` | `timestamptz` | Event timestamp. |
+
+The service role holds only `select` and `insert` — no `update` or `delete`, so
+application code cannot rewrite history. A `cleared` action is recorded even when
+no row was present to remove.
+
+Mutations go through two `security invoker` RPCs, executable only by the service
+role: `public.set_provider_feature_override(...)` and
+`public.clear_provider_feature_override(...)`. Each writes the state change and
+its audit row together, so an entitlement cannot move without a record of who
+moved it.
+
 ## Public-Safe Views
 
 Public pages read from views instead of raw private table payloads.
@@ -1691,6 +1741,8 @@ RLS is enabled on all public tables:
 - `booking_events`
 - `provider_slug_redirects`
 - `service_slug_redirects`
+- `provider_feature_overrides`
+- `provider_feature_override_events`
 
 Public anonymous reads:
 
@@ -1714,6 +1766,17 @@ Server-only writes:
   and RLS.
 - `SUPABASE_SERVICE_ROLE_KEY` must stay server-only and must not be exposed in a
   `NEXT_PUBLIC_*` variable.
+
+Entitlements:
+
+- `providers.plan_tier` carries no `authenticated` column grant, so a provider
+  cannot promote itself; feature overrides are service-role-only for the same
+  reason.
+- Entitlements are resolved per request from `plan_tier` plus current overrides.
+  They are never written into a JWT or `user_metadata`, where a stale token would
+  keep granting access after an override was revoked.
+- Override mutations require `requireSuperAdmin()`, and the audit actor is the
+  verified session user — never a value from the request body.
 
 ## Schema Evolution Rules
 

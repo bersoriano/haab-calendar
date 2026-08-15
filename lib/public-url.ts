@@ -11,7 +11,15 @@ export type PublicVerticalSegment =
   | "venues"
   | "events"
   | "restaurants";
-export type ProviderPlanTier = "free" | "premium";
+// Owned by the entitlement catalog now. Imported for use here and re-exported
+// so slug code and its tests keep importing it from this module unchanged.
+import { getPlanFeatures, type ProviderPlanTier } from "@/lib/entitlements/catalog";
+import {
+  hasResolvedEntitlement,
+  type ProviderEntitlements,
+} from "@/lib/entitlements/resolve";
+
+export type { ProviderPlanTier };
 
 export type SlugValidationResult =
   | { ok: true; slug: string }
@@ -179,12 +187,26 @@ export function validateServiceSlug(value: string) {
   });
 }
 
-export function canUseCustomProviderSlug(planTier: ProviderPlanTier) {
-  return planTier === "premium";
+/**
+ * Accepts a resolved entitlement snapshot, or a bare plan tier when the caller
+ * has no snapshot to hand. A snapshot is the better answer: it accounts for
+ * manual overrides, which a plan tier alone cannot see.
+ */
+export function canUseCustomProviderSlug(
+  access: ProviderPlanTier | ProviderEntitlements,
+) {
+  if (typeof access === "string") {
+    return getPlanFeatures(access).includes("custom_slug");
+  }
+
+  return hasResolvedEntitlement(access, "custom_slug");
 }
 
-export function validateCustomProviderSlug(value: string, planTier: ProviderPlanTier) {
-  if (!canUseCustomProviderSlug(planTier)) {
+export function validateCustomProviderSlug(
+  value: string,
+  access: ProviderPlanTier | ProviderEntitlements,
+) {
+  if (!canUseCustomProviderSlug(access)) {
     return {
       ok: false,
       slug: value.trim(),

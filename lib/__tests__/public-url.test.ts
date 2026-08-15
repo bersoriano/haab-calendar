@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { resolveEntitlements } from "@/lib/entitlements/resolve";
 import {
   buildProviderPath,
   buildServicePath,
@@ -87,6 +88,22 @@ describe("public URL slug helpers", () => {
   it("marks custom provider slugs as premium-only", () => {
     expect(validateCustomProviderSlug("dr-ahmad", "free").ok).toBe(false);
     expect(validateCustomProviderSlug("dr-ahmad", "premium").ok).toBe(true);
+  });
+
+  it("lets a resolved override decide, in both directions", () => {
+    const granted = resolveEntitlements({
+      providerId: "provider-1",
+      planTier: "free",
+      overrides: [{ featureKey: "custom_slug", enabled: true, expiresAt: null }],
+    });
+    const withheld = resolveEntitlements({
+      providerId: "provider-1",
+      planTier: "premium",
+      overrides: [{ featureKey: "custom_slug", enabled: false, expiresAt: null }],
+    });
+
+    expect(validateCustomProviderSlug("dr-ahmad", granted).ok).toBe(true);
+    expect(validateCustomProviderSlug("dr-ahmad", withheld).ok).toBe(false);
   });
 
   it("returns undefined for inherited object keys, not a prototype member", () => {
