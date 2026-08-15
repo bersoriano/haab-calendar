@@ -5563,32 +5563,6 @@ export function HaabBookingModule({
                         />
                       ) : null}
 
-                      {!isSuccessfulBookingCancelled ? (
-                        <div className="flex flex-wrap items-center gap-3">
-                          <ActionButton
-                            tone="primary"
-                            className={cn(
-                              "min-w-[190px]",
-                              isDedicatedPublicPage && publicPillButtonClass,
-                            )}
-                            onClick={() => downloadBookingCalendarFile(successfulBooking)}
-                          >
-                            {t.publicFlow.addToCalendar}
-                          </ActionButton>
-                          <ActionButton
-                            tone="ghost"
-                            className={cn(
-                              "min-w-[150px]",
-                              isDedicatedPublicPage &&
-                                cn(publicPillButtonClass, publicGhostButtonClass),
-                            )}
-                            onClick={() => setIsCalendarQrModalOpen(true)}
-                          >
-                            {t.publicFlow.showQrCode}
-                          </ActionButton>
-                        </div>
-                      ) : null}
-
                       <BookingPass
                         confirmationLabel={
                           isSuccessfulBookingCancelled
@@ -5620,6 +5594,7 @@ export function HaabBookingModule({
                         qrDataUrl={qrForBooking?.url || undefined}
                         qrError={qrForBooking?.error || undefined}
                         onOpenQr={() => setIsCalendarQrModalOpen(true)}
+                        onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
                         location={passLocation}
                         notes={passNotes}
                         description={
@@ -5636,7 +5611,14 @@ export function HaabBookingModule({
                         lang={lang}
                       />
 
-                      <div className="flex flex-wrap items-center justify-center gap-3">
+                      <div
+                        className={cn(
+                          "flex flex-wrap items-center justify-center gap-3 rounded-[28px] px-4 py-4 sm:px-6",
+                          isDedicatedPublicPage
+                            ? "bg-[rgba(255,255,255,0.72)] ring-1 ring-[rgba(255,255,255,0.9)] shadow-[0_18px_40px_rgba(25,28,29,0.06)] backdrop-blur-[18px]"
+                            : "border border-[var(--line)] bg-[var(--surface-lowest)]",
+                        )}
+                      >
                         {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
                           <ActionButton
                             tone="ghost"

@@ -87,6 +87,7 @@ export function BookingPass({
   qrDataUrl,
   qrError,
   onOpenQr,
+  onDownloadIcs,
   confirmationLabel,
   location,
   description,
@@ -114,6 +115,8 @@ export function BookingPass({
   qrDataUrl?: string;
   qrError?: string;
   onOpenQr: () => void;
+  /** Saves the .ics. Lives on the stub, with the QR and the reference. */
+  onDownloadIcs: () => void;
   /**
    * The moment, carried by the ticket itself: "Booking confirmed", "Booking
    * cancelled", "Booking updated". Badged on the stub above the code. Omit it
@@ -334,6 +337,16 @@ export function BookingPass({
               <p className={cn("mt-1", monoValue)}>{issuedLabel}</p>
             </div>
           </div>
+
+          {!isCancelled ? (
+            <button
+              type="button"
+              onClick={onDownloadIcs}
+              className="mt-auto w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+            >
+              {t.publicFlow.addToCalendar}
+            </button>
+          ) : null}
 
         </div>
       </div>
