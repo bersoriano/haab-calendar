@@ -199,6 +199,8 @@ export type BookingDict = {
     noSlotsLeft: string;
     noSlotsLeftBody: string;
     ends: string;
+    heldBySomeoneElse: string;
+    freesAt: string;
     open: string;
     dayFreeFullDay: string;
     dayUnavailableChooseAnother: string;
@@ -690,6 +692,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       noSlotsLeft: "No slots left on this date",
       noSlotsLeftBody: "Pick another available date from the calendar to continue.",
       ends: "Ends",
+      heldBySomeoneElse: "Held",
+      freesAt: "Frees at {time}",
       open: "Open",
       dayFreeFullDay: "This day is currently free for a full-day reservation.",
       dayUnavailableChooseAnother:
@@ -1177,6 +1181,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       noSlotsLeft: "No quedan horarios en esta fecha",
       noSlotsLeftBody: "Elija otra fecha disponible en el calendario para continuar.",
       ends: "Termina",
+      heldBySomeoneElse: "Apartado",
+      freesAt: "Se libera a las {time}",
       open: "Disponible",
       dayFreeFullDay: "Este día está libre para una reservación de día completo.",
       dayUnavailableChooseAnother:

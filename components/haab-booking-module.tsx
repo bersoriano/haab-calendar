@@ -73,6 +73,7 @@ import {
   compareMonthAnchors,
   todayKey,
   getTimeWindowDurationMinutes,
+  getDateTimeKeysInTimeZone,
   isValidTimeWindow,
 } from "@/lib/date";
 import {
@@ -130,6 +131,7 @@ import {
   type BookingFlowNotice,
 } from "@/lib/booking-flow-machine";
 import { getServiceSelectCta } from "@/lib/service-select-cta";
+import { getPublicSlotStates } from "@/lib/slot-states";
 import {
   scrollPublicBookingStepToTop,
   shouldCollapsePublicProgressIndicator,
@@ -3169,9 +3171,9 @@ export function HaabBookingModule({
   });
   const activeCalendarService =
     services.find((service) => service.id === calendarServiceId) ?? services[0];
-  const publicSlots =
+  const publicSlotStates =
     selectedService && bookingFlow.dateKey && selectedService.bookingType === "appointment"
-      ? getAvailableSlots(
+      ? getPublicSlotStates(
           bookingFlow.dateKey,
           selectedService,
           availability,
@@ -3181,6 +3183,7 @@ export function HaabBookingModule({
           bookingHold?.released ? undefined : bookingHold?.id,
         )
       : [];
+  const publicSlots = publicSlotStates.map((state) => state.time);
 
   function renderWelcome() {
     return (
@@ -5277,19 +5280,24 @@ export function HaabBookingModule({
                       ) : (
                         <div className="min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
                           <div className="grid grid-cols-2 gap-2 sm:grid-cols-1">
-                            {publicSlots.map((slot) => {
+                            {publicSlotStates.map((slotState) => {
+                              const slot = slotState.time;
                               const slotEnd = addMinutes(
                                 slot,
                                 selectedService.durationMinutes ?? 30,
                               );
                               const isSelected = bookingFlow.time === slot;
                               const isHolding = pendingHoldTime === slot;
+                              // Someone else is part-way through this one. It is
+                              // not gone, so it stays visible with the time it
+                              // comes back rather than vanishing from the list.
+                              const isHeldByOther = slotState.status === "held";
 
                               return (
                                 <button
                                   key={slot}
                                   type="button"
-                                  disabled={isCreatingHold && !isHolding}
+                                  disabled={(isCreatingHold && !isHolding) || isHeldByOther}
                                   aria-busy={isHolding || undefined}
                                   onClick={() => selectTimeSlot(slot)}
                                   className={cn(
@@ -5327,7 +5335,18 @@ export function HaabBookingModule({
                                         compactMetaTextClass,
                                       )}
                                     >
-                                      {t.publicFlow.ends} {formatTimeLabel(slotEnd, lang)}
+                                      {isHeldByOther && slotState.status === "held"
+                                        ? t.publicFlow.freesAt.replace(
+                                            "{time}",
+                                            formatTimeLabel(
+                                              getDateTimeKeysInTimeZone(
+                                                new Date(slotState.freesAt),
+                                                providerTimeZone,
+                                              ).timeKey,
+                                              lang,
+                                            ),
+                                          )
+                                        : `${t.publicFlow.ends} ${formatTimeLabel(slotEnd, lang)}`}
                                     </p>
                                   </div>
                                   <span
@@ -5340,7 +5359,9 @@ export function HaabBookingModule({
                                       ? t.publicFlow.holdingSlot
                                       : isSelected
                                         ? t.publicFlow.selected
-                                        : t.publicFlow.open}
+                                        : isHeldByOther
+                                          ? t.publicFlow.heldBySomeoneElse
+                                          : t.publicFlow.open}
                                   </span>
                                 </button>
                               );
