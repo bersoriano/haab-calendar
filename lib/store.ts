@@ -2,6 +2,7 @@ import { slugify, currentTimestamp, createId } from "./utils";
 import { getServiceSlug } from "./public-url";
 import { compareDateKeys } from "./date";
 import { DEFAULT_APPOINTMENT_DURATION_MINUTES, WEEKDAY_KEYS } from "./constants";
+import { normalizePublicTheme } from "./public-theme";
 import { normalizeTimeZone } from "./timezone";
 import { VERTICAL_IDS } from "./types";
 import type {
@@ -304,6 +305,9 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
         : undefined,
     // An unusable zone is worse than none: it would silently push slot
     // generation back to server-local time while looking configured.
+    // Rebuilt field by field like the booking normalizer, so anything omitted
+    // here never reaches the page.
+    publicTheme: normalizePublicTheme(source?.publicTheme),
     timezone: normalizeTimeZone(source?.timezone),
   };
 }

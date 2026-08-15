@@ -352,6 +352,9 @@ export type BookingDict = {
     tablesPerSeatingLabel: string;
     maxPartySizeLabel: string;
     partySizeLabel: string;
+    publicThemeLabel: string;
+    publicThemeHelper: string;
+    publicThemeNames: Record<"default" | "pink" | "summer" | "miami", string>;
     partySizeRequiredError: string;
     partySizePlaceholder: string;
     guestsSuffix: string;
@@ -831,6 +834,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tablesPerSeatingLabel: "Tables per seating",
       maxPartySizeLabel: "Max party size",
       partySizeLabel: "Guests",
+      publicThemeLabel: "Look of your booking page",
+      publicThemeHelper:
+        "Changes the colours your clients see. Your dashboard stays as it is.",
+      publicThemeNames: {
+        default: "Classic",
+        pink: "Pink",
+        summer: "Summer",
+        miami: "Miami nights",
+      },
       partySizeRequiredError: "Tell us how many guests are coming.",
       partySizePlaceholder: "2",
       guestsSuffix: "guests",
@@ -1320,6 +1332,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tablesPerSeatingLabel: "Mesas por turno",
       maxPartySizeLabel: "Grupo máximo",
       partySizeLabel: "Comensales",
+      publicThemeLabel: "Estilo de tu página de reservas",
+      publicThemeHelper:
+        "Cambia los colores que ven tus clientes. Tu panel se queda igual.",
+      publicThemeNames: {
+        default: "Clásico",
+        pink: "Rosa",
+        summer: "Verano",
+        miami: "Noches de Miami",
+      },
       partySizeRequiredError: "Indique cuántos comensales asistirán.",
       partySizePlaceholder: "2",
       guestsSuffix: "comensales",

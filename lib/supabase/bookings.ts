@@ -19,6 +19,7 @@ import { BOOKING_HOLD_DURATION_MS } from "@/lib/constants";
 import { formatCapacityLabel } from "@/lib/format";
 import { getEffectiveCost } from "@/lib/locations";
 import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
+import { normalizePublicTheme } from "@/lib/public-theme";
 import { getPublicVerticalSegment } from "@/lib/public-url";
 import type {
   BookingHoldRecord,
@@ -35,7 +36,7 @@ import type {
 } from "@/lib/types";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
@@ -53,6 +54,7 @@ type ProviderRow = {
   vertical: VerticalId;
   language: "en" | "es" | null;
   dashboard_language: "en" | "es" | null;
+  public_theme: string | null;
   timezone: string;
   booking_window_days: number;
   availability: WeeklyAvailability;
@@ -246,6 +248,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
       ? row.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: row.language === "es" ? "es" : "en",
+    publicTheme: normalizePublicTheme(row.public_theme),
     dashboardLanguage:
       row.dashboard_language === "es" || row.dashboard_language === "en"
         ? row.dashboard_language

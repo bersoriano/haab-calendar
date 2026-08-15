@@ -150,6 +150,7 @@ import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
+import { ThemeSettingsSection } from "@/components/provider/ThemeSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -965,11 +966,11 @@ export function HaabBookingModule({
     ? "min-w-0 w-full"
     : "min-w-0 w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
   const publicPrimaryPanelClass = isDedicatedPublicPage
-    ? "min-w-0 rounded-[34px] bg-[rgba(248,249,250,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] xl:p-8"
-    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-8";
+    ? "min-w-0 rounded-[34px] bg-[var(--panel-tint-94)] p-6 ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_28px_64px_rgba(25,28,29,0.08)] xl:p-8"
+    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 xl:p-8";
   const publicElevatedPanelClass = isDedicatedPublicPage
-    ? "min-w-0 rounded-[32px] bg-[rgba(255,255,255,0.92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
-    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-white p-6 xl:p-7";
+    ? "min-w-0 rounded-[32px] bg-[var(--panel-glass-92)] p-6 ring-1 ring-[rgba(255,255,255,0.84)] shadow-[0_24px_58px_rgba(25,28,29,0.09)] xl:p-7"
+    : "min-w-0 rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 xl:p-7";
   const isStickyHeaderActive = shouldCollapsePublicProgressIndicator({
     currentStep: resolvedBookingFlow.step,
     isStepTransitionActive: isPublicStepTransitionActive,
@@ -977,45 +978,45 @@ export function HaabBookingModule({
   });
   const stickyBarPanelClass = isDedicatedPublicPage
     ? isStickyHeaderActive
-      ? "rounded-[32px] border border-white bg-white shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
-      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
-    : "rounded-[28px] border border-[var(--line)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.04)]";
+      ? "rounded-[32px] border border-white bg-[var(--surface-lowest)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[0px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
+      : "rounded-[32px] border border-[rgba(255,255,255,0.6)] bg-[var(--panel-glass-55)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] transition-[background-color,backdrop-filter,border-color,box-shadow] duration-500 ease-out"
+    : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_8px_24px_rgba(15,23,42,0.04)]";
   const publicSoftPanelClass = isDedicatedPublicPage
-    ? "rounded-[32px] bg-[rgba(243,244,245,0.94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
+    ? "rounded-[32px] bg-[var(--panel-mute-94)] p-6 ring-1 ring-[rgba(255,255,255,0.58)] shadow-[0_18px_46px_rgba(25,28,29,0.06)] xl:p-7"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6 xl:p-7";
   const publicInsetCardClass = isDedicatedPublicPage
-    ? "rounded-[28px] bg-[rgba(255,255,255,0.88)] p-5 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
+    ? "rounded-[28px] bg-[var(--panel-glass-88)] p-5 ring-1 ring-[rgba(193,198,214,0.18)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88)]"
     : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-5";
   const publicGlassBarClass = isDedicatedPublicPage
-    ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.5)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_22px_48px_rgba(25,28,29,0.08)] backdrop-blur-[20px]"
-    : "border border-[var(--line)] bg-white";
+    ? "border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-5)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_22px_48px_rgba(25,28,29,0.08)] backdrop-blur-[20px]"
+    : "border border-[var(--line)] bg-[var(--surface-lowest)]";
   const publicStatusStripClass = isDedicatedPublicPage
-    ? "border border-[rgba(255,255,255,0.38)] bg-[rgba(248,249,250,0.9)] shadow-[0_14px_32px_rgba(25,28,29,0.05)]"
+    ? "border border-[rgba(255,255,255,0.38)] bg-[var(--panel-tint-9)] shadow-[0_14px_32px_rgba(25,28,29,0.05)]"
     : "border border-[var(--line)] bg-[var(--surface-soft)]";
   const publicQuietChoiceClass = isDedicatedPublicPage
-    ? "bg-[rgba(248,249,250,0.92)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[0_12px_30px_rgba(25,28,29,0.04)]"
-    : "border border-[var(--line)] bg-white";
+    ? "bg-[var(--panel-tint-92)] ring-1 ring-[rgba(193,198,214,0.18)] shadow-[0_12px_30px_rgba(25,28,29,0.04)]"
+    : "border border-[var(--line)] bg-[var(--surface-lowest)]";
   const publicSoftChoiceClass = isDedicatedPublicPage
-    ? "bg-[rgba(243,244,245,0.9)] ring-1 ring-[rgba(193,198,214,0.14)]"
+    ? "bg-[var(--panel-mute-9)] ring-1 ring-[rgba(193,198,214,0.14)]"
     : "border border-[var(--line)] bg-[var(--surface-soft)]";
   const publicSelectedChoiceClass = isDedicatedPublicPage
-    ? "border border-[rgba(255,255,255,0.64)] bg-[rgba(255,255,255,0.58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_24px_52px_rgba(25,28,29,0.08)] backdrop-blur-[18px]"
+    ? "border border-[rgba(255,255,255,0.64)] bg-[var(--panel-glass-58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_24px_52px_rgba(25,28,29,0.08)] backdrop-blur-[18px]"
     : "border-[var(--accent)] bg-[var(--accent-soft)]";
   const calendarNavPillClass = isDedicatedPublicPage
-    ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.24)] hover:bg-[rgba(255,255,255,0.62)] hover:text-[var(--ink)]"
-    : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[rgba(255,255,255,0.78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]";
+    ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.24)] hover:bg-[var(--panel-glass-62)] hover:text-[var(--ink)]"
+    : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[var(--panel-glass-78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]";
   const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6" : "";
   const publicPrimaryActionClass = isDedicatedPublicPage
     ? cn(publicPillButtonClass, "justify-center")
     : "";
   const publicGhostButtonClass = isDedicatedPublicPage
-    ? "border border-[rgba(255,255,255,0.58)] bg-[rgba(255,255,255,0.44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[rgba(255,255,255,0.58)] hover:text-[var(--ink)]"
+    ? "border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[var(--panel-glass-58)] hover:text-[var(--ink)]"
     : "";
   const publicFieldClass = isDedicatedPublicPage
-    ? "min-h-14 rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "min-h-14 rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "min-h-12 rounded-2xl border border-white px-4 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
   const publicTextareaClass = isDedicatedPublicPage
-    ? "rounded-[24px] border border-white bg-[rgba(243,244,245,0.96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[rgba(255,255,255,0.98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   /**
@@ -3266,7 +3267,7 @@ export function HaabBookingModule({
                   key={label}
                   className={cn(
                     "rounded-3xl border px-4 py-4",
-                    isCurrent && "border-[var(--accent)] bg-white shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
+                    isCurrent && "border-[var(--accent)] bg-[var(--surface-lowest)] shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
                     !isCurrent && "border-[var(--line)] bg-white/70",
                   )}
                 >
@@ -3386,7 +3387,7 @@ export function HaabBookingModule({
                       </span>
                       <span
                         aria-hidden
-                        className="h-3 w-px bg-[rgba(193,198,214,0.45)]"
+                        className="h-3 w-px bg-[var(--panel-mute-45)]"
                       />
                       <ToneBadge tone={bookingTypeTone(service.bookingType)}>
                         {getBookingTypeLabel(service.bookingType, lang)}
@@ -3925,6 +3926,12 @@ export function HaabBookingModule({
             onDashboardLanguageChange={(next) =>
               updateProvider("dashboardLanguage", next)
             }
+            disabled={isSavingAdmin}
+          />
+          <ThemeSettingsSection
+            lang={lang}
+            theme={provider.publicTheme ?? "default"}
+            onThemeChange={(next) => updateProvider("publicTheme", next)}
             disabled={isSavingAdmin}
           />
           <p className="mt-4 text-sm text-[var(--muted)]">
@@ -4559,7 +4566,7 @@ export function HaabBookingModule({
                           <button
                             type="button"
                             onClick={cancelManageReschedule}
-                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[rgba(248,249,250,0.78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-white hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--panel-tint-78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-[var(--surface-lowest)] hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                           >
                             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
                               <path
@@ -4579,7 +4586,7 @@ export function HaabBookingModule({
                           <button
                             type="button"
                             onClick={goBackToServiceChoice}
-                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[rgba(248,249,250,0.78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-white hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[var(--panel-tint-78)] px-3.5 text-[0.8125rem] font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.42)] transition hover:bg-[var(--surface-lowest)] hover:ring-[var(--accent)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                           >
                             <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
                               <path
@@ -4692,7 +4699,7 @@ export function HaabBookingModule({
         {resolvedBookingFlow.step === 1 ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             {headerBanner}
-            <div className="relative isolate overflow-hidden rounded-[28px] bg-[rgba(255,255,255,0.62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
+            <div className="relative isolate overflow-hidden rounded-[28px] bg-[var(--panel-glass-62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
               <span
                 aria-hidden
                 className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,rgba(26,115,232,0.28),transparent_65%)] blur-2xl"
@@ -4733,8 +4740,8 @@ export function HaabBookingModule({
                     // vertically center their content by default).
                     "flex h-full flex-col rounded-[30px] p-6 text-left transition",
                     isDedicatedPublicPage
-                      ? "bg-[rgba(248,249,250,0.94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_18px_42px_rgba(25,28,29,0.06)] hover:translate-y-[-2px] hover:bg-[rgba(255,255,255,0.9)]"
-                      : "border border-[var(--line)] bg-white hover:border-[var(--accent)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.08)]",
+                      ? "bg-[var(--panel-tint-94)] ring-1 ring-[rgba(255,255,255,0.68)] shadow-[0_18px_42px_rgba(25,28,29,0.06)] hover:translate-y-[-2px] hover:bg-[var(--panel-glass-9)]"
+                      : "border border-[var(--line)] bg-[var(--surface-lowest)] hover:border-[var(--accent)] hover:shadow-[0_20px_50px_rgba(15,23,42,0.08)]",
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-2">
@@ -4894,7 +4901,7 @@ export function HaabBookingModule({
                           "flex flex-col gap-1 rounded-2xl px-4 py-3 text-left transition",
                           active
                             ? "bg-[var(--accent-soft)] text-[var(--ink)] ring-2 ring-[var(--accent)]"
-                            : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/50",
+                            : "bg-[var(--surface-lowest)] text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/50",
                         )}
                       >
                         <span className="text-sm font-medium">{loc.address}</span>
@@ -5246,7 +5253,7 @@ export function HaabBookingModule({
                   {hasPartialClientDetails && !isManageRescheduling ? (
                     <div
                       role="status"
-                      className="mt-5 rounded-[22px] border border-[rgba(0,191,165,0.28)] bg-[rgba(104,250,221,0.14)] px-4 py-3.5 text-[var(--ink)]"
+                      className="mt-5 rounded-[22px] border border-[rgba(0,191,165,0.28)] bg-[var(--panel-mute-14)] px-4 py-3.5 text-[var(--ink)]"
                     >
                       <p className="text-[0.9375rem] font-semibold">
                         {t.publicFlow.detailsKeptNoticeTitle}
@@ -5323,7 +5330,7 @@ export function HaabBookingModule({
                                         : "border-[var(--accent)] bg-[var(--accent-soft)]"),
                                     !isSelected &&
                                       (isDedicatedPublicPage
-                                        ? "hover:bg-[rgba(255,255,255,0.72)]"
+                                        ? "hover:bg-[var(--panel-glass-72)]"
                                         : "hover:border-[var(--accent)]"),
                                   )}
                                 >
@@ -5621,7 +5628,7 @@ export function HaabBookingModule({
                         className={cn(
                           "flex flex-wrap items-center justify-center gap-3 rounded-[28px] px-4 py-4 sm:px-6",
                           isDedicatedPublicPage
-                            ? "bg-[rgba(255,255,255,0.72)] ring-1 ring-[rgba(255,255,255,0.9)] shadow-[0_18px_40px_rgba(25,28,29,0.06)] backdrop-blur-[18px]"
+                            ? "bg-[var(--panel-glass-72)] ring-1 ring-[rgba(255,255,255,0.9)] shadow-[0_18px_40px_rgba(25,28,29,0.06)] backdrop-blur-[18px]"
                             : "border border-[var(--line)] bg-[var(--surface-lowest)]",
                         )}
                       >
@@ -5657,7 +5664,7 @@ export function HaabBookingModule({
                               "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
                               isSuccessfulBookingCancelled
                                 ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
-                                : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-white",
+                                : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-[var(--surface-lowest)]",
                               isDedicatedPublicPage && publicPillButtonClass,
                             )}
                           >
@@ -5836,7 +5843,7 @@ export function HaabBookingModule({
           <Link
             href={publicUrl}
             className={cn(
-              "inline-flex min-h-11 min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-white",
+              "inline-flex min-h-11 min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-lowest)]",
               isDedicatedPublicPage && publicPillButtonClass,
             )}
           >
@@ -5873,8 +5880,8 @@ export function HaabBookingModule({
           className={cn(
             "w-full max-w-sm p-6",
             isDedicatedPublicPage
-              ? "rounded-[32px] bg-[rgba(248,249,250,0.98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
-              : "rounded-[32px] border border-[var(--line)] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+              ? "rounded-[32px] bg-[var(--panel-tint-98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
+              : "rounded-[32px] border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
           )}
         >
           <SectionTitle
@@ -5936,8 +5943,8 @@ export function HaabBookingModule({
           className={cn(
             "w-full max-w-lg p-6",
             isDedicatedPublicPage
-              ? "rounded-[32px] bg-[rgba(248,249,250,0.98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
-              : "rounded-[32px] border border-[var(--line)] bg-white shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+              ? "rounded-[32px] bg-[var(--panel-tint-98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
+              : "rounded-[32px] border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
           )}
         >
           <SectionTitle
@@ -6025,8 +6032,8 @@ export function HaabBookingModule({
           className={cn(
             "max-h-[92vh] w-full max-w-5xl overflow-auto",
             isDedicatedPublicPage
-              ? "rounded-[34px] bg-[rgba(248,249,250,0.98)] p-6 ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)] xl:p-8"
-              : "rounded-[32px] border border-[var(--line)] bg-white p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+              ? "rounded-[34px] bg-[var(--panel-tint-98)] p-6 ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)] xl:p-8"
+              : "rounded-[32px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
           )}
         >
           <SectionTitle
@@ -6146,10 +6153,10 @@ export function HaabBookingModule({
                                 : "border border-[var(--line)] bg-[var(--surface-soft)]"
                               : isDedicatedPublicPage
                                 ? publicSoftChoiceClass
-                                : "border border-[var(--line)] bg-white",
+                                : "border border-[var(--line)] bg-[var(--surface-lowest)]",
                             available &&
                               (isDedicatedPublicPage
-                                ? "hover:bg-[rgba(255,255,255,0.72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
+                                ? "hover:bg-[var(--panel-glass-72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
                                 : "hover:border-[var(--accent)]"),
                             selected &&
                               (isDedicatedPublicPage
@@ -6208,14 +6215,14 @@ export function HaabBookingModule({
                         }
                         className={cn(
                           "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                          isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-white",
+                          isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-[var(--surface-lowest)]",
                           rescheduleState.time === slot &&
                             (isDedicatedPublicPage
                               ? cn(publicSelectedChoiceClass, "text-[var(--accent)]")
                               : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"),
                           rescheduleState.time !== slot &&
                             (isDedicatedPublicPage
-                              ? "hover:bg-[rgba(255,255,255,0.72)]"
+                              ? "hover:bg-[var(--panel-glass-72)]"
                               : "hover:border-[var(--accent)]"),
                         )}
                       >
@@ -6315,7 +6322,7 @@ export function HaabBookingModule({
             <a
               href={`mailto:${contactEmail}`}
               className={cn(
-                "inline-flex min-h-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]",
+                "inline-flex min-h-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]",
                 isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass),
               )}
             >
@@ -6431,7 +6438,7 @@ export function HaabBookingModule({
                     <form action={onSignOut}>
                       <button
                         type="submit"
-                        className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+                        className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
                       >
                         {t.admin.signOut}
                       </button>
@@ -6460,7 +6467,7 @@ export function HaabBookingModule({
                       "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
                       adminTab === value
                         ? "bg-[var(--ink)] text-white"
-                        : "bg-[rgba(248,249,250,0.72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[rgba(255,255,255,0.92)] hover:text-[var(--ink)]",
+                        : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]",
                     )}
                   >
                     {label}
@@ -6472,7 +6479,7 @@ export function HaabBookingModule({
                 <button
                   type="button"
                   onClick={() => setSurface("management")}
-                  className="min-h-11 rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+                  className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
                 >
                   {t.admin.backToWorkspace}
                 </button>

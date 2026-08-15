@@ -97,7 +97,7 @@ export function PublicBookingHeader({
     // the one square thing on it.
     <div
       className={cn(
-        "flex min-w-0 items-center justify-between gap-3 rounded-[28px] border border-[rgba(255,255,255,0.6)] bg-[rgba(255,255,255,0.55)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] [-webkit-backdrop-filter:blur(20px)] sm:gap-5 sm:px-7 sm:py-5 xl:px-8",
+        "flex min-w-0 items-center justify-between gap-3 rounded-[28px] border border-[rgba(255,255,255,0.6)] bg-[var(--panel-glass-55)] px-5 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] [-webkit-backdrop-filter:blur(20px)] sm:gap-5 sm:px-7 sm:py-5 xl:px-8",
         className,
       )}
     >
@@ -140,7 +140,7 @@ export function PublicBookingHeader({
             {service ? (
               <span
                 title={service}
-                className="max-w-full shrink truncate rounded-full bg-[rgba(255,255,255,0.72)] px-3 py-1 text-xs font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.55)] sm:text-[0.8125rem]"
+                className="max-w-full shrink truncate rounded-full bg-[var(--panel-glass-72)] px-3 py-1 text-xs font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.55)] sm:text-[0.8125rem]"
               >
                 {service}
               </span>

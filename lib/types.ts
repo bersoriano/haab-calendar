@@ -5,6 +5,9 @@ export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
 export type Lang = "en" | "es";
+import type { PublicTheme } from "./public-theme";
+
+export type { PublicTheme };
 export type AdminTab = "dashboard" | "bookings" | "calendar" | "services" | "settings";
 export type WeekdayKey =
   | "sunday"
@@ -57,6 +60,11 @@ export type ProviderInfo = {
    * English workspace.
    */
   dashboardLanguage?: Lang;
+  /**
+   * Look of the public booking page. "default" is the page as it always was.
+   * See lib/public-theme.ts.
+   */
+  publicTheme?: PublicTheme;
   /**
    * IANA zone the provider's hours are stated in, e.g. "America/Mexico_City".
    * "" means never chosen; the column defaults to "UTC", which is stored but
