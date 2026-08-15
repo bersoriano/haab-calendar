@@ -71,7 +71,7 @@ describe("resolveGuestChromeLanguage", () => {
       draftDashboardLanguage,
       viewerLanguage,
     });
-    const module = resolveSurfaceLanguage({
+    const moduleLanguage = resolveSurfaceLanguage({
       surface: "management",
       publicLanguage: "en",
       providerDashboardLanguage: draftDashboardLanguage,
@@ -79,7 +79,7 @@ describe("resolveGuestChromeLanguage", () => {
     });
 
     expect(chrome).toBe("es");
-    expect(chrome).toBe(module);
+    expect(chrome).toBe(moduleLanguage);
   });
 
   it("leaves the guest on the resolved viewer language when the draft pins nothing", () => {

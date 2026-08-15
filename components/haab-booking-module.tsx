@@ -4479,6 +4479,9 @@ export function HaabBookingModule({
                       currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                       isDedicatedPublicPage={isDedicatedPublicPage}
                       lang={lang}
+                      onStepSelect={
+                        resolvedBookingFlow.step === 3 ? () => goBackToSelectionStep() : undefined
+                      }
                     />
                   </div>
                 </div>

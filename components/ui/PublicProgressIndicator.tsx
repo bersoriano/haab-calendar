@@ -7,12 +7,19 @@ export function PublicProgressIndicator({
   isDedicatedPublicPage,
   lang = "en",
   compact = false,
+  onStepSelect,
 }: {
   currentStep: 2 | 3 | 4;
   isDedicatedPublicPage: boolean;
   lang?: Lang;
   /** Slim single-line form, so progress stays on screen once the header sticks. */
   compact?: boolean;
+  /**
+   * Called when a finished step is tapped. Going back is a normal thing to
+   * want, and the indicator is where people reach for it. Omitted once the
+   * booking exists, where there is nothing to go back to.
+   */
+  onStepSelect?: (step: 2 | 3) => void;
 }) {
   const t = bookingTranslations[lang];
   const steps = [
@@ -82,13 +89,29 @@ export function PublicProgressIndicator({
           const isLast = index === steps.length - 1;
           const connectorActive = isFinished || step.key < currentStep;
 
+          const canGoBack =
+            status === "complete" && !isFinished && Boolean(onStepSelect);
+          const Marker = canGoBack ? "button" : "div";
+
           return (
             <li
               key={step.key}
               className={cn("flex items-start", isLast ? "shrink-0" : "flex-1")}
               aria-current={status === "current" ? "step" : undefined}
             >
-              <div className="flex shrink-0 flex-col items-center gap-2">
+              <Marker
+                {...(canGoBack
+                  ? {
+                      type: "button" as const,
+                      onClick: () => onStepSelect?.(step.key as 2 | 3),
+                      "aria-label": `${t.publicFlow.completedPrefix}${step.label}`,
+                    }
+                  : {})}
+                className={cn(
+                  "flex shrink-0 flex-col items-center gap-2",
+                  canGoBack && "cursor-pointer rounded-2xl transition hover:opacity-80",
+                )}
+              >
                 <span
                   aria-hidden="true"
                   className={cn(
@@ -144,7 +167,7 @@ export function PublicProgressIndicator({
                   </span>
                   {step.label}
                 </span>
-              </div>
+              </Marker>
               {!isLast ? (
                 <div
                   aria-hidden="true"
