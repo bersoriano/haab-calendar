@@ -57,3 +57,33 @@ describe("getServiceSelectCta", () => {
     expect(getVerticalCopy("restaurant", "es").phrases.selectCapacityCta).toBe("Tomar una mesa");
   });
 });
+
+describe("reassurance copy", () => {
+  const verticals = ["healthcare", "spaces", "professional", "events", "restaurant"] as const;
+
+  it("says something specific to each vertical, in both languages", () => {
+    for (const lang of ["en", "es"] as const) {
+      const holds = new Set<string>();
+      const nexts = new Set<string>();
+
+      for (const vertical of verticals) {
+        const { phrases } = getVerticalCopy(vertical, lang);
+
+        expect(phrases.holdReassurance.length).toBeGreaterThan(0);
+        expect(phrases.whatHappensNext.length).toBeGreaterThan(0);
+        holds.add(phrases.holdReassurance);
+        nexts.add(phrases.whatHappensNext);
+      }
+
+      // Shared wording would defeat the point of writing them per vertical.
+      expect(holds.size).toBe(verticals.length);
+      expect(nexts.size).toBe(verticals.length);
+    }
+  });
+
+  it("frames the private link from each audience's own side", () => {
+    expect(getVerticalCopy("healthcare").phrases.whatHappensNext).toContain("no need to call");
+    expect(getVerticalCopy("events").phrases.whatHappensNext).toContain("someone else can take it");
+    expect(getVerticalCopy("restaurant").phrases.whatHappensNext).toContain("frees it for someone else");
+  });
+});

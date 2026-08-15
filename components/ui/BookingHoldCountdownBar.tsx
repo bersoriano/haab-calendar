@@ -67,7 +67,10 @@ export function BookingHoldCountdownBar({
       ? fillTemplate(t.public.holdConfirmedFor, nouns)
       : isExpired
         ? t.public.expiredBody
-        : t.public.holdFinishBody;
+        // Vertical-specific: a clinic, a court, and a workshop reassure
+        // differently, and this is the moment the visitor is deciding whether
+        // to trust the page with their details.
+        : copy.phrases.holdReassurance;
 
   return (
     <section

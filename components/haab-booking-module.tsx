@@ -5550,6 +5550,12 @@ export function HaabBookingModule({
 
                   return (
                     <>
+                      {!isSuccessfulBookingCancelled ? (
+                        <p className="rounded-[22px] border border-[var(--line)] bg-[var(--surface-lowest)] px-5 py-4 text-[0.9375rem] leading-6 text-[var(--muted)]">
+                          {copy.phrases.whatHappensNext}
+                        </p>
+                      ) : null}
+
                       {successfulBooking.manageToken && successfulManageUrl ? (
                         <PrivateLinkCard
                           url={successfulManageUrl}
