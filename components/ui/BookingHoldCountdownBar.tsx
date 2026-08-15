@@ -80,18 +80,18 @@ export function BookingHoldCountdownBar({
         // section. The progress bar does its own clipping.
         "px-0 py-0 transition-colors duration-300",
         isCancelled || isUrgent || isExpired
-          ? "text-[#be123c]"
+          ? "text-[var(--danger-strong)]"
           : isConfirmed
             ? "text-[var(--accent-strong)]"
             : isWarning
-              ? "text-[#92400e]"
+              ? "text-[var(--warning-strong)]"
               : "text-[var(--ink)]",
       )}
     >
       {!isOnline && !isConfirmed && !isCancelled ? (
         <div
           role="status"
-          className="mb-4 rounded-2xl border border-[#fcd34d] bg-[#fffbeb] px-4 py-3 text-[#92400e]"
+          className="mb-4 rounded-2xl border border-[var(--warning-line)] bg-[var(--warning-soft)] px-4 py-3 text-[var(--warning-strong)]"
         >
           <p className="font-semibold">{t.public.offlineTitle}</p>
           <p className="mt-1 text-sm leading-5">{t.public.offlineBody}</p>
@@ -131,19 +131,19 @@ export function BookingHoldCountdownBar({
             className={cn(
               "shrink-0 rounded-[26px] px-5 py-3 text-center font-semibold tabular-nums ring-1 transition-colors",
               isExpired
-                ? "bg-[#fff1f2] px-4 py-2 text-[0.8125rem] uppercase tracking-[0.12em] ring-[#fecdd3]"
+                ? "bg-[var(--danger-soft)] px-4 py-2 text-[0.8125rem] uppercase tracking-[0.12em] text-[var(--danger-strong)] ring-[var(--danger-line)]"
                 : isUrgent
-                  ? "bg-[#fff1f2] text-4xl tracking-[-0.05em] ring-[#fecdd3] sm:text-5xl"
+                  ? "bg-[var(--danger-soft)] text-4xl tracking-[-0.05em] text-[var(--danger-strong)] ring-[var(--danger-line)] sm:text-5xl"
                   : isWarning
-                    ? "bg-[#fffbeb] text-4xl tracking-[-0.05em] ring-[#fde68a] sm:text-5xl"
-                    : "bg-white/85 text-4xl tracking-[-0.05em] ring-black/5 sm:text-5xl",
+                    ? "bg-[var(--warning-soft)] text-4xl tracking-[-0.05em] text-[var(--warning-strong)] ring-[var(--warning-line)] sm:text-5xl"
+                    : "bg-[var(--panel-glass-88)] text-4xl tracking-[-0.05em] text-[var(--primary)] ring-[var(--line)] sm:text-5xl",
             )}
           >
             {isExpired ? t.public.expired : formatCountdown(remainingMs)}
           </div>
         ) : null}
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--panel-glass-72)]">
         <div
           aria-hidden="true"
           className={cn(
@@ -231,7 +231,7 @@ export function BookingHoldCountdownBar({
               <button
                 type="button"
                 onClick={onChooseAnother}
-                className="min-h-11 rounded-full bg-white px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.5)] transition hover:bg-[var(--surface-soft)]"
+                className="min-h-11 rounded-full bg-[var(--surface-lowest)] px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[var(--line)] transition hover:bg-[var(--surface-soft)]"
               >
                 {t.public.chooseAnotherTime}
               </button>

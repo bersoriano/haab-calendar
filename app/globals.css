@@ -13,6 +13,12 @@
   --outline-ghost: rgba(193, 198, 214, 0.15);
   --primary: #005bbf;
   --on-primary: #ffffff;
+  --danger-strong: #be123c;
+  --danger-soft: #fff1f2;
+  --danger-line: #fecdd3;
+  --warning-strong: #92400e;
+  --warning-soft: #fffbeb;
+  --warning-line: #fde68a;
   --primary-container: #1a73e8;
   --accent: #1a73e8;
   --accent-strong: #005bbf;
