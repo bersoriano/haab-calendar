@@ -4,6 +4,7 @@ import Link from "next/link";
 import { List } from "@phosphor-icons/react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { resolveLandingAccountEntry } from "@/lib/landing-account-entry";
 import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
@@ -159,24 +160,29 @@ function DemoButton({
 }
 
 /**
- * The returning-provider entry point. A visitor with an account has no use for
- * "create your page", so every placement of this shows one of three things: a
- * sign-in link, a way into the workspace once setup is done, or nothing at all
- * while a signed-in provider is still mid-setup (the primary CTA continues that).
+ * The returning-provider entry point: a sign-in link, or a way back into the
+ * workspace. See lib/landing-account-entry.ts for why setup state does not
+ * gate this.
  */
 function useAccountEntry() {
-  const { hasPage, loggedIn, loginHref, onOpenDashboard } = useLandingActions();
+  const { loggedIn, loginHref, onOpenDashboard } = useLandingActions();
   const { t } = useLanguage();
 
-  if (!loggedIn) {
-    return loginHref
-      ? ({ kind: "login", href: loginHref, label: t.nav.logIn } as const)
-      : null;
+  const entry = resolveLandingAccountEntry({
+    loggedIn: Boolean(loggedIn),
+    canOpenDashboard: Boolean(onOpenDashboard),
+    hasLoginHref: Boolean(loginHref),
+  });
+
+  if (entry === "login" && loginHref) {
+    return { kind: "login", href: loginHref, label: t.nav.logIn } as const;
   }
 
-  return hasPage && onOpenDashboard
-    ? ({ kind: "dashboard", onClick: onOpenDashboard, label: t.nav.dashboard } as const)
-    : null;
+  if (entry === "dashboard" && onOpenDashboard) {
+    return { kind: "dashboard", onClick: onOpenDashboard, label: t.nav.dashboard } as const;
+  }
+
+  return null;
 }
 
 /** Footer variant: drops the whole row rather than leaving an empty bullet. */

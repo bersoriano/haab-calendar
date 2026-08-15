@@ -50,7 +50,7 @@ describe("landing account entry", () => {
     expect(html).not.toContain("/login");
   });
 
-  it("shows neither while a signed-in provider is still setting up", () => {
+  it("still offers the workspace while a signed-in provider is setting up", () => {
     const html = renderNav({
       loggedIn: true,
       hasPage: false,
@@ -58,9 +58,14 @@ describe("landing account entry", () => {
       onOpenDashboard: () => undefined,
     });
 
+    // This used to show neither entry, on the reasoning that the primary CTA
+    // continues an unfinished setup. It also caught owners whose dashboard
+    // store failed to load or whose session no longer resolved to a user:
+    // signed in, so no log-in link, and no page, so no way into the workspace
+    // either. Setup state decides what the workspace shows, not whether it can
+    // be reached.
+    expect(html).toContain("Your dashboard");
     expect(html).not.toContain("Log in");
-    expect(html).not.toContain("Your dashboard");
-    // The primary CTA is what continues an unfinished setup.
     expect(html).toContain("Create your page");
   });
 

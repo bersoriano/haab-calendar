@@ -39,7 +39,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
-  const loggedIn = Boolean(claimsData?.claims);
+  const hasClaims = Boolean(claimsData?.claims);
 
   let configured = false;
   let email: string | undefined;
@@ -47,13 +47,19 @@ export default async function Home({ searchParams }: HomePageProps) {
   let publicationStatus: PublicationStatus | undefined;
   let isSuperAdmin = false;
   let demoEdit: DemoEditBanner | undefined;
+  // Claims come out of the cookie; a user comes from the server. A token that
+  // still parses but no longer resolves to a user is not a session, and
+  // treating it as one hides the log-in link from someone who needs it.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
 
-  if (loggedIn) {
-    const {
+  if (hasClaims) {
+    ({
       data: { user },
-    } = await supabase.auth.getUser();
+    } = await supabase.auth.getUser());
     email = user?.email ?? claimsData?.claims?.email;
-    isSuperAdmin = isSuperAdminEmail(email);
+    // From the verified user only: a token that no longer resolves to one is
+    // not a session, and must not light up the super-admin entry.
+    isSuperAdmin = isSuperAdminEmail(user?.email);
 
     // Super admin editing an example page: the dashboard runs against that
     // demo provider instead of the caller's own booking page.
@@ -87,6 +93,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     }
   }
 
+  const loggedIn = Boolean(user);
   const resolvedLanguage = await getServerLanguage(lang);
 
   return (
