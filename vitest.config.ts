@@ -21,6 +21,7 @@ export default defineConfig({
       include: [
         "lib/billing/**/*.ts",
         "lib/entitlements/**/*.ts",
+        "lib/google/**/*.ts",
         "lib/integrations/outbox/**/*.ts",
         "lib/observability/**/*.ts",
         "lib/stripe/config.ts",

@@ -269,6 +269,57 @@ gate. No migration is needed — override rows are keyed by text.
 
 ---
 
+## 4f. Google Calendar (one-way projection)
+
+```
+supabase/migrations/20260816153412_add_google_calendar_connections.sql
+  provider_google_calendar_connections        # grant, encrypted token, target calendar
+  provider_google_calendar_event_mappings     # booking ↔ Google event, projected version
+
+lib/google/
+  config.ts          # lazy env, narrow scopes
+  crypto.ts          # AES-256-GCM envelope for refresh tokens
+  oauth.ts           # PKCE, state, exchange, refresh, revoke, scope validation
+  calendar-client.ts # the REST slice this feature uses, injectable
+  ids.ts             # deterministic event id + ownership properties
+  connections.ts     # server-only connection store
+  handler.ts         # the outbox handler
+  reconcile.ts       # bookings that predate the connection
+app/api/google/oauth/{start,callback}/route.ts
+app/api/google/connection/route.ts             # status, choose calendar, disconnect
+```
+
+- **One direction.** Haab writes; Google reflects. Nothing reads Google state
+  back into a booking. Inbound sync is a separate, later piece of work.
+- **Idempotence is structural.** The Google event id is a hash of
+  (namespace, provider, booking), so a replayed outbox delivery addresses the
+  same event; the write is a `PUT`, so it overwrites rather than duplicating;
+  and the mapping records which booking version the event already reflects, so a
+  stale replay costs no API call at all. Delivery is at-least-once and all three
+  are what make that survivable.
+- **Tokens are sealed before they reach the database.** AES-256-GCM at the
+  application layer with a key from `GOOGLE_TOKEN_ENCRYPTION_KEY` and a
+  `key_version` column for rotation. A database dump yields ciphertext. Access
+  tokens are never stored — they are minted from the refresh token per call.
+- **Narrow scopes.** `calendar.events` and `calendar.calendarlist.readonly`, not
+  the full `calendar` scope, which would also grant read access to every event
+  body on every calendar. Granular consent means a callback can succeed with
+  scopes missing, so the grant is validated server-side before it is stored.
+- **The deployment namespace** is stamped into every managed event's private
+  properties, so a staging deployment can never adopt a production booking's
+  event.
+- **Entitlement is re-resolved at delivery time**, from the provider id on the
+  event. The dashboard's snapshot is presentation; this is the authorization. A
+  provider whose entitlement lapsed produces a terminal `skipped`, not a retry.
+- **Disconnect is never gated.** A provider whose plan lapsed can still revoke
+  Haab's access — the refresh token is revoked at Google as well as deleted
+  here. Account deletion cascades the connection away with the provider.
+- **Nothing about the client reaches Google.** The event carries the service
+  name and the times. Not the client's name, email, phone, or notes: a calendar
+  can be shared, and Haab is not the system that decides who may read those.
+
+---
+
 ## 4e. Observability
 
 ```

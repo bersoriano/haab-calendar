@@ -298,6 +298,15 @@ export type BookingDict = {
     integrationPublishRequired: string;
     integrationReadOnly: string;
     comingSoon: string;
+    googleConnect: string;
+    googleDisconnect: string;
+    googleConnected: string;
+    googleChooseCalendar: string;
+    googleChooseCalendarHelp: string;
+    googleSaveCalendar: string;
+    googleNeedsReauth: string;
+    googleConnectionFailed: string;
+    googleWritesTo: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
     eventSchedulingTitle: string;
@@ -794,6 +803,16 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       integrationPublishRequired: "Available once your page is published",
       integrationReadOnly: "Read-only while editing an example page",
       comingSoon: "Coming soon",
+      googleConnect: "Connect Google Calendar",
+      googleDisconnect: "Disconnect",
+      googleConnected: "Connected",
+      googleChooseCalendar: "Choose the calendar Haab writes to",
+      googleChooseCalendarHelp:
+        "Haab adds an event for each booking, and removes it when a booking is cancelled. It never reads your other events.",
+      googleSaveCalendar: "Use this calendar",
+      googleNeedsReauth: "Reconnect needed",
+      googleConnectionFailed: "Could not reach Google Calendar.",
+      googleWritesTo: "Writing bookings to",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
       eventSchedulingTitle: "Event scheduling",
@@ -1307,6 +1326,16 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       integrationPublishRequired: "Disponible cuando publique su página",
       integrationReadOnly: "Solo lectura mientras edita una página de ejemplo",
       comingSoon: "Próximamente",
+      googleConnect: "Conectar Google Calendar",
+      googleDisconnect: "Desconectar",
+      googleConnected: "Conectado",
+      googleChooseCalendar: "Elija el calendario en el que Haab escribirá",
+      googleChooseCalendarHelp:
+        "Haab agrega un evento por cada reserva y lo elimina cuando se cancela. Nunca lee sus otros eventos.",
+      googleSaveCalendar: "Usar este calendario",
+      googleNeedsReauth: "Necesita reconectarse",
+      googleConnectionFailed: "No se pudo conectar con Google Calendar.",
+      googleWritesTo: "Escribiendo reservas en",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
       eventSchedulingTitle: "Programación de eventos",

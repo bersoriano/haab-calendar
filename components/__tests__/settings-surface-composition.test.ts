@@ -35,12 +35,17 @@ describe("settings surface extraction", () => {
 });
 
 describe("integration state boundaries", () => {
-  it("keeps the integrations card away from data access", () => {
+  it("keeps the integrations card away from data access and from Google", () => {
     const section = read("components/provider/ProviderIntegrationsSection.tsx");
 
     expect(section).not.toContain("@/lib/supabase");
-    expect(section).not.toContain("fetch(");
-    expect(section).not.toContain("googleapis");
+    // The card may call Haab's own routes, and only those: every Google call
+    // happens server-side, where the credentials are.
+    expect(section).not.toContain("googleapis.com");
+    expect(section).not.toContain("accounts.google.com");
+    for (const target of section.match(/fetch\("([^"]+)"/g) ?? []) {
+      expect(target).toContain('fetch("/api/');
+    }
     // Eligibility is read from the resolved snapshot, never from a plan string.
     expect(section).not.toContain("planTier");
     expect(section).toContain("hasResolvedEntitlement");

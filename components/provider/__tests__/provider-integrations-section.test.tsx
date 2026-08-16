@@ -123,15 +123,31 @@ describe("ProviderIntegrationsSection", () => {
     expect(html).toContain(en.integrationReadOnly);
   });
 
-  it("offers no working connect action yet", () => {
+  it("sends the provider to Haab's own route, never straight to Google", () => {
     const html = render();
 
-    // A control may exist, but it must be disabled: nothing here talks to Google.
-    expect(html).not.toMatch(/<a[^>]+href="[^"]*google/i);
+    // The browser never holds a Google credential: connecting starts at a Haab
+    // route that checks the session and the entitlement first.
+    expect(html).toContain('data-google-connect="/api/google/oauth/start"');
+    expect(html).not.toMatch(/accounts\.google\.com/);
+    expect(html).not.toMatch(/client_id/);
+  });
+
+  it("offers no connect action to a provider without the entitlement", () => {
+    const html = render({ entitlements: entitlements("free") });
+
+    expect(html).not.toContain("/api/google/oauth/start");
     const buttons = html.match(/<button[^>]*>/g) ?? [];
     for (const button of buttons) {
       expect(button).toContain("disabled");
     }
+  });
+
+  it("offers no connect action while entitlements are unknown", () => {
+    const html = render({ entitlements: undefined });
+
+    // Fail closed: an unresolved entitlement must not render a way in.
+    expect(html).not.toContain("/api/google/oauth/start");
   });
 
   it("states the status in words rather than colour alone", () => {
