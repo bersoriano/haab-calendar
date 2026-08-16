@@ -115,6 +115,13 @@ Each sub-step: move a `render*` function into a real component that takes props/
 - **5c — Setup wizard:** `renderSetupWizard` + provider/availability handlers → `SetupWizard` + `useSetupWizard`.
 - **5d — Service editor:** service CRUD handlers + `renderServices` → `Services` + `useServiceEditor`.
 - **5e — Admin surfaces:** `renderDashboard`, `renderBookingsList`, `renderAdminCalendar`, `renderSettings` → individual components; search/filter local state co-located.
+  - **Done:** `renderSettings` → `ProviderSettingsSurface` (props-only; the module
+    keeps `persistAdminStore` and passes `onSave`). It also hosts
+    `ProviderIntegrationsSection`, whose eligibility comes from a server-resolved
+    entitlement snapshot passed as its own prop — never from `ModuleStore`, and
+    never as authorization for a future mutation. The Google Calendar card is
+    read-only preparation: no OAuth, no API call, no tokens, no sync.
+  - Remaining here: `renderDashboard`, `renderBookingsList`, `renderAdminCalendar`.
 
 **Risk:** medium-high — do strictly one sub-step per commit; smoke the touched surface each time. 5a is the largest; budget extra care for the `renderPublicFlow` sub-split.
 **Verification:** per sub-step visual smoke of that surface + build + lint.

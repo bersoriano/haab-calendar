@@ -24,6 +24,7 @@ import {
   type Lang as LandingLang,
 } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
+import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
 import { normalizeStore } from "@/lib/store";
@@ -67,6 +68,14 @@ type HomeExperienceProps = {
   viewerLanguage: Lang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
+  /**
+   * Server-resolved feature access, kept apart from the store: the store is
+   * editable configuration that round-trips through the provider API, and this
+   * is a read-only answer about what the account may use. Absent for guests,
+   * for standalone mode, and whenever the resolve failed — the UI treats the
+   * absence as "cannot tell", never as access.
+   */
+  providerEntitlements?: ProviderEntitlements;
   /** Server-controlled ability to expose public URLs and booking actions. */
   publicationStatus?: PublicationStatus;
   /** Whether the signed-in account can open the super-admin area. */
@@ -105,6 +114,7 @@ function HomeExperienceInner({
   initialPageName,
   viewerLanguage,
   dashboardStore,
+  providerEntitlements,
   publicationStatus,
   isSuperAdmin,
   demoEdit,
@@ -317,6 +327,7 @@ function HomeExperienceInner({
             }}
             initialLanguage={effectiveConfigured ? undefined : lang}
             viewerLanguage={dashboardLanguage}
+            providerEntitlements={providerEntitlements}
             initialVerticalId={
               effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
             }

@@ -1,6 +1,8 @@
 import { HomeExperience, type DemoEditBanner } from "@/components/home-experience";
 import { createClient } from "@/lib/supabase/server";
-import { getProviderDashboardStore } from "@/lib/supabase/bookings";
+import { getProviderDashboardContext } from "@/lib/supabase/bookings";
+import { getProviderEntitlements } from "@/lib/entitlements/server";
+import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import {
   getPublicationStatus,
   type PublicationStatus,
@@ -44,6 +46,7 @@ export default async function Home({ searchParams }: HomePageProps) {
   let configured = false;
   let email: string | undefined;
   let dashboardStore: ModuleStore | undefined;
+  let providerEntitlements: ProviderEntitlements | undefined;
   let publicationStatus: PublicationStatus | undefined;
   let isSuperAdmin = false;
   let demoEdit: DemoEditBanner | undefined;
@@ -77,13 +80,35 @@ export default async function Home({ searchParams }: HomePageProps) {
       const storeUserId = demoTarget?.ownerUserId ?? user.id;
 
       try {
-        [dashboardStore, publicationStatus] = await Promise.all([
-          getProviderDashboardStore(storeClient, storeUserId).then((store) => store ?? undefined),
+        const [dashboardContext, status] = await Promise.all([
+          getProviderDashboardContext(storeClient, storeUserId),
           getPublicationStatus(storeClient, storeUserId),
         ]);
+
+        dashboardStore = dashboardContext?.store;
+        publicationStatus = status;
         // "Configured" = this provider has completed setup. Drives whether the
         // landing shows verticals or a "go to your dashboard" panel.
         configured = Boolean(dashboardStore?.setupComplete);
+
+        if (dashboardContext) {
+          // Resolved per request from the provider ID the server just read —
+          // never from the browser, and never cached. A demo-editing session
+          // resolves the demo provider's entitlements, not the admin's.
+          try {
+            providerEntitlements = await getProviderEntitlements(
+              dashboardContext.providerId,
+            );
+          } catch (error) {
+            // An unreadable entitlement is an unknown answer, not a yes. The
+            // dashboard stays; the integrations card says it cannot tell.
+            console.error("provider_entitlements_load_failed", {
+              providerId: dashboardContext.providerId,
+              error: error instanceof Error ? error.message : String(error),
+            });
+            providerEntitlements = undefined;
+          }
+        }
       } catch (error) {
         console.error("provider_dashboard_store_load_failed", {
           error: error instanceof Error ? error.message : String(error),
@@ -107,6 +132,7 @@ export default async function Home({ searchParams }: HomePageProps) {
       initialVertical={parseVertical(vertical)}
       initialPageName={name}
       dashboardStore={dashboardStore}
+      providerEntitlements={providerEntitlements}
       publicationStatus={publicationStatus}
       demoEdit={demoEdit}
       resumeGuestPublish={isGuestPublishResume(resumePublish)}

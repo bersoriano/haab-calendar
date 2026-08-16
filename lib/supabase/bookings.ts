@@ -1223,10 +1223,25 @@ export async function rescheduleManagedBooking(
   };
 }
 
-export async function getProviderDashboardStore(
+/** A provider's dashboard data, plus the ID entitlements are resolved against. */
+export type ProviderDashboardContext = {
+  providerId: string;
+  store: ModuleStore;
+};
+
+/**
+ * One owner-scoped read of the whole dashboard.
+ *
+ * The provider ID is returned alongside the store rather than folded into it:
+ * ModuleStore is the editable booking-page configuration that round-trips
+ * through the store API, and an identifier the client could echo back is not
+ * something that belongs in it. Callers that need entitlements resolve them
+ * server-side from this ID.
+ */
+export async function getProviderDashboardContext(
   supabase: SupabaseClient,
   ownerUserId: string,
-): Promise<ModuleStore | null> {
+): Promise<ProviderDashboardContext | null> {
   const { data: provider, error: providerError } = await supabase
     .from("providers")
     .select(PROVIDER_SELECT)
@@ -1263,12 +1278,24 @@ export async function getProviderDashboardStore(
   if (bookingsError) throw bookingsError;
 
   return {
-    provider: toProviderInfo(provider, true),
-    services: (services ?? []).map(toService),
-    availability: provider.availability,
-    bookings: (bookings ?? []).map((booking) => toBookingRecord(booking)),
-    bookingHolds: [],
-    setupComplete: provider.setup_complete,
-    vertical: provider.vertical,
+    providerId: provider.id,
+    store: {
+      provider: toProviderInfo(provider, true),
+      services: (services ?? []).map(toService),
+      availability: provider.availability,
+      bookings: (bookings ?? []).map((booking) => toBookingRecord(booking)),
+      bookingHolds: [],
+      setupComplete: provider.setup_complete,
+      vertical: provider.vertical,
+    },
   };
+}
+
+/** Store-only view for callers with no use for the provider ID. */
+export async function getProviderDashboardStore(
+  supabase: SupabaseClient,
+  ownerUserId: string,
+): Promise<ModuleStore | null> {
+  const context = await getProviderDashboardContext(supabase, ownerUserId);
+  return context?.store ?? null;
 }

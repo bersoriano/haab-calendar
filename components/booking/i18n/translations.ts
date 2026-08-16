@@ -287,6 +287,17 @@ export type BookingDict = {
     providerInformation: string;
     appearanceTitle: string;
     appearanceBody: string;
+    integrationsTitle: string;
+    integrationsBody: string;
+    googleCalendarName: string;
+    googleCalendarDescription: string;
+    integrationAvailable: string;
+    integrationNotConnected: string;
+    integrationPremiumRequired: string;
+    integrationUnavailable: string;
+    integrationPublishRequired: string;
+    integrationReadOnly: string;
+    comingSoon: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
     eventSchedulingTitle: string;
@@ -771,6 +782,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerInformation: "Provider information",
       appearanceTitle: "Public page appearance",
       appearanceBody: "How your booking page looks and which language it speaks.",
+      integrationsTitle: "Integrations",
+      integrationsBody: "Other tools Haab can work with.",
+      googleCalendarName: "Google Calendar",
+      googleCalendarDescription:
+        "Once connected, Haab will keep your booking availability in step with your Google Calendar.",
+      integrationAvailable: "Available",
+      integrationNotConnected: "Not connected",
+      integrationPremiumRequired: "Premium feature",
+      integrationUnavailable: "Status unavailable",
+      integrationPublishRequired: "Available once your page is published",
+      integrationReadOnly: "Read-only while editing an example page",
+      comingSoon: "Coming soon",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
       eventSchedulingTitle: "Event scheduling",
@@ -1272,6 +1295,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       providerInformation: "Información del proveedor",
       appearanceTitle: "Apariencia de su página pública",
       appearanceBody: "Cómo se ve su página de reservas y en qué idioma habla.",
+      integrationsTitle: "Integraciones",
+      integrationsBody: "Otras herramientas con las que Haab puede trabajar.",
+      googleCalendarName: "Google Calendar",
+      googleCalendarDescription:
+        "Una vez conectado, Haab mantendrá su disponibilidad de reservas al día con su Google Calendar.",
+      integrationAvailable: "Disponible",
+      integrationNotConnected: "Sin conectar",
+      integrationPremiumRequired: "Función premium",
+      integrationUnavailable: "Estado no disponible",
+      integrationPublishRequired: "Disponible cuando publique su página",
+      integrationReadOnly: "Solo lectura mientras edita una página de ejemplo",
+      comingSoon: "Próximamente",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
       eventSchedulingTitle: "Programación de eventos",

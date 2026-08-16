@@ -49,6 +49,10 @@ components/
     state/
       useModuleStore.ts           # persistence seam: hydrate/persist/multi-tab sync,
                                   #   activeStore derivation, commit actions, integratedMode
+  provider/
+    ProviderSettingsSurface.tsx   # the Settings tab: info form, availability, integrations
+    ProviderIntegrationsSection.tsx # what Haab can connect to, and whether this
+                                  #   provider may — display only
   haab-booking-module.tsx         # orchestrator + remaining feature render/state
 
 app/                              # Next.js routes (thin — just mount the module with props)
@@ -93,6 +97,22 @@ Two persistence modes both flow through the hook:
 
 ---
 
+## 4a. The settings surface
+
+`ProviderSettingsSurface` owns the Settings tab's markup — provider information,
+the public booking URL, the standalone reset, availability, and the integrations
+card. The module no longer has a `renderSettings()`; it passes state down and
+takes edits and saves back through callbacks, so persistence stays in the
+orchestrator and the surface renders without a store, a client, or a network.
+
+Integrations live *inside* Settings rather than in a tab of their own: connecting
+an outside tool is part of configuring the workspace. `ProviderIntegrationsSection`
+shows one card today — Google Calendar — and is read-only preparation. There is
+no OAuth, no Google API call, no token storage, and no sync: the card reports
+eligibility and "not connected", nothing more.
+
+---
+
 ## 4b. Entitlements
 
 What a provider may use is resolved, not stored as a flag on the session.
@@ -120,6 +140,19 @@ lib/entitlements/
   `clearProviderFeatureOverride` call `requireSuperAdmin()` first and record its
   verified user as the actor. Each calls an RPC that writes the state change and
   its audit row in one statement. Providers hold no grant on either table.
+- **The dashboard resolves them server-side.** `getProviderDashboardContext()`
+  returns the provider ID next to the store; `app/page.tsx` resolves entitlements
+  from that ID and passes the snapshot to `HomeExperience` → `HaabBookingModule`
+  → `ProviderSettingsSurface` as its own prop. It is deliberately *not* inside
+  `ModuleStore`: the store is editable configuration that round-trips through the
+  provider API, and an answer about paid access must not be writable by the thing
+  it governs. A failed resolve is logged and passed on as `undefined`; the
+  dashboard still renders and the integrations card says it cannot tell.
+- **A client snapshot is presentation, never authorization.** It decides what the
+  UI says. Any future integration mutation must re-authenticate the owner and
+  re-resolve the entitlement server-side, through its own endpoints and its own
+  storage — never through `/api/provider/store`, which carries the booking-page
+  configuration and must never carry OAuth credentials or connection state.
 - **Gates consume the snapshot, and only the snapshot.**
   `canUseCustomProviderSlug`, `validateCustomProviderSlug`, and
   `prepareProviderSlugChange` accept `ProviderEntitlements` — a plan tier is a

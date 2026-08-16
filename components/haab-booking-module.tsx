@@ -115,6 +115,7 @@ import {
   hasSlotCapacity,
 } from "@/lib/availability";
 import type { AvailabilityClock, DayAvailabilityLevel } from "@/lib/availability";
+import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
 import {
   canExtendBookingHold,
@@ -146,10 +147,10 @@ import {
 } from "@/components/provider/adminGlass";
 import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearanceForm";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
+import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
-import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
 import { ThemeSettingsSection } from "@/components/provider/ThemeSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
@@ -227,6 +228,13 @@ type HaabBookingModuleProps = {
   resumeGuestPublish?: boolean;
   /** Opens signup-first auth without discarding the current local draft. */
   onRequestPublish?: (store: ModuleStore) => void;
+  /**
+   * Server-resolved feature access for the provider this dashboard is editing.
+   * Optional: guests and standalone drafts have no provider to resolve against,
+   * and a failed resolve arrives as undefined. Display only — the server
+   * re-checks entitlement on every mutation that depends on one.
+   */
+  providerEntitlements?: ProviderEntitlements;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -341,6 +349,7 @@ export function HaabBookingModule({
   isGuestDraft = false,
   resumeGuestPublish = false,
   onRequestPublish,
+  providerEntitlements,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -3948,67 +3957,6 @@ export function HaabBookingModule({
     );
   }
 
-  function renderSettings() {
-    return (
-      <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle
-            title={profileRole?.informationTitle ?? t.admin.providerInformation}
-            action={
-              integratedMode && persistAdminChanges ? (
-                <ActionButton
-                  tone="primary"
-                  disabled={isSavingAdmin}
-                  onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
-                >
-                  {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
-                </ActionButton>
-              ) : undefined
-            }
-          />
-          {adminSaveError ? (
-            <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-              {adminSaveError}
-            </div>
-          ) : null}
-          {adminSaveMessage ? (
-            <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
-              {adminSaveMessage}
-            </div>
-          ) : null}
-          <div className="mt-6">
-            <ProviderInfoForm
-              provider={provider}
-              onChange={updateProvider}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
-          <p className="mt-4 text-sm text-[var(--muted)]">
-            {fillTemplate(t.admin.publicBookingLinkFor, { booking: copy.booking })}{" "}
-            <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
-          </p>
-          {!integratedMode ? (
-            <div className="mt-6">
-              <ActionButton tone="danger" onClick={resetStandaloneSetup}>
-                {t.admin.resetStandaloneSetup}
-              </ActionButton>
-            </div>
-          ) : null}
-        </div>
-
-        <AvailabilitySettingsSection
-          vertical={vertical}
-          availability={availability}
-          onChange={updateAvailabilityDay}
-          onManageEvents={() => setAdminTab("services")}
-          disabled={isSavingAdmin}
-          lang={lang}
-        />
-      </div>
-    );
-  }
-
   function renderPublicCalendar() {
     const earliestVisibleDate = new Date();
     const earliestVisibleDateKey = getDateKey(earliestVisibleDate);
@@ -6546,7 +6494,32 @@ export function HaabBookingModule({
             {adminTab === "calendar" ? renderAdminCalendar() : null}
             {adminTab === "services" ? renderServices() : null}
             {adminTab === "appearance" ? renderAppearance() : null}
-            {adminTab === "settings" ? renderSettings() : null}
+            {adminTab === "settings" ? (
+              <ProviderSettingsSurface
+                title={profileRole?.informationTitle ?? t.admin.providerInformation}
+                publicUrlLabel={fillTemplate(t.admin.publicBookingLinkFor, {
+                  booking: copy.booking,
+                })}
+                provider={provider}
+                availability={availability}
+                vertical={vertical}
+                lang={lang}
+                publicUrl={publicUrl}
+                integratedMode={integratedMode}
+                canPersist={persistAdminChanges}
+                isSaving={isSavingAdmin}
+                saveError={adminSaveError}
+                saveMessage={adminSaveMessage}
+                entitlements={providerEntitlements}
+                onProviderChange={updateProvider}
+                onAvailabilityChange={updateAvailabilityDay}
+                onSave={async () => {
+                  await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
+                }}
+                onManageEvents={() => setAdminTab("services")}
+                onResetStandaloneSetup={resetStandaloneSetup}
+              />
+            ) : null}
           </div>
         ) : isManageView && !isManageRescheduling ? (
           renderManageBooking()
