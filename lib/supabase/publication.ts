@@ -32,6 +32,12 @@ type ProviderSummaryRow = {
   plan_tier: string | null;
 };
 
+type BillingRow = {
+  provider_id: string;
+  plan_tier: string | null;
+  status: string | null;
+};
+
 type OverrideRow = {
   provider_id: string;
   feature_key: string;
@@ -147,6 +153,7 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
     { data: settings, error: settingsError },
     { data: providers, error: providersError },
     { data: overrides, error: overridesError },
+    { data: billing, error: billingError },
   ] = await Promise.all([
       admin
         .from("user_publication_settings")
@@ -162,6 +169,12 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
         .from("provider_feature_overrides")
         .select("provider_id, feature_key, enabled, expires_at")
         .returns<OverrideRow[]>(),
+      // Same bulk-read reasoning: one query for every provider's billing tier
+      // rather than one per row.
+      admin
+        .from("provider_billing_subscriptions")
+        .select("provider_id, plan_tier, status")
+        .returns<BillingRow[]>(),
     ]);
 
   if (settingsError) throw settingsError;
@@ -179,7 +192,17 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
     });
   }
 
-  const entitlementsAvailable = !overridesError;
+  if (billingError) {
+    console.error("provider_billing_read_failed", { error: billingError.message });
+  }
+
+  // Either read failing makes the answer unknown, and an unknown answer about
+  // paid access is reported as unavailable rather than guessed.
+  const entitlementsAvailable = !overridesError && !billingError;
+
+  const billingByProviderId = new Map(
+    (billing ?? []).map((row) => [row.provider_id, row]),
+  );
 
   const settingsByUserId = new Map(
     (settings ?? []).map((setting) => [setting.user_id, setting]),
@@ -226,7 +249,11 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
               entitlements: entitlementsAvailable
                 ? resolveEntitlements({
                     providerId: provider.id,
-                    planTier: provider.plan_tier,
+                    // Billing decides when a subscription exists; the legacy
+                    // column is the fallback for accounts that predate it.
+                    planTier:
+                      billingByProviderId.get(provider.id)?.plan_tier ??
+                      provider.plan_tier,
                     overrides: (overridesByProviderId.get(provider.id) ?? []).map(
                       (row) => ({
                         featureKey: row.feature_key,

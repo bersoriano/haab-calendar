@@ -70,6 +70,7 @@ function makeAdmin(results: Record<string, TableResult>) {
 }
 
 const SETTINGS: TableResult = { data: [], error: null };
+const NO_BILLING: TableResult = { data: [], error: null };
 
 const PROVIDERS: TableResult = {
   data: [
@@ -95,6 +96,7 @@ describe("listManagedUsers", () => {
     mocks.admin.value = makeAdmin({
       user_publication_settings: SETTINGS,
       providers: PROVIDERS,
+      provider_billing_subscriptions: NO_BILLING,
       provider_feature_overrides: {
         data: [
           {
@@ -126,6 +128,7 @@ describe("listManagedUsers", () => {
     mocks.admin.value = makeAdmin({
       user_publication_settings: SETTINGS,
       providers: PROVIDERS,
+      provider_billing_subscriptions: NO_BILLING,
       provider_feature_overrides: {
         data: null,
         error: { message: "Could not find the table 'public.provider_feature_overrides'" },
@@ -142,10 +145,46 @@ describe("listManagedUsers", () => {
     expect(user.provider?.entitlements).toBeUndefined();
   });
 
+  it("resolves the tier from billing when a subscription exists", async () => {
+    mocks.admin.value = makeAdmin({
+      user_publication_settings: SETTINGS,
+      providers: PROVIDERS,
+      provider_billing_subscriptions: {
+        data: [{ provider_id: PROVIDER, plan_tier: "premium", status: "active" }],
+        error: null,
+      },
+      provider_feature_overrides: { data: [], error: null },
+    });
+
+    const [user] = await listManagedUsers();
+
+    // The provider row still says free; the subscription is what is paid for.
+    expect(user.provider?.planTier).toBe("free");
+    expect(user.provider?.entitlements?.planTier).toBe("premium");
+  });
+
+  it("reports entitlements as unavailable when the billing read fails", async () => {
+    mocks.admin.value = makeAdmin({
+      user_publication_settings: SETTINGS,
+      providers: PROVIDERS,
+      provider_billing_subscriptions: {
+        data: null,
+        error: { message: "permission denied" },
+      },
+      provider_feature_overrides: { data: [], error: null },
+    });
+
+    const [user] = await listManagedUsers();
+
+    expect(user.provider?.id).toBe(PROVIDER);
+    expect(user.provider?.entitlements).toBeUndefined();
+  });
+
   it("still fails loudly when the provider read fails", async () => {
     mocks.admin.value = makeAdmin({
       user_publication_settings: SETTINGS,
       providers: { data: null, error: { message: "permission denied" } },
+      provider_billing_subscriptions: NO_BILLING,
       provider_feature_overrides: { data: [], error: null },
     });
 

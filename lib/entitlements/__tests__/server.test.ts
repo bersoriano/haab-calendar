@@ -57,6 +57,17 @@ function makeAdmin(options?: {
         return query;
       }
 
+      if (table === "provider_billing_subscriptions") {
+        // No subscription: these tests exercise the legacy plan tier, which is
+        // still the fallback for an account that predates billing.
+        const query = {
+          select: vi.fn(() => query),
+          eq: vi.fn(() => query),
+          maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+        };
+        return query;
+      }
+
       if (table === "provider_feature_overrides") {
         const query = {
           select: vi.fn(() => query),

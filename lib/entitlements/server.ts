@@ -13,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/lib/supabase/publication";
 
 const OVERRIDE_SELECT = "feature_key, enabled, expires_at";
+const BILLING_SELECT = "plan_tier, status";
 const MAX_REASON_LENGTH = 500;
 
 /** Thrown when a caller lacks a feature. Maps to HTTP 403. */
@@ -38,6 +39,11 @@ export class FeatureOverrideInputError extends Error {
     this.status = status;
   }
 }
+
+type BillingRow = {
+  plan_tier: string | null;
+  status: string | null;
+};
 
 type OverrideRow = {
   feature_key: string;
@@ -81,19 +87,39 @@ export async function getProviderEntitlements(
     throw new FeatureOverrideInputError("Provider not found.", 404);
   }
 
-  const { data: overrides, error: overridesError } = await admin
-    .from("provider_feature_overrides")
-    .select(OVERRIDE_SELECT)
-    .eq("provider_id", providerId)
-    .returns<OverrideRow[]>();
+  const [
+    { data: overrides, error: overridesError },
+    { data: billing, error: billingError },
+  ] = await Promise.all([
+    admin
+      .from("provider_feature_overrides")
+      .select(OVERRIDE_SELECT)
+      .eq("provider_id", providerId)
+      .returns<OverrideRow[]>(),
+    admin
+      .from("provider_billing_subscriptions")
+      .select(BILLING_SELECT)
+      .eq("provider_id", providerId)
+      .maybeSingle<BillingRow>(),
+  ]);
 
   if (overridesError) {
     throw new FeatureOverrideInputError("Could not load provider entitlements.", 500);
   }
 
+  if (billingError) {
+    // Fail closed. An unreadable billing row is an unknown answer about paid
+    // access, and falling back to the legacy column here would hand premium to
+    // anyone whose stale plan_tier still says so.
+    throw new FeatureOverrideInputError("Could not load provider entitlements.", 500);
+  }
+
   return resolveEntitlements({
     providerId,
-    planTier: provider.plan_tier,
+    // Billing decides the baseline when a subscription exists; providers.plan_tier
+    // is the legacy fallback for accounts that predate billing. Overrides still
+    // beat both — that is the resolver's job, not this one's.
+    planTier: billing ? billing.plan_tier : provider.plan_tier,
     overrides: (overrides ?? []).map(toOverrideInput),
   });
 }

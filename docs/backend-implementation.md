@@ -162,7 +162,28 @@ Migration files in `supabase/migrations/` are part of the deployable application
 | `20260803071618_support_legacy_capacity_hold_confirmation.sql` | Compatibility for existing capacity bookings. |
 | `20260804123315_make_booking_holds_resilient.sql` | One-time extension plus scheduled expired-hold cleanup. |
 | `20260812140400_add_account_deletion_cleanup_jobs.sql` | Service-only durable retry state for post-account-deletion Vercel Blob cleanup. |
+| `20260816144447_add_stripe_billing_projection.sql` | Stripe webhook inbox, provider billing projection, and their claim/apply RPCs. |
 | `20260816131850_add_integration_outbox.sql` | Transactional outbox: `bookings.integration_version`, `integration_outbox_events`, enqueue triggers, and the worker claim/completion RPCs. |
+
+## Billing and entitlement source of truth
+
+`POST /api/webhooks/stripe` verifies the Stripe signature against the raw body,
+rejects a `livemode` that disagrees with the configured key, records the event
+in `public.stripe_webhook_events`, then claims and processes it. The claim is a
+single atomic statement, so a redelivery — which Stripe makes no promise not to
+send twice at once — cannot be processed concurrently.
+
+`public.provider_billing_subscriptions` holds one row per provider and is the
+baseline the entitlement resolver reads. Precedence, highest first:
+
+1. an active manual override (`provider_feature_overrides`)
+2. the billing projection
+3. the legacy `providers.plan_tier`, for accounts that predate billing
+
+Required environment: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`,
+`STRIPE_PREMIUM_PRODUCT_IDS` (comma-separated product ids that grant premium; an
+empty list grants nothing). All are read lazily, so `next build` succeeds
+without them and the webhook endpoint fails closed until they are set.
 
 ## Outbound integration delivery
 

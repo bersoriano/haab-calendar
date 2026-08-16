@@ -113,6 +113,50 @@ eligibility and "not connected", nothing more.
 
 ---
 
+## 4d. Billing (Stripe subscription projection)
+
+```
+supabase/migrations/20260816144447_add_stripe_billing_projection.sql
+  public.stripe_webhook_events          # inbox, unique on Stripe's event id
+  public.provider_billing_subscriptions # one row per provider: the projection
+  claim_/apply_/ignore_/fail_/dead_letter_stripe_* RPCs
+
+lib/stripe/config.ts     # lazy env reads; nothing throws at import
+lib/stripe/client.ts     # memoised SDK client, pinned API version
+lib/billing/projection.ts # pure: Stripe subscription → plan tier
+lib/billing/processor.ts  # flatten, map provider, apply atomically
+app/api/webhooks/stripe/route.ts
+```
+
+- **Verify, record, then act.** Nothing in a webhook body is trusted before the
+  signature check — not the event id, not `livemode`. The raw request bytes go
+  to `constructEvent`; parsing and re-serialising would break the signature,
+  which is exactly what the test asserts.
+- **Idempotent by Stripe's event id.** A redelivery collides on the unique
+  constraint, and `claim_stripe_webhook_event` decides in one statement whether
+  there is anything left to do — so two simultaneous deliveries cannot both
+  process.
+- **Ordering is Stripe's timestamp, not arrival order.** The projection stores
+  `last_event_created_at`; an older event arriving late is recorded as handled
+  and applied to nothing.
+- **Provider mapping is `subscription.metadata.haab_provider_id`, and only
+  that.** There is no email fallback: an email is not an identity, and matching
+  on it would let anyone who can set one in Stripe claim another provider.
+- **Access rules.** `active` and `trialing` grant premium; `past_due` keeps it
+  while Stripe retries the charge; `unpaid`, `canceled`, `paused`, `incomplete`,
+  and `incomplete_expired` withhold it. An unknown status, an unconfigured
+  premium product list, or a subscription to another product all resolve to
+  free — every uncertainty fails closed.
+- **Status codes are instructions to Stripe.** 200 settles the event; 500 asks
+  for redelivery; a permanent failure dead-letters and answers 200, because
+  redelivering something unfixable only repeats the failure.
+- **Precedence.** Overrides beat billing; billing beats the legacy
+  `providers.plan_tier`, which remains only for accounts that predate
+  subscriptions. An unreadable billing row fails closed rather than falling back
+  to a stale column.
+
+---
+
 ## 4c. Outbound integrations (transactional outbox)
 
 ```

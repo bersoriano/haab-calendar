@@ -641,6 +641,58 @@ Worker RPCs, all `security invoker` and granted only to `service_role`:
 `complete_`, `skip_`, `retry_`, and `dead_letter_integration_outbox_event(...)`.
 Every completion requires `status = 'processing'` and an exact `lease_token`.
 
+### `public.stripe_webhook_events`
+
+Durable inbox for verified Stripe events. Written only after signature
+verification; never reachable by anon or authenticated.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. |
+| `stripe_event_id` | `text` | Unique. The whole idempotency story: a redelivery collides here. |
+| `event_type` | `text` | Stripe's event type. |
+| `api_version` | `text` | API version Stripe generated the event with. |
+| `livemode` | `boolean` | Checked against the configured key before insert. |
+| `event_created_at` | `timestamptz` | Stripe's own timestamp; used to reject out-of-order application. |
+| `payload` | `jsonb` | The verified event. Immutable after insert. |
+| `status` | `text` | `received`, `processing`, `processed`, `ignored`, `failed`, `dead_letter`. |
+| `attempt_count` | `integer` | Incremented on each claim. |
+| `available_at` | `timestamptz` | Doubles as the processing lease. |
+| `last_error_code` / `last_error_message` | `text` | Bounded and sanitised. |
+| `received_at` / `processed_at` / `created_at` / `updated_at` | `timestamptz` | |
+
+`private.freeze_stripe_webhook_identity()` rejects any update to
+`stripe_event_id`, `event_type`, `livemode`, `event_created_at`, or `payload`:
+what Stripe sent is a record of fact, and only our own status and error columns
+are ours to change.
+
+### `public.provider_billing_subscriptions`
+
+The projection the entitlement resolver reads. One row per provider.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. |
+| `provider_id` | `uuid` | Unique — a provider has at most one deciding subscription. |
+| `stripe_customer_id` | `text` | Stripe customer. |
+| `stripe_subscription_id` | `text` | Unique. |
+| `status` | `text` | Stripe's status, stored verbatim including unknown ones. |
+| `plan_tier` | `text` | Projected tier: `free` or `premium`. |
+| `current_period_end` | `timestamptz` | Furthest item period end. |
+| `cancel_at_period_end` | `boolean` | Access lasts to the period end. |
+| `last_event_id` / `last_event_created_at` | `text` / `timestamptz` | Which event produced this row; an older event cannot overwrite it. |
+
+Both tables have RLS enabled with **no policies** and every privilege revoked
+from `public`, `anon`, and `authenticated`. `service_role` holds
+`select, insert, update` — no delete, since neither an audit of what Stripe sent
+nor a billing projection should be removable by application code.
+
+RPCs, all `security invoker` and granted only to `service_role`:
+`claim_stripe_webhook_event`, `apply_stripe_subscription_projection` (writes the
+projection and completes the inbox row in one statement),
+`ignore_stripe_webhook_event`, `fail_stripe_webhook_event`,
+`dead_letter_stripe_webhook_event`.
+
 ## Public-Safe Views
 
 Public pages read from views instead of raw private table payloads.
@@ -1792,6 +1844,8 @@ RLS is enabled on all public tables:
 - `provider_feature_overrides`
 - `provider_feature_override_events`
 - `integration_outbox_events`
+- `stripe_webhook_events`
+- `provider_billing_subscriptions`
 
 Public anonymous reads:
 
@@ -1821,7 +1875,10 @@ Entitlements:
 - `providers.plan_tier` carries no `authenticated` column grant, so a provider
   cannot promote itself; feature overrides are service-role-only for the same
   reason.
-- Entitlements are resolved per request from `plan_tier` plus current overrides.
+- Entitlement precedence is override → billing projection → legacy
+  `providers.plan_tier`. An unreadable billing row fails closed rather than
+  falling back to a stale legacy value.
+- Entitlements are resolved per request from that baseline plus current overrides.
   They are never written into a JWT or `user_metadata`, where a stale token would
   keep granting access after an override was revoked.
 - `providers_custom_slug_requires_premium` was dropped in migration
