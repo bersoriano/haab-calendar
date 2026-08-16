@@ -9,6 +9,9 @@ import {
   type FeatureOverrideInput,
   type ProviderEntitlements,
 } from "@/lib/entitlements/resolve";
+import { SPAN_NAMES } from "@/lib/observability/events";
+import { logger } from "@/lib/observability/logger";
+import { withSpan } from "@/lib/observability/tracing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/lib/supabase/publication";
 
@@ -104,6 +107,7 @@ export async function getProviderEntitlements(
   ]);
 
   if (overridesError) {
+    logger.error("entitlements.override_read_failed", { providerId });
     throw new FeatureOverrideInputError("Could not load provider entitlements.", 500);
   }
 
@@ -111,10 +115,11 @@ export async function getProviderEntitlements(
     // Fail closed. An unreadable billing row is an unknown answer about paid
     // access, and falling back to the legacy column here would hand premium to
     // anyone whose stale plan_tier still says so.
+    logger.error("entitlements.billing_read_failed", { providerId });
     throw new FeatureOverrideInputError("Could not load provider entitlements.", 500);
   }
 
-  return resolveEntitlements({
+  const snapshot = resolveEntitlements({
     providerId,
     // Billing decides the baseline when a subscription exists; providers.plan_tier
     // is the legacy fallback for accounts that predate billing. Overrides still
@@ -122,6 +127,11 @@ export async function getProviderEntitlements(
     planTier: billing ? billing.plan_tier : provider.plan_tier,
     overrides: (overrides ?? []).map(toOverrideInput),
   });
+
+  // Resolution itself is not logged: it happens on every dashboard render, and
+  // a line per page view would bury the events that matter. Only the failures
+  // and the override applications above and below are worth a record.
+  return snapshot;
 }
 
 export async function hasEntitlement(
@@ -138,13 +148,39 @@ export async function requireEntitlement(
   featureKey: FeatureKey,
   client?: SupabaseClient,
 ): Promise<ProviderEntitlements> {
-  const snapshot = await getProviderEntitlements(providerId, client);
+  return withSpan(
+    SPAN_NAMES.entitlementsResolve,
+    { "entitlement.feature": featureKey },
+    async (span) => {
+      const snapshot = await getProviderEntitlements(providerId, client);
+      const feature = snapshot.features[featureKey];
 
-  if (!hasResolvedEntitlement(snapshot, featureKey)) {
-    throw new EntitlementRequiredError(providerId, featureKey);
-  }
+      span.setAttribute("entitlement.source", feature?.source ?? "unknown");
+      span.setAttribute("entitlement.plan_tier", snapshot.planTier);
 
-  return snapshot;
+      if (!hasResolvedEntitlement(snapshot, featureKey)) {
+        // A denial at a *gate* is worth recording: something asked to do a
+        // premium thing and was refused, which is either a bug or an attempt.
+        logger.warn("entitlements.denied", {
+          providerId,
+          featureKey,
+          planTier: snapshot.planTier,
+          entitlementSource: feature?.source,
+        });
+        throw new EntitlementRequiredError(providerId, featureKey);
+      }
+
+      if (feature?.source === "override") {
+        logger.info("entitlements.override_applied", {
+          providerId,
+          featureKey,
+          planTier: snapshot.planTier,
+        });
+      }
+
+      return snapshot;
+    },
+  );
 }
 
 function assertFeatureKey(featureKey: string): asserts featureKey is FeatureKey {

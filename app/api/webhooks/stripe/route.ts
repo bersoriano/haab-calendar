@@ -11,6 +11,11 @@ import {
   isStripeLiveMode,
   StripeConfigError,
 } from "@/lib/stripe/config";
+import { resolveRequestId, withRequestId } from "@/lib/observability/context";
+import { toSafeError } from "@/lib/observability/errors";
+import { SPAN_NAMES } from "@/lib/observability/events";
+import { logger } from "@/lib/observability/logger";
+import { withSpan } from "@/lib/observability/tracing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -33,19 +38,34 @@ const RETRY_DELAY_SECONDS = 60;
  * permanently broken only fills the log with the same failure.
  */
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const requestId = resolveRequestId(request.headers);
+  // Correlated by request id from the first line. The Stripe event id joins the
+  // context only after the signature is verified — before that it is a value an
+  // attacker chose, and treating it as an identity would let them forge the
+  // trail their own request leaves.
+  let log = logger.child({ requestId });
+
   const webhookSecret = getStripeWebhookSecret();
   const signature = request.headers.get("stripe-signature");
+
+  const respond = (body: Record<string, unknown>, status = 200) =>
+    withRequestId(NextResponse.json(body, { status }), requestId);
 
   // An unconfigured deployment must not accept unverified events, so the
   // endpoint refuses everything rather than falling back to trusting the body.
   if (!webhookSecret) {
-    console.error("stripe_webhook_unconfigured");
-    return NextResponse.json({ userMessage: "Not found." }, { status: 400 });
+    log.error("stripe.webhook.unconfigured", {
+      errorCode: "missing_webhook_secret",
+    });
+    return respond({ userMessage: "Not found." }, 400);
   }
 
   if (!signature) {
-    console.warn("stripe_webhook_signature_missing");
-    return NextResponse.json({ userMessage: "Invalid signature." }, { status: 400 });
+    log.warn("stripe.webhook.signature_invalid", {
+      errorCode: "missing_signature",
+    });
+    return respond({ userMessage: "Invalid signature." }, 400);
   }
 
   // The exact bytes Stripe signed. Parsing and re-serialising would change the
@@ -55,54 +75,63 @@ export async function POST(request: NextRequest) {
   let event: Stripe.Event;
 
   try {
-    event = getStripeClient().webhooks.constructEvent(rawBody, signature, webhookSecret);
+    event = await withSpan(SPAN_NAMES.stripeWebhookVerify, {}, async () =>
+      getStripeClient().webhooks.constructEvent(
+        rawBody,
+        signature,
+        webhookSecret,
+      ),
+    );
   } catch (error) {
     if (error instanceof StripeConfigError) {
-      console.error("stripe_webhook_unconfigured", { code: error.code });
-      return NextResponse.json({ userMessage: "Not found." }, { status: 400 });
+      log.error("stripe.webhook.unconfigured", { errorCode: error.code });
+      return respond({ userMessage: "Not found." }, 400);
     }
 
     // Bad signature, tampered body, stale timestamp, unparseable JSON — all the
     // same answer, and none of them reach the inbox.
-    console.warn("stripe_webhook_signature_invalid");
-    return NextResponse.json({ userMessage: "Invalid signature." }, { status: 400 });
+    log.warn("stripe.webhook.signature_invalid", {
+      errorCode: "verification_failed",
+    });
+    return respond({ userMessage: "Invalid signature." }, 400);
   }
+
+  log = log.child({ stripeEventId: event.id, stripeEventType: event.type });
+  log.info("stripe.webhook.received", {});
 
   // Only now is the livemode flag worth reading. A test-mode deployment that
   // honoured a live event, or the reverse, would project someone else's
   // subscription onto a provider here.
   if (event.livemode !== isStripeLiveMode()) {
-    console.warn("stripe_webhook_mode_mismatch", {
-      stripeEventId: event.id,
-      livemode: event.livemode,
+    log.warn("stripe.webhook.mode_mismatch", {
+      errorCode: "livemode_mismatch",
     });
-    return NextResponse.json({ userMessage: "Invalid signature." }, { status: 400 });
+    return respond({ userMessage: "Invalid signature." }, 400);
   }
 
   const admin = createAdminClient();
 
   try {
-    const { error: insertError } = await admin.from("stripe_webhook_events").insert({
-      stripe_event_id: event.id,
-      event_type: event.type,
-      api_version: event.api_version ?? null,
-      livemode: event.livemode,
-      event_created_at: new Date(event.created * 1000).toISOString(),
-      payload: event as unknown as Record<string, unknown>,
-    });
+    const { error: insertError } = await withSpan(
+      SPAN_NAMES.stripeWebhookPersist,
+      { "stripe.event_type": event.type },
+      async () =>
+        admin.from("stripe_webhook_events").insert({
+          stripe_event_id: event.id,
+          event_type: event.type,
+          api_version: event.api_version ?? null,
+          livemode: event.livemode,
+          event_created_at: new Date(event.created * 1000).toISOString(),
+          payload: event as unknown as Record<string, unknown>,
+        }),
+    );
 
     // 23505: this event has been delivered before. That is Stripe working as
     // documented, not an error — the row already exists, and the claim below
     // decides whether there is anything left to do with it.
     if (insertError && insertError.code !== "23505") {
-      console.error("stripe_webhook_persist_failed", {
-        stripeEventId: event.id,
-        code: insertError.code,
-      });
-      return NextResponse.json(
-        { userMessage: "Could not record the event." },
-        { status: 500 },
-      );
+      log.error("stripe.webhook.failed", { errorCode: "persist_failed" });
+      return respond({ userMessage: "Could not record the event." }, 500);
     }
 
     const duplicate = Boolean(insertError);
@@ -113,53 +142,71 @@ export async function POST(request: NextRequest) {
     );
 
     if (claimError) {
-      console.error("stripe_webhook_claim_failed", { stripeEventId: event.id });
-      return NextResponse.json(
-        { userMessage: "Could not record the event." },
-        { status: 500 },
-      );
+      log.error("stripe.webhook.failed", { errorCode: "claim_failed" });
+      return respond({ userMessage: "Could not record the event." }, 500);
     }
 
     if (!claimed) {
       // Already settled, or another delivery of the same event is being
       // processed right now. Either way there is nothing for this request to
       // do, and Stripe should stop retrying.
-      console.log("stripe_webhook_duplicate", {
-        stripeEventId: event.id,
-        eventType: event.type,
+      log.info("stripe.webhook.duplicate", {
+        durationMs: Date.now() - startedAt,
+        outcome: "duplicate",
       });
-      return NextResponse.json({ received: true, duplicate });
+      return respond({ received: true, duplicate });
     }
 
-    const attemptCount = (claimed as { attempt_count: number }).attempt_count ?? 1;
+    const attemptCount =
+      (claimed as { attempt_count: number }).attempt_count ?? 1;
 
     if (!isSupportedEventType(event.type)) {
       await admin.rpc("ignore_stripe_webhook_event", {
         p_stripe_event_id: event.id,
         p_reason_code: "unsupported_event_type",
       });
-      console.log("stripe_webhook_ignored", {
-        stripeEventId: event.id,
-        eventType: event.type,
+      log.info("stripe.webhook.ignored", {
+        errorCode: "unsupported_event_type",
+        durationMs: Date.now() - startedAt,
+        outcome: "ignored",
       });
-      return NextResponse.json({ received: true });
+      return respond({ received: true });
     }
 
+    log.info("stripe.webhook.persisted", { attemptCount });
+
     const stripe = getStripeClient();
-    const result = await processStripeSubscriptionEvent({
-      event,
-      client: admin,
-      fetchSubscription: (id) => stripe.subscriptions.retrieve(id),
-    });
+    const result = await withSpan(
+      SPAN_NAMES.stripeWebhookProcess,
+      { "stripe.event_type": event.type, "stripe.attempt": attemptCount },
+      async () =>
+        processStripeSubscriptionEvent({
+          event,
+          client: admin,
+          fetchSubscription: (id) =>
+            withSpan(SPAN_NAMES.stripeSubscriptionRetrieve, {}, async () =>
+              stripe.subscriptions.retrieve(id),
+            ),
+        }),
+    );
 
     if (result.outcome === "processed") {
-      console.log("stripe_webhook_processed", {
-        stripeEventId: event.id,
-        eventType: event.type,
+      log.info(
+        result.stale
+          ? "billing.projection.unchanged"
+          : "billing.projection.updated",
+        {
+          planTier: result.planTier,
+          durationMs: Date.now() - startedAt,
+          outcome: result.stale ? "stale" : "updated",
+        },
+      );
+      log.info("stripe.webhook.processed", {
         planTier: result.planTier,
-        stale: result.stale,
+        durationMs: Date.now() - startedAt,
+        outcome: "processed",
       });
-      return NextResponse.json({ received: true });
+      return respond({ received: true });
     }
 
     if (result.outcome === "ignored") {
@@ -167,10 +214,17 @@ export async function POST(request: NextRequest) {
         p_stripe_event_id: event.id,
         p_reason_code: result.reasonCode,
       });
-      return NextResponse.json({ received: true });
+      log.info("stripe.webhook.ignored", {
+        errorCode: result.reasonCode,
+        outcome: "ignored",
+      });
+      return respond({ received: true });
     }
 
-    if (result.outcome === "permanent_failure" || attemptCount >= MAX_ATTEMPTS) {
+    if (
+      result.outcome === "permanent_failure" ||
+      attemptCount >= MAX_ATTEMPTS
+    ) {
       // Nothing a redelivery would fix. Recorded as dead, answered 200 so
       // Stripe stops, and left visible for someone to look at.
       await admin.rpc("dead_letter_stripe_webhook_event", {
@@ -181,13 +235,17 @@ export async function POST(request: NextRequest) {
             : "attempts_exhausted",
         p_error_message: null,
       });
-      console.error("stripe_webhook_dead_lettered", {
-        stripeEventId: event.id,
-        eventType: event.type,
+      if (result.errorCode === "provider_mapping_missing") {
+        log.error("billing.provider_mapping_missing", { attemptCount });
+      }
+
+      log.error("stripe.webhook.dead_lettered", {
         errorCode: result.errorCode,
         attemptCount,
+        durationMs: Date.now() - startedAt,
+        outcome: "dead_letter",
       });
-      return NextResponse.json({ received: true, deadLettered: true });
+      return respond({ received: true, deadLettered: true });
     }
 
     await admin.rpc("fail_stripe_webhook_event", {
@@ -196,27 +254,25 @@ export async function POST(request: NextRequest) {
       p_error_code: result.errorCode,
       p_error_message: null,
     });
-    console.warn("stripe_webhook_retry_scheduled", {
-      stripeEventId: event.id,
-      eventType: event.type,
+    log.warn("stripe.webhook.retry_scheduled", {
       errorCode: result.errorCode,
       attemptCount,
+      retryable: true,
+      durationMs: Date.now() - startedAt,
+      outcome: "retry",
     });
 
     // 500 asks Stripe to redeliver, which is the retry this deserves.
-    return NextResponse.json({ userMessage: "Could not process the event." }, {
-      status: 500,
-    });
+    return respond({ userMessage: "Could not process the event." }, 500);
   } catch (error) {
-    console.error("stripe_webhook_failed", {
-      stripeEventId: event.id,
-      eventType: event.type,
-      error: error instanceof Error ? error.name : "unknown",
+    const safe = toSafeError(error);
+    log.error("stripe.webhook.failed", {
+      errorCode: safe.code,
+      errorName: safe.name,
+      durationMs: Date.now() - startedAt,
+      outcome: "failed",
     });
 
-    return NextResponse.json(
-      { userMessage: "Could not process the event." },
-      { status: 500 },
-    );
+    return respond({ userMessage: "Could not process the event." }, 500);
   }
 }

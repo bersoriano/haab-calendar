@@ -15,6 +15,7 @@ import {
 } from "@/lib/integrations/outbox/errors";
 import type { OutboxRepository } from "@/lib/integrations/outbox/repository";
 import { runIntegrationOutboxWorker } from "@/lib/integrations/outbox/worker";
+import { createLogger, type Logger } from "@/lib/observability/logger";
 import type {
   HandlerResult,
   IntegrationOutboxEvent,
@@ -42,6 +43,10 @@ function makeEvent(overrides: Partial<IntegrationOutboxEvent> = {}): Integration
     leaseToken: "00000000-0000-4000-8000-0000000000aa",
     ...overrides,
   };
+}
+
+function silentLogger(): Logger {
+  return createLogger({ sink: () => undefined });
 }
 
 function makeRepository(events: IntegrationOutboxEvent[], leaseHeld = true) {
@@ -88,7 +93,7 @@ describe("runIntegrationOutboxWorker", () => {
     const summary = await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "succeeded" })],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary).toMatchObject({ claimed: 1, succeeded: 1 });
@@ -101,7 +106,7 @@ describe("runIntegrationOutboxWorker", () => {
     const summary = await runIntegrationOutboxWorker({
       repository,
       handlers: [],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.skipped).toBe(1);
@@ -117,7 +122,7 @@ describe("runIntegrationOutboxWorker", () => {
     await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "succeeded" }, { supports: false })],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(calls[1]).toMatchObject({ op: "skip" });
@@ -131,7 +136,7 @@ describe("runIntegrationOutboxWorker", () => {
       handlers: [
         handler({ outcome: "retryable_failure", errorCode: "rate_limited" }),
       ],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.retried).toBe(1);
@@ -149,7 +154,7 @@ describe("runIntegrationOutboxWorker", () => {
       handlers: [
         handler({ outcome: "permanent_failure", errorCode: "unsupported_payload" }),
       ],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.deadLettered).toBe(1);
@@ -167,7 +172,7 @@ describe("runIntegrationOutboxWorker", () => {
     const summary = await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "retryable_failure", errorCode: "timeout" })],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.deadLettered).toBe(1);
@@ -187,7 +192,7 @@ describe("runIntegrationOutboxWorker", () => {
           throw new Error("token ya29.SECRET rejected by https://provider/api");
         }),
       ],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.retried).toBe(1);
@@ -205,7 +210,7 @@ describe("runIntegrationOutboxWorker", () => {
     await runIntegrationOutboxWorker({
       repository,
       handlers: [{ key: "test", supports: () => true, deliver }],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(deliver).not.toHaveBeenCalled();
@@ -221,7 +226,7 @@ describe("runIntegrationOutboxWorker", () => {
     const summary = await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "succeeded" })],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary).toMatchObject({ leaseConflicts: 1, succeeded: 0 });
@@ -244,7 +249,7 @@ describe("runIntegrationOutboxWorker", () => {
             : { outcome: "succeeded" },
         ),
       ],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(summary.claimed).toBe(3);
@@ -262,33 +267,45 @@ describe("runIntegrationOutboxWorker", () => {
       timeBudgetMs: 10_000,
       // First event fits; the second would start past the budget minus reserve.
       now: () => (clock += 3_000),
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(calls.filter((call) => call.op === "complete")).toHaveLength(1);
   });
 
   it("logs identifiers and codes, never the payload", async () => {
-    const entries: Record<string, unknown>[] = [];
+    const lines: string[] = [];
     const { repository } = makeRepository([makeEvent()]);
 
     await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "succeeded" })],
-      log: (entry) => entries.push(entry),
+      logger: createLogger({ sink: (line) => lines.push(line) }),
     });
 
-    expect(entries).toHaveLength(1);
-    expect(entries[0]).toMatchObject({
-      eventId: expect.any(String),
+    const records = lines.map((line) => JSON.parse(line));
+    const delivery = records.find(
+      (record) => record.event === "integration.outbox.delivery_succeeded",
+    );
+
+    expect(delivery).toMatchObject({
+      outboxEventId: expect.any(String),
       providerId: PROVIDER,
       bookingId: BOOKING,
       eventType: "booking.created",
       aggregateVersion: 1,
       outcome: "succeeded",
     });
-    expect(entries[0]).not.toHaveProperty("payload");
-    expect(JSON.stringify(entries[0])).not.toContain("client");
+    expect(delivery).not.toHaveProperty("payload");
+    expect(JSON.stringify(records)).not.toContain("client");
+    // The run itself is bracketed, so a silent worker is distinguishable from
+    // one that never started.
+    expect(records.map((record) => record.event)).toContain(
+      "integration.outbox.run_started",
+    );
+    expect(records.map((record) => record.event)).toContain(
+      "integration.outbox.run_completed",
+    );
   });
 
   it("passes the lease token through to every completion", async () => {
@@ -299,7 +316,7 @@ describe("runIntegrationOutboxWorker", () => {
     await runIntegrationOutboxWorker({
       repository,
       handlers: [handler({ outcome: "succeeded" })],
-      log: () => undefined,
+      logger: silentLogger(),
     });
 
     expect(calls[1].args).toMatchObject({ leaseToken: "lease-1" });
@@ -308,7 +325,7 @@ describe("runIntegrationOutboxWorker", () => {
   it("claims within the bounds the database enforces", async () => {
     const { repository, calls } = makeRepository([]);
 
-    await runIntegrationOutboxWorker({ repository, log: () => undefined });
+    await runIntegrationOutboxWorker({ repository, logger: silentLogger() });
 
     const args = calls[0].args as {
       workerId: string;

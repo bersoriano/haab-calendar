@@ -269,9 +269,44 @@ gate. No migration is needed — override rows are keyed by text.
 
 ---
 
+## 4e. Observability
+
+```
+instrumentation.ts            # registerOTel, Node runtime only, no-op without an exporter
+lib/observability/
+  logger.ts    # one-line JSON, injected clock and sink, allowlist + redaction
+  events.ts    # the closed set of event and span names
+  context.ts   # request-id resolution and echo
+  errors.ts    # toSafeError: { name, code }, never a message or a stack
+  tracing.ts   # withSpan over @opentelemetry/api
+```
+
+- **Vendor-neutral.** Records go to stdout as single-line JSON. Any platform can
+  ingest them; with no platform, `jq` reads them.
+- **Two defences against leaking.** The logger takes allowlisted fields, and
+  `redact()` replaces any key matching a sensitive concept — `token`, `email`,
+  `secret`, `payload`, `signature` — with `[REDACTED]`. Matching the concept
+  means a newly invented `refreshTokenV2` is covered the day it appears.
+- **Logging never breaks a caller.** A sink that throws, or a value that cannot
+  be serialised, loses the record and nothing else.
+- **Correlation, not authorization.** `x-request-id` is accepted only in a
+  strict format and echoed back. It is never an identity and never an
+  idempotency key: the caller chooses it.
+- **Telemetry cannot break startup.** `registerOTel` installs a provider; with
+  no OTLP exporter configured the SDK drops spans and the application runs
+  exactly as before.
+- **Cardinality lives in logs.** Span attributes are statuses and outcomes;
+  provider, booking, and event ids stay in log fields, where one more distinct
+  value costs nothing.
+
+Event catalog, alert thresholds, and investigation procedures:
+`docs/operations/premium-observability.md`.
+
+---
+
 ## 5. Testing
 
-`npm run test` runs Vitest coverage across pure booking logic and selected render-level components. Tests assert current behavior; treat failures as a behavior change that must be understood, not merely updated.
+`npm run test:unit` runs Vitest across pure booking logic and selected render-level components; `npm run test:coverage` adds enforced thresholds over the premium-critical modules; `npm run test:db` and `npm run test:e2e` need a local Supabase and refuse to run against any other host. `npm run test` remains the unit alias. Tests assert current behavior; treat failures as a behavior change that must be understood, not merely updated.
 
 The full orchestrated browser lifecycle is not covered by unit tests. Verify it with a production build and a live mobile smoke test on a canonical route: hold → offline/reconnect → warning/extend → confirm → ICS/QR → reschedule → cancel → expiry/release. See `docs/booking-process.md` §12.
 

@@ -15,6 +15,9 @@ import {
   createOutboxRepository,
   type OutboxRepository,
 } from "@/lib/integrations/outbox/repository";
+import { SPAN_NAMES } from "@/lib/observability/events";
+import { logger as defaultLogger, type Logger } from "@/lib/observability/logger";
+import { withSpan } from "@/lib/observability/tracing";
 import {
   NO_ACTIVE_INTEGRATIONS,
   type HandlerResult,
@@ -37,7 +40,9 @@ export type OutboxWorkerOptions = {
   timeBudgetMs?: number;
   workerId?: string;
   now?: () => number;
-  log?: (event: Record<string, unknown>) => void;
+  /** Injected so tests assert exact records instead of scraping stdout. */
+  logger?: Logger;
+  requestId?: string;
 };
 
 const emptySummary: OutboxRunSummary = {
@@ -95,13 +100,30 @@ export async function runIntegrationOutboxWorker(
   const leaseSeconds = options.leaseSeconds ?? DEFAULT_LEASE_SECONDS;
   const timeBudgetMs = options.timeBudgetMs ?? DEFAULT_TIME_BUDGET_MS;
   const now = options.now ?? Date.now;
-  const log = options.log ?? ((entry) => console.log("integration_outbox", entry));
   const workerId = options.workerId ?? `outbox-${randomUUID()}`;
+  const log = (options.logger ?? defaultLogger).child({
+    workerId,
+    ...(options.requestId ? { requestId: options.requestId } : {}),
+  });
   const startedAt = now();
 
   const summary: OutboxRunSummary = { ...emptySummary };
 
-  const events = await repository.claim({ workerId, batchSize, leaseSeconds });
+  log.info("integration.outbox.run_started", { batchSize });
+
+  let events: IntegrationOutboxEvent[];
+
+  try {
+    events = await withSpan(
+      SPAN_NAMES.outboxClaim,
+      { "outbox.batch_size": batchSize },
+      async () => repository.claim({ workerId, batchSize, leaseSeconds }),
+    );
+  } catch (error) {
+    log.error("integration.outbox.claim_failed", { errorCode: "claim_failed" });
+    throw error;
+  }
+
   summary.claimed = events.length;
 
   for (const event of events) {
@@ -113,9 +135,24 @@ export async function runIntegrationOutboxWorker(
 
     let result: HandlerResult;
 
+    const eventLog = log.child({
+      outboxEventId: event.id,
+      providerId: event.providerId,
+      bookingId: event.bookingId,
+      aggregateVersion: event.aggregateVersion,
+      attemptCount: event.attemptCount,
+    });
+
     try {
       assertEventShape(event);
-      result = await runHandlers(event, handlers);
+      result = await withSpan(
+        SPAN_NAMES.outboxDeliver,
+        {
+          "outbox.event_type": event.eventType,
+          "outbox.attempt": event.attemptCount,
+        },
+        async () => runHandlers(event, handlers),
+      );
     } catch (error) {
       // A malformed row will never become well-formed; anything else might.
       result =
@@ -133,7 +170,11 @@ export async function runIntegrationOutboxWorker(
     }
 
     try {
-      const recorded = await recordOutcome({ repository, event, result });
+      const recorded = await withSpan(
+        SPAN_NAMES.outboxRecordOutcome,
+        { "outbox.outcome": result.outcome },
+        async () => recordOutcome({ repository, event, result }),
+      );
 
       if (!recorded) {
         // The lease moved on while this worker was working. Another worker owns
@@ -153,17 +194,29 @@ export async function runIntegrationOutboxWorker(
       }
 
       // Identifiers and codes only — never the payload, never a client.
-      log({
-        workerId,
-        eventId: event.id,
-        providerId: event.providerId,
-        bookingId: event.bookingId,
+      const fields = {
         eventType: event.eventType,
-        aggregateVersion: event.aggregateVersion,
-        attemptCount: event.attemptCount,
         outcome: recorded ? result.outcome : "lease_conflict",
-        code: "errorCode" in result ? result.errorCode : undefined,
-      });
+        errorCode: "errorCode" in result ? result.errorCode : undefined,
+      };
+
+      if (!recorded) {
+        eventLog.warn("integration.outbox.lease_conflict", fields);
+      } else if (result.outcome === "succeeded") {
+        eventLog.info("integration.outbox.delivery_succeeded", fields);
+      } else if (result.outcome === "skipped") {
+        eventLog.info("integration.outbox.delivery_skipped", {
+          ...fields,
+          errorCode: result.reasonCode,
+        });
+      } else if (
+        result.outcome === "permanent_failure" ||
+        !hasAttemptsLeft(event.attemptCount)
+      ) {
+        eventLog.error("integration.outbox.delivery_dead_letter", fields);
+      } else {
+        eventLog.warn("integration.outbox.delivery_retry", { ...fields, retryable: true });
+      }
     } catch (error) {
       // The outcome could not be written down. Leaving it unrecorded is the
       // honest option: the lease expires and the event is retried, rather than
@@ -174,6 +227,11 @@ export async function runIntegrationOutboxWorker(
       );
     }
   }
+
+  log.info("integration.outbox.run_completed", {
+    ...summary,
+    durationMs: now() - startedAt,
+  });
 
   return summary;
 }

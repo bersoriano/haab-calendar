@@ -1,0 +1,155 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read-only by default. Nothing here publishes, comments, or writes to the repo,
+# so nothing here needs a token that could. Deliberately not pull_request_target,
+# which would run fork code with repository secrets in scope.
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the older run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  quality:
+    name: Types, lint, unit tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run build
+        env:
+          # Build-time placeholders only. Every real secret is read lazily at
+          # request time, so a build needs none of them — and this job is
+          # fork-safe precisely because it has none to leak.
+          NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: build-only-placeholder
+
+      - name: Fail on whitespace damage
+        run: git diff --check
+
+      - name: Upload coverage summary
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-summary
+          path: coverage/coverage-summary.json
+          retention-days: 7
+          if-no-files-found: ignore
+
+  database:
+    name: Local migrations and database tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: 2.114.0
+
+      - run: npm ci
+
+      # Local stack only. No access token, no project ref, no linked commands —
+      # a pull request from a fork must never be able to touch a real project.
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Replay the migration chain from scratch
+        run: supabase db reset --local
+
+      - name: Run database integration tests
+        run: npm run test:db
+        env:
+          SUPABASE_URL: http://127.0.0.1:54321
+
+      - name: Lint the local schema
+        run: supabase db lint --local
+        continue-on-error: true
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
+
+  premium-e2e:
+    name: Premium entitlement E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: quality
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
+        with:
+          version: 2.114.0
+
+      - run: npm ci
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Export local Supabase credentials
+        run: |
+          # Written to the job env without ever being echoed. These are the
+          # local stack's well-known development keys, not secrets, but printing
+          # keys into a log is a habit worth not having.
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(supabase status -o json | jq -r '.ANON_KEY')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')"
+          } >> "$GITHUB_ENV"
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - run: npm run build
+      - run: npm run test:e2e
+        env:
+          # Deliberately fake and public: it grants access to nothing, and using
+          # a real Stripe secret here would put one in a fork-visible workflow.
+          STRIPE_WEBHOOK_SECRET: whsec_test_only_not_real
+          STRIPE_SECRET_KEY: sk_test_not_a_real_key
+          CRON_SECRET: cron-test-only-not-real
+
+      - name: Upload Playwright report
+        # Failure only, and never the auth-state directory: .playwright/.auth
+        # holds live local sessions and has no business in an artifact.
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup

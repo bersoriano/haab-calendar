@@ -163,3 +163,44 @@ export default function Example() {
 npm install
 npm run dev
 ```
+
+## Quality checks
+
+```bash
+npm ci
+npm run typecheck      # tsc --noEmit
+npm run lint
+npm run test:unit      # Vitest, no browser and no database
+npm run test:webhooks  # Stripe webhook, billing, and config tests
+npm run test:coverage  # enforces thresholds on the premium-critical modules
+npm run test:db        # needs a local Supabase (see below)
+npm run test:e2e       # Playwright premium suite, needs local Supabase
+npm run build
+```
+
+`npm run ci` chains typecheck, lint, coverage, and build — the checks that need
+no container runtime.
+
+### Prerequisites
+
+- Node.js 22 (the version CI uses)
+- A Docker-compatible runtime, for `npm run test:db` and `npm run test:e2e`
+- Supabase CLI: `npx supabase start`
+- Playwright browsers: `npx playwright install --with-deps chromium`
+
+The database and E2E suites refuse to run against anything but a local Supabase
+host, and there is no HTTP seed or reset endpoint anywhere in the application.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs three jobs — `quality`, `database`, and
+`premium-e2e` — on every pull request and on `main`. It uses `npm ci`, pins every
+action to a commit SHA, holds a read-only token, and needs no repository secrets,
+so pull requests from forks run the full suite without touching anything remote.
+
+Recommended (must be set by hand in GitHub settings — this repository's
+configuration is not modified by any script here): require `quality`, `database`,
+and `premium-e2e` as status checks on `main`.
+
+Operational events, redaction rules, alert thresholds, and investigation steps:
+`docs/operations/premium-observability.md`.

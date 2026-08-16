@@ -2,6 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { OutboxInfrastructureError } from "@/lib/integrations/outbox/errors";
 import { runIntegrationOutboxWorker } from "@/lib/integrations/outbox/worker";
+import { resolveRequestId, withRequestId } from "@/lib/observability/context";
+import { toSafeError } from "@/lib/observability/errors";
+import { logger } from "@/lib/observability/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,39 +18,40 @@ export const runtime = "nodejs";
  * worker endpoint open to anyone who guesses the path.
  */
 export async function GET(request: NextRequest) {
+  const requestId = resolveRequestId(request.headers);
+  const log = logger.child({ requestId });
+  const respond = (body: Record<string, unknown>, status = 200) =>
+    withRequestId(NextResponse.json(body, { status }), requestId);
+
   const secret = process.env.CRON_SECRET;
 
   if (!secret) {
-    console.error("integration_outbox_cron_unconfigured");
-    return NextResponse.json({ userMessage: "Not found." }, { status: 401 });
+    log.error("integration.outbox.claim_failed", { errorCode: "cron_unconfigured" });
+    return respond({ userMessage: "Not found." }, 401);
   }
 
   if (request.headers.get("authorization") !== `Bearer ${secret}`) {
-    return NextResponse.json({ userMessage: "Not found." }, { status: 401 });
+    return respond({ userMessage: "Not found." }, 401);
   }
 
   try {
-    const summary = await runIntegrationOutboxWorker();
+    // The worker logs the run itself; the request id is threaded in so a cron
+    // invocation and the deliveries it made share one correlation key.
+    const summary = await runIntegrationOutboxWorker({ requestId });
 
-    // Counts only. A failing event has already been written down as failed or
-    // dead-lettered, so the run itself succeeded even when deliveries did not.
-    console.log("integration_outbox_run", summary);
-
-    return NextResponse.json(summary);
+    return respond(summary);
   } catch (error) {
     // Only reached when the outbox itself is unreachable — nothing could be
     // claimed, or an outcome could not be recorded. Those events keep their
     // leases and are retried once the leases expire.
-    console.error("integration_outbox_run_failed", {
-      error:
-        error instanceof OutboxInfrastructureError
-          ? error.message
-          : "Unexpected outbox worker failure.",
+    const safe = toSafeError(error);
+    log.error("integration.outbox.claim_failed", {
+      errorCode:
+        error instanceof OutboxInfrastructureError ? "infrastructure" : safe.code,
+      errorName: safe.name,
+      outcome: "failed",
     });
 
-    return NextResponse.json(
-      { userMessage: "Could not run the integration outbox." },
-      { status: 500 },
-    );
+    return respond({ userMessage: "Could not run the integration outbox." }, 500);
   }
 }

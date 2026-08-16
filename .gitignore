@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# test artifacts — browser auth state and coverage never belong in git
+.playwright/
+playwright-report/
+test-results/
+blob-report/
