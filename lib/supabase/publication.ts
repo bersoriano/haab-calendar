@@ -65,7 +65,8 @@ export type ManagedUserSummary = {
   provider?: {
     id: string;
     planTier: string | null;
-    entitlements: ProviderEntitlements;
+    /** Absent when the override read failed; the panel then says so. */
+    entitlements?: ProviderEntitlements;
   };
   superAdmin: boolean;
   demoOwner: boolean;
@@ -165,7 +166,20 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
 
   if (settingsError) throw settingsError;
   if (providersError) throw providersError;
-  if (overridesError) throw overridesError;
+
+  // Entitlements are an addition to this page, not its purpose. When the
+  // override read fails — the table is absent on this database, a grant is
+  // wrong — the moderation tools stay usable and the feature panel reports
+  // itself unavailable. It must never fall back to "no overrides": that would
+  // report a granted provider as ungranted, a wrong answer about paid access
+  // rather than a missing one.
+  if (overridesError) {
+    console.error("provider_feature_overrides_read_failed", {
+      error: overridesError.message,
+    });
+  }
+
+  const entitlementsAvailable = !overridesError;
 
   const settingsByUserId = new Map(
     (settings ?? []).map((setting) => [setting.user_id, setting]),
@@ -209,15 +223,19 @@ export async function listManagedUsers(): Promise<ManagedUserSummary[]> {
           ? {
               id: provider.id,
               planTier: provider.plan_tier,
-              entitlements: resolveEntitlements({
-                providerId: provider.id,
-                planTier: provider.plan_tier,
-                overrides: (overridesByProviderId.get(provider.id) ?? []).map((row) => ({
-                  featureKey: row.feature_key,
-                  enabled: row.enabled,
-                  expiresAt: row.expires_at,
-                })),
-              }),
+              entitlements: entitlementsAvailable
+                ? resolveEntitlements({
+                    providerId: provider.id,
+                    planTier: provider.plan_tier,
+                    overrides: (overridesByProviderId.get(provider.id) ?? []).map(
+                      (row) => ({
+                        featureKey: row.feature_key,
+                        enabled: row.enabled,
+                        expiresAt: row.expires_at,
+                      }),
+                    ),
+                  })
+                : undefined,
             }
           : undefined,
         superAdmin: isSuperAdminEmail(user.email),

@@ -276,14 +276,20 @@ export function UserPublicationTable({
                     ) : null}
                   </td>
                   <td className="px-6 py-5">
-                    {user.provider ? (
+                    {!user.provider ? (
+                      <span className="text-sm text-[var(--muted)]">
+                        No provider yet
+                      </span>
+                    ) : user.provider.entitlements ? (
                       <ProviderFeatureOverrides
                         ownerEmail={user.email}
                         entitlements={user.provider.entitlements}
                       />
                     ) : (
+                      // Saying nothing beats saying "no overrides", which would
+                      // read as a provider having no granted features.
                       <span className="text-sm text-[var(--muted)]">
-                        No provider yet
+                        Feature data unavailable
                       </span>
                     )}
                   </td>
