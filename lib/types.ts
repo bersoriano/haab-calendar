@@ -8,7 +8,13 @@ export type Lang = "en" | "es";
 import type { PublicTheme } from "./public-theme";
 
 export type { PublicTheme };
-export type AdminTab = "dashboard" | "bookings" | "calendar" | "services" | "settings";
+export type AdminTab =
+  | "dashboard"
+  | "bookings"
+  | "calendar"
+  | "services"
+  | "appearance"
+  | "settings";
 export type WeekdayKey =
   | "sunday"
   | "monday"

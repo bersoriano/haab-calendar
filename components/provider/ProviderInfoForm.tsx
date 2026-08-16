@@ -3,7 +3,6 @@
 import type { Lang, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { adminFieldClass } from "@/components/provider/adminGlass";
-import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
 import { TimeZoneField } from "@/components/provider/TimeZoneField";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 
@@ -110,25 +109,6 @@ export function ProviderInfoForm({
         disabled={disabled}
         lang={lang}
       />
-      <HeaderImageUploader
-        value={provider.headerImageUrl}
-        onChange={(url) => onChange("headerImageUrl", url)}
-        disabled={disabled}
-        lang={lang}
-      />
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.providerForm.heroText}
-        <input
-          disabled={disabled}
-          value={provider.heroText ?? ""}
-          onChange={(event) => onChange("heroText", event.target.value)}
-          placeholder={provider.businessName || t.providerForm.heroTextPlaceholder}
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-        />
-        <span className="text-xs leading-5 text-[var(--muted)]">
-          {t.providerForm.heroTextHint}
-        </span>
-      </label>
     </div>
   );
 }

@@ -285,6 +285,8 @@ export type BookingDict = {
     newBookingPrefix: string;
     // Settings
     providerInformation: string;
+    appearanceTitle: string;
+    appearanceBody: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
     eventSchedulingTitle: string;
@@ -313,6 +315,7 @@ export type BookingDict = {
     tabDashboard: string;
     tabCalendar: string;
     tabSettings: string;
+    tabAppearance: string;
     backToWorkspace: string;
     signOut: string;
     // ServiceEditor
@@ -766,6 +769,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       monthlyCalendar: "Monthly calendar",
       newBookingPrefix: "New booking",
       providerInformation: "Provider information",
+      appearanceTitle: "Public page appearance",
+      appearanceBody: "How your booking page looks and which language it speaks.",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
       eventSchedulingTitle: "Event scheduling",
@@ -804,6 +809,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tabDashboard: "Dashboard",
       tabCalendar: "Calendar",
       tabSettings: "Settings",
+      tabAppearance: "Appearance",
       backToWorkspace: "← Back to workspace",
       signOut: "Sign out",
       serviceReadOnly: "Configured by the parent app. Service editing is read-only in this mode.",
@@ -1264,6 +1270,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       monthlyCalendar: "Calendario mensual",
       newBookingPrefix: "Nueva reserva",
       providerInformation: "Información del proveedor",
+      appearanceTitle: "Apariencia de su página pública",
+      appearanceBody: "Cómo se ve su página de reservas y en qué idioma habla.",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
       eventSchedulingTitle: "Programación de eventos",
@@ -1302,6 +1310,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tabDashboard: "Panel",
       tabCalendar: "Calendario",
       tabSettings: "Ajustes",
+      tabAppearance: "Apariencia",
       backToWorkspace: "← Volver al espacio de trabajo",
       signOut: "Cerrar sesión",
       serviceReadOnly: "Configurado por la aplicación principal. La edición de servicios es de solo lectura en este modo.",

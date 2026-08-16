@@ -144,6 +144,7 @@ import {
   adminInsetClass,
   adminPanelClass,
 } from "@/components/provider/adminGlass";
+import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearanceForm";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -3875,6 +3876,78 @@ export function HaabBookingModule({
     );
   }
 
+  /**
+   * Everything that changes how the public page looks or which language it
+   * speaks. Kept apart from Settings, which is business data and availability.
+   */
+  function renderAppearance() {
+    return (
+      <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className={cn(adminPanelClass, "p-6")}>
+          <SectionTitle
+            title={t.admin.appearanceTitle}
+            body={t.admin.appearanceBody}
+            action={
+              integratedMode && persistAdminChanges ? (
+                <ActionButton
+                  tone="primary"
+                  disabled={isSavingAdmin}
+                  onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
+                >
+                  {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
+                </ActionButton>
+              ) : undefined
+            }
+          />
+          {adminSaveError ? (
+            <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+              {adminSaveError}
+            </div>
+          ) : null}
+          {adminSaveMessage ? (
+            <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
+              {adminSaveMessage}
+            </div>
+          ) : null}
+          <div className="mt-6">
+            <LogoImageUploader
+              value={provider.logoImageUrl}
+              onChange={(url) => updateProvider("logoImageUrl", url)}
+              disabled={isSavingAdmin}
+              lang={lang}
+            />
+          </div>
+          <div className="mt-6 border-t border-[var(--line)] pt-6">
+            <ProviderAppearanceForm
+              provider={provider}
+              onChange={updateProvider}
+              disabled={isSavingAdmin}
+              lang={lang}
+            />
+          </div>
+        </div>
+
+        <div className={cn(adminPanelClass, "p-6")}>
+          <ThemeSettingsSection
+            lang={lang}
+            theme={provider.publicTheme ?? "default"}
+            onThemeChange={(next) => updateProvider("publicTheme", next)}
+            disabled={isSavingAdmin}
+          />
+          <LanguageSettingsSection
+            lang={lang}
+            clientLanguage={provider.language ?? "en"}
+            onClientLanguageChange={(next) => updateProvider("language", next)}
+            onDashboardLanguageChange={(next) =>
+              updateProvider("dashboardLanguage", next)
+            }
+            disabled={isSavingAdmin}
+          />
+        </div>
+      </div>
+    );
+  }
+
   function renderSettings() {
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
@@ -3911,29 +3984,6 @@ export function HaabBookingModule({
               lang={lang}
             />
           </div>
-          <div className="mt-6 border-t border-[var(--line)] pt-6">
-            <LogoImageUploader
-              value={provider.logoImageUrl}
-              onChange={(url) => updateProvider("logoImageUrl", url)}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
-          <LanguageSettingsSection
-            lang={lang}
-            clientLanguage={provider.language ?? "en"}
-            onClientLanguageChange={(next) => updateProvider("language", next)}
-            onDashboardLanguageChange={(next) =>
-              updateProvider("dashboardLanguage", next)
-            }
-            disabled={isSavingAdmin}
-          />
-          <ThemeSettingsSection
-            lang={lang}
-            theme={provider.publicTheme ?? "default"}
-            onThemeChange={(next) => updateProvider("publicTheme", next)}
-            disabled={isSavingAdmin}
-          />
           <p className="mt-4 text-sm text-[var(--muted)]">
             {fillTemplate(t.admin.publicBookingLinkFor, { booking: copy.booking })}{" "}
             <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
@@ -6456,6 +6506,7 @@ export function HaabBookingModule({
                     ["bookings", copy.Bookings],
                     ["calendar", t.admin.tabCalendar],
                     ["services", copy.Services],
+                    ["appearance", t.admin.tabAppearance],
                     ["settings", t.admin.tabSettings],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (
@@ -6494,6 +6545,7 @@ export function HaabBookingModule({
             {adminTab === "bookings" ? renderBookingsList() : null}
             {adminTab === "calendar" ? renderAdminCalendar() : null}
             {adminTab === "services" ? renderServices() : null}
+            {adminTab === "appearance" ? renderAppearance() : null}
             {adminTab === "settings" ? renderSettings() : null}
           </div>
         ) : isManageView && !isManageRescheduling ? (
