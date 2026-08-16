@@ -135,8 +135,8 @@ workspace switcher, and every read path assumes a single row.
 | `availability` | `jsonb` | `WeeklyAvailability` | Weekly availability object. |
 | `setup_complete` | `boolean` | `ModuleStore.setupComplete` | Controls public visibility. |
 | `vertical` | `text` | `ModuleStore.vertical` | One of the `VerticalId` values. |
-| `custom_slug` | `text` | URL settings | Server-managed premium-only vanity slug input. |
-| `plan_tier` | `text` | `ProviderPlanTier` | Server-managed transitional metadata: `"free"` or `"premium"`; not the final entitlement architecture. |
+| `custom_slug` | `text` | URL settings | Server-managed vanity slug input, authorized from resolved entitlements. |
+| `plan_tier` | `text` | `ProviderPlanTier` | Server-managed baseline: `"free"` or `"premium"`. Feeds the entitlement resolver; never compared directly at an authorization point. |
 | `language` | `text` | `ProviderInfo.language` | `"en"` or `"es"`. |
 | `phone_number_1` | `text` | `ProviderInfo.phoneNumber1` | Public/provider contact phone. |
 | `phone_number_2` | `text` | `ProviderInfo.phoneNumber2` | Optional second public/provider contact phone. |
@@ -1775,6 +1775,13 @@ Entitlements:
 - Entitlements are resolved per request from `plan_tier` plus current overrides.
   They are never written into a JWT or `user_metadata`, where a stale token would
   keep granting access after an override was revoked.
+- `providers_custom_slug_requires_premium` was dropped in migration
+  `20260815234512`: a static `plan_tier` check cannot evaluate a manual override
+  that grants a free provider access or expires at a given instant. Custom-slug
+  authorization now happens in trusted server code only, and a future mutation
+  path must authenticate the owner and call `requireEntitlement()` before any
+  service-role write. `providers_custom_slug_format`, canonical uniqueness,
+  redirect history, RLS, and the protected-column grants are unchanged.
 - Override mutations require `requireSuperAdmin()`, and the audit actor is the
   verified session user — never a value from the request body.
 

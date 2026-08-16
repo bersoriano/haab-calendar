@@ -13,7 +13,7 @@ export type PublicVerticalSegment =
   | "restaurants";
 // Owned by the entitlement catalog now. Imported for use here and re-exported
 // so slug code and its tests keep importing it from this module unchanged.
-import { getPlanFeatures, type ProviderPlanTier } from "@/lib/entitlements/catalog";
+import type { ProviderPlanTier } from "@/lib/entitlements/catalog";
 import {
   hasResolvedEntitlement,
   type ProviderEntitlements,
@@ -188,29 +188,28 @@ export function validateServiceSlug(value: string) {
 }
 
 /**
- * Accepts a resolved entitlement snapshot, or a bare plan tier when the caller
- * has no snapshot to hand. A snapshot is the better answer: it accounts for
- * manual overrides, which a plan tier alone cannot see.
+ * Custom slugs are authorized from a resolved entitlement snapshot only.
+ *
+ * A plan tier is deliberately not accepted: an active override can grant this
+ * to a free provider or withhold it from a premium one, and a bare tier cannot
+ * see either. Taking only the snapshot makes the wrong call a type error rather
+ * than a quiet bypass.
  */
-export function canUseCustomProviderSlug(
-  access: ProviderPlanTier | ProviderEntitlements,
-) {
-  if (typeof access === "string") {
-    return getPlanFeatures(access).includes("custom_slug");
-  }
-
-  return hasResolvedEntitlement(access, "custom_slug");
+export function canUseCustomProviderSlug(entitlements: ProviderEntitlements) {
+  return hasResolvedEntitlement(entitlements, "custom_slug");
 }
 
 export function validateCustomProviderSlug(
   value: string,
-  access: ProviderPlanTier | ProviderEntitlements,
+  entitlements: ProviderEntitlements,
 ) {
-  if (!canUseCustomProviderSlug(access)) {
+  if (!canUseCustomProviderSlug(entitlements)) {
     return {
       ok: false,
       slug: value.trim(),
-      message: "Custom profile URL slugs are available on the premium plan.",
+      // Not "premium only": the answer may come from a manual override in
+      // either direction, so naming a plan would misstate why.
+      message: "Custom profile URLs are not enabled for this provider.",
     } satisfies SlugValidationResult;
   }
 

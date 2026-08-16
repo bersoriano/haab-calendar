@@ -120,8 +120,12 @@ lib/entitlements/
   `clearProviderFeatureOverride` call `requireSuperAdmin()` first and record its
   verified user as the actor. Each calls an RPC that writes the state change and
   its audit row in one statement. Providers hold no grant on either table.
-- **Gates consume the snapshot.** `canUseCustomProviderSlug` accepts a resolved
-  snapshot (preferred) or a bare plan tier for callers that have no snapshot.
+- **Gates consume the snapshot, and only the snapshot.**
+  `canUseCustomProviderSlug`, `validateCustomProviderSlug`, and
+  `prepareProviderSlugChange` accept `ProviderEntitlements` — a plan tier is a
+  type error, so a caller cannot bypass an override by reaching for the cheaper
+  argument. The database's `plan_tier` check on `custom_slug` was dropped for the
+  same reason: it could not see overrides.
 
 Adding a feature: add the key to `FEATURE_KEYS`, map it in `PLAN_FEATURES`, give
 it a label, and read it through `hasEntitlement` / `requireEntitlement` at the

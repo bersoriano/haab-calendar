@@ -85,11 +85,8 @@ describe("public URL slug helpers", () => {
     expect(validateServiceSlug("manage").ok).toBe(false);
   });
 
-  it("marks custom provider slugs as premium-only", () => {
-    expect(validateCustomProviderSlug("dr-ahmad", "free").ok).toBe(false);
-    expect(validateCustomProviderSlug("dr-ahmad", "premium").ok).toBe(true);
-  });
-
+  // Plan-tier arguments are gone: authorization comes from a resolved snapshot
+  // only. Full coverage lives in custom-slug-entitlement.test.ts.
   it("lets a resolved override decide, in both directions", () => {
     const granted = resolveEntitlements({
       providerId: "provider-1",

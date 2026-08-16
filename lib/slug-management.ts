@@ -4,7 +4,6 @@ import {
   validateCustomProviderSlug,
   validateProviderSlug,
   validateServiceSlug,
-  type ProviderPlanTier,
   type SlugAvailabilityResult,
 } from "@/lib/public-url";
 import type { VerticalId } from "@/lib/types";
@@ -173,12 +172,32 @@ export async function prepareProviderSlugChange(
   options: {
     vertical: VerticalId;
     requestedSlug: string;
-    /** A resolved snapshot honours manual overrides; a plan tier does not. */
-    planTier: ProviderPlanTier | ProviderEntitlements;
+    /**
+     * Resolved server-side. A plan tier is not accepted here: it cannot see
+     * the manual overrides that decide this feature in either direction.
+     */
+    entitlements: ProviderEntitlements;
     currentProviderId?: string;
   },
 ) {
-  const validation = validateCustomProviderSlug(options.requestedSlug, options.planTier);
+  // A snapshot resolved for someone else says nothing about this provider.
+  // Refused before any query runs, so a mismatched call costs nothing and
+  // cannot probe which slugs are taken.
+  if (
+    options.currentProviderId &&
+    options.entitlements.providerId !== options.currentProviderId
+  ) {
+    return {
+      ok: false,
+      slug: options.requestedSlug.trim(),
+      message: "Custom profile URLs are not enabled for this provider.",
+    } as const;
+  }
+
+  const validation = validateCustomProviderSlug(
+    options.requestedSlug,
+    options.entitlements,
+  );
 
   if (!validation.ok) {
     return {

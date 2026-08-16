@@ -38,13 +38,16 @@ Public-safe views now include `vertical` and service `slug`, plus redirect views
   - `generateSlug()` normalizes text to lowercase letters, numbers, and hyphens.
   - `generateUniqueSlug()` appends `-2`, `-3`, and so on through a caller-provided collision check.
   - `validateProviderSlug()` and `validateServiceSlug()` return clear validation messages.
-  - `validateCustomProviderSlug()` enforces the premium-only vanity URL rule.
+  - `validateCustomProviderSlug(value, entitlements)` authorizes vanity URLs from
+    a resolved entitlement snapshot. It does not accept a plan tier.
   - `buildProviderPath()`, `buildServicePath()`, and `buildManagePath()` centralize URL construction.
 
 - `lib/slug-management.ts`
   - `checkProviderSlugAvailability()` checks current provider slugs and provider redirect history.
   - `checkServiceSlugAvailability()` checks current service slugs and service redirect history.
-  - `prepareProviderSlugChange()` validates plan access, slug format, and conflicts before a custom slug update.
+  - `prepareProviderSlugChange()` takes a resolved `entitlements` snapshot,
+    rejects one resolved for a different provider, and checks the entitlement
+    before any availability query — then slug format and conflicts.
 
 - `lib/public-booking-resolver.ts`
   - `resolvePublicBookingUrl()` resolves hierarchical provider and service URLs.
@@ -90,10 +93,26 @@ redirected through the backend.
   are server-managed. Authenticated provider clients cannot insert or update
   these columns directly; database triggers generate canonical slugs for normal
   provider inserts.
-- Future custom-slug changes must pass through a trusted server endpoint that
-  verifies entitlement before using service-role access. `providers.plan_tier`
-  is transitional metadata, not the final billing or entitlement architecture.
+- Custom-slug access is decided by resolved entitlements alone. `plan_tier` is
+  baseline metadata that feeds the resolver; it is never compared directly at an
+  authorization point. An active override wins in both directions — a free
+  provider can be granted a vanity URL, a premium one can be withheld from it.
+- The database check `providers_custom_slug_requires_premium` was removed
+  deliberately (migration `20260815234512`). It could not evaluate a
+  time-sensitive manual override, so it would have rejected exactly the writes
+  the resolver had just authorized. Format, canonical uniqueness, redirect
+  history, RLS, and the protected-column grants all remain — those are the
+  boundaries the database can enforce, and they stay the security boundary.
+- There is no custom-slug mutation route today. When one is added it must:
+  authenticate the user server-side, resolve the provider from that identity
+  rather than a client-supplied id, call
+  `requireEntitlement(providerId, "custom_slug")`, run
+  `prepareProviderSlugChange()`, and only then write through the service role.
+  A denied request must mutate nothing.
+- Losing the entitlement later does not withdraw an already-published slug. The
+  entitlement governs *changing* a custom slug; existing public URLs stay
+  stable, and rotating them is a separate product decision.
 - Service slugs are unique per provider because the provider path scopes the service URL.
 - `/public/{slug}` remains only as a standalone local demo path.
 - The current backend public DTO intentionally returns empty bookings and holds; booking-critical writes and manage-token reads still belong to later server-authoritative backend work.
-- Future moderation can be added in `prepareProviderSlugChange()` before updating `providers.custom_slug`.
+- Further moderation can be added in `prepareProviderSlugChange()` before updating `providers.custom_slug`.
