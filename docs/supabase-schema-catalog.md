@@ -327,6 +327,7 @@ durable object for the provider dashboard.
 | `service_snapshot` | `jsonb` | service snapshot | Copy of key service fields at booking time. |
 | `created_at` | `timestamptz` | `BookingRecord.createdAt` | Insert timestamp. |
 | `updated_at` | `timestamptz` | `BookingRecord.updatedAt` | Maintained by trigger. |
+| `integration_version` | `bigint` | not exposed | Server-managed. Rises by one per integration-relevant change; drives the outbox and its deduplication. A client-supplied value is ignored. |
 
 Important constraints and indexes:
 
@@ -592,6 +593,53 @@ role: `public.set_provider_feature_override(...)` and
 `public.clear_provider_feature_override(...)`. Each writes the state change and
 its audit row together, so an entitlement cannot move without a record of who
 moved it.
+
+### `public.integration_outbox_events`
+
+Private delivery state for outbound integrations. Written by a trigger inside
+the booking's transaction; read and updated only by the worker through the
+service role.
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | `uuid` | Primary key. |
+| `provider_id` | `uuid` | Provider scope. Cascades on provider delete. |
+| `booking_id` | `uuid` | Booking scope. Cascades on booking delete. |
+| `aggregate_version` | `bigint` | The `bookings.integration_version` this event describes. |
+| `event_type` | `text` | `booking.created`, `booking.updated`, `booking.rescheduled`, `booking.cancelled`. |
+| `payload_schema_version` | `integer` | Contract version of `payload`. |
+| `payload` | `jsonb` | Identifiers only: `bookingId`, `providerId`, `aggregateVersion`, `change`. Bounded to 8 KB. |
+| `status` | `text` | `pending`, `processing`, `failed`, `succeeded`, `skipped`, `dead_letter`. |
+| `attempt_count` | `integer` | Incremented on each claim. |
+| `available_at` | `timestamptz` | Earliest next claim; moved forward by backoff. |
+| `lease_token` | `uuid` | Present only while `processing`; every completion matches on it. |
+| `leased_by` | `text` | Worker invocation id. |
+| `lease_expires_at` | `timestamptz` | After this, another worker may reclaim the row. |
+| `last_error_code` | `text` | Bounded code, or a skip reason such as `no_active_integrations`. |
+| `last_error_message` | `text` | Bounded, sanitised. Never tokens, payloads, or stack traces. |
+| `created_at` / `updated_at` / `processed_at` | `timestamptz` | `processed_at` is set only in terminal states. |
+
+Unique on `(booking_id, aggregate_version)` — the deduplication that makes a
+replayed trigger harmless. Check constraints keep a `processing` row holding a
+whole lease and every other row holding none, so an expired claim can never be
+mistaken for a live worker.
+
+RLS is enabled with **no policies**, and all privileges are revoked from
+`public`, `anon`, and `authenticated`. `service_role` holds `select` and
+`update` only — the worker never deletes, and retention will be a deliberate
+separate job. Never add this table to a Realtime publication.
+
+Enqueue happens in `private.enqueue_booking_integration_event()`, the one
+`SECURITY DEFINER` function here: the booking write is made by `anon` or
+`authenticated`, who hold no privilege on this table, so the trigger needs the
+owner's rights to insert inside their transaction. It has an empty
+`search_path`, fully qualified objects, no dynamic SQL, and builds exactly one
+row from `NEW`/`OLD`.
+
+Worker RPCs, all `security invoker` and granted only to `service_role`:
+`claim_integration_outbox_events(worker_id, batch_size, lease_seconds)`,
+`complete_`, `skip_`, `retry_`, and `dead_letter_integration_outbox_event(...)`.
+Every completion requires `status = 'processing'` and an exact `lease_token`.
 
 ## Public-Safe Views
 
@@ -1743,6 +1791,7 @@ RLS is enabled on all public tables:
 - `service_slug_redirects`
 - `provider_feature_overrides`
 - `provider_feature_override_events`
+- `integration_outbox_events`
 
 Public anonymous reads:
 

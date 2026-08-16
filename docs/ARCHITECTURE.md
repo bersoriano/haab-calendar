@@ -113,6 +113,65 @@ eligibility and "not connected", nothing more.
 
 ---
 
+## 4c. Outbound integrations (transactional outbox)
+
+```
+supabase/migrations/20260816131850_add_integration_outbox.sql
+  bookings.integration_version           # monotonic, bumped only by relevant changes
+  public.integration_outbox_events       # private delivery state: leases, attempts, status
+  private.set_booking_integration_version()   # BEFORE insert/update
+  private.enqueue_booking_integration_event() # AFTER insert/update, SECURITY DEFINER
+  claim_/complete_/skip_/retry_/dead_letter_integration_outbox_event(s)
+
+lib/integrations/outbox/
+  types.ts        # event, handler contract, typed HandlerResult, run summary
+  errors.ts       # backoff, attempt ceiling, shape validation, message sanitising
+  repository.ts   # server-only; the only caller of the outbox RPCs
+  handlers.ts     # adapter registry — empty today, by design
+  worker.ts       # claim → deliver → record outcome
+app/api/cron/integration-outbox/route.ts   # Bearer CRON_SECRET, fails closed
+```
+
+- **The guarantee.** A booking change and its integration event are one
+  transaction: the event is written by a trigger on `public.bookings`, so a
+  commit takes both and a rollback takes neither. Writing it from TypeScript
+  after the booking write could not offer that — booking mutations here are
+  discrete PostgREST calls with no application transaction, so a crash between
+  the two would commit a booking nobody ever hears about.
+- **Separate from `booking_events`.** That table is the provider's audit
+  history: owner-readable, written once. This one is private operational state a
+  worker rewrites on every attempt. One table would mean either showing lease
+  state to providers or letting workers edit audit history.
+- **`integration_version`** rises by exactly one when a field an outside
+  calendar could show has changed, and not at all otherwise. It orders events,
+  dedupes them through `unique (booking_id, aggregate_version)`, and lets a
+  future adapter recognise a stale delivery. The database sets it; a client
+  cannot.
+- **At-least-once, never exactly-once.** A worker claims rows with
+  `FOR UPDATE SKIP LOCKED` and a timed lease, does the external work outside any
+  transaction, then records the outcome — matched on the lease token, so a
+  worker whose lease expired cannot overwrite the worker that took the row from
+  it. A crash mid-delivery replays the event. **Every handler must therefore be
+  idempotent**, normally by storing the external ID and the version it last
+  wrote.
+- **Ordering.** A later version of a booking is not claimable while any earlier
+  version of the same booking is still non-terminal, so a cancellation cannot
+  overtake the reschedule before it.
+- **Failure policy.** Retryable failures back off exponentially (30s → 6h ceiling,
+  with jitter) up to 8 attempts, then dead-letter. Permanent failures
+  dead-letter immediately. Dead letters stay visible as failures — nothing is
+  marked succeeded to tidy the queue.
+- **Entitlements are not consulted at enqueue time.** The trigger stays
+  deterministic and transaction-local; a plan or override can change after the
+  event exists. The future Google handler re-resolves provider, connection, and
+  `google_calendar_sync` server-side, at delivery time.
+- **Today's behaviour: every event is `skipped`** with `no_active_integrations`,
+  because no adapter is registered. That is correct — when the Google adapter
+  lands, its connection flow performs an initial reconciliation, so the skipped
+  history needs no replay.
+
+---
+
 ## 4b. Entitlements
 
 What a provider may use is resolved, not stored as a flag on the session.

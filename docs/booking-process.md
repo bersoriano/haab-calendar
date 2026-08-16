@@ -329,6 +329,26 @@ Local storage is never used as proof that an integrated public booking was confi
 | Manage token invalid | Standard not-found/error state without revealing booking data. |
 | QR generation fails | Booking remains confirmed; show the localized QR error and keep the ICS option. |
 
+## 10b. Outbound integration events
+
+Every Supabase-backed booking write — public confirmation, self-service cancel
+or reschedule, provider cancel or reschedule, note edits — also writes one row
+to `public.integration_outbox_events`, in the same transaction, through a
+trigger. Nothing in the booking flow calls an outside system during the request.
+
+- The booking's `integration_version` rises once per integration-relevant
+  change; a write that only touches `updated_at` or an internal field produces
+  no event.
+- The event carries identifiers only. Client name, email, phone, notes, and
+  details stay in `bookings`.
+- A background worker delivers events at-least-once with leases and bounded
+  retries. Until a Google Calendar adapter exists, every event terminates as
+  `skipped` / `no_active_integrations`.
+- `public.booking_events` is unchanged and remains the provider-visible audit
+  history. The outbox is private operational state.
+
+See `docs/backend-implementation.md` for the state machine and retry policy.
+
 ## 11. Main implementation files
 
 | Area | File |

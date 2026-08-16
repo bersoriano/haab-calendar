@@ -162,6 +162,67 @@ Migration files in `supabase/migrations/` are part of the deployable application
 | `20260803071618_support_legacy_capacity_hold_confirmation.sql` | Compatibility for existing capacity bookings. |
 | `20260804123315_make_booking_holds_resilient.sql` | One-time extension plus scheduled expired-hold cleanup. |
 | `20260812140400_add_account_deletion_cleanup_jobs.sql` | Service-only durable retry state for post-account-deletion Vercel Blob cleanup. |
+| `20260816131850_add_integration_outbox.sql` | Transactional outbox: `bookings.integration_version`, `integration_outbox_events`, enqueue triggers, and the worker claim/completion RPCs. |
+
+## Outbound integration delivery
+
+Booking changes reach outside systems through a transactional outbox, not
+through calls made during the request.
+
+- **Enqueue is a trigger, not application code.** Booking mutations in
+  `lib/supabase/bookings.ts` are discrete PostgREST calls with no application
+  transaction around them, so an outbox insert written in TypeScript could be
+  lost between a committed booking and a crashed process. Triggers on
+  `public.bookings` run inside the booking's own transaction: commit writes
+  both, rollback writes neither.
+- **`bookings.integration_version`** increments once when an
+  integration-relevant field changes. Relevant: `provider_id`, `service_id`,
+  `service_name`, `booking_type`, `duration_minutes_snapshot`, `client_name`,
+  `client_email`, `client_phone`, `date`, `start_time`, `end_time`, `status`,
+  `notes`, `location_snapshot`, `details`, `details_schema_key`,
+  `details_schema_version`, `service_snapshot`. Excluded: `updated_at`,
+  `manage_token_hash`, `confirmation_number`, `idempotency_key`,
+  `hold_id_snapshot`, and the version column itself.
+- **Event types:** `booking.created` on insert; on update, `booking.cancelled`
+  when the status becomes cancelled, `booking.rescheduled` when the date or
+  either time changes, `booking.updated` otherwise. No event at all when the
+  version did not rise.
+- **Payload carries identifiers only** — booking ID, provider ID, aggregate
+  version, change type. No client name, email, phone, notes, details, or manage
+  token. A handler reloads the booking through an authorized read.
+- **The worker** (`lib/integrations/outbox/worker.ts`) claims a bounded batch
+  through `claim_integration_outbox_events` (`FOR UPDATE SKIP LOCKED`, one
+  lease per row, `attempt_count` incremented on claim), processes events one at
+  a time, and records each outcome through a lease-matched RPC. External work
+  happens outside every database transaction.
+- **Delivery is at-least-once.** An expired lease returns a row to the pool even
+  if the original worker is still alive; its completion is then rejected because
+  the lease token no longer matches. Handlers must be idempotent.
+- **Retry policy:** 8 attempts, 30s initial delay, exponential with jitter, 6h
+  ceiling, then `dead_letter`. Permanent failures dead-letter at once. Stored
+  error codes and messages are bounded and sanitised — never tokens, external
+  response bodies, or stack traces.
+- **Scheduling.** `GET /api/cron/integration-outbox` runs one batch. It requires
+  `Authorization: Bearer $CRON_SECRET` and returns 401 when the secret is unset,
+  so an unconfigured deployment exposes nothing. A scheduler must be pointed at
+  it; this repository has no deployment target configured, so no `vercel.json`
+  cron entry is committed. On Vercel it would be:
+
+  ```json
+  { "crons": [{ "path": "/api/cron/integration-outbox", "schedule": "* * * * *" }] }
+  ```
+
+  Do not rely on `after()`, `waitUntil()`, or fire-and-forget promises for
+  durability: a serverless request may end at the response. Recoverability lives
+  in the outbox and its leases.
+- **Retention.** Keep `succeeded`/`skipped` rows 30–90 days; keep `dead_letter`
+  rows until reviewed. No cleanup job exists yet, and none is added here.
+- **Deletion.** Outbox rows cascade from bookings and providers, so deleting an
+  account discards its pending events. This task deletes nothing from any
+  external calendar; the future Google work must decide credential revocation
+  and external cleanup before provider deletion.
+- **Local and demo mode** never touch this path: the triggers live on Supabase
+  tables, and localStorage bookings never reach them.
 
 ## Deployment
 
