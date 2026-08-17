@@ -147,9 +147,16 @@ export function ProviderIntegrationsSection({
 
   async function disconnect() {
     setBusy(true);
+    setFailed(false);
 
     try {
-      await fetch("/api/google/connection", { method: "DELETE" });
+      const response = await fetch("/api/google/connection", { method: "DELETE" });
+
+      // Checked before clearing anything: a failed disconnect that still
+      // emptied the UI would tell the provider their calendar was released
+      // when it was not.
+      if (!response.ok) throw new Error("failed");
+
       setConnection(null);
       setCalendars([]);
     } catch {

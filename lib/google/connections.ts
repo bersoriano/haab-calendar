@@ -1,17 +1,20 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   createGoogleCalendarClient,
   type GoogleCalendarClient,
 } from "@/lib/google/calendar-client";
-import { decryptSecret, encryptSecret } from "@/lib/google/crypto";
+import { decryptSecret, encryptSecret, type SealedSecret } from "@/lib/google/crypto";
 import {
   GoogleOAuthError,
   refreshAccessToken,
   revokeRefreshToken,
 } from "@/lib/google/oauth";
+import { logger } from "@/lib/observability/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -130,6 +133,13 @@ export async function saveConnection(
         granted_scopes: input.grantedScopes,
         status: "connected",
         last_error_code: null,
+        // A reconnect starts over. The previous calendar may belong to a
+        // different Google account entirely, so keeping it selected would point
+        // the new grant at a calendar the new account may not even have.
+        target_calendar_id: null,
+        target_calendar_summary: null,
+        target_calendar_timezone: null,
+        reconciled_at: null,
       },
       { onConflict: "provider_id" },
     )
@@ -194,34 +204,145 @@ export async function markConnectionStatus(
 export async function deleteConnection(
   providerId: string,
   options: { client?: SupabaseClient; fetchImpl?: typeof fetch } = {},
-) {
+): Promise<{ deleted: boolean; revoked: boolean; revocationQueued: boolean }> {
   const admin = options.client ?? createAdminClient();
   const connection = await getConnection(providerId, admin);
 
-  if (connection) {
-    // Revoked at Google as well as deleted here, so a token that leaked from a
-    // backup is dead too. Best-effort: a Google outage must not stop a provider
-    // disconnecting.
-    try {
-      await revokeRefreshToken(
-        decryptSecret({
-          ciphertext: connection.refresh_token_ciphertext,
-          iv: connection.refresh_token_iv,
-          authTag: connection.refresh_token_auth_tag,
-          keyVersion: connection.refresh_token_key_version,
-        }),
-        options.fetchImpl,
-      );
-    } catch {
-      // An unopenable token cannot be revoked, and the row still has to go.
-    }
+  if (!connection) {
+    return { deleted: true, revoked: false, revocationQueued: false };
   }
 
-  // Mappings cascade from the connection row.
-  await admin
+  let revoked = false;
+  let revocationQueued = false;
+  let sealed: SealedSecret | undefined;
+
+  try {
+    sealed = {
+      ciphertext: connection.refresh_token_ciphertext,
+      iv: connection.refresh_token_iv,
+      authTag: connection.refresh_token_auth_tag,
+      keyVersion: connection.refresh_token_key_version,
+    };
+
+    revoked = await revokeRefreshToken(decryptSecret(sealed), options.fetchImpl);
+  } catch {
+    // An unopenable token cannot be revoked. Nothing more to try, and no point
+    // queueing a job that would fail the same way.
+    sealed = undefined;
+  }
+
+  if (!revoked && sealed) {
+    // Google was unreachable. The row is about to be deleted, so the sealed
+    // token is carried into a job that survives it — otherwise the grant stays
+    // alive at Google with nothing left to revoke it from.
+    const { error } = await admin.from("google_revocation_jobs").insert({
+      provider_id: providerId,
+      refresh_token_ciphertext: sealed.ciphertext,
+      refresh_token_iv: sealed.iv,
+      refresh_token_auth_tag: sealed.authTag,
+      refresh_token_key_version: sealed.keyVersion,
+    });
+
+    revocationQueued = !error;
+
+    if (error) {
+      // Deleting now would strand the grant with no way to revoke it. Better to
+      // fail the disconnect and let the provider try again.
+      logger.error("google.revocation.failed", {
+        providerId,
+        errorCode: "revocation_job_write_failed",
+      });
+      return { deleted: false, revoked: false, revocationQueued: false };
+    }
+
+    logger.info("google.revocation.enqueued", { providerId });
+  }
+
+  // Mappings and reconciliation jobs cascade from the connection row.
+  const { error: deleteError } = await admin
     .from("provider_google_calendar_connections")
     .delete()
     .eq("provider_id", providerId);
+
+  if (deleteError) {
+    return { deleted: false, revoked, revocationQueued };
+  }
+
+  logger.info("google.connection.disconnected", { providerId });
+
+  return { deleted: true, revoked, revocationQueued };
+}
+
+/**
+ * Retries the revocations Google was not available for.
+ *
+ * The job holds the sealed token and nothing that identifies a person. On
+ * success — or once the attempts are spent — the row goes, so the ciphertext
+ * does not linger.
+ */
+export async function runGoogleRevocationWorker(
+  options: { client?: SupabaseClient; fetchImpl?: typeof fetch; workerId?: string } = {},
+): Promise<{ claimed: boolean; revoked: boolean }> {
+  const admin = options.client ?? createAdminClient();
+  const workerId = options.workerId ?? `google-revoke-${randomUUID()}`;
+
+  const { data: job, error } = await admin.rpc("claim_google_revocation_job", {
+    p_worker_id: workerId,
+  });
+
+  if (error) {
+    throw new Error("Could not claim a Google revocation job.");
+  }
+
+  if (!job) {
+    return { claimed: false, revoked: false };
+  }
+
+  const claimed = job as {
+    id: string;
+    provider_id: string | null;
+    refresh_token_ciphertext: string;
+    refresh_token_iv: string;
+    refresh_token_auth_tag: string;
+    refresh_token_key_version: number;
+    attempt_count: number;
+  };
+
+  let revoked = false;
+
+  try {
+    revoked = await revokeRefreshToken(
+      decryptSecret({
+        ciphertext: claimed.refresh_token_ciphertext,
+        iv: claimed.refresh_token_iv,
+        authTag: claimed.refresh_token_auth_tag,
+        keyVersion: claimed.refresh_token_key_version,
+      }),
+      options.fetchImpl,
+    );
+  } catch {
+    revoked = false;
+  }
+
+  const exhausted = claimed.attempt_count >= 8;
+
+  if (revoked || exhausted) {
+    await admin
+      .from("google_revocation_jobs")
+      .update({
+        status: revoked ? "completed" : "dead_letter",
+        completed_at: new Date().toISOString(),
+        last_error_code: revoked ? null : "revocation_attempts_exhausted",
+      })
+      .eq("id", claimed.id);
+
+    logger.info(revoked ? "google.revocation.completed" : "google.revocation.failed", {
+      providerId: claimed.provider_id ?? undefined,
+      attemptCount: claimed.attempt_count,
+    });
+  }
+
+  return { claimed: true, revoked };
 }
 
 /**

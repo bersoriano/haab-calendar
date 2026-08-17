@@ -468,3 +468,175 @@ describe("stripe webhook inbox", () => {
     expect(write.error).not.toBeNull();
   });
 });
+
+describe("google calendar mapping constraints", () => {
+  let connectionId: string;
+  const generation = "00000000-0000-4000-8000-0000000000c1";
+
+  beforeAll(async () => {
+    const { data, error } = await admin
+      .from("provider_google_calendar_connections")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_generation: generation,
+        refresh_token_ciphertext: "ciphertext",
+        refresh_token_iv: "iv",
+        refresh_token_auth_tag: "tag",
+        refresh_token_key_version: 1,
+        granted_scopes: ["https://www.googleapis.com/auth/calendar.events"],
+        target_calendar_id: "cal-db-test",
+        status: "connected",
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    if (error) throw error;
+    connectionId = data.id;
+  });
+
+  it("accepts a mapping whose booking, provider, and connection agree", async () => {
+    const booking = await createBooking();
+
+    const { error } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_id: connectionId,
+        connection_generation: generation,
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab00000000000000000000000000001",
+        last_projected_booking_version: 1,
+      });
+
+    expect(error).toBeNull();
+  });
+
+  it("refuses a mapping naming a provider the booking does not belong to", async () => {
+    const booking = await createBooking();
+
+    const { error } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        // A different provider than the booking's — the composite foreign key
+        // is what makes this impossible rather than merely discouraged.
+        provider_id: "00000000-0000-4000-8000-00000000dead",
+        connection_id: connectionId,
+        connection_generation: generation,
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab00000000000000000000000000002",
+      });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("refuses a mapping claiming a connection generation that does not exist", async () => {
+    const booking = await createBooking();
+
+    const { error } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_id: connectionId,
+        // A reconnect rotates the generation; an old mapping must not be able
+        // to authorize a write against the new grant.
+        connection_generation: "00000000-0000-4000-8000-0000000000ff",
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab00000000000000000000000000003",
+      });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("refuses a Google event id shorter than Google allows", async () => {
+    const booking = await createBooking();
+
+    const { error } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_id: connectionId,
+        connection_generation: generation,
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "abc",
+      });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("hides connections, mappings, and jobs from anon", async () => {
+    for (const table of [
+      "provider_google_calendar_connections",
+      "provider_google_calendar_event_mappings",
+      "provider_google_reconciliation_jobs",
+      "google_revocation_jobs",
+    ]) {
+      const read = await anon.from(table).select("id").limit(1);
+      const write = await anon.from(table).insert({ provider_id: PROVIDER_ID });
+
+      expect(read.error).not.toBeNull();
+      expect(write.error).not.toBeNull();
+    }
+  });
+
+  it("refuses the Google worker RPCs to anon", async () => {
+    const reconcile = await anon.rpc("claim_google_reconciliation_job", {
+      p_worker_id: "attacker",
+      p_lease_seconds: 120,
+    });
+    const revoke = await anon.rpc("claim_google_revocation_job", {
+      p_worker_id: "attacker",
+    });
+
+    expect(reconcile.error).not.toBeNull();
+    expect(revoke.error).not.toBeNull();
+  });
+
+  it("enforces the reconciliation cursor being a pair or nothing", async () => {
+    const { error } = await admin.from("provider_google_reconciliation_jobs").insert({
+      provider_id: PROVIDER_ID,
+      connection_id: connectionId,
+      connection_generation: "00000000-0000-4000-8000-0000000000c9",
+      cursor_date: "2026-09-01",
+      // Half a cursor either repeats a page forever or steps over bookings.
+      cursor_booking_id: null,
+    });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("enforces that only a completed job carries a completion time", async () => {
+    const { error } = await admin.from("provider_google_reconciliation_jobs").insert({
+      provider_id: PROVIDER_ID,
+      connection_id: connectionId,
+      connection_generation: "00000000-0000-4000-8000-0000000000ca",
+      status: "pending",
+      completed_at: new Date().toISOString(),
+    });
+
+    expect(error).not.toBeNull();
+  });
+
+  it("cascades mappings and jobs when the connection goes", async () => {
+    const { data: connection } = await admin
+      .from("provider_google_calendar_connections")
+      .select("id")
+      .eq("provider_id", PROVIDER_ID)
+      .maybeSingle<{ id: string }>();
+
+    await admin
+      .from("provider_google_calendar_connections")
+      .delete()
+      .eq("id", connection?.id ?? "");
+
+    const { data: mappings } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .select("id")
+      .eq("connection_id", connection?.id ?? "");
+
+    expect(mappings ?? []).toHaveLength(0);
+  });
+});

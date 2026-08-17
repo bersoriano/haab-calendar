@@ -44,6 +44,14 @@ export function createOAuthState(): string {
   return randomBytes(32).toString("base64url");
 }
 
+/**
+ * Bound into the authorization request and echoed inside the ID token, so a
+ * token minted for some other flow cannot be replayed into this callback.
+ */
+export function createOAuthNonce(): string {
+  return randomBytes(32).toString("base64url");
+}
+
 /** Constant-time, because a state comparison that returns early leaks it. */
 export function statesMatch(expected: string, received: string): boolean {
   const a = Buffer.from(expected);
@@ -58,6 +66,7 @@ export function statesMatch(expected: string, received: string): boolean {
 
 export function buildAuthorizationUrl(input: {
   state: string;
+  nonce: string;
   codeChallenge: string;
   loginHint?: string;
 }): string {
@@ -77,6 +86,7 @@ export function buildAuthorizationUrl(input: {
     prompt: "consent",
     include_granted_scopes: "true",
     state: input.state,
+    nonce: input.nonce,
     code_challenge: input.codeChallenge,
     code_challenge_method: "S256",
     ...(input.loginHint ? { login_hint: input.loginHint } : {}),
@@ -87,6 +97,8 @@ export function buildAuthorizationUrl(input: {
 
 export type GoogleTokens = {
   accessToken: string;
+  /** Present on the initial exchange; identifies the Google account. */
+  idToken?: string;
   /** Absent when Google reuses an existing grant; the stored one must be kept. */
   refreshToken?: string;
   expiresAt: string;
@@ -95,6 +107,7 @@ export type GoogleTokens = {
 
 type TokenResponse = {
   access_token?: string;
+  id_token?: string;
   refresh_token?: string;
   expires_in?: number;
   scope?: string;
@@ -135,6 +148,7 @@ async function postToken(
 
   return {
     accessToken: payload.access_token,
+    idToken: payload.id_token,
     refreshToken: payload.refresh_token,
     // A minute of slack, so a token is refreshed before it is refused.
     expiresAt: new Date(Date.now() + ((payload.expires_in ?? 3600) - 60) * 1000).toISOString(),
@@ -186,8 +200,11 @@ export async function refreshAccessToken(
  * `openid` is excluded: it is requested for identity, and the feature works
  * without it.
  */
+/** `openid` and `email` are identity, not capability; the feature works without them. */
+const IDENTITY_SCOPES = new Set(["openid", "email"]);
+
 export function hasRequiredScopes(granted: readonly string[]): boolean {
-  const required = GOOGLE_ONE_WAY_SCOPES.filter((scope) => scope !== "openid");
+  const required = GOOGLE_ONE_WAY_SCOPES.filter((scope) => !IDENTITY_SCOPES.has(scope));
 
   return required.every((scope) => granted.includes(scope));
 }
@@ -219,7 +236,7 @@ export async function revokeRefreshToken(
 
 export function missingScopes(granted: readonly string[]): string[] {
   return GOOGLE_ONE_WAY_SCOPES.filter(
-    (scope) => scope !== "openid" && !granted.includes(scope),
+    (scope) => !IDENTITY_SCOPES.has(scope) && !granted.includes(scope),
   );
 }
 

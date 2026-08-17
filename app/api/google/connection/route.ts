@@ -9,7 +9,7 @@ import {
   setTargetCalendar,
   toConnectionView,
 } from "@/lib/google/connections";
-import { reconcileProviderCalendar } from "@/lib/google/reconcile";
+import { enqueueReconciliation } from "@/lib/google/reconcile";
 import { resolveRequestId, withRequestId } from "@/lib/observability/context";
 import { toSafeError } from "@/lib/observability/errors";
 import { logger } from "@/lib/observability/logger";
@@ -75,19 +75,22 @@ export async function GET(request: NextRequest) {
   if (connection && connection.status === "connected" && !connection.target_calendar_id) {
     try {
       const google = await createClientForConnection(connection);
-      const calendars = await google.listCalendars();
+      const page = await google.listCalendars();
 
       return respond({
         available: true,
         connection: view,
         // The id is a server-side handle for the next request, and is not the
         // calendar's address: it is echoed back, never displayed.
-        calendars: calendars.map((calendar) => ({
+        calendars: page.calendars.map((calendar) => ({
           id: calendar.id,
           summary: calendar.summary,
           timeZone: calendar.timeZone,
           primary: calendar.primary,
         })),
+        // Told plainly rather than silently cut off, so a provider whose
+        // calendar is missing knows why.
+        truncated: page.truncated,
       });
     } catch {
       return respond({ available: true, connection: view, calendars: [] });
@@ -135,11 +138,11 @@ export async function PUT(request: NextRequest) {
 
   try {
     const google = await createClientForConnection(connection);
-    const calendars = await google.listCalendars();
+    const page = await google.listCalendars();
     // Re-checked against Google rather than trusted from the request: the
     // client could name any calendar, including one this account cannot write
     // to or does not own.
-    const chosen = calendars.find((calendar) => calendar.id === body.calendarId);
+    const chosen = page.calendars.find((calendar) => calendar.id === body.calendarId);
 
     if (!chosen || !["writer", "owner"].includes(chosen.accessRole)) {
       return respond({ userMessage: "That calendar cannot be written to." }, 400);
@@ -152,21 +155,23 @@ export async function PUT(request: NextRequest) {
       timeZone: chosen.timeZone,
     });
 
-    // Existing bookings predate the connection and produced no outbox work, so
-    // this is what puts them on the calendar.
-    const summary = await reconcileProviderCalendar({ providerId: resolved.providerId });
+    // Queued, not run here. Existing bookings predate the connection and
+    // produced no outbox work, but a provider with a year of them must not wait
+    // on hundreds of Google calls before this request answers.
+    await enqueueReconciliation(
+      {
+        providerId: resolved.providerId,
+        connectionId: connection.id,
+        connectionGeneration: connection.connection_generation,
+      },
+    );
 
-    log.info("entitlements.override_applied", {
-      providerId: resolved.providerId,
-      featureKey: "google_calendar_sync",
-      outcome: "calendar_selected",
-      written: summary.written,
-    });
+    log.info("google.calendar.selected", { providerId: resolved.providerId });
 
-    return respond({ ok: true, reconciled: summary });
+    return respond({ ok: true, reconciliationQueued: true });
   } catch (error) {
     const safe = toSafeError(error);
-    log.error("entitlements.denied", {
+    log.error("google.oauth.failed", {
       providerId: resolved.providerId,
       errorCode: safe.code,
     });
@@ -193,7 +198,19 @@ export async function DELETE(request: NextRequest) {
     return respond({ userMessage: "Not found." }, resolved.error === "unauthenticated" ? 401 : 404);
   }
 
-  await deleteConnection(resolved.providerId);
+  const result = await deleteConnection(resolved.providerId);
 
-  return respond({ ok: true });
+  if (!result.deleted) {
+    // The row is still here, so the provider is still connected. Saying "ok"
+    // would leave the UI claiming a disconnection that did not happen.
+    return respond({ userMessage: "Could not disconnect. Please try again." }, 500);
+  }
+
+  return respond({
+    ok: true,
+    // Revocation may be queued rather than done, and the UI says so instead of
+    // implying Google has already forgotten the grant.
+    revoked: result.revoked,
+    revocationQueued: result.revocationQueued,
+  });
 }

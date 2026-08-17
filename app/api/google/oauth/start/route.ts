@@ -5,6 +5,7 @@ import { requireEntitlement } from "@/lib/entitlements/server";
 import { GoogleConfigError, isGoogleConfigured } from "@/lib/google/config";
 import {
   buildAuthorizationUrl,
+  createOAuthNonce,
   createOAuthState,
   createPkcePair,
 } from "@/lib/google/oauth";
@@ -20,6 +21,7 @@ export const runtime = "nodejs";
 const OAUTH_COOKIE_MAX_AGE = 600;
 export const OAUTH_STATE_COOKIE = "haab_google_oauth_state";
 export const OAUTH_VERIFIER_COOKIE = "haab_google_oauth_verifier";
+export const OAUTH_NONCE_COOKIE = "haab_google_oauth_nonce";
 
 /**
  * Starts the Google connection.
@@ -70,6 +72,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const state = createOAuthState();
+    const nonce = createOAuthNonce();
     const { verifier, challenge } = createPkcePair();
 
     const store = await cookies();
@@ -85,16 +88,22 @@ export async function GET(request: NextRequest) {
 
     store.set(OAUTH_STATE_COOKIE, state, cookieOptions);
     store.set(OAUTH_VERIFIER_COOKIE, verifier, cookieOptions);
+    store.set(OAUTH_NONCE_COOKIE, nonce, cookieOptions);
 
     const url = buildAuthorizationUrl({
       state,
+      nonce,
       codeChallenge: challenge,
+      // A hint only. Which Google account is actually connected comes from the
+      // verified ID token, never from the Haab session.
       loginHint: user.email ?? undefined,
     });
 
+    log.info("google.oauth.started", { providerId: context.providerId });
+
     return withRequestId(NextResponse.redirect(url), requestId);
   } catch (error) {
-    log.error("entitlements.denied", {
+    log.error("google.oauth.failed", {
       providerId: context.providerId,
       errorCode: error instanceof GoogleConfigError ? error.code : "oauth_start_failed",
     });

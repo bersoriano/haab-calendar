@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/integration-outbox",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/google-workers",
+      "schedule": "*/2 * * * *"
+    }
+  ]
+}

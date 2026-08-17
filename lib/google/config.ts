@@ -16,6 +16,9 @@ import "server-only";
  */
 export const GOOGLE_ONE_WAY_SCOPES = [
   "openid",
+  // Requested because the settings page shows which account is connected, and
+  // an account nobody can identify is not something a provider can audit.
+  "email",
   "https://www.googleapis.com/auth/calendar.events",
   "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
 ] as const;

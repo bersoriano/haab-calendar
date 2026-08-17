@@ -35,20 +35,47 @@ export type SealedSecret = {
   keyVersion: number;
 };
 
-function readKey(): Buffer {
-  const raw = process.env.GOOGLE_TOKEN_ENCRYPTION_KEY?.trim();
-
-  if (!raw) {
-    throw new TokenCryptoError("missing_key");
+function parseKey(raw: string | undefined, code: string): Buffer {
+  if (!raw?.trim()) {
+    throw new TokenCryptoError(code);
   }
 
-  const key = Buffer.from(raw, "base64");
+  const key = Buffer.from(raw.trim(), "base64");
 
   if (key.length !== KEY_BYTES) {
     throw new TokenCryptoError("invalid_key_length");
   }
 
   return key;
+}
+
+/**
+ * The key a given version was sealed with.
+ *
+ * Rotation works by setting GOOGLE_TOKEN_ENCRYPTION_KEY to the new key and
+ * moving the old one to GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS. New rows are
+ * written at the current version; existing rows keep opening with the previous
+ * one until something rewrites them. A version this build does not know is
+ * refused rather than guessed at — decrypting with the wrong key would fail the
+ * authentication tag anyway, but failing early says why.
+ */
+function readKeyForVersion(version: number): Buffer {
+  if (version === CURRENT_KEY_VERSION) {
+    return parseKey(process.env.GOOGLE_TOKEN_ENCRYPTION_KEY, "missing_key");
+  }
+
+  if (version === CURRENT_KEY_VERSION - 1) {
+    return parseKey(
+      process.env.GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS,
+      "missing_previous_key",
+    );
+  }
+
+  throw new TokenCryptoError("unknown_key_version");
+}
+
+function readKey(): Buffer {
+  return readKeyForVersion(CURRENT_KEY_VERSION);
 }
 
 export function encryptSecret(secret: string): SealedSecret {
@@ -76,7 +103,7 @@ export function encryptSecret(secret: string): SealedSecret {
 }
 
 export function decryptSecret(sealed: SealedSecret): string {
-  const key = readKey();
+  const key = readKeyForVersion(sealed.keyVersion);
 
   try {
     const decipher = createDecipheriv(

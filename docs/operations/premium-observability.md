@@ -162,6 +162,71 @@ set status = 'pending', available_at = now(), attempt_count = 0,
 where id = '…';
 ```
 
+## Google Calendar
+
+**Events** — `google.oauth.started` / `.succeeded` / `.failed`,
+`google.connection.saved` / `.disconnected` / `.needs_reauth`,
+`google.calendar.selected`, `google.reconcile.enqueued` / `.started` / `.page` /
+`.completed` / `.failed`, `google.event.inserted` / `.patched` / `.deleted` /
+`.skipped` / `.collision` / `.mapping_failed`, `google.revocation.enqueued` /
+`.completed` / `.failed`.
+
+Never logged: OAuth tokens, ID tokens, calendar ids (usually email addresses),
+Google event bodies, or raw Google responses.
+
+**Scheduling.** `vercel.json` runs `/api/cron/integration-outbox` every minute
+and `/api/cron/google-workers` every two. Both require
+`Authorization: Bearer $CRON_SECRET`; Vercel sends it automatically when
+`CRON_SECRET` is set as a project environment variable. Off Vercel, point any
+scheduler at the same paths with the same header.
+
+Manual invocation:
+
+```bash
+curl -s -H "Authorization: Bearer $CRON_SECRET" https://<host>/api/cron/google-workers
+```
+
+**Health queries.**
+
+```sql
+-- Outbox: backlog, stuck leases, dead letters
+select status, count(*), min(available_at) as oldest
+from public.integration_outbox_events group by status;
+
+select count(*) as expired_leases
+from public.integration_outbox_events
+where status = 'processing' and lease_expires_at < now();
+
+-- Reconciliation: jobs that are not finishing
+select status, count(*), min(available_at) as oldest,
+       max(attempt_count) as worst_attempt
+from public.provider_google_reconciliation_jobs group by status;
+
+-- Revocation: grants Google has not confirmed forgetting
+select status, count(*), min(created_at) as oldest
+from public.google_revocation_jobs group by status;
+
+-- Connections needing a human
+select status, count(*) from public.provider_google_calendar_connections
+group by status;
+```
+
+There is no "last successful run" table; the equivalent is the absence of a
+backlog above plus `google.reconcile.completed` in the logs. A cron that stopped
+firing shows up as an oldest-pending age that only grows.
+
+**What the states mean.**
+
+- `needs_reauth` — the grant was revoked or expired. Only the provider can fix
+  it; writes stop until they reconnect.
+- `paused` — the entitlement lapsed. The grant is kept, writes stop, and
+  restoring the entitlement resumes it and queues a full reconciliation.
+- `event_id_collision` — the deterministic id belongs to an event this
+  deployment does not own. Never overwritten. Usually two deployments sharing a
+  calendar with the same `HAAB_DEPLOYMENT_NAMESPACE`.
+- A `dead_letter` revocation job means Google was never told to forget a grant.
+  Revoke it by hand from the Google account's third-party access page.
+
 ## Suggested alerts
 
 Vendor-neutral thresholds. None of these are configured anywhere yet — creating
@@ -176,6 +241,9 @@ them is a deliberate operational step.
 | 5 | Any new `integration.outbox.delivery_dead_letter` | An event will never be delivered. |
 | 6 | `entitlements.billing_read_failed` / `.override_read_failed` above ~1% of resolutions | Resolution fails closed, so this is showing paying providers a free plan. |
 | 7 | Any premium E2E failure on `main` or a pull request | The precedence rules are the product. |
+| 8 | Oldest `pending`/`failed` reconciliation job > 15 min | A provider's calendar is missing bookings they can see in Haab. |
+| 9 | Any `google_revocation_jobs` row in `dead_letter` | A grant Haab was asked to release is still live at Google. |
+| 10 | `provider_google_calendar_connections` in `needs_reauth` rising | Often a client-secret rotation, not individual revocations. |
 
 **Dead letters are owned, not cleared.** Both dead-letter states are terminal on
 purpose: nothing marks them succeeded to tidy a queue. Triage means finding the

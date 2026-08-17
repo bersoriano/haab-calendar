@@ -183,6 +183,25 @@ export async function requireEntitlement(
   );
 }
 
+/**
+ * Follows an entitlement change through to the integrations that depend on it.
+ *
+ * Imported lazily so this module does not pull the Google stack into every
+ * caller that only wants to resolve entitlements. Failures are swallowed
+ * deliberately: an override must be recorded even if the connection cannot be
+ * updated right now, and the next resolution corrects it.
+ */
+async function applyEntitlementSideEffects(providerId: string, admin: SupabaseClient) {
+  try {
+    const { syncGoogleConnectionToEntitlement } = await import(
+      "@/lib/google/lifecycle"
+    );
+    await syncGoogleConnectionToEntitlement({ providerId, client: admin });
+  } catch {
+    // Recorded anyway. The connection is reconciled on the next change.
+  }
+}
+
 function assertFeatureKey(featureKey: string): asserts featureKey is FeatureKey {
   if (!isFeatureKey(featureKey)) {
     throw new FeatureOverrideInputError("Unknown feature.");
@@ -286,6 +305,8 @@ export async function setProviderFeatureOverride(input: {
     throw new FeatureOverrideInputError("Could not save the feature override.", 500);
   }
 
+  await applyEntitlementSideEffects(input.providerId, admin);
+
   return getProviderEntitlements(input.providerId, admin);
 }
 
@@ -314,6 +335,8 @@ export async function clearProviderFeatureOverride(input: {
   if (error) {
     throw new FeatureOverrideInputError("Could not clear the feature override.", 500);
   }
+
+  await applyEntitlementSideEffects(input.providerId, admin);
 
   return getProviderEntitlements(input.providerId, admin);
 }

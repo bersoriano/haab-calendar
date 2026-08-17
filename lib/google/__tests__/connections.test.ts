@@ -48,7 +48,10 @@ function sealedRow(overrides: Partial<GoogleConnectionRow> = {}): GoogleConnecti
   };
 }
 
-function makeClient(row: GoogleConnectionRow | null = sealedRow()) {
+function makeClient(
+  row: GoogleConnectionRow | null = sealedRow(),
+  options?: { insertError?: { message: string }; deleteError?: { message: string } },
+) {
   const writes: Array<{ op: string; payload: unknown }> = [];
 
   const query = {
@@ -58,19 +61,26 @@ function makeClient(row: GoogleConnectionRow | null = sealedRow()) {
     single: async () => ({ data: row, error: null }),
     update: (payload: unknown) => {
       writes.push({ op: "update", payload });
-      return query;
+      return { ...query, eq: async () => ({ error: null }) };
     },
     upsert: (payload: unknown) => {
       writes.push({ op: "upsert", payload });
       return query;
     },
+    insert: async (payload: unknown) => {
+      writes.push({ op: "insert", payload });
+      return { error: options?.insertError ?? null };
+    },
     delete: () => {
       writes.push({ op: "delete", payload: null });
-      return query;
+      return { eq: async () => ({ error: options?.deleteError ?? null }) };
     },
   };
 
-  return { client: { from: () => query } as unknown as SupabaseClient, writes };
+  return {
+    client: { from: (table: string) => ({ ...query, table }) } as unknown as SupabaseClient,
+    writes,
+  };
 }
 
 function tokenFetch(body: Record<string, unknown>, status = 200) {
@@ -302,16 +312,62 @@ describe("deleteConnection", () => {
     expect(writes.some((write) => write.op === "delete")).toBe(true);
   });
 
-  it("still deletes when Google cannot be reached", async () => {
+  it("queues a revocation job when Google cannot be reached, then deletes", async () => {
     const { client, writes } = makeClient();
     const failing = (async () => {
       throw new Error("ECONNRESET");
     }) as unknown as typeof fetch;
 
-    // A provider disconnecting must never be blocked by Google being down.
-    await deleteConnection(PROVIDER, { client, fetchImpl: failing });
+    // A provider disconnecting must never be blocked by Google being down —
+    // but the grant must not be stranded either, so the sealed token moves into
+    // a job that outlives the connection row.
+    const result = await deleteConnection(PROVIDER, { client, fetchImpl: failing });
 
+    expect(result).toMatchObject({ deleted: true, revoked: false, revocationQueued: true });
+    const queued = writes.find((write) => write.op === "insert");
+    expect(queued?.payload).toMatchObject({
+      provider_id: PROVIDER,
+      refresh_token_key_version: 1,
+    });
+    // The job carries ciphertext, never the token itself.
+    expect(JSON.stringify(queued?.payload)).not.toContain(REFRESH);
     expect(writes.some((write) => write.op === "delete")).toBe(true);
+  });
+
+  it("refuses to delete when the revocation job could not be queued", async () => {
+    const { client, writes } = makeClient(sealedRow(), {
+      insertError: { message: "read only" },
+    });
+    const failing = (async () => {
+      throw new Error("ECONNRESET");
+    }) as unknown as typeof fetch;
+
+    const result = await deleteConnection(PROVIDER, { client, fetchImpl: failing });
+
+    // Deleting here would leave the grant alive at Google with nothing left to
+    // revoke it from.
+    expect(result.deleted).toBe(false);
+    expect(writes.some((write) => write.op === "delete")).toBe(false);
+  });
+
+  it("reports a failed deletion rather than claiming success", async () => {
+    const { client } = makeClient(sealedRow(), { deleteError: { message: "denied" } });
+
+    const result = await deleteConnection(PROVIDER, {
+      client,
+      fetchImpl: tokenFetch({}),
+    });
+
+    expect(result.deleted).toBe(false);
+  });
+
+  it("does not queue a job when revocation already succeeded", async () => {
+    const { client, writes } = makeClient();
+
+    const result = await deleteConnection(PROVIDER, { client, fetchImpl: tokenFetch({}) });
+
+    expect(result).toMatchObject({ revoked: true, revocationQueued: false });
+    expect(writes.some((write) => write.op === "insert")).toBe(false);
   });
 
   it("still deletes when the stored token cannot be opened", async () => {
@@ -324,11 +380,12 @@ describe("deleteConnection", () => {
     expect(writes.some((write) => write.op === "delete")).toBe(true);
   });
 
-  it("deletes nothing extra for a provider with no connection", async () => {
+  it("has nothing to do for a provider with no connection", async () => {
     const { client, writes } = makeClient(null);
 
-    await deleteConnection(PROVIDER, { client, fetchImpl: tokenFetch({}) });
+    const result = await deleteConnection(PROVIDER, { client, fetchImpl: tokenFetch({}) });
 
-    expect(writes.filter((write) => write.op === "delete")).toHaveLength(1);
+    expect(result).toEqual({ deleted: true, revoked: false, revocationQueued: false });
+    expect(writes).toHaveLength(0);
   });
 });

@@ -18,9 +18,13 @@ vi.mock("@/lib/supabase/admin", () => ({
   },
 }));
 
-import { GoogleApiError, type GoogleCalendarClient } from "@/lib/google/calendar-client";
+import {
+  GoogleApiError,
+  type GoogleCalendarClient,
+  type GoogleEvent,
+} from "@/lib/google/calendar-client";
 import { createGoogleCalendarHandler } from "@/lib/google/handler";
-import { managedEventId } from "@/lib/google/ids";
+import { buildManagedEventProperties, managedEventId } from "@/lib/google/ids";
 import type { IntegrationOutboxEvent } from "@/lib/integrations/outbox/types";
 
 const PROVIDER = "00000000-0000-4000-8000-000000000001";
@@ -49,6 +53,9 @@ function event(overrides: Partial<IntegrationOutboxEvent> = {}): IntegrationOutb
 }
 
 type Options = {
+  providerTimezone?: string | null;
+  mappingError?: { message: string };
+  upsertError?: { message: string };
   connection?: Record<string, unknown> | null;
   booking?: Record<string, unknown> | null;
   bookingError?: { message: string };
@@ -101,6 +108,21 @@ function makeSupabase(options: Options = {}) {
         return query;
       }
 
+      if (table === "providers") {
+        const query = {
+          select: () => query,
+          eq: () => query,
+          maybeSingle: async () => ({
+            data:
+              options.providerTimezone === null
+                ? { id: PROVIDER, timezone: null }
+                : { id: PROVIDER, timezone: options.providerTimezone ?? "America/Mexico_City" },
+            error: null,
+          }),
+        };
+        return query;
+      }
+
       if (table === "bookings") {
         const query = {
           select: () => query,
@@ -117,10 +139,13 @@ function makeSupabase(options: Options = {}) {
         const query = {
           select: () => query,
           eq: () => query,
-          maybeSingle: async () => ({ data: options.mapping ?? null, error: null }),
+          maybeSingle: async () => ({
+            data: options.mappingError ? null : (options.mapping ?? null),
+            error: options.mappingError ?? null,
+          }),
           upsert: async (row: Record<string, unknown>) => {
             upserts.push(row);
-            return { error: null };
+            return { error: options.upsertError ?? null };
           },
         };
         return query;
@@ -135,21 +160,49 @@ function makeSupabase(options: Options = {}) {
 
 function makeGoogle(overrides: Partial<GoogleCalendarClient> = {}) {
   const calls: Array<{ op: string; args: unknown }> = [];
+  let stored: GoogleEvent | null = null;
 
   const google: GoogleCalendarClient = {
-    listCalendars: async () => [],
-    upsertEvent: async (calendarId, input) => {
-      calls.push({ op: "upsert", args: { calendarId, input } });
-      return { id: input.eventId, etag: '"1"' };
+    listCalendars: async () => ({ calendars: [], truncated: false }),
+    getEvent: async () => stored,
+    insertEvent: async (calendarId, eventId, body) => {
+      calls.push({ op: "insert", args: { calendarId, eventId, body } });
+      stored = {
+        id: eventId,
+        etag: '"1"',
+        extendedProperties: { private: body.privateProperties },
+      };
+      return stored;
     },
-    cancelEvent: async (calendarId, eventId) => {
-      calls.push({ op: "cancel", args: { calendarId, eventId } });
+    patchEvent: async (calendarId, eventId, body) => {
+      calls.push({ op: "patch", args: { calendarId, eventId, body } });
+      return { id: eventId, etag: '"2"' };
     },
-    getEvent: async () => null,
+    deleteEvent: async (calendarId, eventId) => {
+      calls.push({ op: "delete", args: { calendarId, eventId } });
+    },
     ...overrides,
   };
 
   return { google, calls };
+}
+
+/** A fake holding an event already owned by this provider and booking. */
+function makeGoogleWithManagedEvent(overrides: Partial<GoogleCalendarClient> = {}) {
+  const existing: GoogleEvent = {
+    id: "existing",
+    etag: '"1"',
+    extendedProperties: {
+      private: buildManagedEventProperties({
+        namespace: "test",
+        providerId: PROVIDER,
+        bookingId: BOOKING,
+        bookingVersion: 1,
+      }),
+    },
+  };
+
+  return makeGoogle({ getEvent: async () => existing, ...overrides });
 }
 
 function handlerFor(supabase: ReturnType<typeof makeSupabase>, google: GoogleCalendarClient) {
@@ -186,17 +239,15 @@ describe("google calendar handler", () => {
     const result = await handlerFor(supabase, google).deliver(event());
 
     expect(result).toEqual({ outcome: "succeeded" });
-    expect(calls[0].op).toBe("upsert");
+    expect(calls[0].op).toBe("insert");
     expect(calls[0].args).toMatchObject({
       calendarId: CALENDAR,
-      input: {
-        eventId: managedEventId({
-          namespace: "test",
-          providerId: PROVIDER,
-          bookingId: BOOKING,
-        }),
-        summary: "Consultation",
-      },
+      eventId: managedEventId({
+        namespace: "test",
+        providerId: PROVIDER,
+        bookingId: BOOKING,
+      }),
+      body: { summary: "Consultation" },
     });
   });
 
@@ -220,9 +271,9 @@ describe("google calendar handler", () => {
     // A calendar can be shared. Haab is not the system that decides who may
     // see a client's name. Asserted on the event body only — the calendar id
     // legitimately is the account's address.
-    const { input } = calls[0].args as { input: Record<string, unknown> };
-    expect(input.summary).toBe("Consultation");
-    expect(JSON.stringify(input)).not.toMatch(/client|@example|notes/i);
+    const { body } = calls[0].args as { body: Record<string, unknown> };
+    expect(body.summary).toBe("Consultation");
+    expect(JSON.stringify(body)).not.toMatch(/client|@example|notes/i);
   });
 
   it("stamps ownership so the event can be recognised later", async () => {
@@ -232,7 +283,7 @@ describe("google calendar handler", () => {
     await handlerFor(supabase, google).deliver(event());
 
     expect(
-      (calls[0].args as { input: { privateProperties: Record<string, string> } }).input
+      (calls[0].args as { body: { privateProperties: Record<string, string> } }).body
         .privateProperties,
     ).toMatchObject({
       haabManaged: "true",
@@ -263,7 +314,8 @@ describe("google calendar handler", () => {
     );
 
     expect(result).toEqual({ outcome: "succeeded" });
-    expect(calls[0].op).toBe("cancel");
+    // Nothing to delete: the fake holds no event, so the retraction is a no-op.
+    expect(calls.filter((call) => call.op === "delete")).toHaveLength(0);
   });
 
   it("answers a replayed delivery without calling Google", async () => {
@@ -297,20 +349,173 @@ describe("google calendar handler", () => {
 
     await handlerFor(supabase, google).deliver(event({ aggregateVersion: 2 }));
 
-    expect(calls[0].op).toBe("upsert");
+    expect(calls[0].op).toBe("insert");
   });
 
-  it("records the version it projected", async () => {
+  it("records the booking's current version, not the event's", async () => {
     const supabase = makeSupabase();
     const { google } = makeGoogle();
 
-    await handlerFor(supabase, google).deliver(event({ aggregateVersion: 4 }));
+    // The outbox event is older than the booking. The booking's current state
+    // is what belongs on the calendar, and the mapping records that — recording
+    // the event's version would make a later replay look like new work.
+    await handlerFor(supabase, google).deliver(event({ aggregateVersion: 1 }));
 
     expect(supabase.upserts[0]).toMatchObject({
       booking_id: BOOKING,
       connection_generation: GENERATION,
-      last_projected_booking_version: 4,
+      last_projected_booking_version: 2,
     });
+  });
+
+  it("stamps the projected version into the event's ownership properties", async () => {
+    const supabase = makeSupabase();
+    const { google, calls } = makeGoogle();
+
+    await handlerFor(supabase, google).deliver(event({ aggregateVersion: 1 }));
+
+    expect(
+      (calls[0].args as { body: { privateProperties: Record<string, string> } }).body
+        .privateProperties.haabBookingVersion,
+    ).toBe("2");
+  });
+
+  it("refuses a booking that belongs to another provider", async () => {
+    // The fake answers the (id, provider_id) query with nothing, which is what
+    // a cross-tenant booking id looks like from here.
+    const supabase = makeSupabase({ booking: null });
+    const { google, calls } = makeGoogle();
+
+    const result = await handlerFor(supabase, google).deliver(event());
+
+    expect(result).toEqual({ outcome: "skipped", reasonCode: "booking_gone" });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("refuses a connection belonging to a different provider", async () => {
+    const supabase = makeSupabase({
+      connection: {
+        id: "conn-1",
+        provider_id: "00000000-0000-4000-8000-0000000000ff",
+        connection_generation: GENERATION,
+        target_calendar_id: CALENDAR,
+        status: "connected",
+      },
+    });
+    const { google, calls } = makeGoogle();
+
+    const result = await handlerFor(supabase, google).deliver(event());
+
+    expect(result).toEqual({
+      outcome: "permanent_failure",
+      errorCode: "connection_tenant_mismatch",
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("retries when the mapping could not be read", async () => {
+    const supabase = makeSupabase({ mappingError: { message: "timeout" } });
+    const { google, calls } = makeGoogle();
+
+    const result = await handlerFor(supabase, google).deliver(event());
+
+    // Without the mapping there is no way to tell a replay from new work.
+    expect(result).toEqual({
+      outcome: "retryable_failure",
+      errorCode: "mapping_read_failed",
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("retries when the mapping could not be written, despite the Google write", async () => {
+    const supabase = makeSupabase({ upsertError: { message: "deadlock" } });
+    const { google } = makeGoogle();
+
+    const result = await handlerFor(supabase, google).deliver(event());
+
+    // Reporting success would lose the record of what was written; the
+    // projection is idempotent, so retrying is safe.
+    expect(result).toEqual({
+      outcome: "retryable_failure",
+      errorCode: "mapping_write_failed",
+    });
+  });
+
+  it("refuses permanently when the id belongs to somebody else's event", async () => {
+    const supabase = makeSupabase();
+    const foreign = makeGoogle({
+      getEvent: async () => ({
+        id: "existing",
+        etag: '"1"',
+        extendedProperties: { private: { haabManaged: "true" } },
+      }),
+    });
+
+    const result = await handlerFor(supabase, foreign.google).deliver(event());
+
+    expect(result).toEqual({
+      outcome: "permanent_failure",
+      errorCode: "event_id_collision",
+    });
+    expect(foreign.calls.filter((call) => call.op === "patch")).toHaveLength(0);
+  });
+
+  it("patches an event it already owns rather than inserting again", async () => {
+    const supabase = makeSupabase();
+    const { google, calls } = makeGoogleWithManagedEvent();
+
+    await handlerFor(supabase, google).deliver(event());
+
+    expect(calls[0].op).toBe("patch");
+  });
+
+  it("deletes the owned event when the booking is cancelled", async () => {
+    const supabase = makeSupabase({
+      booking: {
+        id: BOOKING,
+        provider_id: PROVIDER,
+        service_name: "Consultation",
+        date: "2026-09-01",
+        start_time: "09:00",
+        end_time: "09:30",
+        status: "cancelled",
+        integration_version: 3,
+      },
+    });
+    const { google, calls } = makeGoogleWithManagedEvent();
+
+    const result = await handlerFor(supabase, google).deliver(
+      event({ eventType: "booking.cancelled", aggregateVersion: 3 }),
+    );
+
+    expect(result).toEqual({ outcome: "succeeded" });
+    expect(calls[0].op).toBe("delete");
+  });
+
+  it("uses the provider's timezone, never the calendar's", async () => {
+    const supabase = makeSupabase({ providerTimezone: "America/New_York" });
+    const { google, calls } = makeGoogle();
+
+    await handlerFor(supabase, google).deliver(event());
+
+    // The connection's calendar is America/Mexico_City; the provider works in
+    // New York, and the booking's wall time is theirs.
+    expect((calls[0].args as { body: { start: { timeZone: string } } }).body.start.timeZone).toBe(
+      "America/New_York",
+    );
+  });
+
+  it("fails permanently when the provider has no timezone to project with", async () => {
+    const supabase = makeSupabase({ providerTimezone: null });
+    const { google, calls } = makeGoogle();
+
+    const result = await handlerFor(supabase, google).deliver(event());
+
+    expect(result).toEqual({
+      outcome: "permanent_failure",
+      errorCode: "provider_timezone_missing",
+    });
+    expect(calls).toHaveLength(0);
   });
 
   it("skips a provider with no connection", async () => {
@@ -407,7 +612,7 @@ describe("google calendar handler", () => {
   it("passes Google's retryable failures through as retryable", async () => {
     const supabase = makeSupabase();
     const { google } = makeGoogle({
-      upsertEvent: async () => {
+      insertEvent: async () => {
         throw new GoogleApiError("rate_limited", 429, true);
       },
     });
@@ -421,7 +626,7 @@ describe("google calendar handler", () => {
   it("dead-letters a revoked grant instead of retrying forever", async () => {
     const supabase = makeSupabase();
     const { google } = makeGoogle({
-      upsertEvent: async () => {
+      insertEvent: async () => {
         throw new GoogleApiError("unauthorized", 401, false);
       },
     });
@@ -435,7 +640,7 @@ describe("google calendar handler", () => {
   it("treats an unrecognised failure as retryable", async () => {
     const supabase = makeSupabase();
     const { google } = makeGoogle({
-      upsertEvent: async () => {
+      insertEvent: async () => {
         throw new Error("something unexpected");
       },
     });

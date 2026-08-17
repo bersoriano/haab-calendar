@@ -8,6 +8,7 @@ import {
   resolveProviderId,
   type SubscriptionInput,
 } from "@/lib/billing/projection";
+import { syncGoogleConnectionToEntitlement } from "@/lib/google/lifecycle";
 import { getStripePremiumProducts } from "@/lib/stripe/config";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -169,6 +170,15 @@ export async function processStripeSubscriptionEvent(input: {
 
   if (error) {
     return { outcome: "retryable_failure", errorCode: "projection_write_failed" };
+  }
+
+  // A tier change can enable or disable Google sync. The connection follows,
+  // and a restored entitlement queues the reconciliation that replaces the
+  // outbox events skipped while it was paused.
+  if (data !== "stale") {
+    await syncGoogleConnectionToEntitlement({ providerId, client: admin }).catch(
+      () => undefined,
+    );
   }
 
   return {

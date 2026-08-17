@@ -67,6 +67,28 @@ test.describe("free provider", () => {
     // answer as a stranger.
     expect([401, 403, 404, 405]).toContain(response.status());
   });
+
+  test("is refused when starting the Google OAuth flow directly", async ({ page }) => {
+    const response = await page.request.get("/api/google/oauth/start", {
+      maxRedirects: 0,
+    });
+
+    // A disabled button is a courtesy; this is the boundary. A free provider
+    // must not be able to begin a connection by typing the URL.
+    expect([403, 404]).toContain(response.status());
+  });
+
+  test("is refused when reading the Google connection directly", async ({ page }) => {
+    const response = await page.request.get("/api/google/connection");
+    const body = await response.json();
+
+    expect([200, 403, 404]).toContain(response.status());
+    // Whatever the status, an unentitled provider is never told a connection is
+    // available to them.
+    if (response.status() === 200) {
+      expect(body.available).toBe(false);
+    }
+  });
 });
 
 test.describe("billing premium provider", () => {
@@ -80,10 +102,56 @@ test.describe("billing premium provider", () => {
     await expect(card).toContainText(/Not connected|Sin conectar/);
   });
 
-  test("still has no connect action, because no adapter exists yet", async ({ page }) => {
+  test("offers a connect action that starts at Haab's own route", async ({ page }) => {
     await openSettings(page);
 
-    await expect(integrationCard(page).getByRole("button")).toBeDisabled();
+    // Google is not configured in CI, so the card falls back to the disabled
+    // control; when it is configured, the connect button appears instead. Both
+    // are the same rule: the browser never holds a Google credential.
+    const card = integrationCard(page);
+    const connect = card.locator("[data-google-connect]");
+
+    if ((await connect.count()) > 0) {
+      await expect(connect).toHaveAttribute(
+        "data-google-connect",
+        "/api/google/oauth/start",
+      );
+    } else {
+      await expect(card.getByRole("button")).toBeDisabled();
+    }
+  });
+
+  test("cannot start OAuth without going through the entitlement check", async ({
+    page,
+  }) => {
+    const response = await page.request.get("/api/google/oauth/start", {
+      maxRedirects: 0,
+    });
+
+    // Either a redirect to Google (entitled and configured) or a refusal.
+    // Never a 500, and never an unauthenticated pass-through.
+    expect([302, 303, 307, 403, 404]).toContain(response.status());
+  });
+
+  test("can reach the Google connection endpoint, and it never leaks credentials", async ({
+    page,
+  }) => {
+    const response = await page.request.get("/api/google/connection");
+
+    if (response.status() === 200) {
+      const text = await response.text();
+      // The view is deliberately without the token, the calendar id, or
+      // anything else that would be a credential in a browser.
+      expect(text).not.toMatch(/refresh_token|ciphertext|access_token|client_secret/);
+    }
+  });
+
+  test("disconnect stays available even when nothing is connected", async ({ page }) => {
+    const response = await page.request.delete("/api/google/connection");
+
+    // Never gated on entitlement: a provider must always be able to revoke
+    // Haab's access to their own calendar.
+    expect([200, 404]).toContain(response.status());
   });
 
   test("keeps the premium state after a reload", async ({ page }) => {
@@ -104,6 +172,24 @@ test.describe("manual revoke over a paid subscription", () => {
     // The subscription row says premium; the override says no, and the override
     // is what the provider sees.
     await expect(integrationCard(page)).toContainText(/Premium feature|Función premium/);
+  });
+
+  test("cannot start a Google connection despite the active subscription", async ({
+    page,
+  }) => {
+    const response = await page.request.get("/api/google/oauth/start", {
+      maxRedirects: 0,
+    });
+
+    // The subscription says premium; the override says no, and the server
+    // enforces the override.
+    expect([403, 404]).toContain(response.status());
+  });
+
+  test("can still disconnect after the revoke", async ({ page }) => {
+    const response = await page.request.delete("/api/google/connection");
+
+    expect([200, 404]).toContain(response.status());
   });
 
   test("cannot be talked out of the denial from the client", async ({ page }) => {

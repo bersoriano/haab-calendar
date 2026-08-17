@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { GoogleCalendarClient } from "@/lib/google/calendar-client";
@@ -9,21 +11,32 @@ import {
   getConnection,
   type GoogleConnectionRow,
 } from "@/lib/google/connections";
+import { buildEventTimes } from "@/lib/google/event-time";
 import { buildManagedEventProperties, managedEventId } from "@/lib/google/ids";
+import { projectManagedEvent } from "@/lib/google/project-event";
+import { logger, type Logger } from "@/lib/observability/logger";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Writes the bookings that already existed when the provider connected.
+ * Writing the bookings that already existed when a provider connected.
  *
- * The outbox only carries changes, and a booking made before the connection
- * existed produced a `skipped` event that will never be replayed. This is what
- * fills that gap — and it is why those skips are safe to leave alone.
+ * The outbox only carries changes, so a booking made before the connection
+ * produced a terminal `skipped` that will never be replayed. This fills that
+ * gap — and it is why those skips are safe to leave alone.
  *
- * Bounded per run and resumable: a provider with a year of bookings must not
- * turn one request into a thousand Google calls.
+ * It is a durable job rather than work done inside the request that selects the
+ * calendar. A provider with a year of bookings would otherwise have waited on
+ * hundreds of Google calls, and an earlier version simply stopped after 200 and
+ * declared itself finished, silently losing everything past that.
+ *
+ * The cursor is `(date, id)`. A date alone is not unique, and a non-unique
+ * cursor either repeats a page forever or steps over bookings that share a date.
  */
 
-const RECONCILE_LIMIT = 200;
+/** Bounded so one invocation stays well inside a serverless time limit. */
+const PAGE_SIZE = 50;
+const MAX_PAGES_PER_RUN = 6;
+const MAX_ATTEMPTS = 5;
 
 type BookingRow = {
   id: string;
@@ -36,128 +49,359 @@ type BookingRow = {
   integration_version: number;
 };
 
-export type ReconcileSummary = {
+type JobRow = {
+  id: string;
+  provider_id: string;
+  connection_id: string;
+  connection_generation: string;
+  status: string;
+  cursor_date: string | null;
+  cursor_booking_id: string | null;
+  considered_count: number;
+  written_count: number;
+  skipped_count: number;
+  failed_count: number;
+  attempt_count: number;
+  lease_token: string;
+};
+
+export type ReconcileRunSummary = {
+  claimed: boolean;
+  completed: boolean;
   considered: number;
   written: number;
   skipped: number;
   failed: number;
 };
 
-export async function reconcileProviderCalendar(
-  input: {
-    providerId: string;
+/**
+ * Queues a reconciliation for this connection generation.
+ *
+ * Idempotent per generation: selecting a calendar twice, or an entitlement
+ * being restored twice, leaves one job rather than two racing ones.
+ */
+export async function enqueueReconciliation(
+  input: { providerId: string; connectionId: string; connectionGeneration: string },
+  client?: SupabaseClient,
+): Promise<void> {
+  const admin = client ?? createAdminClient();
+
+  const { error } = await admin.from("provider_google_reconciliation_jobs").upsert(
+    {
+      provider_id: input.providerId,
+      connection_id: input.connectionId,
+      connection_generation: input.connectionGeneration,
+      status: "pending",
+      available_at: new Date().toISOString(),
+      cursor_date: null,
+      cursor_booking_id: null,
+      considered_count: 0,
+      written_count: 0,
+      skipped_count: 0,
+      failed_count: 0,
+      attempt_count: 0,
+      completed_at: null,
+      last_error_code: null,
+    },
+    { onConflict: "provider_id,connection_generation" },
+  );
+
+  if (error) {
+    throw new Error("Could not queue Google reconciliation.");
+  }
+
+  logger.info("google.reconcile.enqueued", { providerId: input.providerId });
+}
+
+async function releaseJob(
+  admin: SupabaseClient,
+  job: JobRow,
+  patch: Record<string, unknown>,
+) {
+  await admin
+    .from("provider_google_reconciliation_jobs")
+    .update({
+      lease_token: null,
+      leased_by: null,
+      lease_expires_at: null,
+      ...patch,
+    })
+    .eq("id", job.id)
+    .eq("lease_token", job.lease_token);
+}
+
+/**
+ * Claims one reconciliation job and works through a bounded number of pages.
+ *
+ * Returning without finishing is normal: the cursor is saved, the job goes back
+ * to pending, and the next invocation resumes exactly where this one stopped.
+ * `completed_at` is set only when a page comes back short, which is the only
+ * proof that every eligible booking was considered.
+ */
+export async function runGoogleReconciliationWorker(
+  options: {
     client?: SupabaseClient;
     createClient?: (connection: GoogleConnectionRow) => Promise<GoogleCalendarClient>;
     now?: Date;
-  },
-): Promise<ReconcileSummary> {
-  const admin = input.client ?? createAdminClient();
-  const summary: ReconcileSummary = { considered: 0, written: 0, skipped: 0, failed: 0 };
+    workerId?: string;
+    logger?: Logger;
+  } = {},
+): Promise<ReconcileRunSummary> {
+  const admin = options.client ?? createAdminClient();
+  const workerId = options.workerId ?? `google-reconcile-${randomUUID()}`;
+  const log = (options.logger ?? logger).child({ workerId });
 
-  const connection = await getConnection(input.providerId, admin);
+  const summary: ReconcileRunSummary = {
+    claimed: false,
+    completed: false,
+    considered: 0,
+    written: 0,
+    skipped: 0,
+    failed: 0,
+  };
 
-  if (!connection?.target_calendar_id || connection.status !== "connected") {
+  const { data: job, error: claimError } = await admin.rpc(
+    "claim_google_reconciliation_job",
+    { p_worker_id: workerId, p_lease_seconds: 120 },
+  );
+
+  if (claimError) {
+    throw new Error("Could not claim a Google reconciliation job.");
+  }
+
+  if (!job) {
     return summary;
   }
 
-  const from = (input.now ?? new Date()).toISOString().slice(0, 10);
+  const claimed = job as JobRow;
+  summary.claimed = true;
+  const jobLog = log.child({ providerId: claimed.provider_id });
+  jobLog.info("google.reconcile.started", { attemptCount: claimed.attempt_count });
 
-  // Forward-looking only. Back-filling history would write hundreds of events
-  // nobody will look at, and a calendar is about what is coming.
-  const { data: bookings, error } = await admin
-    .from("bookings")
-    .select(
-      "id, provider_id, service_name, date, start_time, end_time, status, integration_version",
-    )
-    .eq("provider_id", input.providerId)
-    .gte("date", from)
-    .neq("status", "cancelled")
-    .order("date", { ascending: true })
-    .limit(RECONCILE_LIMIT)
-    .returns<BookingRow[]>();
+  try {
+    const connection = await getConnection(claimed.provider_id, admin);
 
-  if (error) {
-    throw new Error("Could not load bookings to reconcile.");
-  }
+    // A reconnect since this job was queued makes it obsolete. Finishing it
+    // would write against a grant nobody asked for.
+    if (
+      !connection ||
+      connection.connection_generation !== claimed.connection_generation ||
+      connection.status !== "connected" ||
+      !connection.target_calendar_id
+    ) {
+      await releaseJob(admin, claimed, {
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        last_error_code: "connection_superseded",
+      });
 
-  const google =
-    (await input.createClient?.(connection)) ??
-    (await createClientForConnection(connection, { client: admin }));
+      return { ...summary, completed: true };
+    }
 
-  const namespace = getDeploymentNamespace();
-  const timeZone = connection.target_calendar_timezone ?? "UTC";
+    const { data: provider } = await admin
+      .from("providers")
+      .select("id, timezone")
+      .eq("id", claimed.provider_id)
+      .maybeSingle<{ id: string; timezone: string | null }>();
 
-  for (const booking of bookings ?? []) {
-    summary.considered += 1;
+    if (!provider?.timezone) {
+      await releaseJob(admin, claimed, {
+        status: "dead_letter",
+        completed_at: new Date().toISOString(),
+        last_error_code: "provider_timezone_missing",
+      });
 
-    const eventId = managedEventId({
-      namespace,
-      providerId: booking.provider_id,
-      bookingId: booking.id,
-    });
+      return summary;
+    }
 
-    try {
-      const { data: mapping } = await admin
-        .from("provider_google_calendar_event_mappings")
-        .select("last_projected_booking_version")
-        .eq("booking_id", booking.id)
-        .eq("connection_generation", connection.connection_generation)
-        .maybeSingle<{ last_projected_booking_version: number }>();
+    const google =
+      (await options.createClient?.(connection)) ??
+      (await createClientForConnection(connection, { client: admin }));
 
-      if (
-        mapping &&
-        mapping.last_projected_booking_version >= booking.integration_version
-      ) {
-        summary.skipped += 1;
-        continue;
+    const namespace = getDeploymentNamespace();
+    const from = (options.now ?? new Date()).toISOString().slice(0, 10);
+
+    let cursorDate = claimed.cursor_date;
+    let cursorId = claimed.cursor_booking_id;
+    let exhausted = false;
+
+    for (let page = 0; page < MAX_PAGES_PER_RUN; page += 1) {
+      let query = admin
+        .from("bookings")
+        .select(
+          "id, provider_id, service_name, date, start_time, end_time, status, integration_version",
+        )
+        .eq("provider_id", claimed.provider_id)
+        .gte("date", from)
+        .neq("status", "cancelled");
+
+      if (cursorDate && cursorId) {
+        // Keyset pagination on the same (date, id) the ordering uses. An offset
+        // would drift as rows change underneath it.
+        query = query.or(
+          `date.gt.${cursorDate},and(date.eq.${cursorDate},id.gt.${cursorId})`,
+        );
       }
 
-      await google.upsertEvent(connection.target_calendar_id, {
-        eventId,
-        summary: booking.service_name,
-        start: {
-          dateTime: `${booking.date}T${booking.start_time ?? "00:00"}:00`,
-          timeZone,
-        },
-        end: {
-          dateTime: `${booking.date}T${booking.end_time ?? "00:00"}:00`,
-          timeZone,
-        },
-        privateProperties: buildManagedEventProperties({
+      const { data: bookings, error } = await query
+        .order("date", { ascending: true })
+        .order("id", { ascending: true })
+        .limit(PAGE_SIZE)
+        .returns<BookingRow[]>();
+
+      if (error) {
+        throw new Error("Could not read bookings to reconcile.");
+      }
+
+      const rows = bookings ?? [];
+
+      for (const booking of rows) {
+        summary.considered += 1;
+
+        const eventId = managedEventId({
           namespace,
           providerId: booking.provider_id,
           bookingId: booking.id,
-          bookingVersion: booking.integration_version,
-        }),
+        });
+
+        try {
+          const { data: mapping } = await admin
+            .from("provider_google_calendar_event_mappings")
+            .select("last_projected_booking_version")
+            .eq("booking_id", booking.id)
+            .eq("connection_generation", connection.connection_generation)
+            .maybeSingle<{ last_projected_booking_version: number }>();
+
+          if (
+            mapping &&
+            mapping.last_projected_booking_version >= booking.integration_version
+          ) {
+            summary.skipped += 1;
+          } else {
+            const result = await projectManagedEvent({
+              client: google,
+              calendarId: connection.target_calendar_id,
+              eventId,
+              bookingId: booking.id,
+              owner: { namespace, providerId: booking.provider_id },
+              body: {
+                summary: booking.service_name,
+                ...buildEventTimes({
+                  date: booking.date,
+                  startTime: booking.start_time,
+                  endTime: booking.end_time,
+                  providerTimeZone: provider.timezone,
+                }),
+                privateProperties: buildManagedEventProperties({
+                  namespace,
+                  providerId: booking.provider_id,
+                  bookingId: booking.id,
+                  bookingVersion: booking.integration_version,
+                }),
+              },
+            });
+
+            if (result.outcome === "collision") {
+              summary.failed += 1;
+            } else {
+              await admin.from("provider_google_calendar_event_mappings").upsert(
+                {
+                  provider_id: booking.provider_id,
+                  connection_id: connection.id,
+                  connection_generation: connection.connection_generation,
+                  booking_id: booking.id,
+                  google_calendar_id: connection.target_calendar_id,
+                  google_event_id: eventId,
+                  google_event_etag:
+                    "event" in result ? (result.event.etag ?? null) : null,
+                  google_event_status: "confirmed",
+                  last_projected_booking_version: booking.integration_version,
+                  last_projected_at: new Date().toISOString(),
+                },
+                { onConflict: "booking_id,connection_generation" },
+              );
+
+              summary.written += 1;
+            }
+          }
+        } catch {
+          // One booking failing must not abandon the page. Its mapping was
+          // never advanced, so a later run tries again.
+          summary.failed += 1;
+        }
+
+        // Advanced per booking, not per page: a crash mid-page resumes after
+        // the last booking actually handled rather than redoing the page.
+        cursorDate = booking.date;
+        cursorId = booking.id;
+      }
+
+      jobLog.info("google.reconcile.page", {
+        considered: rows.length,
+        written: summary.written,
       });
 
-      await admin.from("provider_google_calendar_event_mappings").upsert(
-        {
-          provider_id: booking.provider_id,
-          connection_id: connection.id,
-          connection_generation: connection.connection_generation,
-          booking_id: booking.id,
-          google_calendar_id: connection.target_calendar_id,
-          google_event_id: eventId,
-          google_event_status: "confirmed",
-          last_projected_booking_version: booking.integration_version,
-          last_projected_at: new Date().toISOString(),
-        },
-        { onConflict: "booking_id,connection_generation" },
-      );
-
-      summary.written += 1;
-    } catch {
-      // One booking failing must not abandon the rest; the next run picks it
-      // up, because the mapping was never advanced.
-      summary.failed += 1;
+      if (rows.length < PAGE_SIZE) {
+        // Short page: there is nothing after it.
+        exhausted = true;
+        break;
+      }
     }
+
+    const totals = {
+      considered_count: claimed.considered_count + summary.considered,
+      written_count: claimed.written_count + summary.written,
+      skipped_count: claimed.skipped_count + summary.skipped,
+      failed_count: claimed.failed_count + summary.failed,
+      cursor_date: cursorDate,
+      cursor_booking_id: cursorId,
+    };
+
+    if (exhausted) {
+      await releaseJob(admin, claimed, {
+        ...totals,
+        status: "completed",
+        completed_at: new Date().toISOString(),
+        last_error_code: null,
+      });
+
+      await admin
+        .from("provider_google_calendar_connections")
+        .update({ reconciled_at: new Date().toISOString() })
+        .eq("id", connection.id);
+
+      jobLog.info("google.reconcile.completed", {
+        considered: totals.considered_count,
+        written: totals.written_count,
+      });
+
+      return { ...summary, completed: true };
+    }
+
+    // More to do. Back to pending with the cursor saved.
+    await releaseJob(admin, claimed, {
+      ...totals,
+      status: "pending",
+      available_at: new Date().toISOString(),
+    });
+
+    return summary;
+  } catch (error) {
+    const exhaustedAttempts = claimed.attempt_count >= MAX_ATTEMPTS;
+
+    await releaseJob(admin, claimed, {
+      status: exhaustedAttempts ? "dead_letter" : "failed",
+      ...(exhaustedAttempts ? { completed_at: new Date().toISOString() } : {}),
+      // Backoff, so a persistent failure does not spin every minute.
+      available_at: new Date(Date.now() + 60_000 * claimed.attempt_count).toISOString(),
+      last_error_code: error instanceof Error ? "reconcile_failed" : "unknown",
+    });
+
+    jobLog.error("google.reconcile.failed", {
+      attemptCount: claimed.attempt_count,
+      outcome: exhaustedAttempts ? "dead_letter" : "retry",
+    });
+
+    return summary;
   }
-
-  await admin
-    .from("provider_google_calendar_connections")
-    .update({ reconciled_at: new Date().toISOString() })
-    .eq("id", connection.id);
-
-  return summary;
 }

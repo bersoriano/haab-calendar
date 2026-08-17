@@ -291,20 +291,50 @@ app/api/google/connection/route.ts             # status, choose calendar, discon
 
 - **One direction.** Haab writes; Google reflects. Nothing reads Google state
   back into a booking. Inbound sync is a separate, later piece of work.
-- **Idempotence is structural.** The Google event id is a hash of
-  (namespace, provider, booking), so a replayed outbox delivery addresses the
-  same event; the write is a `PUT`, so it overwrites rather than duplicating;
-  and the mapping records which booking version the event already reflects, so a
-  stale replay costs no API call at all. Delivery is at-least-once and all three
-  are what make that survivable.
+- **Create-or-update is read, verify, write.** Google has no upsert, and
+  pretending otherwise once meant overwriting events this deployment did not
+  own. `project-event.ts` reads the event, checks its private properties name
+  *this* namespace, provider, and booking, and only then inserts or patches.
+  A mismatch is a permanent `event_id_collision`; nothing is overwritten. 409
+  recovers through the same check; 412 refetches, re-verifies, and retries once.
+  PATCH carries only Haab's fields, so attendees, reminders, colour, and
+  conferencing survive.
+- **Idempotence is structural.** The event id is a hash of (namespace, provider,
+  booking); the mapping records which booking version Google already reflects,
+  so a stale replay costs no API call. Delivery is at-least-once and both are
+  what make that survivable.
+- **Times are the provider's, not the calendar's.** A booking's date and times
+  are local wall times where the provider works. `dateTime` + `timeZone` lets
+  Google apply the zone's DST rules; full-day bookings use `start.date` with an
+  exclusive `end.date`.
+- **Reconciliation is a durable job**, not work done inside the
+  calendar-selection request. It pages with a `(date, id)` cursor, resumes after
+  a crash, and marks `completed_at` only when a short page proves there is
+  nothing left. Queued on calendar selection and on entitlement restoration.
+- **Entitlement loss pauses; restoration resumes.** The grant is kept — making a
+  provider re-authorize because a subscription lapsed for a week would be a
+  punishment. Restoration queues a reconciliation rather than replaying the
+  outbox, because the skipped events are terminal and what matters is that
+  Google matches the bookings as they are now.
+- **Disconnect is durable.** Revocation is attempted inline; if Google is
+  unreachable the sealed token moves into a revocation job that outlives the
+  connection row, so a grant is never stranded. If that job cannot be written,
+  the disconnect fails rather than silently orphaning the grant.
 - **Tokens are sealed before they reach the database.** AES-256-GCM at the
   application layer with a key from `GOOGLE_TOKEN_ENCRYPTION_KEY` and a
   `key_version` column for rotation. A database dump yields ciphertext. Access
   tokens are never stored — they are minted from the refresh token per call.
-- **Narrow scopes.** `calendar.events` and `calendar.calendarlist.readonly`, not
-  the full `calendar` scope, which would also grant read access to every event
-  body on every calendar. Granular consent means a callback can succeed with
-  scopes missing, so the grant is validated server-side before it is stored.
+- **Narrow scopes.** `calendar.events` and `calendar.calendarlist.readonly`, plus
+  `openid`/`email` for identity — never the full `calendar` scope. Granular
+  consent means a callback can succeed with scopes missing, so the grant is
+  validated server-side before it is stored.
+- **Identity comes from a verified ID token**, checked for signature, issuer,
+  audience, expiry, and a nonce bound to this flow. Never from the Haab session:
+  a provider signed in as one address may connect a different Google account,
+  and recording the Haab address would be a lie later checks would act on.
+- **Reconnect starts over.** A new grant rotates the connection generation and
+  clears the selected calendar, so old mappings cannot authorize writes against
+  it — enforced by composite foreign keys, not only by application code.
 - **The deployment namespace** is stamped into every managed event's private
   properties, so a staging deployment can never adopt a production booking's
   event.

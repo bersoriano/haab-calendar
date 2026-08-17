@@ -110,6 +110,44 @@ describe("token encryption", () => {
     expect(() => encryptSecret("")).toThrow(TokenCryptoError);
   });
 
+  it("opens a row sealed with the previous key after a rotation", () => {
+    // Rotation: the old key moves to _PREVIOUS, the new one takes its place.
+    // Existing rows must keep opening, or every connection breaks at once.
+    withKey(OTHER_KEY);
+    const sealedWithOld = encryptSecret("token-from-before");
+
+    vi.stubEnv("GOOGLE_TOKEN_ENCRYPTION_KEY", KEY);
+    vi.stubEnv("GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS", OTHER_KEY);
+
+    expect(decryptSecret({ ...sealedWithOld, keyVersion: 0 })).toBe("token-from-before");
+  });
+
+  it("writes new rows at the current version", () => {
+    withKey();
+    vi.stubEnv("GOOGLE_TOKEN_ENCRYPTION_KEY_PREVIOUS", OTHER_KEY);
+
+    expect(encryptSecret("fresh").keyVersion).toBe(1);
+  });
+
+  it("refuses a key version this build does not know", () => {
+    withKey();
+    const sealed = encryptSecret("token");
+
+    expect(() => decryptSecret({ ...sealed, keyVersion: 99 })).toThrow(TokenCryptoError);
+  });
+
+  it("reports a missing previous key rather than failing obscurely", () => {
+    withKey();
+    const sealed = encryptSecret("token");
+
+    try {
+      decryptSecret({ ...sealed, keyVersion: 0 });
+      throw new Error("Expected a crypto error.");
+    } catch (error) {
+      expect((error as TokenCryptoError).code).toBe("missing_previous_key");
+    }
+  });
+
   it("keeps the key out of the error it throws", () => {
     withKey(randomBytes(16).toString("base64"));
 

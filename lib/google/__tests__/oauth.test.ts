@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import {
   buildAuthorizationUrl,
+  createOAuthNonce,
   createOAuthState,
   createPkcePair,
   exchangeAuthorizationCode,
@@ -49,6 +50,7 @@ describe("PKCE and state", () => {
   it("produces a different pair every time", () => {
     expect(createPkcePair().verifier).not.toBe(createPkcePair().verifier);
     expect(createOAuthState()).not.toBe(createOAuthState());
+    expect(createOAuthNonce()).not.toBe(createOAuthNonce());
   });
 
   it("matches a state against itself and nothing else", () => {
@@ -64,7 +66,7 @@ describe("PKCE and state", () => {
 describe("buildAuthorizationUrl", () => {
   it("asks for offline access, PKCE, and incremental scopes", () => {
     const url = new URL(
-      buildAuthorizationUrl({ state: "state-1", codeChallenge: "challenge-1" }),
+      buildAuthorizationUrl({ state: "state-1", nonce: "nonce-1", codeChallenge: "challenge-1" }),
     );
 
     expect(url.origin + url.pathname).toBe("https://accounts.google.com/o/oauth2/v2/auth");
@@ -73,12 +75,15 @@ describe("buildAuthorizationUrl", () => {
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
     expect(url.searchParams.get("include_granted_scopes")).toBe("true");
     expect(url.searchParams.get("state")).toBe("state-1");
+    // Echoed back inside the ID token, which is what stops a token minted for
+    // another flow being replayed into this callback.
+    expect(url.searchParams.get("nonce")).toBe("nonce-1");
     expect(url.searchParams.get("response_type")).toBe("code");
   });
 
   it("requests only the narrow scopes, never full calendar access", () => {
     const url = new URL(
-      buildAuthorizationUrl({ state: "s", codeChallenge: "c" }),
+      buildAuthorizationUrl({ state: "s", nonce: "n", codeChallenge: "c" }),
     );
     const scopes = (url.searchParams.get("scope") ?? "").split(" ");
 
@@ -88,7 +93,7 @@ describe("buildAuthorizationUrl", () => {
   });
 
   it("never puts the client secret in the URL", () => {
-    const url = buildAuthorizationUrl({ state: "s", codeChallenge: "c" });
+    const url = buildAuthorizationUrl({ state: "s", nonce: "n", codeChallenge: "c" });
 
     expect(url).not.toContain("test-client-secret");
   });
@@ -96,7 +101,7 @@ describe("buildAuthorizationUrl", () => {
   it("refuses to build a URL when nothing is configured", () => {
     vi.unstubAllEnvs();
 
-    expect(() => buildAuthorizationUrl({ state: "s", codeChallenge: "c" })).toThrow(
+    expect(() => buildAuthorizationUrl({ state: "s", nonce: "n", codeChallenge: "c" })).toThrow(
       GoogleConfigError,
     );
   });
@@ -221,7 +226,7 @@ describe("refreshAccessToken", () => {
 
 describe("scope validation", () => {
   it("accepts a grant that covers the writing and listing scopes", () => {
-    expect(hasRequiredScopes([EVENTS_SCOPE, LIST_SCOPE, "openid"])).toBe(true);
+    expect(hasRequiredScopes([EVENTS_SCOPE, LIST_SCOPE, "openid", "email"])).toBe(true);
     expect(missingScopes([EVENTS_SCOPE, LIST_SCOPE])).toEqual([]);
   });
 
@@ -234,7 +239,18 @@ describe("scope validation", () => {
     expect(hasRequiredScopes([])).toBe(false);
   });
 
-  it("does not require openid, which is only for identity", () => {
+  it("does not require the identity scopes, which are not capabilities", () => {
+    // openid and email name the account; the feature works without either.
     expect(hasRequiredScopes([EVENTS_SCOPE, LIST_SCOPE])).toBe(true);
+    expect(missingScopes([EVENTS_SCOPE, LIST_SCOPE])).toEqual([]);
+  });
+
+  it("reads the id token out of the exchange", async () => {
+    const tokens = await exchangeAuthorizationCode(
+      { code: "c", codeVerifier: "v" },
+      tokenResponse({ access_token: "a", id_token: "header.payload.sig", expires_in: 3600 }),
+    );
+
+    expect(tokens.idToken).toBe("header.payload.sig");
   });
 });

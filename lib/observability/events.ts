@@ -48,11 +48,43 @@ export const OUTBOX_EVENTS = [
   "integration.outbox.lease_conflict",
 ] as const;
 
+/**
+ * Google's own operational vocabulary.
+ *
+ * Separate from the entitlement names on purpose: reusing `entitlements.denied`
+ * to report a successful OAuth connection, as an earlier version did, makes
+ * both names useless for an alert.
+ */
+export const GOOGLE_EVENTS = [
+  "google.oauth.started",
+  "google.oauth.succeeded",
+  "google.oauth.failed",
+  "google.connection.saved",
+  "google.connection.disconnected",
+  "google.connection.needs_reauth",
+  "google.calendar.selected",
+  "google.reconcile.enqueued",
+  "google.reconcile.started",
+  "google.reconcile.page",
+  "google.reconcile.completed",
+  "google.reconcile.failed",
+  "google.event.inserted",
+  "google.event.patched",
+  "google.event.deleted",
+  "google.event.skipped",
+  "google.event.collision",
+  "google.event.mapping_failed",
+  "google.revocation.enqueued",
+  "google.revocation.completed",
+  "google.revocation.failed",
+] as const;
+
 export const OPERATIONAL_EVENTS = [
   ...STRIPE_EVENTS,
   ...BILLING_EVENTS,
   ...ENTITLEMENT_EVENTS,
   ...OUTBOX_EVENTS,
+  ...GOOGLE_EVENTS,
 ] as const;
 
 export type OperationalEvent = (typeof OPERATIONAL_EVENTS)[number];
@@ -69,6 +101,8 @@ export const SPAN_NAMES = {
   outboxClaim: "integration.outbox.claim",
   outboxDeliver: "integration.outbox.deliver",
   outboxRecordOutcome: "integration.outbox.record_outcome",
+  googleProjectEvent: "google.project_event",
+  googleReconcilePage: "google.reconcile.page",
 } as const;
 
 export type SpanName = (typeof SPAN_NAMES)[keyof typeof SPAN_NAMES];
