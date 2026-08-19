@@ -169,3 +169,100 @@ describe("hasResolvedEntitlement", () => {
     );
   });
 });
+
+describe("capability prerequisites", () => {
+  const PROVIDER = "00000000-0000-4000-8000-000000000001";
+
+  function resolve(overrides: Parameters<typeof resolveEntitlements>[0]["overrides"]) {
+    return resolveEntitlements({
+      providerId: PROVIDER,
+      planTier: "free",
+      overrides,
+      now: new Date("2026-08-18T12:00:00.000Z"),
+    });
+  }
+
+  it("refuses busy blocking granted without the base connection", () => {
+    // Busy blocking reads a calendar the provider has not connected. A grant on
+    // its own is a misconfiguration, and resolving it to "yes" would enable a
+    // feature with nothing underneath it.
+    const snapshot = resolve([
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+    ]);
+
+    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_busy_blocking.unmetPrerequisites).toEqual([
+      "google_calendar_sync",
+    ]);
+  });
+
+  it("allows busy blocking once the base connection is granted too", () => {
+    const snapshot = resolve([
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+    ]);
+
+    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(true);
+    expect(
+      snapshot.features.google_calendar_busy_blocking.unmetPrerequisites,
+    ).toBeUndefined();
+  });
+
+  it("refuses two-way sync without busy blocking", () => {
+    const snapshot = resolve([
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+    ]);
+
+    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_two_way_sync.unmetPrerequisites).toEqual([
+      "google_calendar_busy_blocking",
+    ]);
+  });
+
+  it("allows two-way sync only with the whole chain granted", () => {
+    const snapshot = resolve([
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+    ]);
+
+    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(true);
+  });
+
+  it("collapses the whole chain when the base is revoked", () => {
+    // Revoking the connection must take everything built on it, in one pass.
+    const snapshot = resolve([
+      { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+    ]);
+
+    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(false);
+  });
+
+  it("keeps naming the grant's source, so an overruled override is visible", () => {
+    const snapshot = resolve([
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+    ]);
+
+    // An operator reading this can see an override existed and was overruled,
+    // rather than wondering why a granted feature reads as off.
+    expect(snapshot.features.google_calendar_busy_blocking.source).toBe("override");
+  });
+
+  it("leaves the new capabilities off for a premium plan", () => {
+    // Deliberate: they read a provider's wider calendar, and pricing intent for
+    // them is not settled. Only a manual override turns them on today.
+    const snapshot = resolveEntitlements({
+      providerId: PROVIDER,
+      planTier: "premium",
+      overrides: [],
+    });
+
+    expect(snapshot.features.google_calendar_sync.enabled).toBe(true);
+    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(false);
+  });
+});

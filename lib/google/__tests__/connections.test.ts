@@ -45,6 +45,9 @@ function sealedRow(overrides: Partial<GoogleConnectionRow> = {}): GoogleConnecti
     last_error_code: null,
     last_synced_at: null,
     reconciled_at: null,
+    two_way_enabled: false,
+    deletion_cancels_booking: false,
+    busy_blocking_enabled: false,
     ...overrides,
   };
 }

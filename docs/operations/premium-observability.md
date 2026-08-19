@@ -227,6 +227,85 @@ firing shows up as an oldest-pending age that only grows.
 - A `dead_letter` revocation job means Google was never told to forget a grant.
   Revoke it by hand from the Google account's third-party access page.
 
+## Busy blocking and two-way sync
+
+Both are off until a provider switches them on, and each is gated on its own
+entitlement plus the connection existing. Neither is inferred.
+
+**The pipeline.** Google notifies `/api/webhooks/google-calendar`, which writes
+one inbox row and answers 204 without calling Google at all. Everything after
+that is a worker on the cron: dispatch reads the change, the applier judges it,
+repair puts Google back when Haab refused.
+
+```
+notification → google_calendar_webhook_inbox
+             → busy refresh   (busy_refresh channels)
+             → incremental sync → google_calendar_inbound_changes
+                                → applied to the booking
+                                or → google_calendar_sync_conflicts → repair
+```
+
+**Why a change was not applied.** In order of how often it is the answer:
+
+```sql
+-- 1. What was staged, and what happened to it?
+select status, last_error_code, count(*)
+from public.google_calendar_inbound_changes
+group by status, last_error_code
+order by count(*) desc;
+
+-- 2. Conflicts a provider is being shown
+select conflict_type, status, count(*)
+from public.google_calendar_sync_conflicts
+group by conflict_type, status;
+
+-- 3. Is anything still listening?
+select purpose, status, count(*), min(expires_at) as soonest_expiry
+from public.provider_google_calendar_watch_channels
+group by purpose, status;
+```
+
+A `last_error_code` of `two_way_disabled`, `not_entitled`, or
+`connection_superseded` is the system working: the provider's last word wins,
+and it is re-checked at the moment of the write rather than trusted from when
+the change was staged.
+
+**Conflict types, and which repair themselves.** Everything except
+`ownership_mismatch` and `calendar_changed` is restored from Haab automatically
+and ends as `auto_repaired`. Those two are left `open` on purpose:
+`ownership_mismatch` means the event at that id is not this booking's, and
+writing over it would do to somebody else exactly what the check exists to
+prevent.
+
+**Busy state.** The snapshot is generational: intervals are written under a new
+generation and only then activated, so availability never reads a half-written
+refresh. A failed refresh therefore shows up as a stale snapshot, never a
+partial one.
+
+```sql
+select source.calendar_summary, source.last_refreshed_at, source.last_error_code,
+       count(interval.id) as intervals
+from public.provider_google_calendar_busy_sources source
+left join public.provider_google_calendar_busy_intervals interval
+  on interval.busy_source_id = source.id
+ and interval.snapshot_generation = source.active_snapshot_generation
+where source.provider_id = '…'
+group by 1, 2, 3;
+```
+
+**The final check fails closed.** At the moment a booking is written, an
+unverifiable calendar refuses the booking with a retryable 503 rather than
+letting it through. A provider who turned busy blocking on asked for their
+outside commitments to be respected; booking over them because Google timed out
+would break exactly the promise the feature makes. Watch for
+`google.busy.final_check_failed` — sustained, it means providers cannot take
+bookings.
+
+**The calendar Haab writes to is never a busy source.** It is filtered out of
+the picker, rejected by the API, and skipped by the refresh. Its events are
+Haab's own bookings; counting them again would make a service with room for two
+look full after one.
+
 ## Suggested alerts
 
 Vendor-neutral thresholds. None of these are configured anywhere yet — creating
@@ -244,6 +323,10 @@ them is a deliberate operational step.
 | 8 | Oldest `pending`/`failed` reconciliation job > 15 min | A provider's calendar is missing bookings they can see in Haab. |
 | 9 | Any `google_revocation_jobs` row in `dead_letter` | A grant Haab was asked to release is still live at Google. |
 | 10 | `provider_google_calendar_connections` in `needs_reauth` rising | Often a client-secret rotation, not individual revocations. |
+| 11 | `google.busy.final_check_failed` sustained | Bookings are being refused. Fails closed, so this is lost business, not overbooking. |
+| 12 | Oldest `pending` webhook inbox row > 10 min | Notifications are arriving and nothing is reading them. |
+| 13 | Any `google_calendar_inbound_changes` in `dead_letter` | A provider's calendar change will never be applied. |
+| 14 | `provider_google_calendar_watch_channels` with `expires_at` inside 24h and no newer active row | Renewal is not running; push will stop silently within the week. |
 
 **Dead letters are owned, not cleared.** Both dead-letter states are terminal on
 purpose: nothing marks them succeeded to tidy a queue. Triage means finding the
@@ -279,3 +362,9 @@ provider, and with no exporter configured the SDK drops spans silently.
   happened" cannot be answered from logs alone — only the failures can.
 - Traces are only as useful as the exporter behind them; with none configured
   the span names above exist but go nowhere.
+- Watch channels renew only when a worker runs. Without the cron they expire
+  after at most a week and push stops with no error anywhere — the periodic
+  workers still sync, just on their own schedule rather than promptly.
+- Conflicts are never expired or cleaned up. `auto_repaired` rows accumulate.
+- There is no provider-facing notification when a conflict is created; it is
+  visible in the integrations settings and nowhere else.

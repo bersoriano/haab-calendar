@@ -5,7 +5,12 @@ const mocks = vi.hoisted(() => ({
   runIntegrationOutboxWorker: vi.fn(),
   runGoogleReconciliationWorker: vi.fn(),
   runGoogleRevocationWorker: vi.fn(),
+  runGoogleWebhookWorker: vi.fn(),
+  runGoogleInboundApplyWorker: vi.fn(),
+  runGoogleConflictRepairWorker: vi.fn(),
 }));
+
+vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/integrations/outbox/worker", () => ({
   runIntegrationOutboxWorker: mocks.runIntegrationOutboxWorker,
@@ -17,6 +22,18 @@ vi.mock("@/lib/google/reconcile", () => ({
 
 vi.mock("@/lib/google/connections", () => ({
   runGoogleRevocationWorker: mocks.runGoogleRevocationWorker,
+}));
+
+vi.mock("@/lib/google/webhook-worker", () => ({
+  runGoogleWebhookWorker: mocks.runGoogleWebhookWorker,
+}));
+
+vi.mock("@/lib/google/apply-inbound", () => ({
+  runGoogleInboundApplyWorker: mocks.runGoogleInboundApplyWorker,
+}));
+
+vi.mock("@/lib/google/repair", () => ({
+  runGoogleConflictRepairWorker: mocks.runGoogleConflictRepairWorker,
 }));
 
 import { GET } from "@/app/api/cron/integration-outbox/route";
@@ -142,6 +159,24 @@ describe("GET /api/cron/google-workers", () => {
   beforeEach(() => {
     mocks.runGoogleReconciliationWorker.mockReset();
     mocks.runGoogleRevocationWorker.mockReset();
+    mocks.runGoogleWebhookWorker.mockReset();
+    mocks.runGoogleInboundApplyWorker.mockReset();
+    mocks.runGoogleConflictRepairWorker.mockReset();
+    mocks.runGoogleWebhookWorker.mockResolvedValue({
+      claimed: false,
+      dispatched: null,
+      reason: null,
+    });
+    mocks.runGoogleInboundApplyWorker.mockResolvedValue({
+      claimed: false,
+      outcome: null,
+      conflictType: null,
+    });
+    mocks.runGoogleConflictRepairWorker.mockResolvedValue({
+      claimed: false,
+      repaired: false,
+      reason: null,
+    });
     mocks.runGoogleReconciliationWorker.mockResolvedValue({
       claimed: true,
       completed: false,

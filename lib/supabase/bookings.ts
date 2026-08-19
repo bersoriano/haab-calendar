@@ -17,6 +17,7 @@ import {
 } from "@/lib/date";
 import { BOOKING_HOLD_DURATION_MS } from "@/lib/constants";
 import { formatCapacityLabel } from "@/lib/format";
+import { assertGoogleAvailabilityForBooking } from "@/lib/google/availability-guard";
 import { getEffectiveCost } from "@/lib/locations";
 import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { normalizePublicTheme } from "@/lib/public-theme";
@@ -183,11 +184,20 @@ export type ManageBookingInput = {
   token: string;
 };
 
+/**
+ * Who a booking change is attributed to in `booking_events`.
+ *
+ * `google_calendar` is a real actor, not a flavour of `system`: when a booking
+ * moves because the provider dragged it in Google, the audit has to say so, or
+ * the provider is left looking at a change nobody appears to have made.
+ */
+export type BookingActorType = "provider" | "customer" | "system" | "google_calendar";
+
 export type RescheduleBookingInput = {
   bookingId: string;
   dateKey: string;
   time?: string;
-  actorType: "provider" | "customer";
+  actorType: BookingActorType;
   manageToken?: string;
 };
 
@@ -668,7 +678,7 @@ async function insertBookingEvent(
   options: {
     bookingId: string;
     providerId: string;
-    actorType: "provider" | "customer" | "system";
+    actorType: BookingActorType;
     eventType: "created" | "rescheduled" | "cancelled" | "hold_expired" | "note_added";
     metadata?: Record<string, unknown>;
   },
@@ -721,6 +731,62 @@ function assertMatchingHold(options: {
   }
 }
 
+/**
+ * The provider's outside commitments, checked immediately before a write.
+ *
+ * Placed here rather than in each route because every way a slot can be taken
+ * — a public hold, its confirmation, a client's reschedule, the provider's own,
+ * and one arriving from Google — passes through one of the three call sites
+ * below. Five copies in five routes is five chances for one of them to be
+ * forgotten, and a forgotten one is a booking made over a commitment the
+ * provider asked Haab to respect.
+ *
+ * Does nothing at all when the provider has not enabled busy blocking, which is
+ * the overwhelmingly common case; the guard resolves that first and returns
+ * before touching Google.
+ */
+async function assertExternalAvailability(
+  supabase: SupabaseClient,
+  options: {
+    providerId: string;
+    providerTimeZone: string | null;
+    dateKey: string;
+    startTime?: string | null;
+    endTime?: string | null;
+  },
+) {
+  if (!options.providerTimeZone) {
+    return;
+  }
+
+  const decision = await assertGoogleAvailabilityForBooking({
+    providerId: options.providerId,
+    providerTimeZone: options.providerTimeZone,
+    dateKey: options.dateKey,
+    startTime: options.startTime,
+    endTime: options.endTime,
+    client: supabase,
+  });
+
+  if (decision.allowed) {
+    return;
+  }
+
+  if (decision.reason === "busy") {
+    throw new PublicBookingWriteError(
+      "That time is no longer free on the provider's calendar. Choose another slot.",
+      409,
+    );
+  }
+
+  // Could not be verified. Refusing is the fail-closed answer, and 503 says
+  // "ask again" rather than "this will never work".
+  throw new PublicBookingWriteError(
+    "We could not confirm that time just now. Try again in a moment.",
+    503,
+  );
+}
+
 export async function createPublicBookingHold(
   supabase: SupabaseClient,
   input: CreatePublicBookingHoldInput,
@@ -747,6 +813,15 @@ export async function createPublicBookingHold(
 
   const startTime = service.bookingType === "appointment" ? input.time : undefined;
   const endTime = getBookingEndTime(service, input.time);
+
+  await assertExternalAvailability(supabase, {
+    providerId: provider.id,
+    providerTimeZone: provider.timezone,
+    dateKey: input.dateKey,
+    startTime,
+    endTime,
+  });
+
   // Same constant the client counts down from, so the visible timer and the
   // server's expiry can never drift apart.
   const expiresAt = new Date(Date.now() + BOOKING_HOLD_DURATION_MS).toISOString();
@@ -906,6 +981,18 @@ export async function confirmPublicBooking(
   const manageToken = randomToken();
   const startTime = service.bookingType === "appointment" ? input.time : undefined;
   const endTime = getBookingEndTime(service, input.time);
+
+  // Checked again at confirmation, not only when the hold was taken: a hold
+  // lasts minutes, and a meeting can appear on the provider's calendar inside
+  // that window. This is the moment the promise to the client is made.
+  await assertExternalAvailability(supabase, {
+    providerId: provider.id,
+    providerTimeZone: provider.timezone,
+    dateKey: input.dateKey,
+    startTime,
+    endTime,
+  });
+
   const costSnapshot = getEffectiveCost(service, input.locationKey);
   const capacitySnapshot = formatCapacityLabel(service);
   const serviceSnapshot = {
@@ -1012,7 +1099,7 @@ async function updateBookingStatus(
   options: {
     booking: BookingRow;
     status: BookingStatus;
-    actorType: "provider" | "customer";
+    actorType: BookingActorType;
     manageToken?: string;
   },
 ) {
@@ -1105,14 +1192,18 @@ export async function updateManagedBookingNote(
   return { booking: toBookingRecord(data, input.token) };
 }
 
-export async function cancelProviderBooking(supabase: SupabaseClient, bookingId: string) {
+export async function cancelProviderBooking(
+  supabase: SupabaseClient,
+  bookingId: string,
+  actorType: BookingActorType = "provider",
+) {
   const booking = await getBookingById(supabase, bookingId);
 
   return {
     booking: await updateBookingStatus(supabase, {
       booking,
       status: "cancelled",
-      actorType: "provider",
+      actorType,
     }),
   };
 }
@@ -1155,6 +1246,14 @@ async function rescheduleBookingRow(
   const startTime = service.bookingType === "appointment" ? input.time : undefined;
   const endTime = getBookingEndTime(service, input.time);
 
+  await assertExternalAvailability(supabase, {
+    providerId: provider.id,
+    providerTimeZone: provider.timezone,
+    dateKey: input.dateKey,
+    startTime,
+    endTime,
+  });
+
   const { data, error } = await supabase
     .from("bookings")
     .update({
@@ -1193,15 +1292,21 @@ async function rescheduleBookingRow(
   return toBookingRecord(data, input.manageToken);
 }
 
+/**
+ * A reschedule performed on the provider's side.
+ *
+ * `actorType` defaults to the provider because that is who is nearly always
+ * doing it. It is an argument rather than a constant so a change that arrived
+ * from the provider's Google calendar can be recorded as such — the mutation is
+ * identical, and only the audit differs.
+ */
 export async function rescheduleProviderBooking(
   supabase: SupabaseClient,
   input: Omit<RescheduleBookingInput, "actorType">,
+  actorType: BookingActorType = "provider",
 ) {
   return {
-    booking: await rescheduleBookingRow(supabase, {
-      ...input,
-      actorType: "provider",
-    }),
+    booking: await rescheduleBookingRow(supabase, { ...input, actorType }),
   };
 }
 

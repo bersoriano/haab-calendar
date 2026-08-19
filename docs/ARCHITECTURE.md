@@ -269,7 +269,7 @@ gate. No migration is needed — override rows are keyed by text.
 
 ---
 
-## 4f. Google Calendar (one-way projection)
+## 4f. Google Calendar (outbound projection)
 
 ```
 supabase/migrations/20260816153412_add_google_calendar_connections.sql
@@ -289,8 +289,9 @@ app/api/google/oauth/{start,callback}/route.ts
 app/api/google/connection/route.ts             # status, choose calendar, disconnect
 ```
 
-- **One direction.** Haab writes; Google reflects. Nothing reads Google state
-  back into a booking. Inbound sync is a separate, later piece of work.
+- **Outbound is the default and the only direction that is ever automatic.**
+  Haab writes; Google reflects. Reading Google back into a booking exists (4g)
+  but is off until a provider switches it on.
 - **Create-or-update is read, verify, write.** Google has no upsert, and
   pretending otherwise once meant overwriting events this deployment did not
   own. `project-event.ts` reads the event, checks its private properties name
@@ -328,6 +329,79 @@ app/api/google/connection/route.ts             # status, choose calendar, discon
   `openid`/`email` for identity — never the full `calendar` scope. Granular
   consent means a callback can succeed with scopes missing, so the grant is
   validated server-side before it is stored.
+
+## 4g. Google Calendar (busy blocking and two-way)
+
+```
+supabase/migrations/20260819050507_add_google_busy_and_two_way.sql
+  provider_google_calendar_busy_sources       # calendars chosen to block availability
+  provider_google_calendar_busy_intervals     # generational snapshot of busy time
+  provider_google_calendar_watch_channels     # push channels, token stored hashed
+  google_calendar_webhook_inbox               # notifications, deduplicated
+  provider_google_calendar_sync_cursors       # events.list sync tokens
+  google_calendar_inbound_changes             # staged changes, times only
+  google_calendar_sync_conflicts              # what Haab would not do, and why
+supabase/migrations/20260819063000_add_google_inbound_claim_and_actor.sql
+  booking_events.actor_type += 'google_calendar'
+  claim_google_inbound_change / _webhook_notification / _sync_conflict_for_repair
+
+lib/google/
+  busy.ts             # interval maths, freshness thresholds
+  busy-refresh.ts     # FreeBusy → generational snapshot
+  availability-guard.ts # the check immediately before a booking is written
+  watch.ts            # channel credentials, header parsing, authorization
+  watch-worker.ts     # create / renew / stop, reconciled against desire
+  webhook-worker.ts   # notification → busy refresh or incremental sync
+  inbound-sync.ts     # events.list with sync tokens → staged changes
+  inbound-time.ts     # Google times → provider-local booking times
+  apply-inbound.ts    # judges a staged change; applies or files a conflict
+  repair.ts           # restores Google from Haab after a refusal
+  capabilities.ts     # what a provider switched on, and what they chose
+app/api/webhooks/google-calendar/route.ts   # always 204, never calls Google
+app/api/google/capabilities/route.ts        # read and change the two switches
+```
+
+- **Busy blocking reads availability, never content.** FreeBusy returns
+  intervals, and intervals are all that is stored. No title, description,
+  location, attendee, or organizer of an event Haab did not create is ever
+  persisted or logged.
+- **The snapshot is generational.** Intervals are written under a new
+  generation and `activate_google_busy_snapshot` swaps it in atomically, so
+  availability never reads a half-written refresh. A failed refresh leaves the
+  previous snapshot intact — stale is a state that can be reasoned about;
+  partial is not.
+- **The final check fails closed.** Slot browsing may read the cache, because a
+  list of times is a hint. The write is not a hint: it confirms against Google
+  when the cache is not fresh enough, and an unverifiable answer refuses the
+  booking with a retryable 503. It is wired inside `lib/supabase/bookings.ts`
+  at the three points that decide a slot — hold, confirmation, reschedule — so
+  every entry point is covered once rather than five times.
+- **The target calendar is never a busy source.** Its events are Haab's own
+  bookings; counting them again would make a service with room for two look
+  full after one, and would let a booking block its own reschedule.
+- **The push endpoint does no work.** It authenticates the notification against
+  a hashed channel token, writes one inbox row, and answers 204 — no Google
+  call, no database read beyond the channel. A flood of notifications therefore
+  cannot become a flood of API calls on a public route.
+- **The notification is a hint, never an instruction.** Which provider it
+  concerns comes from the stored channel, never from the request. The resource
+  URI Google sends is not trusted for anything.
+- **Two-way applies through the same mutation the UI calls.** No booking SQL
+  lives in the Google worker, so business hours, capacity, and overlap are
+  enforced once and identically. The audit records `google_calendar` as the
+  actor — not the provider, who did not act in Haab, and not `system`.
+- **What Haab will not do, it files rather than forces.** A resize, a move into
+  an occupied slot, a recurring event, a deletion the provider did not opt
+  into: each becomes a conflict, the booking stays as it is, and repair
+  restores the Google event. A booking is an agreement with a client; a drag in
+  a calendar UI is not authority to break it.
+- **Loop prevention is explicit origin tracking, not a time window.** The
+  mapping records the etag Haab's own write produced, so the notification it
+  provokes is recognised as an echo. "Recent" would be a guess, and a guess
+  here means either an ignored real edit or an endless loop.
+- **Renewal creates before it stops.** The other order leaves a window where a
+  provider's change is announced to nobody; a brief overlap only costs a
+  duplicate notification, which the inbox deduplicates anyway.
 - **Identity comes from a verified ID token**, checked for signature, issuer,
   audience, expiry, and a nonce bound to this flow. Never from the Haab session:
   a provider signed in as one address may connect a different Google account,

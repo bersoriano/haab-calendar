@@ -31,7 +31,8 @@ const CONNECTION_SELECT = `
   refresh_token_ciphertext, refresh_token_iv, refresh_token_auth_tag,
   refresh_token_key_version, granted_scopes, target_calendar_id,
   target_calendar_summary, target_calendar_timezone, status, last_error_code,
-  last_synced_at, reconciled_at
+  last_synced_at, reconciled_at, two_way_enabled, deletion_cancels_booking,
+  busy_blocking_enabled
 `;
 
 export type GoogleConnectionRow = {
@@ -51,6 +52,10 @@ export type GoogleConnectionRow = {
   last_error_code: string | null;
   last_synced_at: string | null;
   reconciled_at: string | null;
+  /** Off until the provider opts in, having been told what it does. */
+  two_way_enabled: boolean;
+  deletion_cancels_booking: boolean;
+  busy_blocking_enabled: boolean;
 };
 
 /** What a browser may see. Deliberately without the token or the calendar id. */

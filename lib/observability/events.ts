@@ -77,6 +77,36 @@ export const GOOGLE_EVENTS = [
   "google.revocation.enqueued",
   "google.revocation.completed",
   "google.revocation.failed",
+
+  // Busy blocking
+  "google.busy.refresh_started",
+  "google.busy.refresh_completed",
+  "google.busy.refresh_failed",
+  "google.busy.final_check_blocked",
+  "google.busy.final_check_failed",
+  "google.busy.cache_stale",
+
+  // Push notifications and watch channels
+  "google.webhook.accepted",
+  "google.webhook.rejected",
+  "google.webhook.duplicate",
+  "google.watch.created",
+  "google.watch.renewed",
+  "google.watch.expired",
+  "google.watch.stopped",
+  "google.watch.failed",
+
+  // Inbound synchronisation
+  "google.inbound.full_sync_started",
+  "google.inbound.incremental_sync_completed",
+  "google.inbound.sync_token_invalid",
+  "google.inbound.change_staged",
+  "google.inbound.reschedule_applied",
+  "google.inbound.cancellation_applied",
+  "google.inbound.echo_suppressed",
+  "google.inbound.conflict_created",
+  "google.inbound.repair_completed",
+  "google.inbound.failed",
 ] as const;
 
 export const OPERATIONAL_EVENTS = [
@@ -103,6 +133,10 @@ export const SPAN_NAMES = {
   outboxRecordOutcome: "integration.outbox.record_outcome",
   googleProjectEvent: "google.project_event",
   googleReconcilePage: "google.reconcile.page",
+  googleBusyRefresh: "google.busy.refresh",
+  googleBusyFinalCheck: "google.busy.final_check",
+  googleInboundSync: "google.inbound.sync",
+  googleInboundApply: "google.inbound.apply",
 } as const;
 
 export type SpanName = (typeof SPAN_NAMES)[keyof typeof SPAN_NAMES];

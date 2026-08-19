@@ -233,6 +233,10 @@ function makeGoogle(overrides: Partial<GoogleCalendarClient> = {}) {
 
   const google: GoogleCalendarClient = {
     listCalendars: async () => ({ calendars: [], truncated: false }),
+    watchEvents: async () => ({ resourceId: "res-1", expiresAt: null }),
+    stopChannel: async () => undefined,
+    queryFreeBusy: async () => ({ busyByCalendar: {}, errorsByCalendar: {} }),
+    listEvents: async () => ({ events: [] }),
     getEvent: async () => null,
     insertEvent: async (_calendarId, eventId) => {
       written.push(eventId);

@@ -23,6 +23,26 @@ const EVENT_FIELDS =
 const CALENDAR_LIST_FIELDS =
   "nextPageToken,items(id,summary,timeZone,accessRole,primary)";
 
+/**
+ * The event fields a sync reads. No summary, description, location, attendees,
+ * organizer, or conference data: an unrelated event is inspected and discarded,
+ * and it cannot leak what was never fetched.
+ */
+const LIST_EVENTS_FIELDS =
+  "nextPageToken,nextSyncToken,items(id,etag,status,updated,start,end,transparency,eventType,recurringEventId,originalStartTime,extendedProperties/private)";
+
+/**
+ * Bumped when the query above changes shape. A stored sync token was issued for
+ * a particular query; replaying it under a different one silently misses events.
+ */
+export const EVENTS_QUERY_VERSION = 1;
+
+/** Google's own ceiling on calendars per FreeBusy request. */
+export const FREEBUSY_MAX_CALENDARS = 50;
+
+/** How many calendars a provider may point at their availability. */
+export const MAX_BUSY_SOURCES = 10;
+
 /** Google's own reason codes for "you are going too fast", not "you may not". */
 const USAGE_LIMIT_REASONS = new Set([
   "rateLimitExceeded",
@@ -79,11 +99,47 @@ export type GoogleEvent = {
   updated?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
+  /** `opaque` blocks time; `transparent` does not. */
+  transparency?: string;
+  /** `default`, `outOfOffice`, `focusTime`, `workingLocation`. */
+  eventType?: string;
+  /** Present when the event is an instance of a recurring series. */
+  recurringEventId?: string;
+  originalStartTime?: { dateTime?: string; date?: string; timeZone?: string };
   extendedProperties?: { private?: Record<string, string> };
+};
+
+export type FreeBusyRequest = {
+  timeMin: string;
+  timeMax: string;
+  calendarIds: readonly string[];
+};
+
+export type FreeBusyResult = {
+  /** Busy intervals per calendar, keyed by the id that was asked for. */
+  busyByCalendar: Record<string, Array<{ start: string; end: string }>>;
+  /** Calendars Google refused, with its reason code. Never dropped silently. */
+  errorsByCalendar: Record<string, string>;
+};
+
+export type ListEventsRequest = {
+  calendarId: string;
+  /** Incremental when present; a full scan otherwise. */
+  syncToken?: string;
+  pageToken?: string;
+};
+
+export type ListEventsPage = {
+  events: GoogleEvent[];
+  nextPageToken?: string;
+  /** Only ever present on the final page of a run. */
+  nextSyncToken?: string;
 };
 
 export type GoogleCalendarClient = {
   listCalendars(): Promise<GoogleCalendarPage>;
+  queryFreeBusy(request: FreeBusyRequest): Promise<FreeBusyResult>;
+  listEvents(request: ListEventsRequest): Promise<ListEventsPage>;
   getEvent(calendarId: string, eventId: string): Promise<GoogleEvent | null>;
   insertEvent(
     calendarId: string,
@@ -97,6 +153,23 @@ export type GoogleCalendarClient = {
     etag?: string,
   ): Promise<GoogleEvent>;
   deleteEvent(calendarId: string, eventId: string, etag?: string): Promise<void>;
+  watchEvents(request: WatchRequest): Promise<WatchResponse>;
+  stopChannel(request: { channelId: string; resourceId: string }): Promise<void>;
+};
+
+export type WatchRequest = {
+  calendarId: string;
+  channelId: string;
+  /** Sent back on every notification; the only thing that authenticates one. */
+  token: string;
+  address: string;
+  ttlSeconds: number;
+};
+
+export type WatchResponse = {
+  resourceId: string;
+  /** Google may shorten the requested TTL; the answer is what expires. */
+  expiresAt: string | null;
 };
 
 type GoogleErrorBody = {
@@ -190,6 +263,10 @@ export function createGoogleCalendarClient(input: {
     return response;
   }
 
+  function calendarPath(calendarId: string) {
+    return `/calendars/${encodeURIComponent(calendarId)}`;
+  }
+
   function eventPath(calendarId: string, eventId: string) {
     return `/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
   }
@@ -245,6 +322,100 @@ export function createGoogleCalendarClient(input: {
       } while (pageToken);
 
       return { calendars, truncated };
+    },
+
+    /**
+     * Busy intervals only — no titles, no attendees, nothing about what fills
+     * the time. That is the whole reason availability uses FreeBusy rather than
+     * listing events: this endpoint cannot return content even by accident.
+     */
+    async queryFreeBusy({ timeMin, timeMax, calendarIds }) {
+      if (calendarIds.length === 0) {
+        return { busyByCalendar: {}, errorsByCalendar: {} };
+      }
+
+      // Google caps expansion at 50 calendars per request; the selection cap is
+      // far below that, so one request always suffices.
+      const response = await call("/freeBusy", {
+        method: "POST",
+        body: JSON.stringify({
+          timeMin,
+          timeMax,
+          items: calendarIds.map((id) => ({ id })),
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        calendars?: Record<
+          string,
+          {
+            busy?: Array<{ start?: string; end?: string }>;
+            errors?: Array<{ reason?: string }>;
+          }
+        >;
+      };
+
+      const busyByCalendar: FreeBusyResult["busyByCalendar"] = {};
+      const errorsByCalendar: FreeBusyResult["errorsByCalendar"] = {};
+
+      for (const [calendarId, entry] of Object.entries(payload.calendars ?? {})) {
+        // A per-calendar failure is kept rather than folded into the busy list:
+        // "no busy time" and "we could not ask" must not look alike, because one
+        // of them means the slot is safe and the other means nobody knows.
+        if (entry.errors?.length) {
+          errorsByCalendar[calendarId] = entry.errors[0]?.reason ?? "unknown";
+          continue;
+        }
+
+        busyByCalendar[calendarId] = (entry.busy ?? [])
+          .filter((slot): slot is { start: string; end: string } =>
+            Boolean(slot.start && slot.end),
+          )
+          .map((slot) => ({ start: slot.start, end: slot.end }));
+      }
+
+      return { busyByCalendar, errorsByCalendar };
+    },
+
+    /**
+     * One page of changes.
+     *
+     * The query shape is fixed and versioned in code, because a sync token is
+     * only valid for the query that produced it. Notably absent:
+     * `privateExtendedProperty`, `timeMin`, and `timeMax` — Google rejects them
+     * alongside a sync token, so ownership filtering happens after the fetch
+     * rather than in it.
+     *
+     * `showDeleted` is on: a deleted event is precisely the change two-way sync
+     * most needs to hear about.
+     */
+    async listEvents({ calendarId, syncToken, pageToken }) {
+      const response = await call(
+        `/calendars/${encodeURIComponent(calendarId)}/events`,
+        {
+          method: "GET",
+          query: {
+            fields: LIST_EVENTS_FIELDS,
+            maxResults: "250",
+            showDeleted: "true",
+            singleEvents: "false",
+            ...(syncToken ? { syncToken } : {}),
+            ...(pageToken ? { pageToken } : {}),
+          },
+        },
+      );
+
+      const payload = (await response.json()) as {
+        items?: GoogleEvent[];
+        nextPageToken?: string;
+        nextSyncToken?: string;
+      };
+
+      return {
+        events: payload.items ?? [],
+        nextPageToken: payload.nextPageToken,
+        nextSyncToken: payload.nextSyncToken,
+      };
     },
 
     async getEvent(calendarId, eventId) {
@@ -325,6 +496,60 @@ export function createGoogleCalendarClient(input: {
       } catch (error) {
         // Already gone is the state we wanted. A replayed cancellation has to
         // succeed, or it would fail forever.
+        if (
+          error instanceof GoogleApiError &&
+          (error.status === 404 || error.status === 410)
+        ) {
+          return;
+        }
+
+        throw error;
+      }
+    },
+
+    async watchEvents(request) {
+      // The channel id and token are ours, generated per channel. Google echoes
+      // both back on every notification, and the token is the only thing that
+      // distinguishes a real notification from anyone who guessed the URL.
+      const response = await call(`${calendarPath(request.calendarId)}/events/watch`, {
+        method: "POST",
+        body: JSON.stringify({
+          id: request.channelId,
+          type: "web_hook",
+          address: request.address,
+          token: request.token,
+          params: { ttl: String(request.ttlSeconds) },
+        }),
+      });
+
+      const payload = (await response.json()) as {
+        resourceId?: string;
+        expiration?: string;
+      };
+
+      if (!payload.resourceId) {
+        // Without a resource id the channel cannot ever be stopped, which would
+        // leave Google notifying an endpoint nobody can switch off.
+        throw new GoogleApiError("watch_incomplete", 502, true);
+      }
+
+      return {
+        resourceId: payload.resourceId,
+        expiresAt: payload.expiration
+          ? new Date(Number(payload.expiration)).toISOString()
+          : null,
+      };
+    },
+
+    async stopChannel(request) {
+      try {
+        await call("/channels/stop", {
+          method: "POST",
+          body: JSON.stringify({ id: request.channelId, resourceId: request.resourceId }),
+        });
+      } catch (error) {
+        // A channel that is already gone is the outcome asked for. Failing here
+        // would strand the row that records it as live.
         if (
           error instanceof GoogleApiError &&
           (error.status === 404 || error.status === 410)

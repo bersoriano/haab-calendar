@@ -1,6 +1,7 @@
 import {
   DEFAULT_PLAN_TIER,
   FEATURE_KEYS,
+  getFeaturePrerequisites,
   getPlanFeatures,
   isFeatureKey,
   isProviderPlanTier,
@@ -15,6 +16,11 @@ export type FeatureEntitlement = {
   source: EntitlementSource;
   /** Only present while a temporary override is deciding the answer. */
   overrideExpiresAt?: string;
+  /**
+   * Set when something granted this feature but a capability it depends on is
+   * off, so the answer is no despite the grant.
+   */
+  unmetPrerequisites?: readonly FeatureKey[];
 };
 
 export type ProviderEntitlements = {
@@ -103,6 +109,34 @@ export function resolveEntitlements(input: {
     }
 
     features[featureKey] = { enabled: planFeatures.has(featureKey), source: "plan" };
+  }
+
+  // A capability whose prerequisite is off is off, whatever granted it. Two-way
+  // sync without the base connection has nothing to sync; busy blocking without
+  // it has nothing to read. Enabling either on its own would be a
+  // misconfiguration resolved in the provider's favour, which is the one
+  // direction this resolver never takes.
+  //
+  // Applied after the first pass and in catalog order, so a chain resolves in
+  // one sweep: sync off disables busy blocking, which disables two-way.
+  for (const featureKey of FEATURE_KEYS) {
+    if (!features[featureKey].enabled) {
+      continue;
+    }
+
+    const unmet = getFeaturePrerequisites(featureKey).filter(
+      (prerequisite) => !features[prerequisite].enabled,
+    );
+
+    if (unmet.length > 0) {
+      features[featureKey] = {
+        ...features[featureKey],
+        enabled: false,
+        // The source still names where the *grant* came from, so an operator
+        // reading this can see an override was present and overruled.
+        unmetPrerequisites: unmet,
+      };
+    }
   }
 
   return { providerId: input.providerId, planTier, features };

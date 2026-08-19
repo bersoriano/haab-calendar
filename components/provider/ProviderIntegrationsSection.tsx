@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { adminInsetClass } from "@/components/provider/adminGlass";
+import { GoogleCalendarCapabilities } from "@/components/provider/GoogleCalendarCapabilities";
 import { SectionTitle } from "@/components/ui";
 import { hasResolvedEntitlement, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { FeatureKey } from "@/lib/entitlements/catalog";
@@ -301,6 +302,13 @@ export function ProviderIntegrationsSection({
                       {t.googleNeedsReauth}
                     </p>
                   ) : null}
+
+                  {/* Only once there is a calendar to read from and write to:
+                      neither capability means anything before that. */}
+                  <GoogleCalendarCapabilities
+                    lang={lang}
+                    connected={Boolean(connection?.connected)}
+                  />
                 </div>
               ) : (
                 <button

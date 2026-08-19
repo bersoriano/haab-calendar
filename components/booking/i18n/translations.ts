@@ -307,6 +307,28 @@ export type BookingDict = {
     googleNeedsReauth: string;
     googleConnectionFailed: string;
     googleWritesTo: string;
+    googleBusyTitle: string;
+    googleBusyBody: string;
+    googleBusyEnable: string;
+    googleBusyChoose: string;
+    googleBusyChooseHelp: string;
+    googleBusyLimit: string;
+    googleBusyNoCalendars: string;
+    googleBusySourceFailed: string;
+    googleTwoWayTitle: string;
+    googleTwoWayBody: string;
+    googleTwoWayEnable: string;
+    googleTwoWayDeletion: string;
+    googleTwoWayDeletionHelp: string;
+    googleConflictsTitle: string;
+    googleConflictsBody: string;
+    googleConflictsNone: string;
+    googleConflictRepairing: string;
+    googleSaveFailed: string;
+    googleConflictDuration: string;
+    googleConflictOccupied: string;
+    googleConflictDeletion: string;
+    googleConflictOther: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
     eventSchedulingTitle: string;
@@ -813,6 +835,33 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       googleNeedsReauth: "Reconnect needed",
       googleConnectionFailed: "Could not reach Google Calendar.",
       googleWritesTo: "Writing bookings to",
+      googleBusyTitle: "Block times from other calendars",
+      googleBusyBody:
+        "Haab reads only when you are busy from the calendars you choose — never what the events are. Those times stop appearing as available.",
+      googleBusyEnable: "Use my other calendars to block times",
+      googleBusyChoose: "Calendars to check",
+      googleBusyChooseHelp:
+        "The calendar Haab writes bookings to is not listed: its events are already your Haab bookings.",
+      googleBusyLimit: "You can check up to 10 calendars.",
+      googleBusyNoCalendars: "No other calendars were found on this account.",
+      googleBusySourceFailed: "Haab could not read this calendar.",
+      googleTwoWayTitle: "Let Google changes move bookings",
+      googleTwoWayBody:
+        "Moving an event in Google moves the booking in Haab. Changes Haab cannot accept — a different length, an occupied time — are listed below instead, and the event goes back where it was.",
+      googleTwoWayEnable: "Apply changes made in Google",
+      googleTwoWayDeletion: "Deleting the event cancels the booking",
+      googleTwoWayDeletionHelp:
+        "Off by default. Deleting an event is not the same as telling a client their appointment is cancelled.",
+      googleConflictsTitle: "Changes Haab did not apply",
+      googleConflictsBody:
+        "Each of these was put back the way Haab has it. Make the change in Haab to keep it.",
+      googleConflictsNone: "Nothing to review.",
+      googleConflictRepairing: "Putting this back",
+      googleSaveFailed: "Could not save those settings.",
+      googleConflictDuration: "The length was changed",
+      googleConflictOccupied: "That time was not free in Haab",
+      googleConflictDeletion: "The event was deleted",
+      googleConflictOther: "Haab could not apply this change",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
       eventSchedulingTitle: "Event scheduling",
@@ -1336,6 +1385,33 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       googleNeedsReauth: "Necesita reconectarse",
       googleConnectionFailed: "No se pudo conectar con Google Calendar.",
       googleWritesTo: "Escribiendo reservas en",
+      googleBusyTitle: "Bloquear horarios desde otros calendarios",
+      googleBusyBody:
+        "Haab lee únicamente cuándo estás ocupado en los calendarios que elijas, nunca de qué se tratan los eventos. Esos horarios dejan de aparecer como disponibles.",
+      googleBusyEnable: "Usar mis otros calendarios para bloquear horarios",
+      googleBusyChoose: "Calendarios por revisar",
+      googleBusyChooseHelp:
+        "El calendario donde Haab escribe las reservas no aparece en la lista: sus eventos ya son tus reservas de Haab.",
+      googleBusyLimit: "Puedes revisar hasta 10 calendarios.",
+      googleBusyNoCalendars: "No se encontraron otros calendarios en esta cuenta.",
+      googleBusySourceFailed: "Haab no pudo leer este calendario.",
+      googleTwoWayTitle: "Permitir que los cambios de Google muevan reservas",
+      googleTwoWayBody:
+        "Mover un evento en Google mueve la reserva en Haab. Los cambios que Haab no puede aceptar (otra duración, un horario ocupado) aparecen abajo y el evento vuelve a su lugar.",
+      googleTwoWayEnable: "Aplicar los cambios hechos en Google",
+      googleTwoWayDeletion: "Eliminar el evento cancela la reserva",
+      googleTwoWayDeletionHelp:
+        "Desactivado de forma predeterminada. Eliminar un evento no es lo mismo que avisarle a un cliente que su cita se canceló.",
+      googleConflictsTitle: "Cambios que Haab no aplicó",
+      googleConflictsBody:
+        "Cada uno volvió a como está en Haab. Haz el cambio en Haab para conservarlo.",
+      googleConflictsNone: "Nada por revisar.",
+      googleConflictRepairing: "Restaurando",
+      googleSaveFailed: "No se pudieron guardar esos ajustes.",
+      googleConflictDuration: "Se cambió la duración",
+      googleConflictOccupied: "Ese horario no estaba libre en Haab",
+      googleConflictDeletion: "Se eliminó el evento",
+      googleConflictOther: "Haab no pudo aplicar este cambio",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
       eventSchedulingTitle: "Programación de eventos",

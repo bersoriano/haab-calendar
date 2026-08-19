@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/google-workers",
-      "schedule": "*/2 * * * *"
+      "schedule": "* * * * *"
     }
   ]
 }

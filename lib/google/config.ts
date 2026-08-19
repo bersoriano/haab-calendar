@@ -57,6 +57,32 @@ export function getDeploymentNamespace() {
   return process.env.HAAB_DEPLOYMENT_NAMESPACE?.trim() || "local";
 }
 
+/**
+ * Where Google delivers push notifications.
+ *
+ * Derived from the redirect URI rather than configured separately: the two must
+ * be the same public origin, and a second variable is a second thing to get
+ * wrong. Google requires HTTPS here and will refuse to create a channel
+ * otherwise, so a local deployment simply has no watch address.
+ */
+export function getWatchNotificationUrl(): string | undefined {
+  const redirect = getGoogleRedirectUri();
+
+  if (!redirect) {
+    return undefined;
+  }
+
+  try {
+    const origin = new URL(redirect).origin;
+
+    return origin.startsWith("https://")
+      ? `${origin}/api/webhooks/google-calendar`
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function isGoogleConfigured() {
   return Boolean(
     getGoogleClientId() &&

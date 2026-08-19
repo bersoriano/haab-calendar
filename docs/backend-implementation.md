@@ -239,9 +239,11 @@ through calls made during the request.
 - **Retention.** Keep `succeeded`/`skipped` rows 30–90 days; keep `dead_letter`
   rows until reviewed. No cleanup job exists yet, and none is added here.
 - **Deletion.** Outbox rows cascade from bookings and providers, so deleting an
-  account discards its pending events. This task deletes nothing from any
-  external calendar; the future Google work must decide credential revocation
-  and external cleanup before provider deletion.
+  account discards its pending events. Credential revocation and external
+  cleanup are now handled by the Google work: disconnect attempts revocation
+  inline and falls back to `google_revocation_jobs`, which outlives the
+  connection row so a grant is never stranded. Deleting a provider still does
+  not delete events from a calendar Haab wrote to.
 - **Local and demo mode** never touch this path: the triggers live on Supabase
   tables, and localStorage bookings never reach them.
 

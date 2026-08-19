@@ -1847,6 +1847,35 @@ RLS is enabled on all public tables:
 - `stripe_webhook_events`
 - `provider_billing_subscriptions`
 
+Google Calendar tables, all with RLS enabled and **no policies at all** — they
+are reachable only through the service role, from a server route that shapes a
+safe DTO. None of these rows is ever sent to a browser raw:
+
+- `provider_google_calendar_connections` — grant, sealed refresh token, target
+  calendar, and the three capability switches (`busy_blocking_enabled`,
+  `two_way_enabled`, `deletion_cancels_booking`), all defaulting to false
+- `provider_google_calendar_event_mappings` — booking ↔ event, the projected
+  booking version, and the loop-prevention columns (`last_google_etag`,
+  `last_google_updated_at`, `last_applied_inbound_change_id`)
+- `provider_google_reconciliation_jobs`, `google_revocation_jobs`
+- `provider_google_calendar_busy_sources` — the calendars a provider chose;
+  `calendar_summary` is what the UI shows, the id stays server-side
+- `provider_google_calendar_busy_intervals` — intervals only, never event
+  content, keyed by `snapshot_generation`
+- `provider_google_calendar_watch_channels` — `channel_token_hash`, never the
+  token
+- `google_calendar_webhook_inbox` — unique on `(channel_id, message_number)`
+- `provider_google_calendar_sync_cursors` — sync tokens, treated as credentials
+- `google_calendar_inbound_changes` — times and identifiers only, with a 4 KB
+  constraint that fails loudly if anyone starts copying event bodies in
+- `google_calendar_sync_conflicts` — a code plus the Haab-side schedule, capped
+  at 2 KB
+
+`booking_events.actor_type` accepts `provider`, `customer`, `system`, and
+`google_calendar`. The last one exists so a booking that moved because the
+provider dragged it in Google does not appear in the audit as the provider
+acting inside Haab.
+
 Public anonymous reads:
 
 - Only published provider and service data should be visible.
