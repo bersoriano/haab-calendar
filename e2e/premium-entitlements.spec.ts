@@ -183,7 +183,13 @@ test.describe("billing premium provider", () => {
   test("keeps the premium state after a reload", async ({ page }) => {
     await openSettings(page);
     await page.reload();
-    await page.getByRole("button", { name: /^(Settings|Ajustes)$/ }).click();
+
+    // The workspace is client state rather than a route, so a reload lands
+    // back on the landing page and the tab strip is gone with it. Navigating
+    // again is the honest way to reach Settings, and it makes the assertion
+    // stronger: the entitlement is re-resolved on the server for a fresh page,
+    // not remembered by the tab that was already open.
+    await openSettings(page);
 
     await expect(integrationCard(page)).toContainText(/Available|Disponible/);
   });
