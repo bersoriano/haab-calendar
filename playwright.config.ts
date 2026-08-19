@@ -12,6 +12,11 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
+  // A broken navigation helper fails every test the same way, and twenty-two
+  // sixty-second timeouts exceed the job's own limit — which cancels the run
+  // and skips the report upload, so the one artifact that explains the failure
+  // is the thing that never gets produced. Stopping early keeps the diagnosis.
+  maxFailures: CI ? 3 : 0,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: CI ? [["html", { open: "never" }], ["list"]] : [["list"]],

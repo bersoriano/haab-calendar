@@ -81,10 +81,19 @@ jobs:
       - name: Replay the migration chain from scratch
         run: supabase db reset --local
 
+      - name: Export local Supabase credentials
+        run: |
+          # Same as the E2E job: written to the job env, never echoed. The
+          # local stack's keys are well-known development values rather than
+          # secrets, but printing keys into a log is a habit worth not having.
+          {
+            echo "SUPABASE_URL=http://127.0.0.1:54321"
+            echo "SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.ANON_KEY')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')"
+          } >> "$GITHUB_ENV"
+
       - name: Run database integration tests
         run: npm run test:db
-        env:
-          SUPABASE_URL: http://127.0.0.1:54321
 
       - name: Lint the local schema
         run: supabase db lint --local
@@ -125,8 +134,23 @@ jobs:
             echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')"
           } >> "$GITHUB_ENV"
 
+      # Cached across runs: the download is the slow half, and it only changes
+      # when Playwright does.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # Without --with-deps. That flag runs apt-get, which hung for the full
+        # thirty-minute job limit on two consecutive runs and cancelled both
+        # before a single test ran. The runner image already carries Chromium's
+        # libraries; if that ever stops being true the browser fails to launch
+        # immediately and says so, which is a better failure than a silent
+        # half-hour stall.
+        timeout-minutes: 6
+        run: npx playwright install chromium
 
       - run: npm run build
       - run: npm run test:e2e
@@ -138,9 +162,12 @@ jobs:
           CRON_SECRET: cron-test-only-not-real
 
       - name: Upload Playwright report
-        # Failure only, and never the auth-state directory: .playwright/.auth
-        # holds live local sessions and has no business in an artifact.
-        if: failure()
+        # Any non-success, not just failure: a job that hits its own time limit
+        # is cancelled rather than failed, and `if: failure()` skips exactly
+        # when the report would have explained why. Never the auth-state
+        # directory: .playwright/.auth holds live local sessions and has no
+        # business in an artifact.
+        if: '!success()' 
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-report

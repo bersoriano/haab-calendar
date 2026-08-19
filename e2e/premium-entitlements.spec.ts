@@ -12,9 +12,35 @@ import { authStatePath, providerFor, type E2ERole } from "./fixtures/providers";
  * bypassed entirely.
  */
 
+/**
+ * Opens the workspace, then its Settings tab.
+ *
+ * Two steps rather than one because `/` is the landing page, not the
+ * workspace: a configured owner is shown a panel that opens it, and the tab
+ * strip — Settings included — only mounts once it has. Going straight for the
+ * tab waits for a control that is not on the page yet.
+ */
 async function openSettings(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /^(Settings|Ajustes)$/ }).click();
+
+  // Not anchored, and not "Go to dashboard". Two translation files define a
+  // `goToDashboard` key: the landing one renders here as "Go to your dashboard
+  // →", and the booking one says "Go to dashboard" somewhere else entirely.
+  // The trailing arrow is part of the accessible name, so an anchored match on
+  // the words alone finds nothing.
+  const openWorkspace = page.getByRole("button", {
+    name: /Go to your dashboard|Ir a tu panel/,
+  });
+
+  // Asserted before clicking so a missing entry point reports what is missing
+  // instead of spending the full test timeout inside click().
+  await expect(openWorkspace).toBeVisible();
+  await openWorkspace.click();
+
+  const settings = page.getByRole("button", { name: /^(Settings|Ajustes)$/ });
+  await expect(settings).toBeVisible();
+  await settings.click();
+
   await expect(page.getByText(/Integrations|Integraciones/)).toBeVisible();
 }
 
@@ -157,7 +183,13 @@ test.describe("billing premium provider", () => {
   test("keeps the premium state after a reload", async ({ page }) => {
     await openSettings(page);
     await page.reload();
-    await page.getByRole("button", { name: /^(Settings|Ajustes)$/ }).click();
+
+    // The workspace is client state rather than a route, so a reload lands
+    // back on the landing page and the tab strip is gone with it. Navigating
+    // again is the honest way to reach Settings, and it makes the assertion
+    // stronger: the entitlement is re-resolved on the server for a fresh page,
+    // not remembered by the tab that was already open.
+    await openSettings(page);
 
     await expect(integrationCard(page)).toContainText(/Available|Disponible/);
   });
@@ -249,12 +281,16 @@ test.describe("accessibility of the entitlement state", () => {
   });
 
   test("gives the settings tabs unique accessible names", async ({ page }) => {
-    await page.goto("/");
+    await openSettings(page);
 
     const names = await page
       .getByRole("button", { name: /Dashboard|Panel|Settings|Ajustes|Appearance|Apariencia/ })
       .allTextContents();
 
+    // Asserted first: an empty list satisfies the uniqueness check trivially,
+    // so without this the test passed on a page with no tabs at all — which is
+    // exactly what it was doing.
+    expect(names.length).toBeGreaterThanOrEqual(3);
     expect(new Set(names).size).toBe(names.length);
   });
 });
