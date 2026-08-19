@@ -174,11 +174,32 @@ where id = '…';
 Never logged: OAuth tokens, ID tokens, calendar ids (usually email addresses),
 Google event bodies, or raw Google responses.
 
-**Scheduling.** `vercel.json` runs `/api/cron/integration-outbox` every minute
-and `/api/cron/google-workers` every two. Both require
-`Authorization: Bearer $CRON_SECRET`; Vercel sends it automatically when
-`CRON_SECRET` is set as a project environment variable. Off Vercel, point any
-scheduler at the same paths with the same header.
+**Scheduling.** Not Vercel cron. The Hobby plan allows one run per day, which
+would mean a booking reaching Google the following night, so `vercel.json` was
+removed and `.github/workflows/scheduled-workers.yml` drives both endpoints
+instead — `/api/cron/integration-outbox` and `/api/cron/google-workers`, every
+five minutes, six passes per run.
+
+Both require `Authorization: Bearer $CRON_SECRET`. Two repository secrets make
+it work:
+
+| Secret | Value |
+| --- | --- |
+| `WORKERS_BASE_URL` | `https://haab-calendar.vercel.app`, no trailing slash |
+| `CRON_SECRET` | The same value set in the Vercel project |
+
+If the two `CRON_SECRET`s ever drift, every call answers 401 and the workflow
+fails loudly rather than silently doing nothing.
+
+Two things to know about this arrangement. GitHub's scheduler is best-effort
+and runs late under load — acceptable here because no worker has a deadline;
+each claims what is due and the queue keeps the rest. And **GitHub disables
+scheduled workflows after 60 days without a commit to the repository**, without
+notice. On a quiet repo that is the likeliest way for delivery to stop, so it
+is the first thing to check when a backlog appears with no errors anywhere.
+
+Moving to Vercel Pro would let `vercel.json` own the schedule again at
+per-minute resolution; the routes need no change either way.
 
 Manual invocation:
 

@@ -359,7 +359,13 @@ lib/google/
   capabilities.ts     # what a provider switched on, and what they chose
 app/api/webhooks/google-calendar/route.ts   # always 204, never calls Google
 app/api/google/capabilities/route.ts        # read and change the two switches
+.github/workflows/scheduled-workers.yml     # drives both cron routes
 ```
+
+- **The schedule lives in GitHub Actions, not `vercel.json`.** Vercel's Hobby
+  plan permits one cron run per day, which for a booking app means a change
+  reaching Google the following night. The routes are plain authenticated GETs,
+  so the driver is replaceable; only the schedule moved.
 
 - **Busy blocking reads availability, never content.** FreeBusy returns
   intervals, and intervals are all that is stored. No title, description,

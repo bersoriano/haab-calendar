@@ -1,0 +1,81 @@
+name: Scheduled workers
+
+# Vercel's Hobby plan allows one cron run per day, which for a booking app means
+# a change reaching Google the following night. The workers are plain
+# authenticated GETs, so the schedule lives here instead — free, visible in the
+# same place as CI, and portable if the host ever changes.
+#
+# GitHub's scheduler is best-effort and can run late under load. That is
+# acceptable because nothing here is a deadline: every worker claims what is
+# due and the queue keeps whatever it did not reach.
+
+on:
+  schedule:
+    # Five minutes is GitHub's floor. Each run drains several jobs, so the
+    # effective rate is higher than the interval suggests.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A late run must not overlap the next one. Leases would survive it, but two
+# workers racing for the same job wastes both.
+concurrency:
+  group: scheduled-workers
+  cancel-in-progress: false
+
+jobs:
+  drain:
+    name: Drain the integration queues
+    runs-on: ubuntu-latest
+    # A fork of a public repository has no secrets and nothing to schedule.
+    if: github.repository == 'bersoriano/haab-calendar'
+    timeout-minutes: 5
+
+    steps:
+      - name: Run the workers
+        env:
+          BASE_URL: ${{ secrets.WORKERS_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -uo pipefail
+
+          if [ -z "${BASE_URL}" ] || [ -z "${CRON_SECRET}" ]; then
+            echo "::error::WORKERS_BASE_URL and CRON_SECRET must both be set."
+            exit 1
+          fi
+
+          failures=0
+
+          # Each endpoint claims one job per worker per call, so one call per
+          # run would drain twelve jobs an hour. Six passes with a short pause
+          # keeps a backlog moving without holding a runner for long.
+          for pass in $(seq 1 6); do
+            for path in /api/cron/integration-outbox /api/cron/google-workers; do
+              # The secret goes through an env var, never the command line:
+              # arguments are visible to anything reading the process table.
+              status=$(curl -sS -o /tmp/body.json -w '%{http_code}' \
+                --max-time 60 \
+                -H "Authorization: Bearer ${CRON_SECRET}" \
+                "${BASE_URL}${path}" || echo "000")
+
+              if [ "${status}" != "200" ]; then
+                echo "::warning::${path} answered ${status} on pass ${pass}"
+                failures=$((failures + 1))
+                continue
+              fi
+
+              # Safe to print: these responses carry counters and outcomes
+              # only, never a provider, booking, calendar, or event id.
+              echo "pass ${pass} ${path} -> $(cat /tmp/body.json)"
+            done
+
+            sleep 8
+          done
+
+          # One transient failure is the network. Half of them is the service.
+          if [ "${failures}" -ge 6 ]; then
+            echo "::error::${failures} of 12 worker calls failed."
+            exit 1
+          fi
