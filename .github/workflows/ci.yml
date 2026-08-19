@@ -147,9 +147,12 @@ jobs:
           CRON_SECRET: cron-test-only-not-real
 
       - name: Upload Playwright report
-        # Failure only, and never the auth-state directory: .playwright/.auth
-        # holds live local sessions and has no business in an artifact.
-        if: failure()
+        # Any non-success, not just failure: a job that hits its own time limit
+        # is cancelled rather than failed, and `if: failure()` skips exactly
+        # when the report would have explained why. Never the auth-state
+        # directory: .playwright/.auth holds live local sessions and has no
+        # business in an artifact.
+        if: '!success()' 
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: playwright-report

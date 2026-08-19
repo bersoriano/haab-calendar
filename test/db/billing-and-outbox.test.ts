@@ -19,8 +19,22 @@ const PROVIDER_ID = "00000000-0000-4000-8000-00000000dbc1";
 
 let serviceId: string;
 
+/**
+ * Every booking gets its own slot.
+ *
+ * `bookings_exact_active_slot_idx` forbids two active bookings at one
+ * provider's exact date and time, which is the whole point of it. The suite
+ * randomised the tokens but reused 2026-09-01 09:00 for every booking, so the
+ * first test passed and every later one collided with it.
+ */
+let slotCursor = 0;
+
 async function createBooking(overrides: Record<string, unknown> = {}) {
   const suffix = Math.random().toString(36).slice(2, 10);
+  // A distinct day per booking, so a test never has to reason about which
+  // other test happened to take the same slot.
+  const day = new Date(Date.UTC(2026, 8, 1) + slotCursor * 86_400_000);
+  slotCursor += 1;
 
   const { data, error } = await admin
     .from("bookings")
@@ -32,7 +46,7 @@ async function createBooking(overrides: Record<string, unknown> = {}) {
       duration_minutes_snapshot: 30,
       client_name: "Test Client",
       client_email: "client@example.invalid",
-      date: "2026-09-01",
+      date: day.toISOString().slice(0, 10),
       start_time: "09:00",
       end_time: "09:30",
       manage_token_hash: `hash_${suffix}`,
@@ -382,8 +396,13 @@ describe("stripe webhook inbox", () => {
       p_lease_seconds: 60,
     });
 
-    expect(first.data).not.toBeNull();
-    expect(second.data).toBeNull();
+    // Not `toBeNull()`, however much it reads that way. PostgREST renders a
+    // composite-returning function as an object of nulls when the function
+    // returned SQL NULL, so "nothing was claimed" arrives as a populated shape
+    // whose fields are all null. Believing otherwise is what let two workers
+    // both report claiming a job that neither had.
+    expect(first.data?.id).toBeTruthy();
+    expect(second.data?.id).toBeFalsy();
   });
 
   it("applies the projection and completes the inbox row together", async () => {
