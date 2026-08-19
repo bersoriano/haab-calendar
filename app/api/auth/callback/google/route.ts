@@ -16,10 +16,11 @@ import { logger } from "@/lib/observability/logger";
 import { getProviderDashboardContext } from "@/lib/supabase/bookings";
 import { createClient } from "@/lib/supabase/server";
 import {
+  OAUTH_COOKIE_PATH,
   OAUTH_NONCE_COOKIE,
   OAUTH_STATE_COOKIE,
   OAUTH_VERIFIER_COOKIE,
-} from "@/app/api/google/oauth/start/route";
+} from "@/lib/google/oauth-cookies";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -61,10 +62,12 @@ export async function GET(request: NextRequest) {
   const verifier = store.get(OAUTH_VERIFIER_COOKIE)?.value;
   const expectedNonce = store.get(OAUTH_NONCE_COOKIE)?.value;
 
-  // Single use, whatever happens next.
-  store.delete(OAUTH_STATE_COOKIE);
-  store.delete(OAUTH_VERIFIER_COOKIE);
-  store.delete(OAUTH_NONCE_COOKIE);
+  // Single use, whatever happens next. Deleted on the path they were written
+  // to — a delete without it silently misses, leaving a usable state cookie
+  // behind for the rest of its lifetime.
+  for (const name of [OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE, OAUTH_NONCE_COOKIE]) {
+    store.delete({ name, path: OAUTH_COOKIE_PATH });
+  }
 
   const params = request.nextUrl.searchParams;
 

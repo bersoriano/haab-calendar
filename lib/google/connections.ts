@@ -294,11 +294,9 @@ export async function runGoogleRevocationWorker(
     throw new Error("Could not claim a Google revocation job.");
   }
 
-  if (!job) {
-    return { claimed: false, revoked: false };
-  }
-
-  const claimed = job as {
+  // Same as the reconciliation claim: an empty claim comes back as a row of
+  // nulls, not as null, so the id is the real test.
+  const claimed = job as null | {
     id: string;
     provider_id: string | null;
     refresh_token_ciphertext: string;
@@ -307,6 +305,10 @@ export async function runGoogleRevocationWorker(
     refresh_token_key_version: number;
     attempt_count: number;
   };
+
+  if (!claimed?.id) {
+    return { claimed: false, revoked: false };
+  }
 
   let revoked = false;
 

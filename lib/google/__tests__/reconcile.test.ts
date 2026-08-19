@@ -304,6 +304,37 @@ describe("runGoogleReconciliationWorker", () => {
     expect(written).toHaveLength(0);
   });
 
+  it("treats an all-null claim row as no job at all", async () => {
+    // PostgREST renders a composite-returning function as an object even when
+    // the function returned SQL NULL, so an empty claim arrives looking like a
+    // row. Taking it at face value made the worker report phantom claims and
+    // process a null job on every run.
+    const supabase = makeClient({
+      job: {
+        id: null,
+        provider_id: null,
+        connection_id: null,
+        connection_generation: null,
+        status: null,
+        cursor_date: null,
+        cursor_booking_id: null,
+        considered_count: null,
+        written_count: null,
+        skipped_count: null,
+        failed_count: null,
+        attempt_count: null,
+        lease_token: null,
+      },
+    });
+    const { google, written } = makeGoogle();
+
+    const summary = await run(supabase, google);
+
+    expect(summary.claimed).toBe(false);
+    expect(written).toHaveLength(0);
+    expect(supabase.updates).toHaveLength(0);
+  });
+
   it("writes a small backlog and completes in one run", async () => {
     const supabase = makeClient({ all: bookings(3) });
     const { google, written } = makeGoogle();

@@ -13,6 +13,7 @@ import { encryptSecret } from "@/lib/google/crypto";
 import {
   createClientForConnection,
   deleteConnection,
+  runGoogleRevocationWorker,
   getConnection,
   markConnectionStatus,
   saveConnection,
@@ -386,6 +387,126 @@ describe("deleteConnection", () => {
     const result = await deleteConnection(PROVIDER, { client, fetchImpl: tokenFetch({}) });
 
     expect(result).toEqual({ deleted: true, revoked: false, revocationQueued: false });
+    expect(writes).toHaveLength(0);
+  });
+});
+
+describe("runGoogleRevocationWorker", () => {
+  function workerClient(job: Record<string, unknown> | null) {
+    const writes: Array<{ op: string; payload: unknown }> = [];
+
+    const query = {
+      update: (payload: unknown) => {
+        writes.push({ op: "update", payload });
+        return { eq: async () => ({ error: null }) };
+      },
+    };
+
+    return {
+      client: {
+        rpc: async () => ({ data: job, error: null }),
+        from: () => query,
+      } as unknown as SupabaseClient,
+      writes,
+    };
+  }
+
+  it("treats an all-null claim row as no job at all", async () => {
+    // The RPC returns SQL NULL when nothing is claimable, but PostgREST hands
+    // that back as an object of nulls. Believing it meant reporting a claim
+    // that never happened.
+    const { client, writes } = workerClient({
+      id: null,
+      provider_id: null,
+      refresh_token_ciphertext: null,
+      refresh_token_iv: null,
+      refresh_token_auth_tag: null,
+      refresh_token_key_version: null,
+      attempt_count: null,
+    });
+
+    const result = await runGoogleRevocationWorker({
+      client,
+      fetchImpl: tokenFetch({}),
+    });
+
+    expect(result).toEqual({ claimed: false, revoked: false });
+    expect(writes).toHaveLength(0);
+  });
+
+  it("does nothing when the claim is genuinely null", async () => {
+    const { client } = workerClient(null);
+
+    await expect(
+      runGoogleRevocationWorker({ client, fetchImpl: tokenFetch({}) }),
+    ).resolves.toEqual({ claimed: false, revoked: false });
+  });
+
+  it("revokes a real job and marks it completed", async () => {
+    const sealed = encryptSecret(REFRESH);
+    const { client, writes } = workerClient({
+      id: "job-1",
+      provider_id: PROVIDER,
+      refresh_token_ciphertext: sealed.ciphertext,
+      refresh_token_iv: sealed.iv,
+      refresh_token_auth_tag: sealed.authTag,
+      refresh_token_key_version: sealed.keyVersion,
+      attempt_count: 1,
+    });
+
+    const result = await runGoogleRevocationWorker({
+      client,
+      fetchImpl: tokenFetch({}),
+    });
+
+    expect(result).toEqual({ claimed: true, revoked: true });
+    expect(writes[0].payload).toMatchObject({ status: "completed" });
+  });
+
+  it("dead-letters once the attempts are spent", async () => {
+    const sealed = encryptSecret(REFRESH);
+    const failing = (async () => {
+      throw new Error("ECONNRESET");
+    }) as unknown as typeof fetch;
+
+    const { client, writes } = workerClient({
+      id: "job-1",
+      provider_id: PROVIDER,
+      refresh_token_ciphertext: sealed.ciphertext,
+      refresh_token_iv: sealed.iv,
+      refresh_token_auth_tag: sealed.authTag,
+      refresh_token_key_version: sealed.keyVersion,
+      attempt_count: 8,
+    });
+
+    const result = await runGoogleRevocationWorker({ client, fetchImpl: failing });
+
+    expect(result).toEqual({ claimed: true, revoked: false });
+    expect(writes[0].payload).toMatchObject({
+      status: "dead_letter",
+      last_error_code: "revocation_attempts_exhausted",
+    });
+  });
+
+  it("leaves a job alone while it still has attempts left", async () => {
+    const sealed = encryptSecret(REFRESH);
+    const failing = (async () => {
+      throw new Error("ECONNRESET");
+    }) as unknown as typeof fetch;
+
+    const { client, writes } = workerClient({
+      id: "job-1",
+      provider_id: PROVIDER,
+      refresh_token_ciphertext: sealed.ciphertext,
+      refresh_token_iv: sealed.iv,
+      refresh_token_auth_tag: sealed.authTag,
+      refresh_token_key_version: sealed.keyVersion,
+      attempt_count: 2,
+    });
+
+    await runGoogleRevocationWorker({ client, fetchImpl: failing });
+
+    // The claim already pushed available_at forward; nothing else to write.
     expect(writes).toHaveLength(0);
   });
 });

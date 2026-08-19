@@ -9,6 +9,13 @@ import {
   createOAuthState,
   createPkcePair,
 } from "@/lib/google/oauth";
+import {
+  OAUTH_COOKIE_MAX_AGE,
+  OAUTH_COOKIE_PATH,
+  OAUTH_NONCE_COOKIE,
+  OAUTH_STATE_COOKIE,
+  OAUTH_VERIFIER_COOKIE,
+} from "@/lib/google/oauth-cookies";
 import { resolveRequestId, withRequestId } from "@/lib/observability/context";
 import { logger } from "@/lib/observability/logger";
 import { getProviderDashboardContext } from "@/lib/supabase/bookings";
@@ -17,11 +24,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** Ten minutes is longer than any honest consent screen takes. */
-const OAUTH_COOKIE_MAX_AGE = 600;
-export const OAUTH_STATE_COOKIE = "haab_google_oauth_state";
-export const OAUTH_VERIFIER_COOKIE = "haab_google_oauth_verifier";
-export const OAUTH_NONCE_COOKIE = "haab_google_oauth_nonce";
+
 
 /**
  * Starts the Google connection.
@@ -82,7 +85,10 @@ export async function GET(request: NextRequest) {
       // Lax, not Strict: Google redirects the browser back here, and a Strict
       // cookie would not be sent on that cross-site navigation.
       sameSite: "lax" as const,
-      path: "/api/google/oauth",
+      // Wide enough to cover both the start route and the callback, which live
+      // under different prefixes because the callback path is fixed by what is
+      // registered in the Google console.
+      path: OAUTH_COOKIE_PATH,
       maxAge: OAUTH_COOKIE_MAX_AGE,
     };
 

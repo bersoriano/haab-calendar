@@ -169,11 +169,14 @@ export async function runGoogleReconciliationWorker(
     throw new Error("Could not claim a Google reconciliation job.");
   }
 
-  if (!job) {
+  // PostgREST renders a composite-returning function as an object even when the
+  // function returned SQL NULL, so "no job" arrives as a row of nulls rather
+  // than as null. The id is what actually distinguishes the two.
+  const claimed = job as JobRow | null;
+
+  if (!claimed?.id) {
     return summary;
   }
-
-  const claimed = job as JobRow;
   summary.claimed = true;
   const jobLog = log.child({ providerId: claimed.provider_id });
   jobLog.info("google.reconcile.started", { attemptCount: claimed.attempt_count });
