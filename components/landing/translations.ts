@@ -351,7 +351,7 @@ export const translations = {
         },
         {
           q: "¿Las reservas se pueden agregar a un calendario?",
-          a: "Sí. Cada confirmación incluye archivo de calendario y código QR, así que la reserva llega al calendario que ya usas.",
+          a: "Sí. Cada confirmación incluye un archivo de calendario. También incluye un QR privado para abrir o verificar la reserva.",
         },
         {
           q: "¿Cuánto cuesta?",
@@ -734,7 +734,7 @@ export const translations = {
         },
         {
           q: "Can bookings be added to a calendar?",
-          a: "Yes. Every confirmation includes a calendar file and a QR code, so a booking lands in the calendar you already use.",
+          a: "Yes. Every confirmation includes a calendar file. It also includes a private QR for opening or verifying the booking.",
         },
         {
           q: "What does it cost?",

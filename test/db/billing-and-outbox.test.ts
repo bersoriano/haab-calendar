@@ -488,6 +488,195 @@ describe("stripe webhook inbox", () => {
   });
 });
 
+/**
+ * A super admin granting premium to somebody else's provider.
+ *
+ * The point of an override is that one person can act on another person's
+ * account, so the case worth proving is the cross-account one: the actor and
+ * the provider's owner are deliberately different users here, and nothing in
+ * the RPC ties them together.
+ *
+ * The session check that decides who counts as a super admin lives in the route
+ * and is covered there. What only a database can answer is whether the write
+ * lands on the intended provider, whether the audit records who did it, and
+ * whether anyone else can reach the same function.
+ */
+describe("super admin feature overrides", () => {
+  // Distinct from OWNER_ID on purpose. If these two were ever the same the
+  // suite would still pass while proving only the self-service case.
+  const SUPER_ADMIN_ID = "00000000-0000-4000-8000-00000000dba9";
+
+  beforeAll(async () => {
+    await admin.auth.admin.createUser({
+      id: SUPER_ADMIN_ID,
+      email: "db-super-admin@example.invalid",
+      password: "local-test-password",
+      email_confirm: true,
+    });
+  });
+
+  afterAll(async () => {
+    await admin.auth.admin.deleteUser(SUPER_ADMIN_ID).catch(() => undefined);
+  });
+
+  async function currentOverride(featureKey: string) {
+    const { data } = await admin
+      .from("provider_feature_overrides")
+      .select("provider_id, feature_key, enabled, expires_at, reason, created_by_user_id")
+      .eq("provider_id", PROVIDER_ID)
+      .eq("feature_key", featureKey)
+      .maybeSingle();
+
+    return data;
+  }
+
+  async function auditFor(featureKey: string) {
+    const { data } = await admin
+      .from("provider_feature_override_events")
+      .select("action, enabled, reason, actor_user_id, created_at")
+      .eq("provider_id", PROVIDER_ID)
+      .eq("feature_key", featureKey)
+      .order("created_at", { ascending: true });
+
+    return data ?? [];
+  }
+
+  it("grants a feature on a provider the actor does not own", async () => {
+    const { error } = await admin.rpc("set_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "google_calendar_sync",
+      p_enabled: true,
+      p_expires_at: null,
+      p_reason: "Enabling for a support case",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+
+    expect(error).toBeNull();
+
+    const override = await currentOverride("google_calendar_sync");
+    expect(override).toMatchObject({
+      provider_id: PROVIDER_ID,
+      enabled: true,
+      created_by_user_id: SUPER_ADMIN_ID,
+    });
+
+    // The whole point: the provider belongs to someone else.
+    expect(SUPER_ADMIN_ID).not.toBe(OWNER_ID);
+  });
+
+  it("records who did it, in a row the actor cannot author", async () => {
+    const events = await auditFor("google_calendar_sync");
+    const set = events.filter((event) => event.action === "set");
+
+    expect(set.length).toBeGreaterThanOrEqual(1);
+    expect(set.at(-1)).toMatchObject({
+      enabled: true,
+      actor_user_id: SUPER_ADMIN_ID,
+      reason: "Enabling for a support case",
+    });
+  });
+
+  it("writes the override and its audit row in the same statement", async () => {
+    // A reason is required, and the failure has to leave nothing behind — an
+    // override without an audit row is worse than no override.
+    const before = (await auditFor("custom_slug")).length;
+
+    const { error } = await admin.rpc("set_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "custom_slug",
+      p_enabled: true,
+      p_expires_at: null,
+      p_reason: "   ",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+
+    expect(error).not.toBeNull();
+    expect(await currentOverride("custom_slug")).toBeNull();
+    expect((await auditFor("custom_slug")).length).toBe(before);
+  });
+
+  it("replaces an existing override rather than stacking a second one", async () => {
+    await admin.rpc("set_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "google_calendar_sync",
+      p_enabled: false,
+      p_expires_at: null,
+      p_reason: "Revoking after the support case",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+
+    const { data: rows } = await admin
+      .from("provider_feature_overrides")
+      .select("id, enabled")
+      .eq("provider_id", PROVIDER_ID)
+      .eq("feature_key", "google_calendar_sync");
+
+    // One current override per provider and feature; the history is the events
+    // table, not extra rows here.
+    expect(rows).toHaveLength(1);
+    expect(rows?.[0]?.enabled).toBe(false);
+
+    const events = await auditFor("google_calendar_sync");
+    expect(events.filter((event) => event.action === "set").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("clears the override and says so in the audit", async () => {
+    const { error } = await admin.rpc("clear_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "google_calendar_sync",
+      p_reason: "Support case closed",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+
+    expect(error).toBeNull();
+    expect(await currentOverride("google_calendar_sync")).toBeNull();
+
+    const events = await auditFor("google_calendar_sync");
+    expect(events.at(-1)).toMatchObject({
+      action: "cleared",
+      enabled: null,
+      actor_user_id: SUPER_ADMIN_ID,
+    });
+  });
+
+  it("keeps the history after the override is gone", async () => {
+    // Clearing is not forgetting. The record that someone was granted premium
+    // has to outlive the grant.
+    expect((await auditFor("google_calendar_sync")).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("refuses both tables and both functions to anon", async () => {
+    const readOverrides = await anon
+      .from("provider_feature_overrides")
+      .select("id")
+      .limit(1);
+    const readAudit = await anon
+      .from("provider_feature_override_events")
+      .select("id")
+      .limit(1);
+
+    const grant = await anon.rpc("set_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "google_calendar_sync",
+      p_enabled: true,
+      p_expires_at: null,
+      p_reason: "Granting myself premium",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+    const clear = await anon.rpc("clear_provider_feature_override", {
+      p_provider_id: PROVIDER_ID,
+      p_feature_key: "google_calendar_sync",
+      p_reason: "Covering my tracks",
+      p_actor_user_id: SUPER_ADMIN_ID,
+    });
+
+    expect(readOverrides.error).not.toBeNull();
+    expect(readAudit.error).not.toBeNull();
+    expect(grant.error).not.toBeNull();
+    expect(clear.error).not.toBeNull();
+  });
+});
+
 describe("google calendar mapping constraints", () => {
   let connectionId: string;
   const generation = "00000000-0000-4000-8000-0000000000c1";

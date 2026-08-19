@@ -233,8 +233,8 @@ export const defaultCopy: VerticalCopy = {
 
     clientLabel: "Client",
 
-    scanQrBody: "Scan the code with your phone camera to add this booking to your calendar.",
-    calendarQrLabel: "QR code to add this booking to a calendar",
+    scanQrBody: "Scan to open this booking, or present the code to the provider.",
+    calendarQrLabel: "Private QR code for this booking",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This booking happens on a single fixed date.",
@@ -355,8 +355,8 @@ export const defaultCopyEs: VerticalCopy = {
 
     clientLabel: "Cliente",
 
-    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
-    calendarQrLabel: "Código QR para agregar esta reserva al calendario",
+    scanQrBody: "Escanee para abrir esta reserva o presente el código al proveedor.",
+    calendarQrLabel: "Código QR privado de esta reserva",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
@@ -478,8 +478,8 @@ export const healthcareCopy: VerticalCopy = {
 
     clientLabel: "Patient",
 
-    scanQrBody: "Scan the code with your phone camera to add this appointment to your calendar.",
-    calendarQrLabel: "QR code to add this appointment to a calendar",
+    scanQrBody: "Scan to open this appointment, or present the code to the provider.",
+    calendarQrLabel: "Private QR code for this appointment",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This appointment happens on a single fixed date.",
@@ -601,8 +601,8 @@ export const healthcareCopyEs: VerticalCopy = {
 
     clientLabel: "Paciente",
 
-    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta cita a su calendario.",
-    calendarQrLabel: "Código QR para agregar esta cita al calendario",
+    scanQrBody: "Escanee para abrir esta cita o presente el código al proveedor.",
+    calendarQrLabel: "Código QR privado de esta cita",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta cita ocurre en una sola fecha fija.",
@@ -722,8 +722,8 @@ export const eventsCopy: VerticalCopy = {
 
     clientLabel: "Attendee",
 
-    scanQrBody: "Scan the code with your phone camera to add this registration to your calendar.",
-    calendarQrLabel: "QR code to add this registration to a calendar",
+    scanQrBody: "Scan to open this registration, or present the code to the organizer.",
+    calendarQrLabel: "Private QR code for this registration",
 
     eventDateLabel: "Event date and time",
     singleOccurrenceHelper:
@@ -847,8 +847,8 @@ export const eventsCopyEs: VerticalCopy = {
 
     clientLabel: "Asistente",
 
-    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar este registro a su calendario.",
-    calendarQrLabel: "Código QR para agregar este registro al calendario",
+    scanQrBody: "Escanee para abrir este registro o presente el código al organizador.",
+    calendarQrLabel: "Código QR privado de este registro",
 
     eventDateLabel: "Fecha y hora del evento",
     singleOccurrenceHelper:
@@ -970,8 +970,8 @@ export const spacesCopy: VerticalCopy = {
 
     clientLabel: "Guest",
 
-    scanQrBody: "Scan the code with your phone camera to add this reservation to your calendar.",
-    calendarQrLabel: "QR code to add this reservation to a calendar",
+    scanQrBody: "Scan to open this reservation, or present the code to the provider.",
+    calendarQrLabel: "Private QR code for this reservation",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This reservation happens on a single fixed date.",
@@ -1092,8 +1092,8 @@ export const spacesCopyEs: VerticalCopy = {
 
     clientLabel: "Huésped",
 
-    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
-    calendarQrLabel: "Código QR para agregar esta reserva al calendario",
+    scanQrBody: "Escanee para abrir esta reserva o presente el código al proveedor.",
+    calendarQrLabel: "Código QR privado de esta reserva",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",
@@ -1213,8 +1213,8 @@ export const professionalCopy: VerticalCopy = {
 
     clientLabel: "Client",
 
-    scanQrBody: "Scan the code with your phone camera to add this session to your calendar.",
-    calendarQrLabel: "QR code to add this session to a calendar",
+    scanQrBody: "Scan to open this session, or present the code to the provider.",
+    calendarQrLabel: "Private QR code for this session",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This session happens on a single fixed date.",
@@ -1335,8 +1335,8 @@ export const professionalCopyEs: VerticalCopy = {
 
     clientLabel: "Cliente",
 
-    scanQrBody: "Escanee el código con la cámara de su teléfono para agregar esta sesión a su calendario.",
-    calendarQrLabel: "Código QR para agregar esta sesión al calendario",
+    scanQrBody: "Escanee para abrir esta sesión o presente el código al proveedor.",
+    calendarQrLabel: "Código QR privado de esta sesión",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta sesión ocurre en una sola fecha fija.",
@@ -1455,8 +1455,8 @@ export const restaurantCopy: VerticalCopy = {
 
     clientLabel: "Guest",
 
-    scanQrBody: "Scan the code with your phone camera to add this reservation to your calendar.",
-    calendarQrLabel: "QR code to add this reservation to a calendar",
+    scanQrBody: "Scan to open this reservation, or present the code to the restaurant.",
+    calendarQrLabel: "Private QR code for this reservation",
 
     eventDateLabel: "Date and time",
     singleOccurrenceHelper: "This reservation happens on a single fixed date.",
@@ -1577,8 +1577,8 @@ export const restaurantCopyEs: VerticalCopy = {
     clientLabel: "Comensal",
 
     scanQrBody:
-      "Escanee el código con la cámara de su teléfono para agregar esta reserva a su calendario.",
-    calendarQrLabel: "Código QR para agregar esta reserva a un calendario",
+      "Escanee para abrir esta reserva o presente el código al restaurante.",
+    calendarQrLabel: "Código QR privado de esta reserva",
 
     eventDateLabel: "Fecha y hora",
     singleOccurrenceHelper: "Esta reserva ocurre en una sola fecha fija.",

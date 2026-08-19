@@ -1133,6 +1133,34 @@ export async function getManagedBooking(supabase: SupabaseClient, input: ManageB
   return { booking: toBookingRecord(booking, input.token) };
 }
 
+/**
+ * Resolves an appointment QR through the signed-in provider client. Booking
+ * RLS owns tenant isolation, so a token from another provider returns no row.
+ */
+export async function getProviderBookingByManageToken(
+  supabase: SupabaseClient,
+  token: string,
+) {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(BOOKING_SELECT)
+    .eq("manage_token_hash", hashManageToken(token))
+    .maybeSingle<BookingRow>();
+
+  if (error) {
+    throw new PublicBookingWriteError("Could not retrieve that appointment.", 500, error);
+  }
+
+  if (!data) {
+    throw new PublicBookingWriteError(
+      "That appointment was not found for your booking page.",
+      404,
+    );
+  }
+
+  return toBookingRecord(data);
+}
+
 export async function cancelManagedBooking(supabase: SupabaseClient, input: ManageBookingInput) {
   const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
   const booking = await getBookingByManageToken(supabase, provider.id, input.token);

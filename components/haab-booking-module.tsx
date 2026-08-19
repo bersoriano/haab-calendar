@@ -7,6 +7,7 @@ import {
   findBookingByToken,
   generateManageToken,
 } from "@/lib/booking-tokens";
+import { getAppointmentQrPayload } from "@/lib/booking-scan";
 import {
   startTransition,
   useCallback,
@@ -177,6 +178,7 @@ import {
   type ManageNoteStatus,
 } from "@/components/booking/ManageBookingPanel";
 import { BookingPass, type PassField } from "@/components/booking/BookingPass";
+import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import {
   isGuestDraftMeaningful,
@@ -369,6 +371,7 @@ export function HaabBookingModule({
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
   const [adminTab, setAdminTab] = useState<AdminTab>("dashboard");
+  const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
   const [setupPublished, setSetupPublished] = useState(false);
@@ -1277,14 +1280,12 @@ export function HaabBookingModule({
       return null;
     }
 
+    const content = getAppointmentQrPayload(successfulBooking, successfulManageUrl);
+    if (!content) return null;
+
     return {
       bookingId: successfulBooking.id,
-      content: buildIcsContent(
-        localizedSuccessfulBooking ?? successfulBooking,
-        provider,
-        buildManageUrl(businessSlug, successfulBooking.manageToken, vertical, lang),
-        lang,
-      ),
+      content,
     };
   });
 
@@ -3611,7 +3612,16 @@ export function HaabBookingModule({
   function renderBookingsList() {
     return (
       <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title={copy.phrases.allBookingsTitle} />
+        <SectionTitle
+          title={copy.phrases.allBookingsTitle}
+          action={
+            integratedMode ? (
+              <ActionButton tone="primary" onClick={() => setIsAppointmentScannerOpen(true)}>
+                {t.admin.scanAppointment}
+              </ActionButton>
+            ) : null
+          }
+        />
         <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
           <input
             value={searchTerm}
@@ -5883,8 +5893,8 @@ export function HaabBookingModule({
           )}
         >
           <SectionTitle
-            eyebrow={t.publicFlow.addToCalendar}
-            title={t.manage.downloadEvent}
+            eyebrow={t.publicFlow.showQrCode}
+            title={t.publicFlow.showQrCode}
             body={copy.phrases.scanQrBody}
           />
           <div
@@ -6529,6 +6539,11 @@ export function HaabBookingModule({
       </section>
 
       {renderCalendarQrModal()}
+      <AppointmentScannerDialog
+        open={integratedMode && isAppointmentScannerOpen}
+        onClose={() => setIsAppointmentScannerOpen(false)}
+        lang={lang}
+      />
       {renderCancellationModal()}
       {renderRescheduleModal()}
     </>

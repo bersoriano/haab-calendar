@@ -280,6 +280,7 @@ export type BookingDict = {
     allTypes: string;
     appointments: string;
     tryBroaderSearch: string;
+    scanAppointment: string;
     // Calendar
     monthlyCalendar: string;
     newBookingPrefix: string;
@@ -753,7 +754,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       appointmentDetails: "Appointment details",
       customerDetails: "Customer details",
       addToCalendar: "Add to calendar",
-      showQrCode: "Show QR code",
+      showQrCode: "Show appointment QR",
       reschedule: "Reschedule",
       bookAnother: "Book another",
       manageBookingAnytime: "Manage this booking anytime",
@@ -787,7 +788,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       receiptReference: "Reference",
       receiptIssued: "Issued",
       downloadIcs: "Download .ics file",
-      scanToAdd: "Scan to add it to the phone in your hand",
+      scanToAdd: "Scan to open appointment details or present this code to the provider",
       saveThisLinkTitle: "Save this link",
       saveThisLinkTagline:
         "Save this link – you can reschedule or cancel anytime without an account",
@@ -808,6 +809,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       allTypes: "All types",
       appointments: "Appointments",
       tryBroaderSearch: "Try a broader search or clear the filters.",
+      scanAppointment: "Scan appointment",
       monthlyCalendar: "Monthly calendar",
       newBookingPrefix: "New booking",
       providerInformation: "Provider information",
@@ -1303,7 +1305,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       appointmentDetails: "Detalles de la cita",
       customerDetails: "Datos del cliente",
       addToCalendar: "Agregar al calendario",
-      showQrCode: "Mostrar código QR",
+      showQrCode: "Mostrar QR de la cita",
       reschedule: "Reagendar",
       bookAnother: "Reserve otra",
       manageBookingAnytime: "Gestione esta reserva en cualquier momento",
@@ -1337,7 +1339,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       receiptReference: "Referencia",
       receiptIssued: "Emitido",
       downloadIcs: "Descargar archivo .ics",
-      scanToAdd: "Escanee para agregarlo al teléfono que tiene en la mano",
+      scanToAdd: "Escanee para abrir los detalles o presente este código al proveedor",
       saveThisLinkTitle: "Guarde este enlace",
       saveThisLinkTagline:
         "Guarde este enlace: puede reagendar o cancelar cuando quiera, sin crear una cuenta",
@@ -1358,6 +1360,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       allTypes: "Todos los tipos",
       appointments: "Citas",
       tryBroaderSearch: "Intente una búsqueda más amplia o limpie los filtros.",
+      scanAppointment: "Escanear cita",
       monthlyCalendar: "Calendario mensual",
       newBookingPrefix: "Nueva reserva",
       providerInformation: "Información del proveedor",

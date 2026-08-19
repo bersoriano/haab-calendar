@@ -230,14 +230,19 @@ The success screen is laid out as a receipt worth keeping:
   reference derived from the booking id, and the issue date;
 - the date and time in display type, then the full booking summary;
 - a perforation, below which sit the take-away tools: a one-tap `.ics`
-  download and a scannable inline QR code containing the same calendar event,
-  with an enlarged view;
+  download and a scannable inline appointment QR containing the private manage
+  URL, with an enlarged view;
 - actions to reschedule, cancel, or book another service;
 - the private manage URL in a card of its own, headed "Save this link" and
   captioned "Save this link – you can reschedule or cancel anytime without an
   account", with copy and open actions.
 
-The ICS event also contains the private manage URL. The manage URL contains the raw token and should be treated like a password-reset link: anyone with the URL can manage that booking. The database stores only `manage_token_hash`.
+The ICS event and appointment QR both lead back to the private manage URL. The
+manage URL contains the raw token and should be treated like a password-reset
+link: anyone with the URL can manage that booking. The database stores only
+`manage_token_hash`. A signed-in provider can scan the QR from the Bookings tab;
+the server resolves the token through provider-scoped RLS before returning the
+appointment details.
 
 ## 7. Self-service reschedule and cancellation
 

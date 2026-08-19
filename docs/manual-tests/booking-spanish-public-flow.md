@@ -117,7 +117,7 @@ temporarily). Confirm the visitor is returned to the time step with:
 - Date shown uses Spanish weekday and month names (e.g. "lunes, 29 de junio de 2026").
 - Time shown uses 24-hour format (e.g. "10:00").
 - "Add to calendar" button reads **"Agregar al calendario"**.
-- "Show QR code" button reads **"Mostrar código QR"**.
+- "Show appointment QR" button reads **"Mostrar QR de la cita"**.
 - Manage-link section reads **"Gestione esta reserva en cualquier momento"**.
 - "Copy link" button reads **"Copiar enlace"**.
 - "Book another" link reads **"Reserve otra"**.
@@ -159,12 +159,12 @@ With a different (non-cancelled) booking, open its manage URL.
 5. Confirm — button reads **"Guardar nuevo horario"**.
 6. Status message reads **"Su reserva ha sido reagendada."**
 
-### Calendar QR modal (es)
+### Appointment QR modal (es)
 
-From the success summary, click **"Mostrar código QR"**.
+From the success summary, click **"Mostrar QR de la cita"**.
 
-- Modal heading or loading text reads **"Preparando código QR del calendario..."**
-- Download button reads **"Descargue el evento en su teléfono"**.
+- Modal heading reads **"Mostrar QR de la cita"**.
+- Body explains that scanning opens the reservation or lets the provider verify it.
 - Close button reads **"Cerrar"**.
 
 ---
