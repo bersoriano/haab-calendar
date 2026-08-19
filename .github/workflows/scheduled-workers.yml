@@ -29,6 +29,11 @@ jobs:
   drain:
     name: Drain the integration queues
     runs-on: ubuntu-latest
+    # The secrets live on this environment rather than on the repository, so the
+    # job has to name it to see them. Without this the step reads two empty
+    # strings and stops — which is what it did, loudly, rather than silently
+    # calling nothing.
+    environment: Production
     # A fork of a public repository has no secrets and nothing to schedule.
     if: github.repository == 'bersoriano/haab-calendar'
     timeout-minutes: 5
