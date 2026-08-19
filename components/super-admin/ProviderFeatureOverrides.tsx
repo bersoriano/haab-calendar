@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 
-import { FEATURE_KEYS, FEATURE_LABELS, type FeatureKey } from "@/lib/entitlements/catalog";
+import {
+  FEATURE_KEYS,
+  FEATURE_LABELS,
+  getFeaturePrerequisites,
+  type FeatureKey,
+} from "@/lib/entitlements/catalog";
 import {
   buildClearOverrideRequest,
   buildSetOverrideRequest,
@@ -29,6 +34,21 @@ function formatUtcDate(value?: string) {
  * implied. A reason is mandatory in the form because it is mandatory in the
  * audit trail.
  */
+/**
+ * The prerequisites that would keep a grant from taking effect right now.
+ *
+ * Exported so it can be tested directly: the button it disables only renders
+ * after a click, and these tests render statically.
+ */
+export function blockingPrerequisites(
+  snapshot: ProviderEntitlements,
+  featureKey: FeatureKey,
+): readonly FeatureKey[] {
+  return getFeaturePrerequisites(featureKey).filter(
+    (prerequisite) => !snapshot.features[prerequisite].enabled,
+  );
+}
+
 export function ProviderFeatureOverrides({
   ownerEmail,
   entitlements,
@@ -136,6 +156,22 @@ export function ProviderFeatureOverrides({
           const overridden = feature.source === "override";
           const open = editing === featureKey;
 
+          // Two different moments, both worth showing.
+          //
+          // `unmetPrerequisites` is the resolver's verdict on a grant that has
+          // already been made: something switched this feature on, a capability
+          // it depends on is off, and the answer is therefore still no. Without
+          // it the panel reports the grant as saved and the feature as Off,
+          // with nothing connecting the two.
+          //
+          // `missing` is the same question asked before granting, so the
+          // support case where someone grants two-way, watches it do nothing,
+          // and has no way to find out why simply does not start.
+          const blockedBy = feature.unmetPrerequisites ?? [];
+          const missing = blockingPrerequisites(snapshot, featureKey);
+          const listFeatures = (keys: readonly FeatureKey[]) =>
+            keys.map((key) => FEATURE_LABELS[key]).join(" and ");
+
           return (
             <li key={featureKey} className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
@@ -156,10 +192,20 @@ export function ProviderFeatureOverrides({
                     Override
                   </span>
                 ) : null}
+                {blockedBy.length > 0 ? (
+                  <span className="inline-flex rounded-full bg-rose-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-rose-800">
+                    Blocked
+                  </span>
+                ) : null}
               </div>
               {overridden && feature.overrideExpiresAt ? (
                 <p className="text-xs text-[var(--muted)]">
                   Expires {formatUtcDate(feature.overrideExpiresAt)} UTC
+                </p>
+              ) : null}
+              {blockedBy.length > 0 ? (
+                <p className="text-xs font-medium text-rose-700">
+                  Granted, but off: needs {listFeatures(blockedBy)}.
                 </p>
               ) : null}
               {open ? (
@@ -184,12 +230,27 @@ export function ProviderFeatureOverrides({
                       className="mt-1 w-full rounded-full border border-[var(--line)] bg-white px-3 py-2 text-sm font-normal text-[var(--ink)]"
                     />
                   </label>
+                  {missing.length > 0 ? (
+                    <p className="text-xs font-medium text-amber-800">
+                      Turn on {listFeatures(missing)} first. Granting this alone
+                      leaves it off.
+                    </p>
+                  ) : null}
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      disabled={busy}
+                      // A disabled button is a courtesy, not the rule: the
+                      // resolver refuses an unmet prerequisite whatever the UI
+                      // allows. Withhold and Clear are never disabled, because
+                      // taking access away must not depend on anything.
+                      disabled={busy || missing.length > 0}
+                      title={
+                        missing.length > 0
+                          ? `Requires ${listFeatures(missing)}`
+                          : undefined
+                      }
                       onClick={() => submit(featureKey, "grant")}
-                      className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+                      className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Grant
                     </button>

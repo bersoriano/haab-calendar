@@ -1,7 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ProviderFeatureOverrides } from "@/components/super-admin/ProviderFeatureOverrides";
+import {
+  blockingPrerequisites,
+  ProviderFeatureOverrides,
+} from "@/components/super-admin/ProviderFeatureOverrides";
 import { resolveEntitlements } from "@/lib/entitlements/resolve";
 
 const PROVIDER = "00000000-0000-4000-8000-000000000001";
@@ -69,5 +72,104 @@ describe("ProviderFeatureOverrides", () => {
 
     expect(html).not.toContain("Override");
     expect(html).not.toContain("On<");
+  });
+});
+
+describe("prerequisite chain", () => {
+  const GRANT_TWO_WAY = [
+    { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+  ];
+
+  it("says a granted feature is off, and names what it needs", () => {
+    // The support case this exists to prevent: two-way granted, two-way off,
+    // and nothing on screen connecting the two.
+    const html = render("free", GRANT_TWO_WAY);
+
+    expect(html).toContain("Blocked");
+    expect(html).toContain("Granted, but off: needs");
+    expect(html).toContain("Google Calendar sync");
+    expect(html).toContain("Google Calendar busy blocking");
+  });
+
+  it("does not call a feature blocked when nothing is blocking it", () => {
+    const html = render("free", [
+      { featureKey: "custom_slug", enabled: true, expiresAt: null },
+    ]);
+
+    expect(html).not.toContain("Blocked");
+    expect(html).not.toContain("Granted, but off");
+  });
+
+  it("reports no block once every prerequisite is granted too", () => {
+    const html = render("free", [
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+    ]);
+
+    expect(html).not.toContain("Blocked");
+    expect(html).not.toContain("Granted, but off");
+    // Three overrides, all deciding their feature.
+    expect(html.match(/Override/g)?.length).toBe(3);
+  });
+
+  it("keeps withholding available on a blocked feature", () => {
+    // Taking access away must never depend on a prerequisite being met.
+    const html = render("free", GRANT_TWO_WAY);
+
+    expect(html).toContain("Change access");
+  });
+});
+
+describe("blockingPrerequisites", () => {
+  function snapshot(overrides: Parameters<typeof resolveEntitlements>[0]["overrides"]) {
+    return resolveEntitlements({
+      providerId: PROVIDER,
+      planTier: "free",
+      overrides,
+      now: new Date("2026-08-15T12:00:00.000Z"),
+    });
+  }
+
+  it("names both prerequisites two-way needs when neither is on", () => {
+    expect(blockingPrerequisites(snapshot([]), "google_calendar_two_way_sync")).toEqual([
+      "google_calendar_sync",
+      "google_calendar_busy_blocking",
+    ]);
+  });
+
+  it("names only the one still missing", () => {
+    const current = snapshot([
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+    ]);
+
+    expect(blockingPrerequisites(current, "google_calendar_two_way_sync")).toEqual([
+      "google_calendar_busy_blocking",
+    ]);
+  });
+
+  it("returns nothing once the chain is satisfied", () => {
+    const current = snapshot([
+      { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+    ]);
+
+    expect(blockingPrerequisites(current, "google_calendar_two_way_sync")).toEqual([]);
+  });
+
+  it("returns nothing for a feature that depends on nothing", () => {
+    expect(blockingPrerequisites(snapshot([]), "custom_slug")).toEqual([]);
+    expect(blockingPrerequisites(snapshot([]), "google_calendar_sync")).toEqual([]);
+  });
+
+  it("counts a revoke as unmet, not just an absent grant", () => {
+    // A withheld prerequisite blocks exactly as a missing one does.
+    const current = snapshot([
+      { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
+    ]);
+
+    expect(blockingPrerequisites(current, "google_calendar_busy_blocking")).toEqual([
+      "google_calendar_sync",
+    ]);
   });
 });
