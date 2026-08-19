@@ -81,10 +81,19 @@ jobs:
       - name: Replay the migration chain from scratch
         run: supabase db reset --local
 
+      - name: Export local Supabase credentials
+        run: |
+          # Same as the E2E job: written to the job env, never echoed. The
+          # local stack's keys are well-known development values rather than
+          # secrets, but printing keys into a log is a habit worth not having.
+          {
+            echo "SUPABASE_URL=http://127.0.0.1:54321"
+            echo "SUPABASE_ANON_KEY=$(supabase status -o json | jq -r '.ANON_KEY')"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')"
+          } >> "$GITHUB_ENV"
+
       - name: Run database integration tests
         run: npm run test:db
-        env:
-          SUPABASE_URL: http://127.0.0.1:54321
 
       - name: Lint the local schema
         run: supabase db lint --local
