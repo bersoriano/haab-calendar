@@ -134,8 +134,23 @@ jobs:
             echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status -o json | jq -r '.SERVICE_ROLE_KEY')"
           } >> "$GITHUB_ENV"
 
+      # Cached across runs: the download is the slow half, and it only changes
+      # when Playwright does.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # Without --with-deps. That flag runs apt-get, which hung for the full
+        # thirty-minute job limit on two consecutive runs and cancelled both
+        # before a single test ran. The runner image already carries Chromium's
+        # libraries; if that ever stops being true the browser fails to launch
+        # immediately and says so, which is a better failure than a silent
+        # half-hour stall.
+        timeout-minutes: 6
+        run: npx playwright install chromium
 
       - run: npm run build
       - run: npm run test:e2e
