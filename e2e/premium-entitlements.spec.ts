@@ -12,9 +12,22 @@ import { authStatePath, providerFor, type E2ERole } from "./fixtures/providers";
  * bypassed entirely.
  */
 
+/**
+ * Opens the workspace, then its Settings tab.
+ *
+ * Two steps rather than one because `/` is the landing page, not the
+ * workspace: a configured owner is shown a panel that opens it, and the tab
+ * strip — Settings included — only mounts once it has. Going straight for the
+ * tab waits for a control that is not on the page yet.
+ */
 async function openSettings(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /^(Settings|Ajustes)$/ }).click();
+  await page.getByRole("button", { name: /^(Go to dashboard|Ir al panel)$/ }).click();
+
+  const settings = page.getByRole("button", { name: /^(Settings|Ajustes)$/ });
+  await expect(settings).toBeVisible();
+  await settings.click();
+
   await expect(page.getByText(/Integrations|Integraciones/)).toBeVisible();
 }
 
@@ -249,12 +262,16 @@ test.describe("accessibility of the entitlement state", () => {
   });
 
   test("gives the settings tabs unique accessible names", async ({ page }) => {
-    await page.goto("/");
+    await openSettings(page);
 
     const names = await page
       .getByRole("button", { name: /Dashboard|Panel|Settings|Ajustes|Appearance|Apariencia/ })
       .allTextContents();
 
+    // Asserted first: an empty list satisfies the uniqueness check trivially,
+    // so without this the test passed on a page with no tabs at all — which is
+    // exactly what it was doing.
+    expect(names.length).toBeGreaterThanOrEqual(3);
     expect(new Set(names).size).toBe(names.length);
   });
 });
