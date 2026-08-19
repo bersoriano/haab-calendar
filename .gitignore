@@ -46,3 +46,6 @@ next-env.d.ts
 playwright-report/
 test-results/
 blob-report/
+
+# Local tutorials — working notes, deliberately not tracked
+docs/tutorials/

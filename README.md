@@ -159,10 +159,87 @@ export default function Example() {
 
 ## Local Run
 
+`npm install && npm run dev` is **not** enough on a fresh clone. The app reads
+Supabase configuration at startup and throws without it, so the first page load
+fails rather than degrading. Do all four steps.
+
+### 1. Node
+
+Node.js 22, the version CI uses. Older majors are untested.
+
+### 2. Install
+
 ```bash
 npm install
+```
+
+Two transitive packages (`sharp`, `unrs-resolver`) print an npm
+`allow-scripts` warning about install scripts. Harmless — `sharp` matters only
+for self-hosted image optimization and `unrs-resolver` only for ESLint.
+
+### 3. A database
+
+The app needs a Supabase project with this repo's migrations applied. Local is
+the recommended default, and the only one the test suites will talk to.
+
+```bash
+npx supabase start          # starts Postgres, Auth, PostgREST, Studio in Docker
+npx supabase db reset --local   # applies every migration from scratch
+npx supabase status             # prints the URL and keys you need next
+```
+
+Needs a Docker-compatible runtime. Without one you can still run
+`npm run ci` (typecheck, lint, unit tests, build) but not the app itself.
+
+To point at a hosted project instead: `npx supabase link --project-ref <ref>`
+then `npx supabase db push`. Never run `test:db` or `test:e2e` against it —
+both are destructive and both refuse a non-local host by design.
+
+### 4. Environment
+
+```bash
+cp .env.example .env.local
+```
+
+Fill these three from `npx supabase status`. Nothing works without them:
+
+| Variable | From |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | `API URL` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `anon key` |
+| `SUPABASE_SERVICE_ROLE_KEY` | `service_role key` |
+
+Everything else in `.env.example` is optional, and each one's absence disables
+exactly one thing rather than breaking the app:
+
+| Unset | Effect |
+| --- | --- |
+| `STRIPE_*` | The webhook endpoint refuses every request; no subscription grants premium |
+| `GOOGLE_*` | The Google integration reports itself unavailable and no route offers it |
+| `CRON_SECRET` | Both cron routes answer 401 to everything |
+| `BLOB_READ_WRITE_TOKEN` | Image upload is unavailable |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No traces exported; the app runs normally |
+
+`HAAB_DEPLOYMENT_NAMESPACE` defaults to `local` and should stay distinct per
+environment — it is stamped into every Google Calendar event Haab creates, and
+two deployments sharing a namespace will each treat the other's events as their
+own.
+
+Then:
+
+```bash
 npm run dev
 ```
+
+### First sign-in
+
+Auth is email + password through Supabase. Locally, `npx supabase start` runs
+Inbucket for mail capture on <http://127.0.0.1:54324> — confirmation links land
+there rather than in a real inbox.
+
+Super-admin access is a single hardcoded address in `lib/super-admin-policy.ts`.
+To reach `/super-admin` on your own machine, sign up with that address or change
+the constant locally.
 
 ## Quality checks
 
@@ -186,7 +263,27 @@ no container runtime.
 - Node.js 22 (the version CI uses)
 - A Docker-compatible runtime, for `npm run test:db` and `npm run test:e2e`
 - Supabase CLI: `npx supabase start`
-- Playwright browsers: `npx playwright install --with-deps chromium`
+- Playwright browsers: `npx playwright install chromium`
+
+`test:db` reads `SUPABASE_URL` and `SUPABASE_ANON_KEY`, falling back to the
+`NEXT_PUBLIC_*` names — but `SUPABASE_SERVICE_ROLE_KEY` has no fallback and must
+be set explicitly. If `.env.local` points at a hosted project, pass the local
+values on the command line rather than exporting them globally:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321 \
+SUPABASE_SERVICE_ROLE_KEY=<local service_role key> \
+SUPABASE_ANON_KEY=<local anon key> \
+npm run test:db
+```
+
+Playwright starts its own server, but `reuseExistingServer` is on locally — stop
+any `npm run dev` first, or the browser tests drive a server configured for a
+different database than the one they seeded.
+
+`--with-deps` is deliberately omitted above: it runs `apt-get`, which hung for a
+full job timeout twice in CI, and the runner image already carries Chromium's
+libraries.
 
 The database and E2E suites refuse to run against anything but a local Supabase
 host, and there is no HTTP seed or reset endpoint anywhere in the application.
@@ -201,6 +298,39 @@ so pull requests from forks run the full suite without touching anything remote.
 Recommended (must be set by hand in GitHub settings — this repository's
 configuration is not modified by any script here): require `quality`, `database`,
 and `premium-e2e` as status checks on `main`.
+
+### Background workers
+
+`.github/workflows/scheduled-workers.yml` drives the two cron routes every five
+minutes:
+
+```
+GET /api/cron/integration-outbox   Authorization: Bearer $CRON_SECRET
+GET /api/cron/google-workers       Authorization: Bearer $CRON_SECRET
+```
+
+Not Vercel cron: the Hobby plan permits one run per day, which for a booking app
+means a change reaching Google the following night. The routes are plain
+authenticated GETs, so the driver is replaceable.
+
+A deployment needs two secrets, and the job reads them from the `Production`
+GitHub **environment** rather than from repository secrets:
+
+| Secret | Value |
+| --- | --- |
+| `WORKERS_BASE_URL` | Deployment origin, no trailing slash |
+| `CRON_SECRET` | The same value set on the host |
+
+Repository-level secrets will not be seen by that job unless you also drop the
+`environment:` key from it. If the two `CRON_SECRET`s ever drift, every call
+answers 401 and the workflow fails loudly rather than quietly doing nothing.
+
+> GitHub disables scheduled workflows after 60 days without a commit to the
+> repository, silently. On a quiet repo that is the likeliest way delivery stops
+> — check it first when a backlog appears with no errors anywhere.
+
+Without this workflow the app still works; outbound Google delivery and the
+inbound queues simply do not drain.
 
 Operational events, redaction rules, alert thresholds, and investigation steps:
 `docs/operations/premium-observability.md`.
