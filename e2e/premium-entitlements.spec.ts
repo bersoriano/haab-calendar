@@ -22,7 +22,20 @@ import { authStatePath, providerFor, type E2ERole } from "./fixtures/providers";
  */
 async function openSettings(page: Page) {
   await page.goto("/");
-  await page.getByRole("button", { name: /^(Go to dashboard|Ir al panel)$/ }).click();
+
+  // Not anchored, and not "Go to dashboard". Two translation files define a
+  // `goToDashboard` key: the landing one renders here as "Go to your dashboard
+  // →", and the booking one says "Go to dashboard" somewhere else entirely.
+  // The trailing arrow is part of the accessible name, so an anchored match on
+  // the words alone finds nothing.
+  const openWorkspace = page.getByRole("button", {
+    name: /Go to your dashboard|Ir a tu panel/,
+  });
+
+  // Asserted before clicking so a missing entry point reports what is missing
+  // instead of spending the full test timeout inside click().
+  await expect(openWorkspace).toBeVisible();
+  await openWorkspace.click();
 
   const settings = page.getByRole("button", { name: /^(Settings|Ajustes)$/ });
   await expect(settings).toBeVisible();
