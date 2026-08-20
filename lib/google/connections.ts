@@ -120,10 +120,27 @@ export async function saveConnection(
 ): Promise<GoogleConnectionRow> {
   const admin = client ?? createAdminClient();
   const sealed = encryptSecret(input.refreshToken);
+  const existing = await getConnection(input.providerId, admin);
+
+  if (existing) {
+    // Not an upsert. The mapping foreign key points at
+    // (connection_id, provider_id, connection_generation) with no ON UPDATE, so
+    // rotating the generation on the live row orphans every mapping and the
+    // database refuses the write — which broke reconnect for exactly the
+    // providers who had projected at least one booking. Deleting first also
+    // revokes the previous grant instead of overwriting the only copy of it.
+    const released = await deleteConnection(input.providerId, { client: admin });
+
+    if (!released.deleted) {
+      // The old grant is still live at Google and now unrevocable if we write
+      // over it. Better to fail the reconnect and keep the token that works.
+      throw new Error("Could not release the previous Google connection.");
+    }
+  }
 
   const { data, error } = await admin
     .from("provider_google_calendar_connections")
-    .upsert(
+    .insert(
       {
         provider_id: input.providerId,
         // A new grant is a new generation: anything in flight against the old
@@ -146,7 +163,6 @@ export async function saveConnection(
         target_calendar_timezone: null,
         reconciled_at: null,
       },
-      { onConflict: "provider_id" },
     )
     .select(CONNECTION_SELECT)
     .single<GoogleConnectionRow>();

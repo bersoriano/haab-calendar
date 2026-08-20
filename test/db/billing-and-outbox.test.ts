@@ -749,57 +749,6 @@ describe("google calendar mapping constraints", () => {
     expect(error).not.toBeNull();
   });
 
-  it("cascades the mapping away when the connection is deleted instead", async () => {
-    // The path reconnect should take: the old row goes, its mappings go with
-    // it, and the new grant is a new insert rather than a mutated old one.
-    const booking = await createBooking();
-
-    const { data: doomed, error: insertError } = await admin
-      .from("provider_google_calendar_connections")
-      .insert({
-        provider_id: PROVIDER_ID,
-        connection_generation: "00000000-0000-4000-8000-0000000000ca",
-        refresh_token_ciphertext: "ciphertext",
-        refresh_token_iv: "iv",
-        refresh_token_auth_tag: "tag",
-        refresh_token_key_version: 1,
-        granted_scopes: ["https://www.googleapis.com/auth/calendar.events"],
-        target_calendar_id: "cal-db-test",
-        status: "connected",
-      })
-      .select("id")
-      .single<{ id: string }>();
-
-    // One connection per provider, so the seeded row has to go first.
-    if (insertError) {
-      expect(insertError).not.toBeNull();
-      return;
-    }
-
-    await admin
-      .from("provider_google_calendar_event_mappings")
-      .insert({
-        provider_id: PROVIDER_ID,
-        connection_id: doomed.id,
-        connection_generation: "00000000-0000-4000-8000-0000000000ca",
-        booking_id: booking.id,
-        google_calendar_id: "cal-db-test",
-        google_event_id: "haab0000000000000000000000000000a",
-      });
-
-    await admin
-      .from("provider_google_calendar_connections")
-      .delete()
-      .eq("id", doomed.id);
-
-    const { data: orphans } = await admin
-      .from("provider_google_calendar_event_mappings")
-      .select("id")
-      .eq("connection_id", doomed.id);
-
-    expect(orphans).toEqual([]);
-  });
-
   it("refuses a mapping naming a provider the booking does not belong to", async () => {
     const booking = await createBooking();
 
@@ -927,4 +876,62 @@ describe("google calendar mapping constraints", () => {
 
     expect(mappings ?? []).toHaveLength(0);
   });
+  it("lets a reconnect replace a connection that already has mappings", async () => {
+    // The shape saveConnection uses: delete the old row so its mappings cascade,
+    // then insert a new generation. An in-place UPDATE of the generation is what
+    // the earlier test proves the database refuses.
+    const booking = await createBooking();
+
+    const { data: previous } = await admin
+      .from("provider_google_calendar_connections")
+      .select("id, connection_generation")
+      .eq("provider_id", PROVIDER_ID)
+      .maybeSingle<{ id: string; connection_generation: string }>();
+
+    if (previous) {
+      await admin.from("provider_google_calendar_event_mappings").insert({
+        provider_id: PROVIDER_ID,
+        connection_id: previous.id,
+        connection_generation: previous.connection_generation,
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab0000000000000000000000000000b",
+      });
+
+      await admin
+        .from("provider_google_calendar_connections")
+        .delete()
+        .eq("id", previous.id);
+    }
+
+    const rotated = "00000000-0000-4000-8000-0000000000cb";
+    const { data: reconnected, error } = await admin
+      .from("provider_google_calendar_connections")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_generation: rotated,
+        refresh_token_ciphertext: "ciphertext",
+        refresh_token_iv: "iv",
+        refresh_token_auth_tag: "tag",
+        refresh_token_key_version: 1,
+        granted_scopes: ["https://www.googleapis.com/auth/calendar.events"],
+        status: "connected",
+      })
+      .select("id, connection_generation")
+      .single<{ id: string; connection_generation: string }>();
+
+    expect(error).toBeNull();
+    expect(reconnected?.connection_generation).toBe(rotated);
+    expect(reconnected?.connection_generation).not.toBe(previous?.connection_generation);
+
+    const { data: survivors } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .select("id")
+      .eq("provider_id", PROVIDER_ID);
+
+    // The old mappings went with the old row rather than being left pointing at
+    // a generation that no longer exists.
+    expect(survivors).toEqual([]);
+  });
+
 });

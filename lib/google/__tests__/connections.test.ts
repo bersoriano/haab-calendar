@@ -71,9 +71,17 @@ function makeClient(
       writes.push({ op: "upsert", payload });
       return query;
     },
-    insert: async (payload: unknown) => {
+    // Awaitable for the revocation job, chainable for the connection row, which
+    // reads its insert back through .select().single().
+    insert: (payload: unknown) => {
       writes.push({ op: "insert", payload });
-      return { error: options?.insertError ?? null };
+      const result = { error: options?.insertError ?? null };
+
+      return {
+        ...query,
+        select: () => query,
+        then: (resolve: (value: typeof result) => unknown) => resolve(result),
+      };
     },
     delete: () => {
       writes.push({ op: "delete", payload: null });
@@ -81,10 +89,41 @@ function makeClient(
     },
   };
 
+  // saveConnection releases the old grant through deleteConnection, which uses
+  // the global fetch. Recording it in `writes` is what makes "revoked before
+  // the new ciphertext was written" an assertion about order rather than a
+  // guess.
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init?: RequestInit) => {
+      writes.push({ op: "revoke", payload: String(init?.body ?? "") });
+      return new Response("{}", {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }),
+  );
+
   return {
     client: { from: (table: string) => ({ ...query, table }) } as unknown as SupabaseClient,
     writes,
   };
+}
+
+/**
+ * The write that stores the connection itself.
+ *
+ * A reconnect also writes a revocation job, which carries ciphertext too; the
+ * generation is what tells the two apart.
+ */
+function connectionWrite(writes: Array<{ op: string; payload: unknown }>) {
+  return writes.find(
+    (write) =>
+      write.op === "insert" &&
+      typeof write.payload === "object" &&
+      write.payload !== null &&
+      "connection_generation" in write.payload,
+  );
 }
 
 function tokenFetch(body: Record<string, unknown>, status = 200) {
@@ -103,7 +142,10 @@ beforeEach(() => {
   vi.stubEnv("GOOGLE_TOKEN_ENCRYPTION_KEY", Buffer.alloc(32, 9).toString("base64"));
 });
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
 
 describe("toConnectionView", () => {
   it("hides the calendar id, which is usually an email address", () => {
@@ -172,13 +214,27 @@ describe("saveConnection", () => {
       client,
     );
 
-    const payload = writes[0].payload as Record<string, unknown>;
+    const payload = connectionWrite(writes)!.payload as Record<string, unknown>;
     expect(JSON.stringify(payload)).not.toContain(REFRESH);
     expect(payload.refresh_token_ciphertext).toEqual(expect.any(String));
     expect(payload.refresh_token_key_version).toBe(1);
   });
 
-  it("rotates the generation, retiring anything already in flight", async () => {
+  it("inserts without deleting anything on a first connect", async () => {
+    const { client, writes } = makeClient(null);
+
+    await saveConnection(
+      { providerId: PROVIDER, refreshToken: REFRESH, grantedScopes: [] },
+      client,
+    );
+
+    expect(writes.some((write) => write.op === "delete")).toBe(false);
+    expect(connectionWrite(writes)?.op).toBe("insert");
+  });
+
+  it("deletes the old connection before inserting the new one", async () => {
+    // Not an upsert: the mapping foreign key has no ON UPDATE, so rotating the
+    // generation on the live row is rejected once any booking is projected.
     const { client, writes } = makeClient();
 
     await saveConnection(
@@ -186,10 +242,50 @@ describe("saveConnection", () => {
       client,
     );
 
-    const payload = writes[0].payload as Record<string, unknown>;
+    const deletedAt = writes.findIndex((write) => write.op === "delete");
+    const inserted = connectionWrite(writes);
+
+    expect(deletedAt).toBeGreaterThanOrEqual(0);
+    expect(writes.indexOf(inserted!)).toBeGreaterThan(deletedAt);
+
+    const payload = inserted!.payload as Record<string, unknown>;
     expect(payload.connection_generation).toEqual(expect.any(String));
     expect(payload.connection_generation).not.toBe("gen-1");
     expect(payload.status).toBe("connected");
+  });
+
+  it("revokes the previous grant before the new ciphertext is written", async () => {
+    const { client, writes } = makeClient();
+
+    await saveConnection(
+      { providerId: PROVIDER, refreshToken: "1//0g-new-refresh-token", grantedScopes: [] },
+      client,
+    );
+
+    const revokedAt = writes.findIndex((write) => write.op === "revoke");
+    expect(revokedAt).toBeGreaterThanOrEqual(0);
+    expect(writes.indexOf(connectionWrite(writes)!)).toBeGreaterThan(revokedAt);
+
+    // The token revoked is the old one, not the one being stored.
+    expect(String(writes[revokedAt].payload)).toContain(encodeURIComponent(REFRESH));
+  });
+
+  it("writes nothing when the previous connection cannot be released", async () => {
+    // Overwriting the only copy of a grant that is still live at Google leaves
+    // nothing able to revoke it. Failing the reconnect keeps the token that
+    // works.
+    const { client, writes } = makeClient(sealedRow(), {
+      deleteError: { message: "nope" },
+    });
+
+    await expect(
+      saveConnection(
+        { providerId: PROVIDER, refreshToken: REFRESH, grantedScopes: [] },
+        client,
+      ),
+    ).rejects.toThrow();
+
+    expect(connectionWrite(writes)).toBeUndefined();
   });
 });
 
