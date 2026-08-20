@@ -37,6 +37,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 const PAGE_SIZE = 50;
 const MAX_PAGES_PER_RUN = 6;
 const MAX_ATTEMPTS = 5;
+/** Longest wait before a stalled job is re-claimed, in minutes. */
+const MAX_STALL_BACKOFF_MINUTES = 5;
 
 type BookingRow = {
   id: string;
@@ -394,11 +396,17 @@ export async function runGoogleReconciliationWorker(
       return { ...summary, completed: true };
     }
 
+    // A stall means Google just failed, so re-claiming at once would only
+    // fail again; healthy paging stays immediate.
+    const retryDelayMs = stalled
+      ? 60_000 * Math.min(claimed.attempt_count, MAX_STALL_BACKOFF_MINUTES)
+      : 0;
+
     // More to do. Back to pending with the cursor saved.
     await releaseJob(admin, claimed, {
       ...totals,
       status: "pending",
-      available_at: new Date().toISOString(),
+      available_at: new Date(Date.now() + retryDelayMs).toISOString(),
     });
 
     return summary;

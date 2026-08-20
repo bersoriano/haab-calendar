@@ -398,6 +398,10 @@ describe("runGoogleReconciliationWorker", () => {
     expect(release.cursor_booking_id).toBeTruthy();
     // Not finished, so nothing may record that it was.
     expect(release.completed_at).toBeUndefined();
+    // Healthy progress: the next page should start immediately.
+    expect(
+      new Date(release.available_at as string).getTime() - Date.now(),
+    ).toBeLessThan(1_000);
   });
 
   it("resumes from a saved cursor rather than starting again", async () => {
@@ -453,6 +457,39 @@ describe("runGoogleReconciliationWorker", () => {
       failed_count: 1,
     });
     expect(release.completed_at).toBeUndefined();
+  });
+
+  it("backs a stalled job off rather than re-claiming it immediately", async () => {
+    const supabase = makeClient({ all: bookings(10), job: jobRow({ attemptCount: 2 }) });
+    const { google } = makeGoogle({
+      insertEvent: async () => {
+        throw new Error("Google said no");
+      },
+    });
+
+    await run(supabase, google);
+
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    expect(release).toMatchObject({ status: "pending" });
+    const delay = new Date(release.available_at as string).getTime() - Date.now();
+    expect(delay).toBeGreaterThan(110_000);
+    expect(delay).toBeLessThanOrEqual(120_000);
+  });
+
+  it("caps the stall backoff so a long job stays reachable", async () => {
+    const supabase = makeClient({ all: bookings(10), job: jobRow({ attemptCount: 40 }) });
+    const { google } = makeGoogle({
+      insertEvent: async () => {
+        throw new Error("Google said no");
+      },
+    });
+
+    await run(supabase, google);
+
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    const delay = new Date(release.available_at as string).getTime() - Date.now();
+    expect(delay).toBeGreaterThan(290_000);
+    expect(delay).toBeLessThanOrEqual(300_000);
   });
 
   it("leaves the cursor null when the first booking of a job fails", async () => {
