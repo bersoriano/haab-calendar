@@ -135,8 +135,8 @@ async function releaseJob(
  *
  * Returning without finishing is normal: the cursor is saved, the job goes back
  * to pending, and the next invocation resumes exactly where this one stopped.
- * `completed_at` is set only when a page comes back short, which is the only
- * proof that every eligible booking was considered.
+ * `completed_at` is set only when a page comes back short with no failure in
+ * the run, which is the only proof that every eligible booking was written.
  */
 export async function runGoogleReconciliationWorker(
   options: {
@@ -227,6 +227,7 @@ export async function runGoogleReconciliationWorker(
     let cursorDate = claimed.cursor_date;
     let cursorId = claimed.cursor_booking_id;
     let exhausted = false;
+    let stalled = false;
 
     for (let page = 0; page < MAX_PAGES_PER_RUN; page += 1) {
       let query = admin
@@ -307,30 +308,40 @@ export async function runGoogleReconciliationWorker(
             if (result.outcome === "collision") {
               summary.failed += 1;
             } else {
-              await admin.from("provider_google_calendar_event_mappings").upsert(
-                {
-                  provider_id: booking.provider_id,
-                  connection_id: connection.id,
-                  connection_generation: connection.connection_generation,
-                  booking_id: booking.id,
-                  google_calendar_id: connection.target_calendar_id,
-                  google_event_id: eventId,
-                  google_event_etag:
-                    "event" in result ? (result.event.etag ?? null) : null,
-                  google_event_status: "confirmed",
-                  last_projected_booking_version: booking.integration_version,
-                  last_projected_at: new Date().toISOString(),
-                },
-                { onConflict: "booking_id,connection_generation" },
-              );
+              const { error: mappingError } = await admin
+                .from("provider_google_calendar_event_mappings")
+                .upsert(
+                  {
+                    provider_id: booking.provider_id,
+                    connection_id: connection.id,
+                    connection_generation: connection.connection_generation,
+                    booking_id: booking.id,
+                    google_calendar_id: connection.target_calendar_id,
+                    google_event_id: eventId,
+                    google_event_etag:
+                      "event" in result ? (result.event.etag ?? null) : null,
+                    google_event_status: "confirmed",
+                    last_projected_booking_version: booking.integration_version,
+                    last_projected_at: new Date().toISOString(),
+                  },
+                  { onConflict: "booking_id,connection_generation" },
+                );
+
+              // An unrecorded mapping is not a write: the next run would have
+              // no way to tell this booking was already projected.
+              if (mappingError) {
+                throw new Error("Could not record the projected event.");
+              }
 
               summary.written += 1;
             }
           }
         } catch {
-          // One booking failing must not abandon the page. Its mapping was
-          // never advanced, so a later run tries again.
+          // Nothing re-queues a finished job, so the only retry is this cursor
+          // staying on the last success. Stop rather than step over the miss.
           summary.failed += 1;
+          stalled = true;
+          break;
         }
 
         // Advanced per booking, not per page: a crash mid-page resumes after
@@ -343,6 +354,8 @@ export async function runGoogleReconciliationWorker(
         considered: rows.length,
         written: summary.written,
       });
+
+      if (stalled) break;
 
       if (rows.length < PAGE_SIZE) {
         // Short page: there is nothing after it.

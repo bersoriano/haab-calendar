@@ -80,6 +80,7 @@ type Options = {
   connection?: Record<string, unknown> | null;
   all?: Booking[];
   mappings?: Record<string, number>;
+  mappingUpsertErrorFor?: string;
   providerTimezone?: string | null;
 };
 
@@ -214,6 +215,9 @@ function makeClient(options: Options = {}) {
             error: null,
           }),
           upsert: async (row: Record<string, unknown>) => {
+            if (row.booking_id === options.mappingUpsertErrorFor) {
+              return { error: new Error("mapping upsert failed") };
+            }
             upserts.push(row);
             return { error: null };
           },
@@ -417,10 +421,88 @@ describe("runGoogleReconciliationWorker", () => {
     expect(supabase.updates.at(-1)).toMatchObject({ considered_count: 60 });
   });
 
-  it("keeps going after one booking fails inside a page", async () => {
+  it("stops the page at a failed booking and keeps the cursor on the last success", async () => {
     const supabase = makeClient({ all: bookings(10) });
     let calls = 0;
+    const { google, written } = makeGoogle({
+      insertEvent: async (_calendarId, eventId) => {
+        calls += 1;
+        if (calls === 4) throw new Error("Google said no");
+        written.push(eventId);
+        return { id: eventId, etag: '"1"' };
+      },
+    });
+
+    const summary = await run(supabase, google);
+
+    expect(summary.failed).toBe(1);
+    expect(summary.written).toBe(3);
+    // Nothing past the failure runs: the cursor has to stay retryable.
+    expect(written).toHaveLength(3);
+    expect(supabase.upserts.map((row) => row.booking_id)).toEqual([
+      "b0000",
+      "b0001",
+      "b0002",
+    ]);
+
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    expect(summary.completed).toBe(false);
+    expect(release).toMatchObject({
+      status: "pending",
+      cursor_booking_id: "b0002",
+      failed_count: 1,
+    });
+    expect(release.completed_at).toBeUndefined();
+  });
+
+  it("leaves the cursor null when the first booking of a job fails", async () => {
+    const supabase = makeClient({ all: bookings(10) });
+    const { google, written } = makeGoogle({
+      insertEvent: async () => {
+        throw new Error("Google said no");
+      },
+    });
+
+    const summary = await run(supabase, google);
+
+    expect(summary).toMatchObject({ failed: 1, written: 0, completed: false });
+    expect(written).toHaveLength(0);
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    expect(release).toMatchObject({
+      status: "pending",
+      cursor_date: null,
+      cursor_booking_id: null,
+    });
+    expect(release.completed_at).toBeUndefined();
+  });
+
+  it("does not complete a short final page that had a failure", async () => {
+    const supabase = makeClient({ all: bookings(3) });
+    let calls = 0;
     const { google } = makeGoogle({
+      insertEvent: async (_calendarId, eventId) => {
+        calls += 1;
+        if (calls === 3) throw new Error("Google said no");
+        return { id: eventId, etag: '"1"' };
+      },
+    });
+
+    const summary = await run(supabase, google);
+
+    expect(summary).toMatchObject({ failed: 1, written: 2, completed: false });
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    expect(release).toMatchObject({
+      status: "pending",
+      cursor_booking_id: "b0001",
+    });
+    expect(release.completed_at).toBeUndefined();
+  });
+
+  it("retries the failed booking on the next run from the saved cursor", async () => {
+    const all = bookings(10);
+    const first = makeClient({ all });
+    let calls = 0;
+    const { google: failing } = makeGoogle({
       insertEvent: async (_calendarId, eventId) => {
         calls += 1;
         if (calls === 4) throw new Error("Google said no");
@@ -428,12 +510,50 @@ describe("runGoogleReconciliationWorker", () => {
       },
     });
 
+    await run(first, failing);
+    const release = first.updates.at(-1) as Record<string, string | null>;
+
+    const second = makeClient({
+      all,
+      job: jobRow({
+        cursorDate: release.cursor_date,
+        cursorId: release.cursor_booking_id,
+      }),
+    });
+    const { google, written } = makeGoogle();
+
+    const summary = await run(second, google);
+
+    expect(summary).toMatchObject({ failed: 0, written: 7, completed: true });
+    // b0003 is the booking the first run failed on.
+    expect(second.upserts.map((row) => row.booking_id)).toEqual([
+      "b0003",
+      "b0004",
+      "b0005",
+      "b0006",
+      "b0007",
+      "b0008",
+      "b0009",
+    ]);
+    expect(written).toHaveLength(7);
+  });
+
+  it("does not count a booking as written when its mapping upsert fails", async () => {
+    const supabase = makeClient({
+      all: bookings(5),
+      mappingUpsertErrorFor: "b0002",
+    });
+    const { google } = makeGoogle();
+
     const summary = await run(supabase, google);
 
-    // The failure is counted and the page finishes. That booking's mapping was
-    // never advanced, so a later run tries it again.
-    expect(summary.failed).toBe(1);
-    expect(summary.written).toBe(9);
+    expect(summary).toMatchObject({ failed: 1, written: 2, completed: false });
+    const release = supabase.updates.at(-1) as Record<string, unknown>;
+    expect(release).toMatchObject({
+      status: "pending",
+      cursor_booking_id: "b0001",
+    });
+    expect(release.completed_at).toBeUndefined();
   });
 
   it("skips bookings Google already reflects", async () => {
