@@ -2,6 +2,7 @@ import "server-only";
 
 import { del } from "@vercel/blob";
 
+import { deleteConnection } from "@/lib/google/connections";
 import { SUPER_ADMIN_EMAIL } from "@/lib/super-admin-policy";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireSuperAdmin } from "@/lib/supabase/publication";
@@ -24,6 +25,7 @@ export class AccountDeletionError extends Error {
 }
 
 export type ProviderImageRow = {
+  id: string;
   logo_image_url: string | null;
   header_image_url: string | null;
   gallery_image_urls: unknown;
@@ -150,7 +152,7 @@ export async function deleteManagedAccount(
 
   const { data: providers, error: providersError } = await admin
     .from("providers")
-    .select("logo_image_url, header_image_url, gallery_image_urls")
+    .select("id, logo_image_url, header_image_url, gallery_image_urls")
     .eq("owner_user_id", userId)
     .returns<ProviderImageRow[]>();
 
@@ -181,24 +183,45 @@ export async function deleteManagedAccount(
     }
   }
 
+  const rollbackCleanupJob = async () => {
+    if (!cleanupJobId) return;
+
+    const { error: rollbackError } = await removeCleanupJob(
+      admin,
+      cleanupJobId,
+    );
+    if (rollbackError) {
+      console.error("account_deletion_cleanup_job_rollback_failed", {
+        cleanupJobId,
+        error: boundedErrorMessage(rollbackError),
+      });
+    }
+  };
+
+  // Deleting the auth user cascades providers, and providers cascade the Google
+  // connection rows with the only copy of the sealed refresh token. Revoking
+  // has to happen while that token still exists, or the grant stays alive at
+  // Google with nothing left to revoke it from.
+  for (const provider of providers ?? []) {
+    const { deleted } = await deleteConnection(provider.id);
+
+    if (!deleted) {
+      await rollbackCleanupJob();
+
+      throw new AccountDeletionError(
+        "deletion_failed",
+        "Could not revoke the Google connection for this account.",
+      );
+    }
+  }
+
   const { error: deleteError } = await admin.auth.admin.deleteUser(
     userId,
     false,
   );
 
   if (deleteError) {
-    if (cleanupJobId) {
-      const { error: rollbackError } = await removeCleanupJob(
-        admin,
-        cleanupJobId,
-      );
-      if (rollbackError) {
-        console.error("account_deletion_cleanup_job_rollback_failed", {
-          cleanupJobId,
-          error: boundedErrorMessage(rollbackError),
-        });
-      }
-    }
+    await rollbackCleanupJob();
 
     throw new AccountDeletionError(
       "deletion_failed",

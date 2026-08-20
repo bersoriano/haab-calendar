@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   deleteBlobs: vi.fn(),
+  deleteConnection: vi.fn(),
   requireSuperAdmin: vi.fn(),
 }));
 
@@ -18,6 +19,10 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("@/lib/supabase/publication", () => ({
   requireSuperAdmin: mocks.requireSuperAdmin,
+}));
+
+vi.mock("@/lib/google/connections", () => ({
+  deleteConnection: mocks.deleteConnection,
 }));
 
 import {
@@ -43,6 +48,7 @@ type CleanupRow = {
 function makeAdmin(options?: {
   targetEmail?: string | null;
   providerRows?: Array<{
+    id: string;
     logo_image_url: string | null;
     header_image_url: string | null;
     gallery_image_urls: unknown;
@@ -139,6 +145,7 @@ function makeAdmin(options?: {
   };
 
   return {
+    providerSelect: providerQuery.select,
     client: {
       auth,
       from: vi.fn((table: string) => {
@@ -208,6 +215,7 @@ describe("account deletion policy", () => {
     expect(
       collectVercelBlobUrls([
         {
+          id: "provider-1",
           logo_image_url:
             "https://store.public.blob.vercel-storage.com/provider-logos/logo.png",
           header_image_url:
@@ -218,6 +226,7 @@ describe("account deletion policy", () => {
           ],
         },
         {
+          id: "provider-2",
           logo_image_url:
             "https://store.public.blob.vercel-storage.com/provider-logos/logo.png",
           header_image_url: null,
@@ -239,12 +248,18 @@ describe("account deletion orchestration", () => {
   beforeEach(() => {
     mocks.createAdminClient.mockReset();
     mocks.deleteBlobs.mockReset();
+    mocks.deleteConnection.mockReset();
     mocks.requireSuperAdmin.mockReset();
     mocks.requireSuperAdmin.mockResolvedValue({
       id: "super-admin",
       email: "bsorianodev@gmail.com",
     });
     mocks.deleteBlobs.mockResolvedValue(undefined);
+    mocks.deleteConnection.mockResolvedValue({
+      deleted: true,
+      revoked: false,
+      revocationQueued: false,
+    });
   });
 
   it("stops before privileged operations when caller is unauthorized", async () => {
@@ -295,10 +310,81 @@ describe("account deletion orchestration", () => {
     );
   });
 
+  it("deletes an owner with no providers without touching Google", async () => {
+    const admin = makeAdmin({ providerRows: [] });
+    mocks.createAdminClient.mockReturnValue(admin.client);
+
+    await expect(
+      deleteManagedAccount("target-user", "target@example.com"),
+    ).resolves.toEqual({ userId: "target-user", cleanupPending: false });
+    expect(mocks.deleteConnection).not.toHaveBeenCalled();
+    expect(admin.actions).toEqual(["auth-delete"]);
+  });
+
+  it("revokes every Google connection before the Auth cascade destroys it", async () => {
+    const admin = makeAdmin({
+      providerRows: [
+        {
+          id: "provider-1",
+          logo_image_url: null,
+          header_image_url: null,
+          gallery_image_urls: [],
+        },
+        {
+          id: "provider-2",
+          logo_image_url: null,
+          header_image_url: null,
+          gallery_image_urls: [],
+        },
+      ],
+    });
+    mocks.createAdminClient.mockReturnValue(admin.client);
+    mocks.deleteConnection.mockImplementation(async (providerId: string) => {
+      admin.actions.push(`google-disconnect:${providerId}`);
+      return { deleted: true, revoked: true, revocationQueued: false };
+    });
+
+    await expect(
+      deleteManagedAccount("target-user", "target@example.com"),
+    ).resolves.toEqual({ userId: "target-user", cleanupPending: false });
+    expect(admin.actions).toEqual([
+      "google-disconnect:provider-1",
+      "google-disconnect:provider-2",
+      "auth-delete",
+    ]);
+    expect(admin.providerSelect.mock.calls[0][0]).toContain("id");
+  });
+
+  it("aborts the account deletion when a Google connection cannot be revoked", async () => {
+    const admin = makeAdmin({
+      providerRows: [
+        {
+          id: "provider-1",
+          logo_image_url: null,
+          header_image_url: null,
+          gallery_image_urls: [],
+        },
+      ],
+    });
+    mocks.createAdminClient.mockReturnValue(admin.client);
+    mocks.deleteConnection.mockResolvedValue({
+      deleted: false,
+      revoked: false,
+      revocationQueued: false,
+    });
+
+    await expect(
+      deleteManagedAccount("target-user", "target@example.com"),
+    ).rejects.toMatchObject({ code: "deletion_failed" });
+    expect(admin.client.auth.admin.deleteUser).not.toHaveBeenCalled();
+    expect(admin.actions).toEqual([]);
+  });
+
   it("deletes an account without creating cleanup when no current blobs exist", async () => {
     const admin = makeAdmin({
       providerRows: [
         {
+          id: "provider-1",
           logo_image_url: "https://cdn.example.com/logo.png",
           header_image_url: null,
           gallery_image_urls: [],
@@ -311,6 +397,7 @@ describe("account deletion orchestration", () => {
       deleteManagedAccount("target-user", "target@example.com"),
     ).resolves.toEqual({ userId: "target-user", cleanupPending: false });
     expect(admin.actions).toEqual(["auth-delete"]);
+    expect(mocks.deleteConnection).toHaveBeenCalledWith("provider-1");
     expect(mocks.deleteBlobs).not.toHaveBeenCalled();
   });
 
@@ -320,6 +407,7 @@ describe("account deletion orchestration", () => {
     const admin = makeAdmin({
       providerRows: [
         {
+          id: "provider-1",
           logo_image_url: blobUrl,
           header_image_url: null,
           gallery_image_urls: [],
@@ -340,8 +428,37 @@ describe("account deletion orchestration", () => {
       "blob-delete",
       "cleanup-delete",
     ]);
+    expect(mocks.deleteConnection).toHaveBeenCalledWith("provider-1");
     expect(mocks.deleteBlobs).toHaveBeenCalledWith([blobUrl]);
     expect(admin.jobs.size).toBe(0);
+  });
+
+  it("rolls back the cleanup job when a Google connection cannot be revoked", async () => {
+    const blobUrl =
+      "https://store.public.blob.vercel-storage.com/provider-logos/logo.png";
+    const admin = makeAdmin({
+      providerRows: [
+        {
+          id: "provider-1",
+          logo_image_url: blobUrl,
+          header_image_url: null,
+          gallery_image_urls: [],
+        },
+      ],
+    });
+    mocks.createAdminClient.mockReturnValue(admin.client);
+    mocks.deleteConnection.mockResolvedValue({
+      deleted: false,
+      revoked: false,
+      revocationQueued: false,
+    });
+
+    await expect(
+      deleteManagedAccount("target-user", "target@example.com"),
+    ).rejects.toMatchObject({ code: "deletion_failed" });
+    expect(admin.actions).toEqual(["cleanup-insert", "cleanup-delete"]);
+    expect(admin.jobs.size).toBe(0);
+    expect(mocks.deleteBlobs).not.toHaveBeenCalled();
   });
 
   it("rolls back cleanup job and leaves blobs when Auth deletion fails", async () => {
@@ -350,6 +467,7 @@ describe("account deletion orchestration", () => {
     const admin = makeAdmin({
       providerRows: [
         {
+          id: "provider-1",
           logo_image_url: blobUrl,
           header_image_url: null,
           gallery_image_urls: [],
@@ -377,6 +495,7 @@ describe("account deletion orchestration", () => {
     const admin = makeAdmin({
       providerRows: [
         {
+          id: "provider-1",
           logo_image_url: blobUrl,
           header_image_url: null,
           gallery_image_urls: [],
