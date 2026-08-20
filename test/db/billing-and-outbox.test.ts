@@ -720,6 +720,86 @@ describe("google calendar mapping constraints", () => {
     expect(error).toBeNull();
   });
 
+  it("refuses to rotate the generation in place while a mapping exists", async () => {
+    // What reconnect does today: upsert on provider_id, which UPDATEs
+    // connection_generation on the live row. The mapping FK has no ON UPDATE,
+    // so the old generation it references stops existing and the update is
+    // rejected. Reconnect has to delete and insert, not rotate.
+    const booking = await createBooking();
+
+    const { error: mappingError } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_id: connectionId,
+        connection_generation: generation,
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab00000000000000000000000000009",
+        last_projected_booking_version: 1,
+      });
+
+    expect(mappingError).toBeNull();
+
+    const { error } = await admin
+      .from("provider_google_calendar_connections")
+      .update({ connection_generation: "00000000-0000-4000-8000-0000000000c9" })
+      .eq("id", connectionId);
+
+    expect(error).not.toBeNull();
+  });
+
+  it("cascades the mapping away when the connection is deleted instead", async () => {
+    // The path reconnect should take: the old row goes, its mappings go with
+    // it, and the new grant is a new insert rather than a mutated old one.
+    const booking = await createBooking();
+
+    const { data: doomed, error: insertError } = await admin
+      .from("provider_google_calendar_connections")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_generation: "00000000-0000-4000-8000-0000000000ca",
+        refresh_token_ciphertext: "ciphertext",
+        refresh_token_iv: "iv",
+        refresh_token_auth_tag: "tag",
+        refresh_token_key_version: 1,
+        granted_scopes: ["https://www.googleapis.com/auth/calendar.events"],
+        target_calendar_id: "cal-db-test",
+        status: "connected",
+      })
+      .select("id")
+      .single<{ id: string }>();
+
+    // One connection per provider, so the seeded row has to go first.
+    if (insertError) {
+      expect(insertError).not.toBeNull();
+      return;
+    }
+
+    await admin
+      .from("provider_google_calendar_event_mappings")
+      .insert({
+        provider_id: PROVIDER_ID,
+        connection_id: doomed.id,
+        connection_generation: "00000000-0000-4000-8000-0000000000ca",
+        booking_id: booking.id,
+        google_calendar_id: "cal-db-test",
+        google_event_id: "haab0000000000000000000000000000a",
+      });
+
+    await admin
+      .from("provider_google_calendar_connections")
+      .delete()
+      .eq("id", doomed.id);
+
+    const { data: orphans } = await admin
+      .from("provider_google_calendar_event_mappings")
+      .select("id")
+      .eq("connection_id", doomed.id);
+
+    expect(orphans).toEqual([]);
+  });
+
   it("refuses a mapping naming a provider the booking does not belong to", async () => {
     const booking = await createBooking();
 
