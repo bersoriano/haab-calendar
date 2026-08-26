@@ -5,6 +5,7 @@ import {
   getProviderBookingByManageToken,
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
+import { getTrustedAppOrigins } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -34,7 +35,14 @@ export async function POST(request: NextRequest) {
   }
 
   const code = await readCode(request);
-  const parsed = parseAppointmentQrCode(code, new URL(request.url).origin);
+  // The origin serving this request plus any the deployment still owns. A QR is
+  // printed once and scanned for months: after a domain change the code in the
+  // customer's wallet names the old host, which is no longer the request origin
+  // and which a redirect cannot fix, because this is a string comparison.
+  const parsed = parseAppointmentQrCode(code, [
+    new URL(request.url).origin,
+    ...getTrustedAppOrigins(),
+  ]);
 
   if (!parsed) {
     return NextResponse.json(

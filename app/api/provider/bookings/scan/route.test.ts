@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
@@ -52,6 +52,10 @@ function request(body: unknown) {
 }
 
 describe("POST /api/provider/bookings/scan", () => {
+  afterEach(() => {
+    delete process.env.HAAB_ADDITIONAL_ORIGINS;
+  });
+
   beforeEach(() => {
     mocks.getUser.mockReset();
     mocks.getProviderBookingByManageToken.mockReset();
@@ -74,6 +78,35 @@ describe("POST /api/provider/bookings/scan", () => {
 
   it("rejects QR data that is not a same-origin appointment link", async () => {
     const response = await POST(request({ code: "BEGIN:VCALENDAR" }));
+
+    expect(response.status).toBe(400);
+    expect(mocks.getProviderBookingByManageToken).not.toHaveBeenCalled();
+  });
+
+  it("accepts a code minted on a retired origin the deployment still trusts", async () => {
+    // The domain moved; the QR in the customer's wallet did not.
+    process.env.HAAB_ADDITIONAL_ORIGINS = "https://haab-calendar.vercel.app";
+    mocks.getProviderBookingByManageToken.mockResolvedValue(booking);
+
+    const response = await POST(
+      request({
+        code: "https://haab-calendar.vercel.app/doctors/rivera-family/manage/private-token",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.getProviderBookingByManageToken).toHaveBeenCalledWith(
+      expect.anything(),
+      "private-token",
+    );
+  });
+
+  it("rejects a code from an origin the deployment does not own", async () => {
+    const response = await POST(
+      request({
+        code: "https://attacker.example/doctors/rivera-family/manage/private-token",
+      }),
+    );
 
     expect(response.status).toBe(400);
     expect(mocks.getProviderBookingByManageToken).not.toHaveBeenCalled();

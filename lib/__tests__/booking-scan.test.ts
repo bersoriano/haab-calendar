@@ -43,4 +43,35 @@ describe("appointment QR parsing", () => {
   ])("rejects %s instead of treating it as an appointment QR", (_label, code) => {
     expect(parseAppointmentQrCode(code, "https://haab.example")).toBeNull();
   });
+
+  it("accepts a code minted on a retired origin that is still trusted", () => {
+    expect(
+      parseAppointmentQrCode(
+        "https://haab-calendar.vercel.app/doctors/rivera-family/manage/private-token",
+        ["https://haabcalendar.com", "https://haab-calendar.vercel.app"],
+      ),
+    ).toEqual({
+      verticalSegment: "doctors",
+      providerSlug: "rivera-family",
+      token: "private-token",
+    });
+  });
+
+  it("still rejects an untrusted origin when several are accepted", () => {
+    expect(
+      parseAppointmentQrCode(
+        "https://attacker.example/doctors/rivera-family/manage/private-token",
+        ["https://haabcalendar.com", "https://haab-calendar.vercel.app"],
+      ),
+    ).toBeNull();
+  });
+
+  it("trusts nothing when the accepted origin list is empty", () => {
+    expect(
+      parseAppointmentQrCode(
+        "https://haabcalendar.com/doctors/rivera-family/manage/private-token",
+        [],
+      ),
+    ).toBeNull();
+  });
 });
