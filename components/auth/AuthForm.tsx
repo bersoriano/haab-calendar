@@ -117,6 +117,14 @@ export function AuthForm({
         >
           {intent === "signup" ? t.alreadyHaveAccount : t.newHereCreateAccount}
         </button>
+        {intent === "login" ? (
+          <a
+            className="text-center text-sm font-semibold text-[var(--muted)] underline-offset-4 transition hover:text-[var(--primary)] hover:underline"
+            href={`/login/reset?lang=${lang}`}
+          >
+            {t.forgotPassword}
+          </a>
+        ) : null}
       </div>
     </form>
   );

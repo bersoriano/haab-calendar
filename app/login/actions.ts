@@ -186,6 +186,103 @@ export async function authenticate(
   return login(previousState, formData);
 }
 
+/** Deliberately permissive: the authority on a deliverable address is the mail. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Where a recovery link lands.
+ *
+ * Not /auth or /login: getSafeNextPath in both the confirm route and the login
+ * page rejects a `next` under either, and a rejected `next` silently drops the
+ * visitor on the home page holding a recovery session with nowhere to set a
+ * password.
+ */
+// Not exported: a "use server" module may only export async functions.
+const PASSWORD_RESET_PATH = "/reset-password";
+
+/**
+ * Starts a password reset.
+ *
+ * The answer is the same whether or not an account exists. Anything else turns
+ * this form into an oracle for which email addresses hold accounts here, which
+ * is exactly the question an attacker wants answered before trying passwords.
+ * Supabase's own errors are swallowed for the same reason.
+ */
+export async function requestPasswordReset(
+  _previousState: AuthFormState = initialState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  void _previousState;
+
+  const email = String(formData.get("email") || "").trim();
+  const { lang, t } = getAuthCopy(formData.get("lang"));
+
+  if (!email) {
+    return { message: t.resetEmailRequired, status: "error" };
+  }
+
+  if (!EMAIL_PATTERN.test(email)) {
+    return { message: t.resetEmailInvalid, status: "error" };
+  }
+
+  const supabase = await createClient();
+  const origin = await getOrigin();
+  const redirectTo = new URL("/auth/confirm", origin);
+  redirectTo.searchParams.set("next", PASSWORD_RESET_PATH);
+  redirectTo.searchParams.set("lang", lang);
+
+  // The result is intentionally unread. A failure here — unknown address, rate
+  // limit, mail outage — must look identical to success from the outside.
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectTo.toString(),
+  });
+
+  return { message: t.resetSent, status: "success" };
+}
+
+/**
+ * Sets the new password, using the session the emailed link established.
+ *
+ * The session is the authorization: reaching this action at all means the
+ * recovery token was already verified by /auth/confirm. It is re-checked from
+ * the server rather than assumed, because a form post can arrive at any time,
+ * including long after the link expired.
+ */
+export async function updatePassword(
+  _previousState: AuthFormState = initialState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  void _previousState;
+
+  const password = String(formData.get("password") || "");
+  const { lang, t } = getAuthCopy(formData.get("lang"));
+  void lang;
+
+  if (password.length < 6) {
+    return { message: t.passwordMin, status: "error" };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { message: t.newPasswordNoSession, status: "error" };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { message: t.newPasswordFailed, status: "error" };
+  }
+
+  revalidatePath("/", "layout");
+
+  return { message: t.newPasswordUpdated, status: "success" };
+}
+
 export async function logout() {
   const supabase = await createClient();
 

@@ -25,6 +25,8 @@ export default function robots(): MetadataRoute.Robots {
         "/auth/",
         "/*/manage/",
         "/public/",
+        "/reset-password",
+        "/login/reset",
         "/super-admin",
         "/try-booking",
         "/account-deletion-preview",

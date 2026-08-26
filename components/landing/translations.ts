@@ -104,6 +104,27 @@ export const translations = {
       emailConfirmed: "Correo confirmado. Inicia sesión para continuar.",
       accountCreated:
         "Cuenta creada. Enviamos un enlace de confirmación a tu correo. Confírmalo y después inicia sesión aquí.",
+      forgotPassword: "¿Olvidaste tu contraseña?",
+      resetTitle: "Restablecer tu contraseña",
+      resetBody:
+        "Escribe el correo de tu cuenta y te enviaremos un enlace para elegir una contraseña nueva.",
+      resetSubmit: "Enviar enlace",
+      resetSending: "Enviando enlace...",
+      resetBackToSignIn: "← Volver a iniciar sesión",
+      resetEmailRequired: "Escribe el correo de tu cuenta.",
+      resetEmailInvalid: "Escribe una dirección de correo válida.",
+      resetSent:
+        "Si existe una cuenta con ese correo, enviamos un enlace para restablecer la contraseña. Revisa tu bandeja de entrada.",
+      newPasswordTitle: "Elige una contraseña nueva",
+      newPasswordBody:
+        "Ya verificamos tu enlace. Escribe la contraseña que usarás de ahora en adelante.",
+      newPassword: "Contraseña nueva",
+      newPasswordSubmit: "Guardar contraseña",
+      newPasswordSaving: "Guardando...",
+      newPasswordUpdated: "Contraseña actualizada. Ya puedes iniciar sesión.",
+      newPasswordNoSession:
+        "Ese enlace expiró o ya se usó. Solicita uno nuevo para restablecer tu contraseña.",
+      newPasswordFailed: "No se pudo actualizar la contraseña.",
       confirmationExpired:
         "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
     },
@@ -510,6 +531,29 @@ export const translations = {
       emailConfirmed: "Email confirmed. Sign in to continue.",
       accountCreated:
         "Account created. We sent a confirmation link to your email. Confirm it, then sign in here.",
+      forgotPassword: "Forgot your password?",
+      resetTitle: "Reset your password",
+      resetBody:
+        "Enter your account email and we will send you a link to choose a new password.",
+      resetSubmit: "Send link",
+      resetSending: "Sending link...",
+      resetBackToSignIn: "← Back to sign in",
+      resetEmailRequired: "Enter your account email.",
+      resetEmailInvalid: "Enter a valid email address.",
+      // Identical whether or not the account exists: a different answer would
+      // turn this form into a way to find out who holds an account here.
+      resetSent:
+        "If an account exists for that email, we sent a link to reset the password. Check your inbox.",
+      newPasswordTitle: "Choose a new password",
+      newPasswordBody:
+        "Your link is verified. Enter the password you will use from now on.",
+      newPassword: "New password",
+      newPasswordSubmit: "Save password",
+      newPasswordSaving: "Saving...",
+      newPasswordUpdated: "Password updated. You can sign in now.",
+      newPasswordNoSession:
+        "That link is expired or has already been used. Request a new one to reset your password.",
+      newPasswordFailed: "Could not update the password.",
       confirmationExpired:
         "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
     },
