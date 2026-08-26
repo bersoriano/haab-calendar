@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { PublicBookingPageShell } from "@/components/public-booking-page-shell";
 import {
@@ -9,8 +10,19 @@ import {
   parsePublicLanguage,
   withPublicLanguage,
 } from "@/lib/public-language";
+import { buildProviderCanonicalMetadata } from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ verticalSegment: string; providerSlug: string }>;
+}): Promise<Metadata> {
+  const { verticalSegment, providerSlug } = await params;
+
+  return buildProviderCanonicalMetadata(verticalSegment, providerSlug);
+}
 
 export default async function PublicProviderBookingPage({
   params,

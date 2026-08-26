@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { getServerLanguage } from "@/lib/language/server";
+import { buildRootMetadata } from "@/lib/site-metadata";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -14,11 +15,9 @@ const plexMono = IBM_Plex_Mono({
   weight: ["400", "500"],
 });
 
-export const metadata: Metadata = {
-  title: "Haab Calendar",
-  description:
-    "Reusable appointment and booking management module for timed appointments and full-day reservations.",
-};
+// Carries metadataBase, so every canonical link and Open Graph URL below it
+// resolves against the site's own domain instead of the serving host.
+export const metadata: Metadata = buildRootMetadata();
 
 export default async function RootLayout({
   children,

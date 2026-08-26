@@ -9,8 +9,13 @@ import {
   parsePublicLanguage,
   withPublicLanguage,
 } from "@/lib/public-language";
+import { PRIVATE_PAGE_METADATA } from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
+
+// The token in this URL is the only thing standing between a stranger and a
+// customer's booking. It must never reach a search index.
+export const metadata = PRIVATE_PAGE_METADATA;
 
 export default async function PublicManageBookingPage({
   params,
