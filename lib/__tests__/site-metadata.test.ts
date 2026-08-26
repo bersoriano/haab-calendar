@@ -7,16 +7,20 @@ import {
   buildRootMetadata,
 } from "@/lib/site-metadata";
 
-let saved: string | undefined;
+const TOUCHED = ["NEXT_PUBLIC_SITE_URL", "GOOGLE_SITE_VERIFICATION"] as const;
+let saved: Record<string, string | undefined>;
 
 beforeEach(() => {
-  saved = process.env.NEXT_PUBLIC_SITE_URL;
+  saved = Object.fromEntries(TOUCHED.map((key) => [key, process.env[key]]));
+  delete process.env.GOOGLE_SITE_VERIFICATION;
   process.env.NEXT_PUBLIC_SITE_URL = "https://haabcalendar.com";
 });
 
 afterEach(() => {
-  if (saved === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
-  else process.env.NEXT_PUBLIC_SITE_URL = saved;
+  for (const key of TOUCHED) {
+    if (saved[key] === undefined) delete process.env[key];
+    else process.env[key] = saved[key] as string;
+  }
 });
 
 describe("root metadata", () => {
@@ -81,5 +85,19 @@ describe("provider page canonical URL", () => {
 
   it("declares no canonical URL for a segment that is not a public vertical", () => {
     expect(buildProviderCanonicalMetadata("nonsense", "rivera-family")).toEqual({});
+  });
+});
+
+describe("search-console ownership", () => {
+  it("publishes the verification token when one is configured", () => {
+    process.env.GOOGLE_SITE_VERIFICATION = "abc123token";
+
+    expect(buildRootMetadata().verification?.google).toBe("abc123token");
+  });
+
+  it("emits no verification tag at all when none is configured", () => {
+    // An empty content="" tag is worse than no tag: Search Console reads it as
+    // a failed match rather than an absent one.
+    expect(buildRootMetadata().verification?.google).toBeUndefined();
   });
 });

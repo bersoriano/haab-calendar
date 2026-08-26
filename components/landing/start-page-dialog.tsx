@@ -135,7 +135,7 @@ export function StartPageDialog({
         <div className="mt-3 flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3">
           <span className="haab-live-dot h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--teal)]" aria-hidden="true" />
           <span className="truncate font-mono text-xs text-[var(--muted)] sm:text-[13px]">
-            haab.app/{previewSegment}/
+            haabcalendar.com/{previewSegment}/
             <span
               className={
                 trimmedName

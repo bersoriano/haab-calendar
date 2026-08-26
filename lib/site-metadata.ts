@@ -17,22 +17,28 @@ import { buildAbsoluteUrl, getSiteOrigin } from "@/lib/site-url";
  */
 export function buildRootMetadata(): Metadata {
   const origin = getSiteOrigin();
+  // Search Console's meta-tag method. Left off entirely when unset, because an
+  // empty content="" reads as a failed match rather than an absent tag. A DNS
+  // TXT record verifies the whole domain instead and is the better option when
+  // subdomains need to be covered too — see README.
+  const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined;
 
   return {
+    ...(googleVerification ? { verification: { google: googleVerification } } : {}),
     // Without this, every relative URL in metadata — canonical links, Open
     // Graph images — resolves against whatever host served the request, so a
     // preview deployment advertises itself as the canonical site.
     metadataBase: new URL(origin),
     title: "Haab Calendar",
     description:
-      "Reusable appointment and booking management module for timed appointments and full-day reservations.",
+      "Haab Calendar is booking software for small businesses. Publish a booking page, take appointments without client accounts, and optionally sync confirmed bookings to your own Google Calendar.",
     openGraph: {
       type: "website",
       siteName: "Haab Calendar",
       url: origin,
       title: "Haab Calendar",
       description:
-        "Reusable appointment and booking management module for timed appointments and full-day reservations.",
+        "Haab Calendar is booking software for small businesses. Publish a booking page, take appointments without client accounts, and optionally sync confirmed bookings to your own Google Calendar.",
     },
   };
 }

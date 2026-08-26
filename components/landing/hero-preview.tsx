@@ -24,7 +24,7 @@ import { useLanguage } from "./language-provider";
 // prices are copied from that seed so the demo matches the real page a visitor
 // lands on from "Try a real booking".
 export const PREVIEW_PUBLIC_PATH = "/doctors/dr-maya-rivera";
-const PREVIEW_URL_LABEL = "haab.app/doctors/dr-maya-rivera";
+const PREVIEW_URL_LABEL = "haabcalendar.com/doctors/dr-maya-rivera";
 const PREVIEW_PROVIDER_NAME = "Dr. Maya Rivera";
 
 type DayRule = {

@@ -684,6 +684,50 @@ export function Features() {
  * ships today; the last item names what does not, which is the part that makes
  * the other three believable while the product is in early access.
  */
+/**
+ * The Google Calendar integration, explained on the home page.
+ *
+ * Not a marketing section. Google's OAuth review reads the home page of any app
+ * requesting a sensitive scope and checks that the page explains what the app
+ * does and why it needs that access; this one was rejected for "does not
+ * explain the purpose of your app" while the page said nothing about Google at
+ * all. The claims here mirror lib/legal/content.ts and the behaviour in
+ * lib/google/, and components/landing/__tests__/google-disclosure.test.tsx
+ * pins the parts the review depends on.
+ */
+export function GoogleIntegration() {
+  const { lang, t } = useLanguage();
+  return (
+    <section
+      id="google-calendar"
+      className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-16 sm:px-8 sm:py-20"
+    >
+      <div className="mx-auto max-w-[1280px]">
+        <SectionHeading eyebrow={t.googleIntegration.eyebrow} title={t.googleIntegration.title} />
+        <p className="mt-6 max-w-[70ch] text-[15px] leading-7 text-[var(--muted)]">
+          {t.googleIntegration.purpose}
+        </p>
+        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-3">
+          {t.googleIntegration.items.map((item) => (
+            <div key={item.title} className="bg-[var(--surface-lowest)] p-6 sm:p-7">
+              <h3 className="text-base font-semibold tracking-[-0.01em] text-[var(--ink)]">
+                {item.title}
+              </h3>
+              <p className="mt-2.5 text-[15px] leading-7 text-[var(--muted)]">{item.body}</p>
+            </div>
+          ))}
+        </div>
+        <Link
+          href={`/privacy?lang=${lang}#google`}
+          className="mt-6 inline-block text-sm font-semibold text-[var(--primary)] hover:underline"
+        >
+          {t.googleIntegration.privacyLink}
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export function Trust() {
   const { t } = useLanguage();
 
@@ -886,6 +930,7 @@ export function LandingPage({
         {afterHero}
         <HowItWorks />
         <Features />
+        <GoogleIntegration />
         <Trust />
         <FAQ />
         <FinalCTA />

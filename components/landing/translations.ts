@@ -315,6 +315,27 @@ export const translations = {
         "Gana el más parecido. Todo se edita en la configuración.",
       cta: "Crear mi página",
     },
+    googleIntegration: {
+      eyebrow: "Google Calendar",
+      title: "Tus reservas, en el calendario que ya usas.",
+      purpose:
+        "Haab Calendar es software de reservas para negocios pequeños. Publicas una página de reservas, tus clientes reservan en ella sin crear una cuenta, y las reservas confirmadas pueden aparecer en tu propio Google Calendar.",
+      items: [
+        {
+          title: "Conectar es opcional.",
+          body: "No se solicita nada a Google hasta que conectas una cuenta, y puedes desconectarla cuando quieras desde tu configuración, lo que revoca el acceso de inmediato.",
+        },
+        {
+          title: "Las reservas salen; los tiempos ocupados regresan.",
+          body: "Haab escribe un evento por cada reserva confirmada y lee los tiempos ocupados de los calendarios que designes, para que un compromiso que ya tienes bloquee ese horario.",
+        },
+        {
+          title: "Los datos de tus clientes nunca salen de Haab.",
+          body: "Los eventos llevan el nombre del servicio y nada más. El nombre, correo, teléfono y notas de un cliente nunca se escriben en Google, porque un calendario puede compartirse y Haab no decide quién puede leerlos.",
+        },
+      ],
+      privacyLink: "Cómo tratamos los datos de Google →",
+    },
     trust: {
       eyebrow: "Confianza",
       title: "Hecho para cuidar un calendario real.",
@@ -699,6 +720,27 @@ export const translations = {
       note:
         "Closest match wins. Everything is editable during setup.",
       cta: "Create your page",
+    },
+    googleIntegration: {
+      eyebrow: "Google Calendar",
+      title: "Your bookings, on the calendar you already keep.",
+      purpose:
+        "Haab Calendar is booking software for small businesses. You publish a booking page, your clients book on it without creating an account, and confirmed bookings can appear on your own Google Calendar.",
+      items: [
+        {
+          title: "Connecting is optional.",
+          body: "Nothing is requested from Google until you connect an account, and you can disconnect at any time from your settings, which revokes the access immediately.",
+        },
+        {
+          title: "Bookings go out; busy times come back.",
+          body: "Haab writes one event per confirmed booking and reads busy times from the calendars you nominate, so a commitment already on your calendar blocks that slot.",
+        },
+        {
+          title: "Your clients' details never leave Haab.",
+          body: "Events carry the service name and nothing else. A client's name, email, phone, and notes are never written to Google, because a calendar can be shared and Haab does not decide who may read them.",
+        },
+      ],
+      privacyLink: "How we handle Google data →",
     },
     trust: {
       eyebrow: "Trust",
