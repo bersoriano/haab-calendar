@@ -225,6 +225,42 @@ environment — it is stamped into every Google Calendar event Haab creates, and
 two deployments sharing a namespace will each treat the other's events as their
 own.
 
+`NEXT_PUBLIC_SITE_URL` is the deployment's canonical origin — `https://haabcalendar.com`
+in production. Almost nothing reads it: request-time code derives its own origin
+from the request, which is right on every host. It is consulted only where no
+request exists or where a *stable* answer is the point — `metadataBase`,
+`sitemap.xml`, `robots.txt`, and the canonical `<link>` on public booking pages.
+Unset, it falls back to Vercel's own production domain, then to
+`https://haabcalendar.com`. `robots.txt` and `sitemap.xml` are prerendered, so
+this is read at **build** time: changing it needs a redeploy, not a restart.
+
+### Moving to a different domain
+
+Most of the work is outside this repository. In the app itself, set
+`NEXT_PUBLIC_SITE_URL` to the new origin and redeploy. Then, in order:
+
+| Where | Change |
+| --- | --- |
+| Vercel | Assign the domain, and make it the **primary** one so the old host redirects to it |
+| Supabase → Auth → URL Configuration | Site URL, and add the new origin to the redirect allow-list. Confirmation links are built from the request origin, but Supabase silently rewrites any origin missing from that list |
+| Google Cloud → OAuth client | Add `<origin>/api/auth/callback/google` as an authorized redirect URI, and the domain to the consent screen |
+| Google Cloud → Domain verification | Required before Google will create a push channel. The notification address is derived from `GOOGLE_OAUTH_REDIRECT_URI`, so there is nothing else to set |
+| Stripe → Webhooks | Point the endpoint at the new origin. A new endpoint issues a new signing secret; update `STRIPE_WEBHOOK_SECRET` |
+| GitHub → `Production` environment | `WORKERS_BASE_URL` |
+
+Two things do not follow a redirect, because both compare origins as strings
+rather than requesting them:
+
+- **QR codes and manage links already in circulation.** They carry the origin
+  that minted them. List the retired origin in `HAAB_ADDITIONAL_ORIGINS`
+  (comma-separated) and the scanner keeps accepting them; drop it once they have
+  aged out.
+- **Live Google push channels.** `provider_google_calendar_watch_channels`
+  stores no address, and the worker only rebuilds a channel when it expires — so
+  push keeps going to the old host for up to a week. Two-way sync still works
+  through the periodic workers meanwhile. To cut that short, clear `expires_at`
+  on the active rows after the cutover and let the next worker pass rebuild them.
+
 Then:
 
 ```bash
@@ -318,7 +354,7 @@ GitHub **environment** rather than from repository secrets:
 
 | Secret | Value |
 | --- | --- |
-| `WORKERS_BASE_URL` | Deployment origin, no trailing slash |
+| `WORKERS_BASE_URL` | Deployment origin, no trailing slash — `https://haabcalendar.com` |
 | `CRON_SECRET` | The same value set on the host |
 
 Repository-level secrets will not be seen by that job unless you also drop the

@@ -185,7 +185,7 @@ it work:
 
 | Secret | Value |
 | --- | --- |
-| `WORKERS_BASE_URL` | `https://haab-calendar.vercel.app`, no trailing slash |
+| `WORKERS_BASE_URL` | `https://haabcalendar.com`, no trailing slash |
 | `CRON_SECRET` | The same value set in the Vercel project |
 
 If the two `CRON_SECRET`s ever drift, every call answers 401 and the workflow
