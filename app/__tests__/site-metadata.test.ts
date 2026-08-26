@@ -58,6 +58,13 @@ describe("sitemap.xml", () => {
     }
   });
 
+  it("lists the legal pages, which Google's OAuth reviewer has to reach", () => {
+    const urls = sitemap().map((entry) => entry.url);
+
+    expect(urls).toContain("https://haabcalendar.com/privacy");
+    expect(urls).toContain("https://haabcalendar.com/terms");
+  });
+
   it("never lists a private manage link", () => {
     expect(sitemap().every((entry) => !entry.url.includes("/manage/"))).toBe(true);
   });

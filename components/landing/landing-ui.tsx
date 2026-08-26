@@ -830,6 +830,19 @@ export function Footer({
                   {t.footer.company.pricing}
                 </a>
               </li>
+              {/* Google's OAuth consent screen links to both, and its reviewer
+                  checks they are reachable from the app itself, not only by
+                  their bare URLs. */}
+              <li>
+                <Link href={`/privacy?lang=${lang}`} className="hover:text-[var(--ink)]">
+                  {t.footer.company.privacy}
+                </Link>
+              </li>
+              <li>
+                <Link href={`/terms?lang=${lang}`} className="hover:text-[var(--ink)]">
+                  {t.footer.company.terms}
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

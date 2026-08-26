@@ -378,6 +378,8 @@ export const translations = {
       companyHeading: "Empresa",
       company: {
         pricing: "Acceso anticipado",
+        privacy: "Aviso de privacidad",
+        terms: "Términos de servicio",
       },
       copyright: "© 2026 Haab Calendar. Software de reservas en acceso anticipado.",
       createLink: "Crear mi página →",
@@ -761,6 +763,8 @@ export const translations = {
       companyHeading: "Company",
       company: {
         pricing: "Early access",
+        privacy: "Privacy notice",
+        terms: "Terms of service",
       },
       copyright: "© 2026 Haab Calendar. Early-access booking software.",
       createLink: "Create your page →",

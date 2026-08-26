@@ -18,6 +18,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/",
     "/gallery",
     "/login",
+    // Reachable by more than readers: Google's OAuth review fetches these while
+    // verifying the consent screen's privacy policy and terms links.
+    "/privacy",
+    "/terms",
     ...DEMO_PAGES.map(getDemoPagePath),
   ];
 
