@@ -9,7 +9,10 @@ import { resolveEntitlements } from "@/lib/entitlements/resolve";
 
 const PROVIDER = "00000000-0000-4000-8000-000000000001";
 
-function render(planTier: string, overrides: Parameters<typeof resolveEntitlements>[0]["overrides"]) {
+function render(
+  planTier: string,
+  overrides: Parameters<typeof resolveEntitlements>[0]["overrides"],
+) {
   return renderToStaticMarkup(
     <ProviderFeatureOverrides
       ownerEmail="owner@example.com"
@@ -27,7 +30,11 @@ describe("ProviderFeatureOverrides", () => {
   it("shows a free plan with every feature off and none overridden", () => {
     const html = render("free", []);
 
-    expect(html).toContain("Plan: free");
+    expect(html).toContain("Premium access");
+    expect(html).toContain("0 of 4 enabled");
+    expect(html).toContain("Manage premium access");
+    expect(html).toContain("<details");
+    expect(html).not.toContain("<details open");
     expect(html).toContain("Custom URL slug");
     expect(html).toContain("Google Calendar sync");
     expect(html).toContain("Off");
@@ -77,7 +84,11 @@ describe("ProviderFeatureOverrides", () => {
 
 describe("prerequisite chain", () => {
   const GRANT_TWO_WAY = [
-    { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+    {
+      featureKey: "google_calendar_two_way_sync",
+      enabled: true,
+      expiresAt: null,
+    },
   ];
 
   it("says a granted feature is off, and names what it needs", () => {
@@ -103,8 +114,16 @@ describe("prerequisite chain", () => {
   it("reports no block once every prerequisite is granted too", () => {
     const html = render("free", [
       { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
-      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
-      { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
+      {
+        featureKey: "google_calendar_busy_blocking",
+        enabled: true,
+        expiresAt: null,
+      },
+      {
+        featureKey: "google_calendar_two_way_sync",
+        enabled: true,
+        expiresAt: null,
+      },
     ]);
 
     expect(html).not.toContain("Blocked");
@@ -122,7 +141,9 @@ describe("prerequisite chain", () => {
 });
 
 describe("blockingPrerequisites", () => {
-  function snapshot(overrides: Parameters<typeof resolveEntitlements>[0]["overrides"]) {
+  function snapshot(
+    overrides: Parameters<typeof resolveEntitlements>[0]["overrides"],
+  ) {
     return resolveEntitlements({
       providerId: PROVIDER,
       planTier: "free",
@@ -132,10 +153,9 @@ describe("blockingPrerequisites", () => {
   }
 
   it("names both prerequisites two-way needs when neither is on", () => {
-    expect(blockingPrerequisites(snapshot([]), "google_calendar_two_way_sync")).toEqual([
-      "google_calendar_sync",
-      "google_calendar_busy_blocking",
-    ]);
+    expect(
+      blockingPrerequisites(snapshot([]), "google_calendar_two_way_sync"),
+    ).toEqual(["google_calendar_sync", "google_calendar_busy_blocking"]);
   });
 
   it("names only the one still missing", () => {
@@ -143,23 +163,31 @@ describe("blockingPrerequisites", () => {
       { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
     ]);
 
-    expect(blockingPrerequisites(current, "google_calendar_two_way_sync")).toEqual([
-      "google_calendar_busy_blocking",
-    ]);
+    expect(
+      blockingPrerequisites(current, "google_calendar_two_way_sync"),
+    ).toEqual(["google_calendar_busy_blocking"]);
   });
 
   it("returns nothing once the chain is satisfied", () => {
     const current = snapshot([
       { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
-      { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
+      {
+        featureKey: "google_calendar_busy_blocking",
+        enabled: true,
+        expiresAt: null,
+      },
     ]);
 
-    expect(blockingPrerequisites(current, "google_calendar_two_way_sync")).toEqual([]);
+    expect(
+      blockingPrerequisites(current, "google_calendar_two_way_sync"),
+    ).toEqual([]);
   });
 
   it("returns nothing for a feature that depends on nothing", () => {
     expect(blockingPrerequisites(snapshot([]), "custom_slug")).toEqual([]);
-    expect(blockingPrerequisites(snapshot([]), "google_calendar_sync")).toEqual([]);
+    expect(blockingPrerequisites(snapshot([]), "google_calendar_sync")).toEqual(
+      [],
+    );
   });
 
   it("counts a revoke as unmet, not just an absent grant", () => {
@@ -168,8 +196,8 @@ describe("blockingPrerequisites", () => {
       { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
     ]);
 
-    expect(blockingPrerequisites(current, "google_calendar_busy_blocking")).toEqual([
-      "google_calendar_sync",
-    ]);
+    expect(
+      blockingPrerequisites(current, "google_calendar_busy_blocking"),
+    ).toEqual(["google_calendar_sync"]);
   });
 });

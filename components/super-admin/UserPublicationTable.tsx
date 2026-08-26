@@ -153,7 +153,9 @@ export function UserPublicationTable({
   if (users.length === 0) {
     return (
       <div className="space-y-4">
-        {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
+        {accountFeedback ? (
+          <AccountFeedback feedback={accountFeedback} />
+        ) : null}
         <div className="rounded-3xl border border-[var(--line)] bg-white p-8 text-center">
           <h2 className="text-lg font-semibold text-[var(--ink)]">
             No registered users
@@ -171,173 +173,183 @@ export function UserPublicationTable({
       {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
       <div className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-[0_18px_48px_rgba(15,23,42,0.07)]">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1320px] border-collapse text-left">
+          <table className="w-full min-w-[1120px] border-collapse text-left">
+            <caption className="sr-only">
+              Registered accounts and access controls
+            </caption>
             <thead className="bg-[var(--surface)] text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
               <tr>
-                <th className="px-6 py-4 font-semibold">Account</th>
+                <th className="sticky left-0 z-10 w-72 bg-[var(--surface)] px-6 py-4 font-semibold shadow-[1px_0_0_var(--line)]">
+                  Account
+                </th>
                 <th className="px-6 py-4 font-semibold">Workflow</th>
-                <th className="px-6 py-4 font-semibold">Email status</th>
-                <th className="px-6 py-4 font-semibold">Last sign-in</th>
                 <th className="px-6 py-4 font-semibold">Publication</th>
-                <th className="px-6 py-4 font-semibold">Features</th>
-                <th className="px-6 py-4 text-right font-semibold">Action</th>
+                <th className="px-6 py-4 font-semibold">Premium access</th>
+                <th className="px-6 py-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--line)]">
-            {users.map((user) => {
-              const pending = pendingUserId === user.id;
-              const rowFeedback = feedback?.userId === user.id ? feedback : undefined;
+              {users.map((user) => {
+                const pending = pendingUserId === user.id;
+                const rowFeedback =
+                  feedback?.userId === user.id ? feedback : undefined;
 
-              return (
-                <tr key={user.id} className="align-top">
-                  <td className="px-6 py-5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-[var(--ink)]">
-                        {user.email}
-                      </span>
-                      {user.superAdmin ? (
-                        <span className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-violet-700">
-                          Super admin
+                return (
+                  <tr
+                    key={user.id}
+                    className="align-top transition-colors hover:bg-slate-50/70"
+                  >
+                    <td className="sticky left-0 z-[1] bg-white px-6 py-5 shadow-[1px_0_0_var(--line)]">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="break-all font-semibold text-[var(--ink)]">
+                          {user.email}
                         </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-2 text-xs text-[var(--muted)]">
-                      Joined {formatUtcDate(user.createdAt)} UTC
-                    </p>
-                  </td>
-                  <td className="px-6 py-5">
-                    {user.workflow ? (
-                      <>
-                        <p className="font-medium text-[var(--ink)]">
-                          {user.workflow.businessName}
-                        </p>
-                        <p className="mt-1 text-xs text-[var(--muted)]">
-                          {user.workflow.setupComplete
-                            ? "Workflow completed"
-                            : "Workflow incomplete"}
-                        </p>
-                        {user.workflow.setupComplete && user.publishingEnabled ? (
-                          <Link
-                            className="mt-2 inline-block text-xs font-semibold text-[var(--primary)] underline-offset-4 hover:underline"
-                            href={user.workflow.publicPath}
-                            target="_blank"
-                          >
-                            Open public page
-                          </Link>
+                        {user.superAdmin ? (
+                          <span className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-violet-700">
+                            Super admin
+                          </span>
                         ) : null}
-                      </>
-                    ) : (
-                      <span className="text-sm text-[var(--muted)]">
-                        No workflow created
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.emailConfirmedAt
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {user.emailConfirmedAt ? "Confirmed" : "Unconfirmed"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-5 text-sm text-[var(--muted)]">
-                    {formatUtcDate(user.lastSignInAt)}
-                    {user.lastSignInAt ? " UTC" : ""}
-                  </td>
-                  <td className="px-6 py-5">
-                    <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                        user.publishingEnabled
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-rose-100 text-rose-700"
-                      }`}
-                    >
-                      {user.publishingEnabled ? "Enabled" : "Disabled"}
-                    </span>
-                    {user.publicationUpdatedAt ? (
-                      <p className="mt-2 text-xs text-[var(--muted)]">
-                        Updated {formatUtcDate(user.publicationUpdatedAt)} UTC
-                      </p>
-                    ) : null}
-                    {rowFeedback ? (
-                      <p
-                        className={`mt-2 max-w-xs text-xs font-medium ${
-                          rowFeedback.tone === "success"
-                            ? "text-emerald-700"
-                            : "text-rose-700"
-                        }`}
-                        role={rowFeedback.tone === "error" ? "alert" : "status"}
-                      >
-                        {rowFeedback.message}
-                      </p>
-                    ) : null}
-                  </td>
-                  <td className="px-6 py-5">
-                    {!user.provider ? (
-                      <span className="text-sm text-[var(--muted)]">
-                        No provider yet
-                      </span>
-                    ) : user.provider.entitlements ? (
-                      <ProviderFeatureOverrides
-                        ownerEmail={user.email}
-                        entitlements={user.provider.entitlements}
-                      />
-                    ) : (
-                      // Saying nothing beats saying "no overrides", which would
-                      // read as a provider having no granted features.
-                      <span className="text-sm text-[var(--muted)]">
-                        Feature data unavailable
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-5 text-right">
-                    <div className="flex flex-col items-end gap-2">
-                      <button
-                        type="button"
-                        aria-pressed={!user.publishingEnabled}
-                        disabled={pending}
-                        onClick={() => changePublication(user)}
-                        className={`inline-flex min-w-36 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
-                          user.publishingEnabled
-                            ? "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
-                            : "bg-emerald-600 text-white hover:bg-emerald-700"
-                        }`}
-                      >
-                        {pending
-                          ? "Saving…"
-                          : user.publishingEnabled
-                            ? "Disable publishing"
-                            : "Enable publishing"}
-                      </button>
-                      {user.superAdmin ? (
-                        <button
-                          type="button"
-                          disabled
-                          className="inline-flex min-w-36 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500"
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            user.emailConfirmedAt
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-amber-100 text-amber-800"
+                          }`}
                         >
-                          Protected account
-                        </button>
+                          {user.emailConfirmedAt ? "Confirmed" : "Unconfirmed"}
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-1 text-xs leading-5 text-[var(--muted)]">
+                        <p>Joined {formatUtcDate(user.createdAt)} UTC</p>
+                        <p>
+                          Last sign-in {formatUtcDate(user.lastSignInAt)}
+                          {user.lastSignInAt ? " UTC" : ""}
+                        </p>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      {user.workflow ? (
+                        <>
+                          <p className="font-medium text-[var(--ink)]">
+                            {user.workflow.businessName}
+                          </p>
+                          <p className="mt-1 text-xs text-[var(--muted)]">
+                            {user.workflow.setupComplete
+                              ? "Workflow completed"
+                              : "Workflow incomplete"}
+                          </p>
+                          {user.workflow.setupComplete &&
+                          user.publishingEnabled ? (
+                            <Link
+                              className="mt-2 inline-block text-xs font-semibold text-[var(--primary)] underline-offset-4 hover:underline"
+                              href={user.workflow.publicPath}
+                              target="_blank"
+                            >
+                              Open public page
+                            </Link>
+                          ) : null}
+                        </>
                       ) : (
+                        <span className="text-sm text-[var(--muted)]">
+                          No workflow created
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5">
+                      <span
+                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                          user.publishingEnabled
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {user.publishingEnabled ? "Enabled" : "Disabled"}
+                      </span>
+                      {user.publicationUpdatedAt ? (
+                        <p className="mt-2 text-xs text-[var(--muted)]">
+                          Updated {formatUtcDate(user.publicationUpdatedAt)} UTC
+                        </p>
+                      ) : null}
+                      {rowFeedback ? (
+                        <p
+                          className={`mt-2 max-w-xs text-xs font-medium ${
+                            rowFeedback.tone === "success"
+                              ? "text-emerald-700"
+                              : "text-rose-700"
+                          }`}
+                          role={
+                            rowFeedback.tone === "error" ? "alert" : "status"
+                          }
+                        >
+                          {rowFeedback.message}
+                        </p>
+                      ) : null}
+                    </td>
+                    <td className="px-6 py-5">
+                      {!user.provider ? (
+                        <span className="text-sm text-[var(--muted)]">
+                          No provider yet
+                        </span>
+                      ) : user.provider.entitlements ? (
+                        <ProviderFeatureOverrides
+                          ownerEmail={user.email}
+                          entitlements={user.provider.entitlements}
+                        />
+                      ) : (
+                        // Saying nothing beats saying "no overrides", which would
+                        // read as a provider having no granted features.
+                        <span className="text-sm text-[var(--muted)]">
+                          Feature data unavailable
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex flex-col items-end gap-2">
                         <button
                           type="button"
+                          aria-pressed={!user.publishingEnabled}
                           disabled={pending}
-                          onClick={() => {
-                            setDeletionError(undefined);
-                            setDeletionTarget(user);
-                          }}
-                          className="inline-flex min-w-36 items-center justify-center rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-wait disabled:opacity-60"
+                          onClick={() => changePublication(user)}
+                          className={`inline-flex min-w-36 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60 ${
+                            user.publishingEnabled
+                              ? "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"
+                              : "bg-emerald-600 text-white hover:bg-emerald-700"
+                          }`}
                         >
-                          Delete account
+                          {pending
+                            ? "Saving…"
+                            : user.publishingEnabled
+                              ? "Disable publishing"
+                              : "Enable publishing"}
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                        {user.superAdmin ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex min-w-36 items-center justify-center rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-500"
+                          >
+                            Protected account
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={pending}
+                            onClick={() => {
+                              setDeletionError(undefined);
+                              setDeletionTarget(user);
+                            }}
+                            className="inline-flex min-w-36 items-center justify-center rounded-full bg-rose-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-wait disabled:opacity-60"
+                          >
+                            Delete account
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

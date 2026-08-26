@@ -41,6 +41,7 @@ describe("UserPublicationTable", () => {
     );
 
     expect(html).toContain("bsorianodev@gmail.com");
+    expect(html).toContain("Registered accounts and access controls");
     expect(html).toContain("Super admin");
     expect(html).toContain("Haab Admin");
     expect(html).toContain("Confirmed");
