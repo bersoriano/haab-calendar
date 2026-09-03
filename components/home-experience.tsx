@@ -498,8 +498,8 @@ function DashboardPanel({
   const { t } = useLanguage();
 
   return (
-    <section className="px-5 py-14 sm:px-8">
-      <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-[28px] border border-[var(--line)] bg-[var(--surface)] p-8 text-center shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-10">
+    <section className="bg-[var(--band-tint)] px-5 py-16 sm:px-8 sm:py-20">
+      <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-8 text-center shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-10">
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
           {email ? `${t.home.signedInAs} ${email}` : t.home.signedIn}
         </p>
@@ -530,13 +530,17 @@ function VerticalsPanel({
 }) {
   const { t } = useLanguage();
   return (
-    <section id="verticals" className="scroll-mt-20 px-5 py-16 sm:px-8 sm:py-20">
+    <section
+      id="verticals"
+      className="scroll-mt-20 bg-[var(--band-tint)] px-5 py-20 sm:px-8 sm:py-24"
+    >
       <div className="mx-auto max-w-[1280px]">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
+          <p className="flex items-center justify-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
+            <span aria-hidden="true" className="h-px w-8 shrink-0 bg-[var(--line)]" />
             {t.useCases.eyebrow}
           </p>
-          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+          <h2 className="mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-[var(--ink)] sm:text-[2.6rem]">
             {t.useCases.title}
           </h2>
           <p className="mt-4 text-base leading-7 text-[var(--muted)] sm:text-lg">
@@ -552,7 +556,7 @@ function VerticalsPanel({
                 key={v.id}
                 type="button"
                 onClick={() => onSelectVertical(v.id as LandingVertical)}
-                className="flex flex-col gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left transition hover:border-[rgba(26,115,232,0.28)]"
+                className="group flex flex-col gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.32)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
               >
                 <span className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
                   {verticalCopy.label}
@@ -560,7 +564,9 @@ function VerticalsPanel({
                 <span className="text-[15px] leading-7 text-[var(--muted)]">
                   {verticalCopy.tagline}
                 </span>
-                <span className="mt-auto text-sm font-semibold text-[var(--primary)]">
+                {/* The copy already ends in an arrow; the hover shift moves
+                    that one rather than adding a second. */}
+                <span className="mt-auto text-sm font-semibold text-[var(--primary)] transition-transform duration-300 group-hover:translate-x-0.5">
                   {verticalCopy.start}
                 </span>
               </button>
