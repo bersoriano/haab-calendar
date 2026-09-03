@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { List } from "@phosphor-icons/react";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
 import { resolveLandingAccountEntry } from "@/lib/landing-account-entry";
 import { cn } from "@/lib/utils";
@@ -296,10 +303,112 @@ function GlassCard({
 }) {
   return (
     <div
-      className={`rounded-lg border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
+      className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * Fades a section in the first time it reaches the viewport.
+ *
+ * The hidden class is added by script rather than sitting in the markup, so a
+ * visitor whose JS never runs — or whose browser lacks IntersectionObserver —
+ * gets the fully visible page instead of an empty one. Reduced motion is
+ * handled in CSS, where both reveal classes collapse to "visible, no
+ * transition".
+ */
+function Reveal({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const [state, setState] = useState<"idle" | "hidden" | "shown">("idle");
+
+  // A ref callback rather than an effect: the hidden class is only ever
+  // applied to an element that was measured as below the fold, so nothing
+  // already on screen flashes out and back in.
+  const attach = useCallback((node: HTMLDivElement | null) => {
+    if (!node || typeof IntersectionObserver === "undefined") {
+      return;
+    }
+
+    if (node.getBoundingClientRect().top < window.innerHeight) {
+      return;
+    }
+
+    setState("hidden");
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setState("shown");
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "0px 0px -12% 0px" },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={attach}
+      className={cn(
+        state === "hidden" && "haab-reveal",
+        state === "shown" && "haab-reveal-in",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Which band a heading is being set on, so its type and rules pick the right
+ * contrast. Sections used to alternate between `white/70` and `white/55` — a
+ * difference nobody can see — so nine of them read as one uninterrupted plane;
+ * the bands are now `--band-paper`, `--band-tint`, and the single `--night`
+ * stop, and only that last one changes the heading's colours.
+ */
+type BandTone = "paper" | "night";
+
+/**
+ * An eyebrow, set in the mono face.
+ *
+ * Not a stylistic tic: this product is a timetable, and mono is the face a
+ * timetable is set in. It also keeps the section indices — 01, 02 — on a
+ * fixed advance so they line up down the page.
+ */
+function Eyebrow({
+  children,
+  tone = "paper",
+}: {
+  children: ReactNode;
+  tone?: BandTone;
+}) {
+  return (
+    <p
+      className={cn(
+        "flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em]",
+        tone === "night" ? "text-[var(--secondary-fixed)]" : "text-[var(--primary)]",
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "h-px w-8 shrink-0",
+          tone === "night" ? "bg-[var(--night-line)]" : "bg-[var(--line)]",
+        )}
+      />
+      {children}
+    </p>
   );
 }
 
@@ -307,23 +416,44 @@ function SectionHeading({
   eyebrow,
   title,
   body,
+  align = "center",
+  tone = "paper",
 }: {
   eyebrow?: string;
   title: string;
   body?: string;
+  /** Six centred headings in a row is the monotony; alternate them. */
+  align?: "center" | "left";
+  tone?: BandTone;
 }) {
+  const centered = align === "center";
+
   return (
-    <div className="mx-auto max-w-3xl text-center">
+    <div className={cn("max-w-3xl", centered && "mx-auto")}>
       {eyebrow ? (
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-          {eyebrow}
-        </p>
+        <div className={cn(centered && "justify-center", "flex")}>
+          <Eyebrow tone={tone}>{eyebrow}</Eyebrow>
+        </div>
       ) : null}
-      <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl lg:text-5xl">
+      <h2
+        className={cn(
+          "mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] sm:text-[2.6rem] lg:text-[3.1rem]",
+          tone === "night" ? "text-[var(--night-ink)]" : "text-[var(--ink)]",
+          centered && "text-center",
+        )}
+      >
         {title}
       </h2>
       {body ? (
-        <p className="mt-4 text-base leading-7 text-[var(--muted)] sm:text-lg">{body}</p>
+        <p
+          className={cn(
+            "mt-4 text-base leading-7 sm:text-lg",
+            tone === "night" ? "text-[var(--night-muted)]" : "text-[var(--muted)]",
+            centered && "text-center",
+          )}
+        >
+          {body}
+        </p>
       ) : null}
     </div>
   );
@@ -538,10 +668,16 @@ export function DemoCard({ index }: { index: number }) {
   return (
     <Link
       href={localizedExamplePath(liveExamplePaths[index], lang)}
-      className="group flex min-h-56 flex-col rounded-lg border border-[var(--line)] bg-white p-5 transition hover:border-[rgba(26,115,232,0.28)]"
+      className="group relative flex min-h-56 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.32)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
     >
+      {/* The card's own slot rule, drawn along the top edge and filled in on
+          hover: the same hour-rule device the setup steps use. */}
+      <span
+        aria-hidden="true"
+        className="haab-slot-rule absolute inset-x-0 top-0 h-1.5 text-[var(--primary)] opacity-25 transition-opacity duration-300 group-hover:opacity-70"
+      />
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
           {item.vertical}
         </p>
         <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
@@ -558,9 +694,12 @@ export function DemoCard({ index }: { index: number }) {
   );
 }
 
+// Four featured demos left an orphan in a three-up grid. Two-up through lg and
+// four-up above it both divide the landing's four and the gallery's twelve
+// without a ragged last row.
 export function DemoGrid({ indexes }: { indexes: number[] }) {
   return (
-    <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {indexes.map((index) => (
         <DemoCard key={index} index={index} />
       ))}
@@ -577,14 +716,12 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   const { lang, t } = useLanguage();
 
   return (
-    <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-14 sm:px-8 sm:py-16">
+    <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-16 sm:px-8 sm:py-20">
       <div className="mx-auto max-w-[1280px]">
-        <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
           <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-              {t.liveExamples.eyebrow}
-            </p>
-            <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+            <Eyebrow>{t.liveExamples.eyebrow}</Eyebrow>
+            <h2 className="mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-[var(--ink)] sm:text-[2.6rem]">
               {t.liveExamples.title}
             </h2>
           </div>
@@ -592,7 +729,9 @@ export function LiveExamples({ featured }: { featured: number[] }) {
             {formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
           </p>
         </div>
-        <DemoGrid indexes={featured} />
+        <Reveal>
+          <DemoGrid indexes={featured} />
+        </Reveal>
         <div className="mt-8 flex flex-col items-center gap-3">
           <Link href={galleryPath(lang)} className={secondaryLinkClass}>
             {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length)}
@@ -608,29 +747,49 @@ export function LiveExamples({ featured }: { featured: number[] }) {
 
 
 
+/**
+ * Setup, as a rail rather than three boxes.
+ *
+ * These steps are a real sequence — you cannot publish a page you have not
+ * named — so the numbering carries information, and the layout should show the
+ * order instead of leaving three interchangeable cards to imply it. The rail is
+ * the slot rule: an hour line with the three steps marked on it.
+ */
 export function HowItWorks() {
   const { t } = useLanguage();
   const stepNumbers = ["01", "02", "03"];
   return (
-    <section id="how" className="scroll-mt-20 bg-white/55 px-5 py-16 sm:px-8 sm:py-20">
+    <section id="how" className="scroll-mt-20 bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24">
       <div className="mx-auto max-w-[1280px]">
-        <SectionHeading
-          eyebrow={t.how.eyebrow}
-          title={t.how.title}
-        />
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {t.how.steps.map((s, i) => (
-            <GlassCard key={stepNumbers[i]} className="flex h-full flex-col gap-4">
-              <span className="font-mono text-xs font-semibold uppercase tracking-[0.1em] tabular-nums text-[var(--primary)]">
-                {t.how.stepLabel} {stepNumbers[i]}
-              </span>
-              <h3 className="text-2xl font-semibold text-[var(--ink)]">
-                {s.title}
-              </h3>
-              <p className="text-[15px] leading-7 text-[var(--muted)]">{s.body}</p>
-            </GlassCard>
-          ))}
-        </div>
+        <SectionHeading eyebrow={t.how.eyebrow} title={t.how.title} align="left" />
+        <Reveal className="relative mt-14">
+          {/* The rail. Vertical on phones, where the steps stack; horizontal
+              from lg, where they sit side by side. */}
+          <span
+            aria-hidden="true"
+            className="haab-slot-rule-y absolute bottom-2 left-[15px] top-2 w-1.5 text-[var(--primary)] lg:hidden"
+          />
+          <span
+            aria-hidden="true"
+            className="haab-slot-rule absolute left-0 right-0 top-[15px] hidden h-1.5 text-[var(--primary)] lg:block"
+          />
+          <ol className="relative grid gap-10 lg:grid-cols-3 lg:gap-8">
+            {t.how.steps.map((s, i) => (
+              <li key={stepNumbers[i]} className="relative pl-14 lg:pl-0">
+                <span className="absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] font-mono text-[11px] font-semibold tabular-nums text-[var(--primary)] lg:relative lg:mb-6">
+                  {/* The marker carries the number; naming it again in a line
+                      of its own would say "step" twice. */}
+                  <span className="sr-only">{t.how.stepLabel} </span>
+                  {stepNumbers[i]}
+                </span>
+                <h3 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">
+                  {s.title}
+                </h3>
+                <p className="mt-3 max-w-md text-[15px] leading-7 text-[var(--muted)]">{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </Reveal>
       </div>
     </section>
   );
@@ -646,30 +805,51 @@ export function Features() {
     { glyph: "↗", tone: "blue" as const },
   ];
   return (
-    <section id="features" className="scroll-mt-20 px-5 py-16 sm:px-8 sm:py-20">
+    <section
+      id="features"
+      className="scroll-mt-20 bg-[var(--band-tint)] px-5 py-20 sm:px-8 sm:py-24"
+    >
       <div className="mx-auto max-w-[1280px]">
-        <SectionHeading
-          eyebrow={t.features.eyebrow}
-          title={t.features.title}
-        />
-        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <SectionHeading eyebrow={t.features.eyebrow} title={t.features.title} />
+        {/* Five equal cards say all five matter equally. The first one is the
+            reason the product exists, so it gets the width and the larger
+            type; the rest fall in behind it. */}
+        <Reveal className="mt-14 grid gap-4 md:grid-cols-2">
           {t.features.items.map((f, i) => (
-            <GlassCard key={f.title} className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
+            <GlassCard
+              key={f.title}
+              className={cn(
+                "flex flex-col gap-4 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
+                i === 0 && "md:col-span-2 md:p-8",
+              )}
+            >
+              <div className={cn("flex items-start gap-4", i === 0 && "md:gap-5")}>
                 <BrandGlyph label={meta[i].glyph} tone={meta[i].tone} />
                 <div>
-                  <h3 className="text-xl font-semibold text-[var(--ink)]">
+                  <h3
+                    className={cn(
+                      "font-semibold tracking-[-0.02em] text-[var(--ink)]",
+                      i === 0 ? "text-xl md:text-3xl" : "text-xl",
+                    )}
+                  >
                     {f.title}
                   </h3>
-                  <p className="mt-2 text-[15px] leading-7 text-[var(--muted)]">{f.body}</p>
+                  <p
+                    className={cn(
+                      "mt-2 leading-7 text-[var(--muted)]",
+                      i === 0 ? "text-[15px] md:max-w-2xl md:text-lg md:leading-8" : "text-[15px]",
+                    )}
+                  >
+                    {f.body}
+                  </p>
                 </div>
               </div>
-              <p className="mt-auto text-xs font-semibold uppercase text-[var(--teal)]">
+              <p className="mt-auto font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
                 {f.tag}
               </p>
             </GlassCard>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -700,29 +880,39 @@ export function GoogleIntegration() {
   return (
     <section
       id="google-calendar"
-      className="scroll-mt-20 border-b border-[var(--line)] bg-white/70 px-5 py-16 sm:px-8 sm:py-20"
+      className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24"
     >
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.googleIntegration.eyebrow} title={t.googleIntegration.title} />
-        <p className="mt-6 max-w-[70ch] text-[15px] leading-7 text-[var(--muted)]">
-          {t.googleIntegration.purpose}
-        </p>
-        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-3">
+      {/* Two columns rather than another three-across row of cards: the
+          explanation stays alongside the claims it covers as they scroll. */}
+      <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <div className="lg:sticky lg:top-28 lg:self-start">
+          <SectionHeading
+            eyebrow={t.googleIntegration.eyebrow}
+            title={t.googleIntegration.title}
+            align="left"
+          />
+          <p className="mt-5 max-w-[52ch] text-[15px] leading-7 text-[var(--muted)]">
+            {t.googleIntegration.purpose}
+          </p>
+          <Link
+            href={`/privacy?lang=${lang}#google`}
+            className={cn(secondaryLinkClass, "mt-7")}
+          >
+            {t.googleIntegration.privacyLink}
+          </Link>
+        </div>
+        <Reveal className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
           {t.googleIntegration.items.map((item) => (
-            <div key={item.title} className="bg-[var(--surface-lowest)] p-6 sm:p-7">
-              <h3 className="text-base font-semibold tracking-[-0.01em] text-[var(--ink)]">
+            <div key={item.title} className="py-7 first:pt-0 last:pb-0 sm:py-8">
+              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
                 {item.title}
               </h3>
-              <p className="mt-2.5 text-[15px] leading-7 text-[var(--muted)]">{item.body}</p>
+              <p className="mt-2.5 max-w-[62ch] text-[15px] leading-7 text-[var(--muted)]">
+                {item.body}
+              </p>
             </div>
           ))}
-        </div>
-        <Link
-          href={`/privacy?lang=${lang}#google`}
-          className="mt-6 inline-block text-sm font-semibold text-[var(--primary)] hover:underline"
-        >
-          {t.googleIntegration.privacyLink}
-        </Link>
+        </Reveal>
       </div>
     </section>
   );
@@ -732,19 +922,31 @@ export function Trust() {
   const { t } = useLanguage();
 
   return (
-    <section id="trust" className="scroll-mt-20 border-y border-[var(--line)] bg-white/55 px-5 py-16 sm:px-8 sm:py-20">
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} />
-        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--line)] sm:grid-cols-3">
+    /* The page's one dark stop. Trust used to render exactly like the Google
+       section directly above it — same hairline grid, same three cells — so
+       the two read as one long panel. Dropping the cards here and letting the
+       claims sit on the night band separates them and gives the scroll a
+       floor to land on before the closing CTA. */
+    <section
+      id="trust"
+      className="relative scroll-mt-20 overflow-hidden bg-[var(--night)] px-5 py-20 sm:px-8 sm:py-28"
+    >
+      <span
+        aria-hidden="true"
+        className="haab-slot-rule haab-slot-rule-fade absolute inset-x-0 top-0 h-10 text-[var(--secondary-fixed)]"
+      />
+      <div className="relative mx-auto max-w-[1280px]">
+        <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} tone="night" />
+        <Reveal className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
           {t.trust.items.map((item) => (
-            <div key={item.title} className="bg-[var(--surface-lowest)] p-6 sm:p-7">
-              <h3 className="text-base font-semibold tracking-[-0.01em] text-[var(--ink)]">
+            <div key={item.title} className="border-t border-[var(--night-line)] pt-6">
+              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--night-ink)]">
                 {item.title}
               </h3>
-              <p className="mt-2.5 text-[15px] leading-7 text-[var(--muted)]">{item.body}</p>
+              <p className="mt-3 text-[15px] leading-7 text-[var(--night-muted)]">{item.body}</p>
             </div>
           ))}
-        </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -753,24 +955,26 @@ export function Trust() {
 export function FAQ() {
   const { t } = useLanguage();
   return (
-    <section id="faq" className={sectionPadding}>
-      <div className="mx-auto max-w-[920px]">
-        <SectionHeading eyebrow={t.faq.eyebrow} title={t.faq.title} />
-        <div className="mt-12 divide-y divide-[var(--line)] rounded-[28px] border border-[var(--line)] bg-white/75">
+    <section id="faq" className={cn(sectionPadding, "bg-[var(--band-paper)]")}>
+      {/* No box around the questions: after the night band the page wants a
+          quiet, plainly typeset column, not another panel. */}
+      <div className="mx-auto max-w-[820px]">
+        <SectionHeading eyebrow={t.faq.eyebrow} title={t.faq.title} align="left" />
+        <div className="mt-12 divide-y divide-[var(--line)] border-y border-[var(--line)]">
           {t.faq.items.map((item) => (
-            <details key={item.q} className="group px-6 py-5 sm:px-8">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left">
-                <span className="text-base font-semibold text-[var(--ink)] sm:text-lg">
+            <details key={item.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]">
+                <span className="text-base font-semibold text-[var(--ink)] transition group-hover:text-[var(--primary)] sm:text-lg">
                   {item.q}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--muted)] transition group-open:rotate-45 group-open:border-[var(--primary)] group-open:text-[var(--primary)]"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--muted)] transition duration-300 group-open:rotate-45 group-open:border-[var(--primary)] group-open:text-[var(--primary)]"
                 >
                   +
                 </span>
               </summary>
-              <p className="mt-4 text-[15px] leading-7 text-[var(--muted)]">{item.a}</p>
+              <p className="mt-4 max-w-[68ch] text-[15px] leading-7 text-[var(--muted)]">{item.a}</p>
             </details>
           ))}
         </div>
@@ -786,11 +990,15 @@ export function FinalCTA() {
   const { hasPage } = useLandingActions();
   const primaryLabel = usePrimaryCtaLabel();
   return (
-    <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-20 sm:px-8 lg:py-24">
+    <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-24 sm:px-8 lg:py-28">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(26,115,232,0.95),rgba(79,142,241,0.92))]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
+      <span
+        aria-hidden="true"
+        className="haab-slot-rule haab-slot-rule-fade pointer-events-none absolute inset-x-0 top-0 h-12 text-white"
+      />
       <div className="relative mx-auto max-w-[920px] text-center">
-        <h2 className="text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+        <h2 className="text-balance text-4xl font-semibold tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.4rem]">
           {t.finalCta.title}
         </h2>
         <p className="mt-5 text-lg leading-8 text-white/85">
@@ -820,7 +1028,7 @@ export function Footer({
   const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
   return (
-    <footer className="border-t border-[var(--line)] bg-white/65 px-5 py-12 sm:px-8">
+    <footer className="border-t border-[var(--line)] bg-[var(--band-tint)] px-5 py-14 sm:px-8">
       <div className="mx-auto max-w-[1280px]">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
           <div>

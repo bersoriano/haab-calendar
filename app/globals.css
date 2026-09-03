@@ -64,6 +64,16 @@
   /* Landing page accents (see components/landing/) */
   --teal: #0d9488;
   --teal-soft: rgba(13, 148, 136, 0.1);
+  /* Landing section bands. The page used to alternate white/70 and white/55,
+     a difference no eye can see, so nine sections read as one flat plane.
+     These three are deliberately far enough apart to be read as separate
+     bands, and the night band is the page's one dark moment. */
+  --band-paper: #ffffff;
+  --band-tint: #eef2f8;
+  --night: #0f1720;
+  --night-ink: #f5f7fa;
+  --night-muted: rgba(226, 232, 240, 0.68);
+  --night-line: rgba(148, 163, 184, 0.24);
 }
 
 @theme inline {
@@ -206,5 +216,74 @@ code {
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Landing signature: the slot rule.
+   A booking page is a day cut into slots, so the landing's one repeated
+   graphic device is that cut - evenly spaced hairline ticks with a heavier
+   tick every fourth, the way an hour rule sits over quarter-hours. Used as
+   the rail that connects the three setup steps and as the texture on the
+   night band. Nowhere else.
+   ------------------------------------------------------------------------ */
+.haab-slot-rule {
+  background-image: repeating-linear-gradient(
+      to right,
+      currentColor 0 1px,
+      transparent 1px 12px
+    );
+  opacity: 0.28;
+}
+
+/* Over a filled band the full-strength rule reads as a barcode, so the band
+   variants fade it out into the surface below. */
+.haab-slot-rule-fade {
+  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1), transparent);
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1), transparent);
+}
+
+/* Same rule turned on its side, for the stacked (phone) step list. */
+.haab-slot-rule-y {
+  background-image: repeating-linear-gradient(
+      to bottom,
+      currentColor 0 1px,
+      transparent 1px 12px
+    );
+  opacity: 0.28;
+}
+
+.haab-slot-rule-dense {
+  background-image:
+    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 12px);
+  background-size: 100% 100%, 100% 60%;
+  background-position: 0 0, 0 100%;
+  background-repeat: no-repeat, no-repeat;
+}
+
+/* Section entrance. One transform, one fade, triggered by the reveal
+   observer in landing-ui. Sections start visible and are only hidden once
+   the observer confirms it can take over, so a failed script never leaves a
+   blank page. */
+.haab-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.haab-reveal-in {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haab-reveal,
+  .haab-reveal-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
