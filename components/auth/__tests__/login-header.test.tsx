@@ -9,13 +9,34 @@ describe("LoginHeader", () => {
 
     expect(html).toContain("Haab Calendar");
     expect(html).toContain("← Back to home");
-    expect(html.match(/href="\/?\?lang=en"/g)).toHaveLength(2);
+    // The brand mark and the back link both point at the English landing page.
+    expect(html.match(/href="\/\?lang=en"/g)).toHaveLength(2);
   });
 
   it("links the Spanish login page back to the Spanish landing page", () => {
     const html = renderToStaticMarkup(<LoginHeader lang="es" />);
 
     expect(html).toContain("← Volver al inicio");
-    expect(html.match(/href="\/?\?lang=es"/g)).toHaveLength(2);
+    expect(html.match(/href="\/\?lang=es"/g)).toHaveLength(2);
+  });
+
+  it("carries the language switcher, so no page has to place its own", () => {
+    const html = renderToStaticMarkup(<LoginHeader lang="en" />);
+
+    expect(html).toContain('href="?lang=es"');
+    expect(html).toContain('href="?lang=en"');
+    expect(html).toContain('aria-label="Choose language"');
+  });
+
+  it("lets a page build the switch links when its state lives in the query", () => {
+    const html = renderToStaticMarkup(
+      <LoginHeader
+        lang="en"
+        languageHrefFor={(option) => `/login?lang=${option}&mode=signup`}
+      />,
+    );
+
+    expect(html).toContain('href="/login?lang=es&amp;mode=signup"');
+    expect(html).toContain('href="/login?lang=en&amp;mode=signup"');
   });
 });
