@@ -57,7 +57,7 @@ describe("landing translations", () => {
     expect(translations.en.auth.eventOrganizerPanelTitle).toBe("Organizer login");
     expect(translations.es.auth.eventOrganizerPanelTitle).toBe("Acceso para organizadores");
     expect(translations.en.auth.eventOrganizerPageBody).not.toMatch(/\bprovider\b/i);
-    expect(translations.es.auth.eventOrganizerPageBody).not.toMatch(/\bproveedor\b/i);
+    expect(translations.es.auth.eventOrganizerPageBody).not.toMatch(/\b(proveedor|administrador)\b/i);
   });
 
   it("defaults visitor-owned surfaces to English", () => {

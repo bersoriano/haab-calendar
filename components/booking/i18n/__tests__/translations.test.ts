@@ -59,7 +59,7 @@ describe("bookingTranslations", () => {
     expect(bookingTranslations.en.healthcareRole.informationTitle).toBe("Physician information");
     expect(bookingTranslations.es.healthcareRole.informationTitle).toBe("Información del Médico");
     expect(Object.values(bookingTranslations.en.healthcareRole).join(" ")).not.toMatch(/\bprovider\b/i);
-    expect(Object.values(bookingTranslations.es.healthcareRole).join(" ")).not.toMatch(/\bproveedor\b/i);
+    expect(Object.values(bookingTranslations.es.healthcareRole).join(" ")).not.toMatch(/\b(proveedor|administrador)\b/i);
   });
 
   it("uses organizer terminology for the events vertical in both languages", () => {
@@ -80,7 +80,7 @@ describe("bookingTranslations", () => {
     ).not.toMatch(/\bprovider\b/i);
     expect(
       Object.values(bookingTranslations.es.eventOrganizerRole).join(" "),
-    ).not.toMatch(/\bproveedor\b/i);
+    ).not.toMatch(/\b(proveedor|administrador)\b/i);
   });
 });
 

@@ -379,7 +379,7 @@ describe("private management page", () => {
 
     expect(html).toContain("Cancelada");
     expect(html).toContain("El horario quedó libre para otras personas.");
-    expect(html).not.toContain("Nota para el proveedor");
+    expect(html).not.toContain("Nota para el administrador");
   });
 });
 

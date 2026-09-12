@@ -27,7 +27,7 @@ Last run: (not yet run) · Result: —
    **Salud**, **Para médicos y especialistas**, and **Elegir otro flujo**. Use
    that action once and confirm it returns to the vertical picker before
    selecting **Salud** again.
-6. Confirm Step 1 is labeled **Datos del Médico**, not **Proveedor** or **Mis
+6. Confirm Step 1 is labeled **Datos del Médico**, not **Administrador** or **Mis
    datos**. Enter the physician data:
    - Full name `Dra. Carmen Salinas`
    - Business `Clínica Salinas`
@@ -40,7 +40,7 @@ Last run: (not yet run) · Result: —
    and settings remain Spanish. Reload and confirm Settings → Language is still
    **Español**. Settings must show **Información del Médico**, and healthcare
    service-editor profile hints must refer to **el médico**, never **el
-   proveedor**.
+   administrador**.
 9. Edit the seeded service (e.g. "First-time visit") — leave defaults; confirm it
    is an appointment type.
 

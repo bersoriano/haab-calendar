@@ -66,8 +66,8 @@ export const translations = {
     auth: {
       pageTitle: "Inicia sesión para administrar tu espacio de reservas.",
       pageBody:
-        "Usa tu cuenta de proveedor para configurar servicios, disponibilidad, reservas y la página pública de reservas.",
-      panelTitle: "Acceso para proveedores",
+        "Usa tu cuenta de administrador para configurar servicios, disponibilidad, reservas y la página pública de reservas.",
+      panelTitle: "Acceso para administradores",
       eventOrganizerPageBody:
         "Usa tu cuenta de organizador para configurar eventos, registros y la página pública de registro.",
       eventOrganizerPanelTitle: "Acceso para organizadores",
