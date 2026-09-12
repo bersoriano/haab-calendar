@@ -355,7 +355,7 @@ export const defaultCopyEs: VerticalCopy = {
 
     clientLabel: "Cliente",
 
-    scanQrBody: "Escanee para abrir esta reserva o presente el código al proveedor.",
+    scanQrBody: "Escanee para abrir esta reserva o presente el código al administrador.",
     calendarQrLabel: "Código QR privado de esta reserva",
 
     eventDateLabel: "Fecha y hora",
@@ -601,7 +601,7 @@ export const healthcareCopyEs: VerticalCopy = {
 
     clientLabel: "Paciente",
 
-    scanQrBody: "Escanee para abrir esta cita o presente el código al proveedor.",
+    scanQrBody: "Escanee para abrir esta cita o presente el código al administrador.",
     calendarQrLabel: "Código QR privado de esta cita",
 
     eventDateLabel: "Fecha y hora",
@@ -1092,7 +1092,7 @@ export const spacesCopyEs: VerticalCopy = {
 
     clientLabel: "Huésped",
 
-    scanQrBody: "Escanee para abrir esta reserva o presente el código al proveedor.",
+    scanQrBody: "Escanee para abrir esta reserva o presente el código al administrador.",
     calendarQrLabel: "Código QR privado de esta reserva",
 
     eventDateLabel: "Fecha y hora",
@@ -1335,7 +1335,7 @@ export const professionalCopyEs: VerticalCopy = {
 
     clientLabel: "Cliente",
 
-    scanQrBody: "Escanee para abrir esta sesión o presente el código al proveedor.",
+    scanQrBody: "Escanee para abrir esta sesión o presente el código al administrador.",
     calendarQrLabel: "Código QR privado de esta sesión",
 
     eventDateLabel: "Fecha y hora",
