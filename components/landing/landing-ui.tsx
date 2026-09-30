@@ -4,26 +4,30 @@ import Link from "next/link";
 import { ArrowRight, List } from "@phosphor-icons/react";
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
-import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { DEMO_PAGES } from "@/lib/demo-pages";
 import { resolveLandingAccountEntry } from "@/lib/landing-account-entry";
 import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
 import { LiveDemoDialog } from "./live-demo-dialog";
+import { DemoGrid } from "./demo-card";
 import { formatDemoCount } from "./demo-count";
 import { FactStrip } from "./fact-strip";
+import { HowItWorks } from "./how-it-works";
 import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
 import { LangPill } from "./lang-pill";
+import { Reveal } from "./reveal";
 import {
   CheckChip,
   LandingScope,
+  LpButton,
+  SectionHeading as LpSectionHeading,
   lpBody,
   lpButtonClass,
   lpDisplay,
@@ -242,11 +246,6 @@ const secondaryLinkClass =
 
 
 const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
-const liveExamplePaths = DEMO_PAGES.map(getDemoPagePath);
-
-function localizedExamplePath(path: string, lang: "en" | "es") {
-  return `${path}?lang=${lang}`;
-}
 
 function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
@@ -264,7 +263,7 @@ export function galleryPath(lang: "en" | "es") {
   return `/gallery?lang=${lang}`;
 }
 
-export { formatDemoCount };
+export { DemoGrid, formatDemoCount };
 
 function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
   const toneClass =
@@ -304,66 +303,6 @@ function GlassCard({
   return (
     <div
       className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * Fades a section in the first time it reaches the viewport.
- *
- * The hidden class is added by script rather than sitting in the markup, so a
- * visitor whose JS never runs — or whose browser lacks IntersectionObserver —
- * gets the fully visible page instead of an empty one. Reduced motion is
- * handled in CSS, where both reveal classes collapse to "visible, no
- * transition".
- */
-function Reveal({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const [state, setState] = useState<"idle" | "hidden" | "shown">("idle");
-
-  // A ref callback rather than an effect: the hidden class is only ever
-  // applied to an element that was measured as below the fold, so nothing
-  // already on screen flashes out and back in.
-  const attach = useCallback((node: HTMLDivElement | null) => {
-    if (!node || typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
-    if (node.getBoundingClientRect().top < window.innerHeight) {
-      return;
-    }
-
-    setState("hidden");
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setState("shown");
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px -12% 0px" },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={attach}
-      className={cn(
-        state === "hidden" && "haab-reveal",
-        state === "shown" && "haab-reveal-in",
-        className,
-      )}
     >
       {children}
     </div>
@@ -721,61 +660,6 @@ export function Hero() {
 }
 
 /**
- * A single example page. `index` addresses both DEMO_PAGES and the landing
- * copy's items list, which are kept the same length by demo-pages.test.ts — so
- * one number is enough to pair a card with the page it opens.
- */
-export function DemoCard({ index }: { index: number }) {
-  const { lang, t } = useLanguage();
-  const item = t.liveExamples.items[index];
-
-  if (!item) {
-    return null;
-  }
-
-  return (
-    <Link
-      href={localizedExamplePath(liveExamplePaths[index], lang)}
-      className="group relative flex min-h-56 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.32)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-    >
-      {/* The card's own slot rule, drawn along the top edge and filled in on
-          hover: the same hour-rule device the setup steps use. */}
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule absolute inset-x-0 top-0 h-1.5 text-[var(--primary)] opacity-25 transition-opacity duration-300 group-hover:opacity-70"
-      />
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          {item.vertical}
-        </p>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
-          <span className="haab-live-dot h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
-          {t.liveExamples.liveBadge}
-        </span>
-      </div>
-      <h3 className="mt-4 text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">{item.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.proof}</p>
-      <span className="mt-auto pt-5 text-sm font-semibold text-[var(--primary)] group-hover:underline">
-        {item.cta} →
-      </span>
-    </Link>
-  );
-}
-
-// Four featured demos left an orphan in a three-up grid. Two-up through lg and
-// four-up above it both divide the landing's four and the gallery's twelve
-// without a ragged last row.
-export function DemoGrid({ indexes }: { indexes: number[] }) {
-  return (
-    <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {indexes.map((index) => (
-        <DemoCard key={index} index={index} />
-      ))}
-    </div>
-  );
-}
-
-/**
  * The landing section. `featured` is chosen on the server so a visit can show a
  * different handful without the shuffle causing a hydration mismatch; the rest
  * live in the gallery.
@@ -784,80 +668,27 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   const { lang, t } = useLanguage();
 
   return (
-    <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-16 sm:px-8 sm:py-20">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="max-w-3xl">
-            <Eyebrow>{t.liveExamples.eyebrow}</Eyebrow>
-            <h2 className="mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-[var(--ink)] sm:text-[2.6rem]">
-              {t.liveExamples.title}
-            </h2>
-          </div>
-          <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
-            {formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
-          </p>
-        </div>
+    <section
+      id="live-examples"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 py-[72px] sm:px-8 lg:py-[120px]")}
+    >
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-7 lg:gap-12">
+        <LpSectionHeading
+          eyebrow={t.liveExamples.eyebrow}
+          title={t.liveExamples.title}
+          body={formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
+        />
         <Reveal>
-          <DemoGrid indexes={featured} />
+          <DemoGrid indexes={featured} carousel />
         </Reveal>
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <Link href={galleryPath(lang)} className={secondaryLinkClass}>
-            {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length)}
-          </Link>
-          <p className="text-center text-xs text-[var(--muted)]">
+        <div className="flex flex-col items-stretch gap-2.5 text-center sm:items-center sm:gap-3">
+          <LpButton variant="outline-ink" size="card" arrow href={galleryPath(lang)} className="sm:px-[26px]">
+            {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length).replace(/\s*→\s*$/, "")}
+          </LpButton>
+          <p className="text-[13.5px] text-[var(--lp-muted)] sm:text-[14.5px]">
             {formatDemoCount(t.liveExamples.note, DEMO_PAGES.length)}
           </p>
         </div>
-      </div>
-    </section>
-  );
-}
-
-
-
-/**
- * Setup, as a rail rather than three boxes.
- *
- * These steps are a real sequence — you cannot publish a page you have not
- * named — so the numbering carries information, and the layout should show the
- * order instead of leaving three interchangeable cards to imply it. The rail is
- * the slot rule: an hour line with the three steps marked on it.
- */
-export function HowItWorks() {
-  const { t } = useLanguage();
-  const stepNumbers = ["01", "02", "03"];
-  return (
-    <section id="how" className="scroll-mt-20 bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24">
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.how.eyebrow} title={t.how.title} align="left" />
-        <Reveal className="relative mt-14">
-          {/* The rail. Vertical on phones, where the steps stack; horizontal
-              from lg, where they sit side by side. */}
-          <span
-            aria-hidden="true"
-            className="haab-slot-rule-y absolute bottom-2 left-[15px] top-2 w-1.5 text-[var(--primary)] lg:hidden"
-          />
-          <span
-            aria-hidden="true"
-            className="haab-slot-rule absolute left-0 right-0 top-[15px] hidden h-1.5 text-[var(--primary)] lg:block"
-          />
-          <ol className="relative grid gap-10 lg:grid-cols-3 lg:gap-8">
-            {t.how.steps.map((s, i) => (
-              <li key={stepNumbers[i]} className="relative pl-14 lg:pl-0">
-                <span className="absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] font-mono text-[11px] font-semibold tabular-nums text-[var(--primary)] lg:relative lg:mb-6">
-                  {/* The marker carries the number; naming it again in a line
-                      of its own would say "step" twice. */}
-                  <span className="sr-only">{t.how.stepLabel} </span>
-                  {stepNumbers[i]}
-                </span>
-                <h3 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                  {s.title}
-                </h3>
-                <p className="mt-3 max-w-md text-[15px] leading-7 text-[var(--muted)]">{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
       </div>
     </section>
   );

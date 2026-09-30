@@ -10,7 +10,7 @@ import { DEMO_PAGES } from "@/lib/demo-pages";
  *
  * The pick happens on the server so a visit can show a different set without
  * the shuffle running during a client render, which would not match the HTML
- * the server already sent.
+ * the server already sent. The first demo is pinned to the front.
  */
 export const LANDING_DEMO_COUNT = 4;
 
@@ -18,16 +18,24 @@ export function pickFeaturedDemos(
   count = LANDING_DEMO_COUNT,
   random: () => number = Math.random,
 ) {
-  const indexes = DEMO_PAGES.map((_, index) => index);
+  const take = Math.max(0, Math.min(count, DEMO_PAGES.length));
+
+  if (take === 0) {
+    return [];
+  }
+
+  // The first demo is the product's core industry (healthcare), so it always
+  // leads; only the rest rotate.
+  const indexes = DEMO_PAGES.map((_, index) => index).slice(1);
 
   // Fisher-Yates over a copy: every subset is equally likely, and taking the
-  // first `count` never repeats a demo.
+  // first `take - 1` never repeats a demo.
   for (let i = indexes.length - 1; i > 0; i -= 1) {
     const j = Math.floor(random() * (i + 1));
     [indexes[i], indexes[j]] = [indexes[j], indexes[i]];
   }
 
-  return indexes.slice(0, Math.max(0, Math.min(count, indexes.length)));
+  return [0, ...indexes.slice(0, take - 1)];
 }
 
 /** Every demo, in the order they are declared. Used by the gallery. */

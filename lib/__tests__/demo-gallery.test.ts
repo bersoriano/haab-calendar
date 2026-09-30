@@ -30,6 +30,17 @@ describe("pickFeaturedDemos", () => {
     }
   });
 
+  it("always leads with the first demo, the healthcare one", () => {
+    expect(DEMO_PAGES[0].vertical).toBe("healthcare");
+
+    for (let attempt = 0; attempt < 50; attempt += 1) {
+      expect(pickFeaturedDemos()[0]).toBe(0);
+    }
+
+    expect(pickFeaturedDemos(4, () => 0.99)[0]).toBe(0);
+    expect(pickFeaturedDemos(1)).toEqual([0]);
+  });
+
   it("caps at what exists when asked for more", () => {
     expect(pickFeaturedDemos(DEMO_PAGES.length + 5)).toHaveLength(DEMO_PAGES.length);
   });

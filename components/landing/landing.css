@@ -105,32 +105,22 @@
   box-shadow: 0 16px 40px rgba(11, 27, 43, 0.1);
 }
 
-/* Horizontal swipe row for the demo cards on phones. */
-.haab-landing .lp-snap-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
+/* Horizontal swipe row for the demo cards on phones. Only below 640px, so it
+   cannot fight the grid utilities above that. */
+@media (max-width: 639px) {
+  .haab-landing .lp-snap-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+  }
+  .haab-landing .lp-snap-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  .haab-landing .lp-snap-row::-webkit-scrollbar {
+    display: none;
+  }
 }
-.haab-landing .lp-snap-row > * {
-  scroll-snap-align: start;
-  flex-shrink: 0;
-}
-.haab-landing .lp-snap-row::-webkit-scrollbar {
-  display: none;
-}
-
-/* Atmosphere helpers (hero, final CTA). Radial glows + dot grid. */
-.haab-landing .lp-dot-grid {
-  background-image: radial-gradient(rgba(11, 27, 43, 0.09) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.6;
-}
-.haab-landing .lp-dot-grid-light {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.14) 1.2px, transparent 1.2px);
-  background-size: 26px 26px;
-}
-.haab-landing .lp-glow-mint  { background: radial-gradient(closest-side, rgba(104, 250, 221, 0.42), transparent); }
-.haab-landing .lp-glow-blue  { background: radial-gradient(closest-side, rgba(26, 107, 224, 0.20), transparent); }
-.haab-landing .lp-glow-coral { background: radial-gradient(closest-side, rgba(255, 122, 89, 0.20), transparent); }

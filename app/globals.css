@@ -243,16 +243,6 @@ code {
   mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1), transparent);
 }
 
-/* Same rule turned on its side, for the stacked (phone) step list. */
-.haab-slot-rule-y {
-  background-image: repeating-linear-gradient(
-      to bottom,
-      currentColor 0 1px,
-      transparent 1px 12px
-    );
-  opacity: 0.28;
-}
-
 .haab-slot-rule-dense {
   background-image:
     repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 48px),
