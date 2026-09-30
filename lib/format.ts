@@ -18,6 +18,15 @@ export function formatDateLabel(dateKey: string, lang: Lang = "en") {
   return getLongDateFormatter(lang).format(parseDateKey(dateKey));
 }
 
+/** "Thursday, October 1" — the year is left off where the page already says when. */
+export function formatWeekdayDate(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
 export function formatCompactDate(dateKey: string, lang: Lang = "en") {
   return getCompactDateFormatter(lang).format(parseDateKey(dateKey));
 }

@@ -250,6 +250,23 @@ export type BookingDict = {
     summaryHeldFor: string;
     confirmBooking: string;
     aboutBooking: string;
+    successTitle: string;
+    successTitleNoName: string;
+    successTitleEvents: string;
+    successTitleEventsNoName: string;
+    successTitleCancelled: string;
+    successAt: string;
+    successOnDay: string;
+    successWhatNext: string;
+    successCopyLink: string;
+    passShowAtCheckIn: string;
+    passDownloadIcs: string;
+    passAbout: string;
+    linkTitle: string;
+    linkBody: string;
+    linkBodyShort: string;
+    linkOpen: string;
+    actionsNeedChange: string;
     // Boarding-pass confirmation
     passEyebrow: string;
     passDate: string;
@@ -804,6 +821,23 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       summaryHeldFor: "Held for you · {time} left",
       confirmBooking: "Confirm {booking}",
       aboutBooking: "About the {booking}",
+      successTitle: "You're booked, {name}.",
+      successTitleNoName: "You're booked.",
+      successTitleEvents: "You're in, {name}.",
+      successTitleEventsNoName: "You're in.",
+      successTitleCancelled: "Your {booking} was cancelled.",
+      successAt: "{date} at {time}",
+      successOnDay: "on {date}",
+      successWhatNext: "What happens next",
+      successCopyLink: "Copy private link",
+      passShowAtCheckIn: "Show at check-in",
+      passDownloadIcs: "Download .ics",
+      passAbout: "About",
+      linkTitle: "Your private link",
+      linkBody: "Reschedule or cancel anytime — no account, no phone call. Anyone with this link can manage the {booking}, so keep it to yourself.",
+      linkBodyShort: "Reschedule or cancel anytime — no account, no phone call. Keep it to yourself.",
+      linkOpen: "Open",
+      actionsNeedChange: "Need to change something?",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
       passTime: "Time",
@@ -1368,6 +1402,23 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       summaryHeldFor: "Lugar apartado para usted · quedan {time}",
       confirmBooking: "Confirmar {booking}",
       aboutBooking: "Sobre su {booking}",
+      successTitle: "Todo listo, {name}.",
+      successTitleNoName: "Todo listo.",
+      successTitleEvents: "Ya está dentro, {name}.",
+      successTitleEventsNoName: "Ya está dentro.",
+      successTitleCancelled: "Se canceló su {booking}.",
+      successAt: "{date}, {time}",
+      successOnDay: "el {date}",
+      successWhatNext: "Qué sigue",
+      successCopyLink: "Copiar enlace privado",
+      passShowAtCheckIn: "Muéstrelo al llegar",
+      passDownloadIcs: "Descargar .ics",
+      passAbout: "Acerca de",
+      linkTitle: "Su enlace privado",
+      linkBody: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Cualquiera con este enlace puede administrar su {booking}, así que guárdelo solo para usted.",
+      linkBodyShort: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Guárdelo solo para usted.",
+      linkOpen: "Abrir",
+      actionsNeedChange: "¿Necesita cambiar algo?",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",
       passTime: "Horario",

@@ -57,6 +57,8 @@ export interface VerticalCopy {
     selectCapacityCta: string;
     // Label on the mint callout that carries a service's notes on its card.
     beforeVisitLabel: string;
+    // Heading over a service's notes on the confirmation pass.
+    bringWithYouLabel: string;
     // Said at the two moments a visitor is deciding whether to trust this:
     // while the hold is running, and once the booking exists.
     holdReassurance: string;
@@ -180,6 +182,7 @@ export const defaultCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before you arrive:",
+    bringWithYouLabel: "Before you arrive",
     holdReassurance: "This time is held for you while you finish.",
     whatHappensNext: "You will get a confirmation with everything you need. Change or cancel any time from your private link.",
     chooseServiceBody:
@@ -302,6 +305,7 @@ export const defaultCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de llegar:",
+    bringWithYouLabel: "Antes de llegar",
     holdReassurance: "Este horario queda apartado mientras termina.",
     whatHappensNext: "Recibirá una confirmación con todo lo necesario. Cambie o cancele cuando quiera desde su enlace privado.",
     chooseServiceBody:
@@ -426,6 +430,7 @@ export const healthcareCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before your visit:",
+    bringWithYouLabel: "Bring with you",
     holdReassurance: "This appointment is held for you for ten minutes.",
     whatHappensNext: "Bring your ID and a list of anything you are taking, and arrive five minutes early. If you need to change it, use your private link — no need to call.",
     chooseServiceBody:
@@ -550,6 +555,7 @@ export const healthcareCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de su consulta:",
+    bringWithYouLabel: "Qué llevar",
     holdReassurance: "Esta cita queda apartada para usted durante diez minutos.",
     whatHappensNext: "Traiga una identificación y la lista de lo que esté tomando, y llegue cinco minutos antes. Si necesita cambiarla, use su enlace privado: no hace falta llamar.",
     chooseServiceBody:
@@ -673,6 +679,7 @@ export const eventsCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before you arrive:",
+    bringWithYouLabel: "Before you arrive",
     holdReassurance: "Your spot is held for ten minutes.",
     whatHappensNext: "Arrive fifteen minutes before it starts. Cannot make it? Release your spot with your private link so someone else can take it.",
     chooseServiceBody:
@@ -798,6 +805,7 @@ export const eventsCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de llegar:",
+    bringWithYouLabel: "Antes de llegar",
     holdReassurance: "Su lugar queda apartado durante diez minutos.",
     whatHappensNext: "Llegue quince minutos antes de que empiece. ¿No puede asistir? Libere su lugar con su enlace privado para que otra persona lo tome.",
     chooseServiceBody:
@@ -923,6 +931,7 @@ export const spacesCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before you arrive:",
+    bringWithYouLabel: "Before you arrive",
     holdReassurance: "The space is yours for the next ten minutes while you sort the details.",
     whatHappensNext: "Turn up ten minutes before your slot. Need it another day? Your private link moves it.",
     chooseServiceBody:
@@ -1045,6 +1054,7 @@ export const spacesCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de llegar:",
+    bringWithYouLabel: "Antes de llegar",
     holdReassurance: "El espacio es suyo durante los próximos diez minutos mientras completa los datos.",
     whatHappensNext: "Llegue diez minutos antes de su horario. ¿Lo necesita otro día? Su enlace privado lo mueve.",
     chooseServiceBody:
@@ -1168,6 +1178,7 @@ export const professionalCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before your appointment:",
+    bringWithYouLabel: "Bring with you",
     holdReassurance: "This session is held while you finish.",
     whatHappensNext: "Anything you want reviewed beforehand can be sent after you book. Reschedule from your private link whenever you need.",
     chooseServiceBody:
@@ -1290,6 +1301,7 @@ export const professionalCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de su cita:",
+    bringWithYouLabel: "Qué llevar",
     holdReassurance: "Esta sesión queda apartada mientras termina.",
     whatHappensNext: "Puede enviarnos lo que quiera que revisemos después de reservar. Reagende desde su enlace privado cuando lo necesite.",
     chooseServiceBody:
@@ -1412,6 +1424,7 @@ export const restaurantCopy: VerticalCopy = {
     selectFullDayCta: "Reserve the day",
     selectCapacityCta: "Take a table",
     beforeVisitLabel: "Before you arrive:",
+    bringWithYouLabel: "Before you arrive",
     holdReassurance: "Your table is held for ten minutes while you finish.",
     whatHappensNext: "We hold the table for fifteen minutes past your time. Plans changed? Your private link frees it for someone else.",
     chooseServiceBody:
@@ -1534,6 +1547,7 @@ export const restaurantCopyEs: VerticalCopy = {
     selectFullDayCta: "Reservar el día",
     selectCapacityCta: "Tomar una mesa",
     beforeVisitLabel: "Antes de llegar:",
+    bringWithYouLabel: "Antes de llegar",
     holdReassurance: "Su mesa queda apartada diez minutos mientras termina.",
     whatHappensNext: "Guardamos la mesa quince minutos después de su hora. ¿Cambió de planes? Su enlace privado la libera para alguien más.",
     chooseServiceBody:
