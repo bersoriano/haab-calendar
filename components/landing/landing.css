@@ -87,10 +87,13 @@
 
 /* Landing text opts in to the landing face and ink. Deliberately NOT set on
    .haab-landing itself: the hero booking card sits inside the wrapper and must
-   keep inheriting Inter and the app's ink. */
-.haab-landing .lp-body {
-  font-family: var(--lp-font-body);
-  color: var(--lp-ink);
+   keep inheriting Inter and the app's ink. Layered so utilities such as
+   `text-white` on the same element still win over the default ink. */
+@layer components {
+  .haab-landing .lp-body {
+    font-family: var(--lp-font-body);
+    color: var(--lp-ink);
+  }
 }
 
 /* Card hover lift (spec §8). */

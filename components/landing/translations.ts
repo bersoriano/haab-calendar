@@ -346,6 +346,11 @@ export const translations = {
       note:
         "Gana el más parecido. Todo se edita en la configuración.",
       cta: "Crear mi página",
+      healthBadge: "Nuestra industria principal",
+      healthLanguage: "Tus pacientes leen “pacientes”, no “clientes”.",
+      prefilled: "Precargado para ti",
+      addOwn: "+ Agrega los tuyos · Editable",
+      startShort: "Empezar →",
     },
     googleIntegration: {
       eyebrow: "Google Calendar",
@@ -786,6 +791,11 @@ export const translations = {
       note:
         "Closest match wins. Everything is editable during setup.",
       cta: "Create your page",
+      healthBadge: "Our core industry",
+      healthLanguage: "Patients see “patients,” not “customers.”",
+      prefilled: "Pre-filled for you",
+      addOwn: "+ Add your own · Editable",
+      startShort: "Start →",
     },
     googleIntegration: {
       eyebrow: "Google Calendar",

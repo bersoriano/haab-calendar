@@ -1204,9 +1204,9 @@ export function LandingPage({
         <main className="flex-1">
           <Hero />
           <FactStrip />
-          <LiveExamples featured={featuredDemos} />
           {afterHero}
           <HowItWorks />
+          <LiveExamples featured={featuredDemos} />
           <Features />
           <GoogleIntegration />
           <Trust />

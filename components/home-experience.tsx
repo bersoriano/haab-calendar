@@ -8,13 +8,13 @@ import { AdminHero } from "@/components/provider/AdminHero";
 import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
 import { logout } from "@/app/login/actions";
 import { stopDemoEdit } from "@/app/super-admin/actions";
-import { VERTICALS } from "@/config/verticals";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 import {
   LandingActionsProvider,
   LandingPage,
   type LandingVertical,
 } from "@/components/landing/landing-ui";
+import { DashboardSection, UseCasesSection } from "@/components/landing/use-cases";
 import {
   LanguageProvider,
   useLanguage,
@@ -367,9 +367,9 @@ function HomeExperienceInner({
           showUseCases={!effectiveConfigured}
           afterHero={
             effectiveConfigured ? (
-              <DashboardPanel onOpen={() => openApp()} email={email} />
+              <DashboardSection onOpen={() => openApp()} email={email} />
             ) : (
-              <VerticalsPanel onSelectVertical={onSelectVertical} />
+              <UseCasesSection onSelectVertical={onSelectVertical} />
             )
           }
         />
@@ -484,96 +484,5 @@ function AccountStatusBar({
         ) : null}
       </div>
     </aside>
-  );
-}
-
-// Shown below the hero to a configured user: a direct route into their app.
-function DashboardPanel({
-  onOpen,
-  email,
-}: {
-  onOpen: () => void;
-  email?: string;
-}) {
-  const { t } = useLanguage();
-
-  return (
-    <section className="bg-[var(--band-tint)] px-5 py-16 sm:px-8 sm:py-20">
-      <div className="mx-auto flex max-w-[1100px] flex-col items-center gap-5 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-8 text-center shadow-[0_18px_46px_rgba(15,23,42,0.06)] sm:p-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-          {email ? `${t.home.signedInAs} ${email}` : t.home.signedIn}
-        </p>
-        <h2 className="text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-          {t.home.bookingPageReady}
-        </h2>
-        <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
-          {t.home.dashboardBody}
-        </p>
-        <button
-          type="button"
-          onClick={onOpen}
-          className="inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_32px_rgba(26,115,232,0.28)] transition hover:shadow-[0_18px_40px_rgba(26,115,232,0.34)] active:translate-y-px"
-        >
-          {t.home.goToDashboard}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-// Shown below the hero to everyone who hasn't configured yet: pick a vertical
-// to start. Uses the real preset data from config/verticals.ts.
-function VerticalsPanel({
-  onSelectVertical,
-}: {
-  onSelectVertical: (vertical: LandingVertical) => void;
-}) {
-  const { t } = useLanguage();
-  return (
-    <section
-      id="verticals"
-      className="scroll-mt-20 bg-[var(--band-tint)] px-5 py-20 sm:px-8 sm:py-24"
-    >
-      <div className="mx-auto max-w-[1280px]">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="flex items-center justify-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
-            <span aria-hidden="true" className="h-px w-8 shrink-0 bg-[var(--line)]" />
-            {t.useCases.eyebrow}
-          </p>
-          <h2 className="mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-[var(--ink)] sm:text-[2.6rem]">
-            {t.useCases.title}
-          </h2>
-          <p className="mt-4 text-base leading-7 text-[var(--muted)] sm:text-lg">
-            {t.useCases.body}
-          </p>
-        </div>
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {VERTICALS.map((v) => {
-            const verticalCopy = t.home.verticals[v.id];
-
-            return (
-              <button
-                key={v.id}
-                type="button"
-                onClick={() => onSelectVertical(v.id as LandingVertical)}
-                className="group flex flex-col gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-left transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.32)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-              >
-                <span className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
-                  {verticalCopy.label}
-                </span>
-                <span className="text-[15px] leading-7 text-[var(--muted)]">
-                  {verticalCopy.tagline}
-                </span>
-                {/* The copy already ends in an arrow; the hover shift moves
-                    that one rather than adding a second. */}
-                <span className="mt-auto text-sm font-semibold text-[var(--primary)] transition-transform duration-300 group-hover:translate-x-0.5">
-                  {verticalCopy.start}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </section>
   );
 }
