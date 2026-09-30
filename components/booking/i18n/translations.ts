@@ -242,6 +242,14 @@ export type BookingDict = {
     stepOfTotal: string;
     where: string;
     whereShared: string;
+    detailsReassurance: string;
+    optionalSuffix: string;
+    summaryLive: string;
+    summaryAddField: string;
+    summaryNoNotes: string;
+    summaryHeldFor: string;
+    confirmBooking: string;
+    aboutBooking: string;
     // Boarding-pass confirmation
     passEyebrow: string;
     passDate: string;
@@ -788,6 +796,14 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       stepOfTotal: "Step {n} of {total}",
       where: "Where",
       whereShared: "Same for every {service}",
+      detailsReassurance: "No account, no password.",
+      optionalSuffix: "(optional)",
+      summaryLive: "Live",
+      summaryAddField: "Add your {field}",
+      summaryNoNotes: "No notes",
+      summaryHeldFor: "Held for you · {time} left",
+      confirmBooking: "Confirm {booking}",
+      aboutBooking: "About the {booking}",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
       passTime: "Time",
@@ -1344,6 +1360,14 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       stepOfTotal: "Paso {n} de {total}",
       where: "Dónde",
       whereShared: "Aplica a cada {service}",
+      detailsReassurance: "Sin cuenta ni contraseña.",
+      optionalSuffix: "(opcional)",
+      summaryLive: "En vivo",
+      summaryAddField: "Agregue su {field}",
+      summaryNoNotes: "Sin notas",
+      summaryHeldFor: "Lugar apartado para usted · quedan {time}",
+      confirmBooking: "Confirmar {booking}",
+      aboutBooking: "Sobre su {booking}",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",
       passTime: "Horario",
