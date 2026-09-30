@@ -18,6 +18,7 @@ import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { LiveDemoDialog } from "./live-demo-dialog";
+import { LandingScope } from "./primitives";
 import { StartPageDialog } from "./start-page-dialog";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
@@ -1131,19 +1132,21 @@ export function LandingPage({
 }) {
   return (
     <LandingDialogsProvider>
-      <StickyNav showUseCases={showUseCases} />
-      <main className="flex-1">
-        <Hero />
-        <LiveExamples featured={featuredDemos} />
-        {afterHero}
-        <HowItWorks />
-        <Features />
-        <GoogleIntegration />
-        <Trust />
-        <FAQ />
-        <FinalCTA />
-      </main>
-      <Footer showUseCases={showUseCases} />
+      <LandingScope>
+        <StickyNav showUseCases={showUseCases} />
+        <main className="flex-1">
+          <Hero />
+          <LiveExamples featured={featuredDemos} />
+          {afterHero}
+          <HowItWorks />
+          <Features />
+          <GoogleIntegration />
+          <Trust />
+          <FAQ />
+          <FinalCTA />
+        </main>
+        <Footer showUseCases={showUseCases} />
+      </LandingScope>
     </LandingDialogsProvider>
   );
 }

@@ -11,13 +11,14 @@ import {
   formatDemoCount,
 } from "./landing-ui";
 import { LanguageProvider, useLanguage } from "./language-provider";
+import { LandingScope } from "./primitives";
 import type { Lang } from "./translations";
 
 function GalleryContent({ indexes }: { indexes: number[] }) {
   const { lang, t } = useLanguage();
 
   return (
-    <>
+    <LandingScope>
       <StickyNav alwaysShowCta anchorsGoHome showUseCases={false} />
       <main className="flex-1 px-5 py-14 sm:px-8 sm:py-16">
         <div className="mx-auto max-w-[1280px]">
@@ -43,7 +44,7 @@ function GalleryContent({ indexes }: { indexes: number[] }) {
         </div>
       </main>
       <Footer anchorsGoHome showUseCases={false} />
-    </>
+    </LandingScope>
   );
 }
 
