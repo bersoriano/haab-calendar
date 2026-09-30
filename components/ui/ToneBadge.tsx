@@ -5,9 +5,11 @@ import { compactBadgeTextClass } from "@/lib/constants";
 export function ToneBadge({
   children,
   tone = "primary",
+  className,
 }: {
   children: ReactNode;
   tone?: "primary" | "secondary" | "danger" | "neutral";
+  className?: string;
 }) {
   return (
     <span
@@ -21,6 +23,7 @@ export function ToneBadge({
         tone === "danger" && "bg-[rgba(255,241,242,0.86)] text-[#be123c]",
         tone === "neutral" &&
           "bg-[rgba(104,250,221,0.22)] text-[var(--action-teal-deep)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+        className,
       )}
     >
       {children}

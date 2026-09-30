@@ -74,6 +74,14 @@
   --night-ink: #f5f7fa;
   --night-muted: rgba(226, 232, 240, 0.68);
   --night-line: rgba(148, 163, 184, 0.24);
+  /* Public booking redesign (see docs/booking-redesign/design-spec.md §1) */
+  --callout-mint: #eaf7f3; /* "Before your visit" / "What happens next" */
+  --callout-mint-line: #cdeae1;
+  --callout-mint-ink: #1f3d38; /* text on the callout (~10:1) */
+  --tile-blue: #e3edfd; /* service icon tile A (icon: --accent) */
+  --tile-teal: #d9f4ee; /* service icon tile B (icon: #00897b) */
+  --chip-duration-bg: #d6f3ec; /* duration chip; text: --action-teal-deep */
+  --summary-surface: #f3f6fb; /* date block and inset panels */
 }
 
 @theme inline {
@@ -242,5 +250,35 @@ code {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+}
+
+/* Confirmation pass stub (see components/booking/BookingPass.tsx). One element,
+   two layouts: a horizontal band on phones with the code beside the facts, and
+   the tear-off column from lg. Children pick their area with `grid-area`. */
+.haab-pass-stub {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-areas:
+    "qr title"
+    "qr meta"
+    "qr pill";
+  align-items: center;
+  gap: 10px 16px;
+}
+
+@media (min-width: 1024px) {
+  .haab-pass-stub {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "qr"
+      "pill"
+      "meta"
+      "ics";
+    justify-items: center;
+    align-content: start;
+    gap: 14px;
+    text-align: center;
   }
 }

@@ -12,6 +12,7 @@ export function BookingHoldCountdownBar({
   remainingMs,
   remainingRatio,
   helperDesktopHidden,
+  layout = "stacked",
   isOnline = true,
   canExtend = false,
   isExtending = false,
@@ -30,6 +31,12 @@ export function BookingHoldCountdownBar({
   remainingMs: number;
   remainingRatio: number;
   helperDesktopHidden?: boolean;
+  /**
+   * `inline` is the dedicated page's tighter form: label and message share a
+   * row, a slimmer bar sits under them, and the timer stands beside both.
+   * `stacked` is the original and stays the default.
+   */
+  layout?: "stacked" | "inline";
   isOnline?: boolean;
   canExtend?: boolean;
   isExtending?: boolean;
@@ -97,79 +104,144 @@ export function BookingHoldCountdownBar({
           <p className="mt-1 text-sm leading-5">{t.public.offlineBody}</p>
         </div>
       ) : null}
-      <div className="flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
-            {fillTemplate(t.public.holdLabelFor, nouns)}
-            {/* What the hold means is reassurance, not instruction: worth
-                having on demand, not worth re-reading on every booking. The
-                icon rides the label because the title below it is hidden on
-                small screens, where the answer is wanted most. */}
-            {isRunning ? (
-              <InfoTooltip
-                label={t.public.holdMeaningTooltipLabel}
-                text={`${t.public.holdMeaningBody} ${t.public.holdDetailsSafe}`}
+      {layout === "inline" ? (
+        <div className="flex items-center gap-3 sm:gap-[22px]">
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-2.5">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
+              <p className="hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#3c4043] sm:flex">
+                {fillTemplate(t.public.holdLabelFor, nouns)}
+                {isRunning ? (
+                  <InfoTooltip
+                    label={t.public.holdMeaningTooltipLabel}
+                    text={`${t.public.holdMeaningBody} ${t.public.holdDetailsSafe}`}
+                  />
+                ) : null}
+              </p>
+              <p
+                className={cn(
+                  "text-[13.5px] font-medium sm:text-sm",
+                  isUrgent || isExpired ? "text-[var(--danger-strong)]" : "text-[#3c4043]",
+                )}
+              >
+                {statusLabel || (isRunning ? t.public.holdMeaningTitle : "")}
+              </p>
+            </div>
+            <div className="h-[5px] overflow-hidden rounded-full bg-[rgba(255,255,255,0.85)] sm:h-1.5">
+              <div
+                aria-hidden="true"
+                className={cn(
+                  "h-full rounded-full transition-[width,background-color] duration-500 ease-out",
+                  isCancelled || isUrgent || isExpired
+                    ? "bg-[#e11d48]"
+                    : isConfirmed
+                      ? "bg-[var(--accent)]"
+                      : isWarning
+                        ? "bg-[#f59e0b]"
+                        : "bg-[var(--action-teal)]",
+                )}
+                style={{
+                  width:
+                    isConfirmed || isCancelled ? "100%" : `${displayedRemainingPercent}%`,
+                }}
               />
-            ) : null}
-          </p>
-          {statusLabel ? (
-            <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
-              {statusLabel}
-            </p>
-          ) : null}
-          {/* What the hold actually means, said plainly, while it is running. */}
-          {isRunning ? (
-            <p className="mt-1 hidden text-[0.9375rem] font-semibold tracking-[-0.01em] text-[var(--ink)] sm:block">
-              {t.public.holdMeaningTitle}
-            </p>
+            </div>
+          </div>
+          {!isConfirmed && !isCancelled ? (
+            <div
+              role="timer"
+              aria-label={`${t.public.holdRemaining}: ${isExpired ? t.public.expired : formatCountdown(remainingMs)}`}
+              className={cn(
+                "shrink-0 rounded-[14px] border px-3 py-1 text-center text-[26px] font-bold leading-[1.2] tracking-[-0.03em] tabular-nums transition-colors sm:rounded-[18px] sm:px-[18px] sm:py-1.5 sm:text-[38px]",
+                isExpired
+                  ? "border-[var(--danger-line)] bg-[var(--danger-soft)] !px-3 !py-2 !text-[0.8125rem] font-semibold uppercase tracking-[0.12em] text-[var(--danger-strong)]"
+                  : isUrgent
+                    ? "border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-strong)]"
+                    : isWarning
+                      ? "border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-strong)]"
+                      : "border-[#dfe3ea] bg-white text-[#0b57d0]",
+              )}
+            >
+              {isExpired ? t.public.expired : formatCountdown(remainingMs)}
+            </div>
           ) : null}
         </div>
-        {!isConfirmed && !isCancelled ? (
-          <div
-            role="timer"
-            aria-label={`${t.public.holdRemaining}: ${isExpired ? t.public.expired : formatCountdown(remainingMs)}`}
-            className={cn(
-              "shrink-0 rounded-[26px] px-5 py-3 text-center font-semibold tabular-nums ring-1 transition-colors",
-              isExpired
-                ? "bg-[var(--danger-soft)] px-4 py-2 text-[0.8125rem] uppercase tracking-[0.12em] text-[var(--danger-strong)] ring-[var(--danger-line)]"
-                : isUrgent
-                  ? "bg-[var(--danger-soft)] text-4xl tracking-[-0.05em] text-[var(--danger-strong)] ring-[var(--danger-line)] sm:text-5xl"
-                  : isWarning
-                    ? "bg-[var(--warning-soft)] text-4xl tracking-[-0.05em] text-[var(--warning-strong)] ring-[var(--warning-line)] sm:text-5xl"
-                    : "bg-[var(--panel-glass-88)] text-4xl tracking-[-0.05em] text-[var(--primary)] ring-[var(--line)] sm:text-5xl",
-            )}
-          >
-            {isExpired ? t.public.expired : formatCountdown(remainingMs)}
+      ) : (
+        <>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[0.8125rem] font-semibold uppercase tracking-[0.12em]">
+              {fillTemplate(t.public.holdLabelFor, nouns)}
+              {/* What the hold means is reassurance, not instruction: worth
+                  having on demand, not worth re-reading on every booking. The
+                  icon rides the label because the title below it is hidden on
+                  small screens, where the answer is wanted most. */}
+              {isRunning ? (
+                <InfoTooltip
+                  label={t.public.holdMeaningTooltipLabel}
+                  text={`${t.public.holdMeaningBody} ${t.public.holdDetailsSafe}`}
+                />
+              ) : null}
+            </p>
+            {statusLabel ? (
+              <p className="mt-1 text-[0.9375rem] font-semibold text-[var(--ink)]">
+                {statusLabel}
+              </p>
+            ) : null}
+            {/* What the hold actually means, said plainly, while it is running. */}
+            {isRunning ? (
+              <p className="mt-1 hidden text-[0.9375rem] font-semibold tracking-[-0.01em] text-[var(--ink)] sm:block">
+                {t.public.holdMeaningTitle}
+              </p>
+            ) : null}
           </div>
-        ) : null}
-      </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--panel-glass-72)]">
-        <div
-          aria-hidden="true"
+          {!isConfirmed && !isCancelled ? (
+            <div
+              role="timer"
+              aria-label={`${t.public.holdRemaining}: ${isExpired ? t.public.expired : formatCountdown(remainingMs)}`}
+              className={cn(
+                "shrink-0 rounded-[26px] px-5 py-3 text-center font-semibold tabular-nums ring-1 transition-colors",
+                isExpired
+                  ? "bg-[var(--danger-soft)] px-4 py-2 text-[0.8125rem] uppercase tracking-[0.12em] text-[var(--danger-strong)] ring-[var(--danger-line)]"
+                  : isUrgent
+                    ? "bg-[var(--danger-soft)] text-4xl tracking-[-0.05em] text-[var(--danger-strong)] ring-[var(--danger-line)] sm:text-5xl"
+                    : isWarning
+                      ? "bg-[var(--warning-soft)] text-4xl tracking-[-0.05em] text-[var(--warning-strong)] ring-[var(--warning-line)] sm:text-5xl"
+                      : "bg-[var(--panel-glass-88)] text-4xl tracking-[-0.05em] text-[var(--primary)] ring-[var(--line)] sm:text-5xl",
+              )}
+            >
+              {isExpired ? t.public.expired : formatCountdown(remainingMs)}
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--panel-glass-72)]">
+          <div
+            aria-hidden="true"
+            className={cn(
+              "h-full rounded-full transition-[width,background-color] duration-500 ease-out",
+              isCancelled || isUrgent || isExpired
+                ? "bg-[#e11d48]"
+                : isConfirmed
+                  ? "bg-[var(--accent)]"
+                  : isWarning
+                    ? "bg-[#f59e0b]"
+                    : "bg-[var(--action-teal)]",
+            )}
+            style={{
+              width:
+                isConfirmed || isCancelled ? "100%" : `${displayedRemainingPercent}%`,
+            }}
+          />
+        </div>
+        <p
           className={cn(
-            "h-full rounded-full transition-[width,background-color] duration-500 ease-out",
-            isCancelled || isUrgent || isExpired
-              ? "bg-[#e11d48]"
-              : isConfirmed
-                ? "bg-[var(--accent)]"
-                : isWarning
-                  ? "bg-[#f59e0b]"
-                  : "bg-[var(--action-teal)]",
+            "mt-2 text-[0.9375rem] leading-6 opacity-85",
+            helperDesktopHidden && "lg:hidden",
           )}
-          style={{
-            width:
-              isConfirmed || isCancelled ? "100%" : `${displayedRemainingPercent}%`,
-          }}
-        />
-      </div>
-      <p
-        className={cn(
-          "mt-2 text-[0.9375rem] leading-6 opacity-85",
-          helperDesktopHidden && "lg:hidden",
-        )}
-      >
-        {helperText}
-      </p>
+        >
+          {helperText}
+        </p>
+        </>
+      )}
       {/* No button here: the step's action bar already carries "Change", and two
           controls for one action read as two different outcomes. The hold's
           meaning now lives in the tooltip on the label above. */}

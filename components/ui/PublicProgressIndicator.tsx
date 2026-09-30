@@ -7,6 +7,8 @@ export function PublicProgressIndicator({
   isDedicatedPublicPage,
   lang = "en",
   compact = false,
+  showServiceStep = false,
+  serviceLabel,
   onStepSelect,
 }: {
   currentStep: 2 | 3 | 4;
@@ -15,6 +17,15 @@ export function PublicProgressIndicator({
   /** Slim single-line form, so progress stays on screen once the header sticks. */
   compact?: boolean;
   /**
+   * The dedicated page's journey starts at "Service": with more than one
+   * service the visitor has already made that choice by the time they get here,
+   * so it shows as done. A single-service provider skips it, and so does the
+   * indicator. Ignored on the embedded surface, which keeps its three steps.
+   */
+  showServiceStep?: boolean;
+  /** The vertical's noun for the first step ("Service", "Event", "Space"). */
+  serviceLabel?: string;
+  /**
    * Called when a finished step is tapped. Going back is a normal thing to
    * want, and the indicator is where people reach for it. Omitted once the
    * booking exists, where there is nothing to go back to.
@@ -22,7 +33,10 @@ export function PublicProgressIndicator({
   onStepSelect?: (step: 2 | 3) => void;
 }) {
   const t = bookingTranslations[lang];
-  const steps = [
+  const steps: Array<{ key: 1 | 2 | 3 | 4; label: string }> = [
+    ...(isDedicatedPublicPage && showServiceStep
+      ? [{ key: 1 as const, label: serviceLabel ?? t.publicFlow.dateAndTime }]
+      : []),
     { key: 2 as const, label: t.publicFlow.dateAndTime },
     { key: 3 as const, label: t.publicFlow.myDetails },
     { key: 4 as const, label: t.publicFlow.confirm },
@@ -74,9 +88,47 @@ export function PublicProgressIndicator({
     );
   }
 
+  const activeIndex = Math.max(
+    0,
+    steps.findIndex((step) => step.key === currentStep),
+  );
+
   return (
     <nav aria-label={t.publicFlow.progressLabel}>
-      <ol className="flex items-start" role="list">
+      {/* A phone has no room for four labelled circles, so it gets a segmented
+          bar and the current step's name; the sentence is what assistive tech
+          reads there, the segments are only decoration. */}
+      {isDedicatedPublicPage ? (
+        <div className="flex flex-col gap-3 sm:hidden">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#1a5fd0] [font-family:var(--font-plex-mono)]">
+            {t.publicFlow.stepOfTotal
+              .replace("{n}", String(activeIndex + 1))
+              .replace("{total}", String(steps.length))}{" "}
+            · {steps[activeIndex].label}
+          </p>
+          <div
+            aria-hidden="true"
+            className="grid gap-1"
+            style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}
+          >
+            {steps.map((step, index) => (
+              <span
+                key={step.key}
+                className={cn(
+                  "h-1 rounded-full",
+                  index <= activeIndex || currentStep === 4
+                    ? "bg-[var(--primary)]"
+                    : "bg-[rgba(255,255,255,0.9)]",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <ol
+        className={cn("items-start", isDedicatedPublicPage ? "hidden sm:flex" : "flex")}
+        role="list"
+      >
         {steps.map((step, index) => {
           const isFinished = currentStep === 4;
           const status = isFinished
@@ -89,8 +141,13 @@ export function PublicProgressIndicator({
           const isLast = index === steps.length - 1;
           const connectorActive = isFinished || step.key < currentStep;
 
+          // The service step is only ever a record of what was chosen: the
+          // handler wired to this list goes back to the date, not the service.
           const canGoBack =
-            status === "complete" && !isFinished && Boolean(onStepSelect);
+            status === "complete" &&
+            !isFinished &&
+            step.key !== 1 &&
+            Boolean(onStepSelect);
           const Marker = canGoBack ? "button" : "div";
 
           return (

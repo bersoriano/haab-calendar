@@ -80,8 +80,12 @@ import {
 import {
   formatDateLabel,
   formatCompactDate,
+  formatWeekdayDate,
+  formatPassDate,
+  formatPassDateCompact,
   formatMonthLabel,
   formatTimeLabel,
+  formatCompactTimeRange,
   formatTimeRange,
   formatDuration,
   formatCapacityLabel,
@@ -134,6 +138,8 @@ import {
   type BookingFlowNotice,
 } from "@/lib/booking-flow-machine";
 import { getServiceSelectCta } from "@/lib/service-select-cta";
+import { getServiceContact, resolveSharedServiceContact } from "@/lib/service-card";
+import { getDateTile, getSummaryClientRows } from "@/lib/details-summary";
 import { getPublicSlotStates } from "@/lib/slot-states";
 import {
   scrollPublicBookingStepToTop,
@@ -177,9 +183,21 @@ import {
   ManageBookingPanel,
   type ManageNoteStatus,
 } from "@/components/booking/ManageBookingPanel";
-import { BookingPass, type PassField } from "@/components/booking/BookingPass";
+import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
+import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
+import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
+import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
+import {
+  AppointmentSummary,
+  CompactAppointmentSummary,
+  MobileConfirmBar,
+  type SummaryFooter,
+} from "@/components/booking/AppointmentSummary";
+import { DetailsForm } from "@/components/booking/DetailsForm";
+import { ServiceCard } from "@/components/booking/ServiceCard";
+import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
 import {
   isGuestDraftMeaningful,
   prepareGuestPreviewStore,
@@ -1040,6 +1058,7 @@ export function HaabBookingModule({
   function renderPublicLanguageChooser(
     className = "",
     variant: "floating" | "inset" = "floating",
+    compact = false,
   ) {
     if (surface !== "public") return null;
 
@@ -1048,6 +1067,7 @@ export function HaabBookingModule({
         lang={lang}
         onChange={choosePublicLanguage}
         tone={variant}
+        compact={compact}
         className={className}
       />
     );
@@ -4458,6 +4478,127 @@ export function HaabBookingModule({
       dispatchBookingFlow({ type: "RESTART" });
     };
 
+    // Step 3, dedicated page: what the new details layout shows. Everything
+    // here is read from state the flow already owns; nothing is decided here.
+    const useDetailsLayout = isPublicDetailsStep && isDedicatedPublicPage;
+    const detailsErrorId = "booking-error";
+    const detailsFieldsRefused = bookingError === copy.phrases.clientFieldsRequiredError;
+    const detailsContact = selectedService
+      ? getServiceContact(selectedService, provider)
+      : { addresses: [], phones: [] };
+    // With several priced locations only the one the booker chose is shown.
+    const detailsAddresses =
+      selectionLocations.length >= 2 && selectedLocation
+        ? [selectedLocation.address]
+        : detailsContact.addresses;
+    const detailsPhones = detailsContact.phones;
+    const detailsCost = effectiveCost.trim() || null;
+    const detailsDateKey = bookingFlow.dateKey || selectedService?.occurrenceDate || "";
+    const detailsStart = selectedService
+      ? resolveBookingStartTime(selectedService, bookingFlow.time)
+      : undefined;
+    const detailsEnd = selectedService
+      ? resolveBookingEndTime(selectedService, bookingFlow.time)
+      : undefined;
+    const detailsTimeRange = formatCompactTimeRange(detailsStart, detailsEnd, lang);
+    const detailsDate = {
+      tile: detailsDateKey ? getDateTile(detailsDateKey, lang) : null,
+      label: detailsDateKey ? formatDateLabel(detailsDateKey, lang) : t.publicFlow.notSelected,
+      timeLine: detailsTimeRange
+        ? // Only a timed appointment has a length worth repeating beside its range.
+          `${detailsTimeRange}${
+            selectedService?.bookingType === "appointment" &&
+            selectedService.durationMinutes &&
+            !selectionIsSingle
+              ? ` · ${formatDuration(selectedService, lang)}`
+              : ""
+          }`
+        : detailsStart
+          ? formatTimeLabel(detailsStart, lang)
+          : t.publicFlow.fullDay,
+      timeShort:
+        detailsTimeRange ||
+        (detailsStart ? formatTimeLabel(detailsStart, lang) : t.publicFlow.fullDay),
+    };
+    const detailsMeta = [
+      selectedService?.medicalSpecialty?.trim(),
+      provider.businessName || provider.fullName,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const detailsRows = getSummaryClientRows({
+      values: bookingFlow,
+      requiresPartySize: Boolean(selectedService && hasSlotCapacity(selectedService)),
+      labels: {
+        name: t.publicFlow.fullName,
+        email: t.publicFlow.email,
+        phone: t.publicFlow.phoneNumber,
+        partySize: t.admin.partySizeLabel,
+        notes: t.publicFlow.notes,
+      },
+    });
+    // The same three outcomes the old action row had, in the same order.
+    const detailsFooter: SummaryFooter = {
+      primaryLabel:
+        integratedMode && !isNetworkOnline
+          ? t.public.onlineRequired
+          : isBookingHoldExpired
+            ? isCreatingHold
+              ? t.public.holdingAgain
+              : t.public.holdAgain
+            : fillTemplate(t.publicFlow.confirmBooking, { booking: copy.booking }),
+      onPrimary: isBookingHoldExpired ? () => void retryExpiredBookingHold() : confirmBooking,
+      primaryDisabled:
+        isConfirmingBooking || isCreatingHold || (integratedMode && !isNetworkOnline),
+      isExpired: isBookingHoldExpired,
+      heldText:
+        bookingHold && !isBookingHoldExpired
+          ? fillTemplate(t.publicFlow.summaryHeldFor, {
+              time: formatCountdown(bookingHoldRemainingMs),
+            })
+          : null,
+      error: null,
+      errorId: detailsErrorId,
+      chooseAnotherLabel: t.public.chooseAnotherTime,
+      onChooseAnother: goBackToSelectionStep,
+    };
+
+    // Step 1, dedicated page. One address and phone set shared by every service
+    // is said once under the grid; otherwise each card carries its own.
+    const sharedServiceContact = resolveSharedServiceContact(services, provider);
+    // A weekly service has a different count on every date, so only a fixed
+    // occurrence can state one on its card.
+    const getServiceSeatsNote = (service: Service) => {
+      if (service.occurrenceMode !== "single" || !service.occurrenceDate) {
+        return null;
+      }
+
+      const left = getSpotsLeft(
+        service,
+        service.occurrenceDate,
+        bookings,
+        undefined,
+        activeBookingHolds,
+      );
+
+      if (!Number.isFinite(left) || typeof service.maxSpots !== "number") {
+        return null;
+      }
+
+      const remaining = Math.max(0, left);
+
+      return {
+        text:
+          remaining === 0
+            ? copy.phrases.fullyBookedLabel
+            : `${remaining} ${copy.phrases.spotsLeftSuffix}`,
+        tone:
+          remaining > 0 && remaining <= service.maxSpots * 0.25
+            ? ("scarce" as const)
+            : ("muted" as const),
+      };
+    };
+
     return (
       <div
         className={cn(
@@ -4494,6 +4635,8 @@ export function HaabBookingModule({
                     <PublicProgressIndicator
                       currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                       isDedicatedPublicPage={isDedicatedPublicPage}
+                      showServiceStep={hasMultipleServices}
+                      serviceLabel={copy.Service}
                       lang={lang}
                       onStepSelect={
                         resolvedBookingFlow.step === 3 ? () => goBackToSelectionStep() : undefined
@@ -4508,6 +4651,8 @@ export function HaabBookingModule({
                     compact
                     currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                     isDedicatedPublicPage={isDedicatedPublicPage}
+                    showServiceStep={hasMultipleServices}
+                    serviceLabel={copy.Service}
                     lang={lang}
                   />
                 </div>
@@ -4519,6 +4664,7 @@ export function HaabBookingModule({
                     remainingMs={bookingHoldRemainingMs}
                     remainingRatio={bookingHoldRemainingRatio}
                     helperDesktopHidden
+                    layout={isDedicatedPublicPage ? "inline" : "stacked"}
                     isOnline={!integratedMode || isNetworkOnline}
                     canExtend={shouldOfferHoldExtension}
                     isExtending={isExtendingHold}
@@ -4646,7 +4792,7 @@ export function HaabBookingModule({
                     </div>
                   </div>
                 </>
-              ) : isPublicDetailsStep ? (
+              ) : isPublicDetailsStep && !isDedicatedPublicPage ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
@@ -4704,7 +4850,103 @@ export function HaabBookingModule({
           </div>
           </>
         ) : null}
-        {resolvedBookingFlow.step === 1 ? (
+        {resolvedBookingFlow.step === 1 && isDedicatedPublicPage ? (
+          <div className="space-y-4 p-5 sm:space-y-[22px] sm:p-8 xl:px-10 xl:py-10">
+            {headerBanner}
+            <ServiceStepIntro
+              title={copy.phrases.chooseServiceTitle}
+              body={
+                services.length === 1
+                  ? copy.phrases.onlyOneServiceBody
+                  : copy.phrases.chooseServiceBody
+              }
+              serviceLabel={copy.Service}
+              lang={lang}
+            />
+            <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
+              {services.map((service, index) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  index={index}
+                  vertical={vertical ?? undefined}
+                  copy={copy}
+                  lang={lang}
+                  contact={sharedServiceContact ? null : getServiceContact(service, provider)}
+                  seatsNote={getServiceSeatsNote(service)}
+                  className={
+                    services.length % 2 === 1 && index === services.length - 1
+                      ? "lg:col-span-2"
+                      : undefined
+                  }
+                  onSelect={() => {
+                    setBookingFlow((current) => ({
+                      ...current,
+                      serviceId: service.id,
+                      dateKey: "",
+                      time: "",
+                      step: 2,
+                    }));
+                  }}
+                />
+              ))}
+            </div>
+            {sharedServiceContact ? (
+              <section
+                aria-label={t.publicFlow.where}
+                className="flex flex-col gap-2.5 rounded-[22px] bg-[var(--panel-tint-72)] px-[18px] py-4 text-sm text-[#3c4043] ring-1 ring-[rgba(255,255,255,0.86)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:rounded-3xl sm:px-[26px] sm:py-[18px]"
+              >
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-7 sm:gap-y-2">
+                  <span className="text-[10.5px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)] sm:text-[11px]">
+                    {t.publicFlow.where}
+                  </span>
+                  {sharedServiceContact.addresses.map((address) => (
+                    <span key={`addr-${address}`} className="flex items-center gap-2">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 shrink-0 text-[var(--accent)]"
+                      >
+                        <path
+                          d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      {address}
+                    </span>
+                  ))}
+                  {sharedServiceContact.phones.map((phone) => (
+                    <a
+                      key={`phone-${phone}`}
+                      href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+                      className="flex items-center gap-2 font-medium text-[var(--primary)] sm:text-[var(--ink)]"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 shrink-0 text-[var(--accent)]"
+                      >
+                        <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+                      </svg>
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+                {services.length > 1 ? (
+                  <span className="hidden text-[13px] text-[var(--muted)] sm:block">
+                    {t.publicFlow.whereShared.replace("{service}", copy.service)}
+                  </span>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+        {resolvedBookingFlow.step === 1 && !isDedicatedPublicPage ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             {headerBanner}
             <div className="relative isolate overflow-hidden rounded-[28px] bg-[var(--panel-glass-62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
@@ -4876,7 +5118,73 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
+        {useDetailsLayout && selectedService ? (
+          <>
+            <div className="grid gap-4 p-4 sm:gap-5 sm:p-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start xl:px-10 xl:py-10">
+              <div className="order-2 flex min-w-0 flex-col gap-4 sm:gap-5 lg:order-1">
+                <DetailsForm
+                  values={{
+                    clientName: bookingFlow.clientName,
+                    clientEmail: bookingFlow.clientEmail,
+                    clientPhone: bookingFlow.clientPhone,
+                    partySize: bookingFlow.partySize,
+                    notes: bookingFlow.notes,
+                  }}
+                  onChange={updateBookingFlow}
+                  showPartySize={hasSlotCapacity(selectedService)}
+                  invalidRequired={detailsFieldsRefused}
+                  errorId={detailsErrorId}
+                  copy={copy}
+                  lang={lang}
+                />
+                <AppointmentAbout
+                  service={selectedService}
+                  vertical={vertical ?? undefined}
+                  isEvent={selectionIsEvent}
+                  isSingle={selectionIsSingle}
+                  singleDateLabel={singleDateLabel}
+                  addresses={detailsAddresses}
+                  phones={detailsPhones}
+                  isDesktop={isDesktopColumns}
+                  copy={copy}
+                  lang={lang}
+                />
+              </div>
+              <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:self-stretch">
+                <CompactAppointmentSummary
+                  title={copy.bookingSummary}
+                  serviceName={selectedService.name}
+                  date={detailsDate}
+                  changeLabel={t.publicFlow.changeDateTime}
+                  onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  cost={detailsCost}
+                />
+                <AppointmentSummary
+                  title={copy.bookingSummary}
+                  serviceName={selectedService.name}
+                  meta={detailsMeta}
+                  date={detailsDate}
+                  changeLabel={t.publicFlow.changeDateTime}
+                  onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  clientTitle={copy.phrases.clientLabel}
+                  rows={detailsRows}
+                  cost={detailsCost}
+                  footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}
+                  lang={lang}
+                />
+              </div>
+            </div>
+            <MobileConfirmBar
+              total={detailsCost}
+              totalLabel={t.publicFlow.total}
+              footer={{ ...detailsFooter, error: isDesktopColumns ? null : bookingError }}
+            />
+          </>
+        ) : null}
+
+        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
+        !useDetailsLayout &&
+        selectedService ? (
           <div
             className={cn(
               "grid gap-4 p-4 sm:gap-5 sm:p-8",
@@ -5484,7 +5792,13 @@ export function HaabBookingModule({
             ) : null}
 
             {isPublicSuccessStep && successfulBooking ? (
-              <div className="[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5">
+              <div
+                className={
+                  isDedicatedPublicPage
+                    ? "space-y-4 sm:space-y-5"
+                    : "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5"
+                }
+              >
                 {(() => {
                   // The booked location, else the service's linked addresses.
                   const successAddresses = successfulBooking.location
@@ -5572,6 +5886,148 @@ export function HaabBookingModule({
                           value: successAddresses.join("\n"),
                         }
                       : undefined;
+
+                  if (isDedicatedPublicPage) {
+                    // The moment first, then the record (the pass), then the
+                    // key to it (the private link), then what can be changed.
+                    const rise =
+                      "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.35s_both]";
+                    const statusLabel = isSuccessfulBookingCancelled
+                      ? t.publicFlow.bookingCancelled
+                      : successfulBooking.status === "rescheduled"
+                        ? t.publicFlow.bookingUpdated
+                        : t.publicFlow.bookingConfirmed;
+                    const hasLink = Boolean(
+                      successfulBooking.manageToken && successfulManageUrl,
+                    );
+
+                    return (
+                      <>
+                        <BookingSuccessPanel
+                          status={successfulBooking.status}
+                          clientName={successfulBooking.clientName}
+                          serviceName={selectedService.name}
+                          dateLabel={formatWeekdayDate(successfulBooking.dateKey, lang)}
+                          timeLabel={
+                            isFullDayBooking
+                              ? null
+                              : formatTimeLabel(successfulBooking.startTime, lang)
+                          }
+                          isEvents={selectionIsEvent}
+                          statusLabel={statusLabel}
+                          whatHappensNext={copy.phrases.whatHappensNext}
+                          onAddToCalendar={() => downloadBookingCalendarFile(successfulBooking)}
+                          onCopyLink={hasLink ? () => void copyManageLink() : undefined}
+                          copied={copiedManageLink}
+                          copy={copy}
+                          lang={lang}
+                        />
+
+                        <div className={rise}>
+                          <RefinedBookingPass
+                            booking={successfulBooking}
+                            providerName={
+                              provider.businessName || provider.fullName || copy.bookingPage
+                            }
+                            serviceName={selectedService.name}
+                            typeBadge={
+                              selectionIsEvent
+                                ? {
+                                    label: getOccurrenceModeLabel(
+                                      selectedService.occurrenceMode,
+                                      lang,
+                                    ),
+                                    tone: "secondary",
+                                  }
+                                : {
+                                    label: getBookingTypeLabel(
+                                      successfulBooking.bookingType,
+                                      lang,
+                                    ),
+                                    tone: bookingTypeTone(successfulBooking.bookingType),
+                                  }
+                            }
+                            dateLabel={formatPassDate(successfulBooking.dateKey, lang)}
+                            dateLabelCompact={formatPassDateCompact(
+                              successfulBooking.dateKey,
+                              lang,
+                            )}
+                            timeLabel={formatTimeLabel(successfulBooking.startTime, lang)}
+                            isFullDay={isFullDayBooking}
+                            durationLabel={formatDuration(selectedService, lang)}
+                            clientFieldLabel={copy.phrases.clientLabel}
+                            addresses={successAddresses}
+                            providerPhones={successPhones}
+                            providerEmail={provider.email?.trim() || undefined}
+                            category={
+                              selectedService.medicalSpecialty
+                                ? {
+                                    label: t.publicFlow.specialty,
+                                    value: selectedService.medicalSpecialty,
+                                  }
+                                : undefined
+                            }
+                            description={selectedService.description?.trim() || undefined}
+                            bringLabel={copy.phrases.bringWithYouLabel}
+                            notes={selectedService.notes?.trim() || undefined}
+                            clientNotes={
+                              successfulBooking.notes.trim()
+                                ? {
+                                    label: fillTemplate(t.publicFlow.passClientNotes, {
+                                      client: copy.phrases.clientLabel.toLowerCase(),
+                                      Client: copy.phrases.clientLabel,
+                                    }),
+                                    value: successfulBooking.notes,
+                                  }
+                                : undefined
+                            }
+                            costLabel={successfulBooking.cost || effectiveCost}
+                            admitLabel={
+                              successfulBooking.capacitySnapshot ||
+                              formatCapacityLabel(selectedService, lang)
+                            }
+                            reference={successfulBooking.id.slice(-10)}
+                            issuedLabel={formatCompactDate(
+                              getDateKey(new Date(successfulBooking.createdAt)),
+                              lang,
+                            )}
+                            qrDataUrl={qrForBooking?.url || undefined}
+                            qrError={qrForBooking?.error || undefined}
+                            onOpenQr={() => setIsCalendarQrModalOpen(true)}
+                            onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
+                            copy={copy}
+                            lang={lang}
+                          />
+                        </div>
+
+                        {hasLink ? (
+                          <div className={rise}>
+                            <PrivateLinkCard
+                              variant="refined"
+                              url={successfulManageUrl}
+                              lang={lang}
+                              copied={copiedManageLink}
+                              onCopy={() => void copyManageLink()}
+                              bookingNoun={copy.booking}
+                            />
+                          </div>
+                        ) : null}
+
+                        <div className={rise}>
+                          <SuccessActions
+                            canReschedule={!isServiceSingleOccurrence(successfulBooking.serviceId)}
+                            isCancelled={isSuccessfulBookingCancelled}
+                            cancelLabel={copy.phrases.cancelBookingButton}
+                            onReschedule={() => openReschedule(successfulBooking.id)}
+                            onCancel={() => openCancellation(successfulBooking.id)}
+                            bookAnotherHref={manageBookingToken ? publicUrl : undefined}
+                            onBookAnother={() => startFreshBooking()}
+                            lang={lang}
+                          />
+                        </div>
+                      </>
+                    );
+                  }
 
                   return (
                     <>
@@ -5699,7 +6155,7 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {(isPublicSelectionStep || isPublicDetailsStep) && selectedService ? (
+        {(isPublicSelectionStep || isPublicDetailsStep) && !useDetailsLayout && selectedService ? (
           <div className="sticky bottom-0 z-30 mt-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
             <div
               className={cn(
@@ -6402,9 +6858,12 @@ export function HaabBookingModule({
             // The two flags that already gate the transition, read for the
             // first time from outside the region they fade out.
             isAdvancing={isPublicFlowFadingOut || isCreatingHold}
-            errorMessage={bookingError}
-            languageChooser={renderPublicLanguageChooser("", "inset")}
+            // On the details step a refusal is shown above the confirm button,
+            // where the eye already is, not in the band's one-line meta slot.
+            errorMessage={resolvedBookingFlow.step === 3 ? null : bookingError}
+            languageChooser={renderPublicLanguageChooser("", "inset", true)}
             lang={lang}
+            variant="enhanced"
             // Matches the gutter the flow's own panels use, so the band's edges
             // line up with the banner and the cards below it.
             className="mx-4 mt-4 sm:mx-8 sm:mt-8 xl:mx-10"

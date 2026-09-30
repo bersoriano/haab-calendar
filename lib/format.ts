@@ -18,6 +18,34 @@ export function formatDateLabel(dateKey: string, lang: Lang = "en") {
   return getLongDateFormatter(lang).format(parseDateKey(dateKey));
 }
 
+/** "Thursday, October 1" — the year is left off where the page already says when. */
+export function formatWeekdayDate(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
+/** "Thu, October 1, 2026" — the pass's date block, where the long weekday would wrap. */
+export function formatPassDate(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
+/** "Thu, Oct 1" — the same date for a phone, where the long form wraps to three lines. */
+export function formatPassDateCompact(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
 export function formatCompactDate(dateKey: string, lang: Lang = "en") {
   return getCompactDateFormatter(lang).format(parseDateKey(dateKey));
 }
@@ -38,6 +66,27 @@ export function formatTimeLabel(time?: string, lang: Lang = "en") {
 export function formatTimeRange(startTime?: string, endTime?: string, lang: Lang = "en") {
   if (!startTime || !endTime) return FULL_DAY[lang];
   return `${formatTimeLabel(startTime, lang)} - ${formatTimeLabel(endTime, lang)}`;
+}
+
+/**
+ * "9:00 – 9:30 AM": one meridiem when both ends share it, two when they do not
+ * ("11:30 AM – 12:30 PM"). Spanish is 24h and has no meridiem to merge. Empty
+ * when either end is missing, so a caller can fall back to its own wording.
+ */
+export function formatCompactTimeRange(
+  startTime?: string,
+  endTime?: string,
+  lang: Lang = "en",
+) {
+  if (!startTime || !endTime) return "";
+  const start = formatTimeLabel(startTime, lang);
+  const end = formatTimeLabel(endTime, lang);
+  if (lang === "es") return `${start} – ${end}`;
+  const [startClock, startMeridiem] = start.split(" ");
+  const [, endMeridiem] = end.split(" ");
+  return startMeridiem === endMeridiem
+    ? `${startClock} – ${end}`
+    : `${start} – ${end}`;
 }
 
 export function formatCountdown(milliseconds: number) {

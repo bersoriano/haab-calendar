@@ -237,6 +237,36 @@ export type BookingDict = {
     // Public header live slot
     headerTimesShownIn: string;
     headerHoldingSpot: string;
+    headerNoAccount: string;
+    headerTimesIn: string;
+    stepOfTotal: string;
+    where: string;
+    whereShared: string;
+    detailsReassurance: string;
+    optionalSuffix: string;
+    summaryLive: string;
+    summaryAddField: string;
+    summaryNoNotes: string;
+    summaryHeldFor: string;
+    confirmBooking: string;
+    aboutBooking: string;
+    successTitle: string;
+    successTitleNoName: string;
+    successTitleEvents: string;
+    successTitleEventsNoName: string;
+    successTitleCancelled: string;
+    successAt: string;
+    successOnDay: string;
+    successWhatNext: string;
+    successCopyLink: string;
+    passShowAtCheckIn: string;
+    passDownloadIcs: string;
+    passAbout: string;
+    linkTitle: string;
+    linkBody: string;
+    linkBodyShort: string;
+    linkOpen: string;
+    actionsNeedChange: string;
     // Boarding-pass confirmation
     passEyebrow: string;
     passDate: string;
@@ -778,6 +808,36 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       managementUrlLabel: "Booking management link",
       headerTimesShownIn: "Times shown in",
       headerHoldingSpot: "Holding your spot…",
+      headerNoAccount: "No account needed",
+      headerTimesIn: "Times in {city}",
+      stepOfTotal: "Step {n} of {total}",
+      where: "Where",
+      whereShared: "Same for every {service}",
+      detailsReassurance: "No account, no password.",
+      optionalSuffix: "(optional)",
+      summaryLive: "Live",
+      summaryAddField: "Add your {field}",
+      summaryNoNotes: "No notes",
+      summaryHeldFor: "Held for you · {time} left",
+      confirmBooking: "Confirm {booking}",
+      aboutBooking: "About the {booking}",
+      successTitle: "You're booked, {name}.",
+      successTitleNoName: "You're booked.",
+      successTitleEvents: "You're in, {name}.",
+      successTitleEventsNoName: "You're in.",
+      successTitleCancelled: "Your {booking} was cancelled.",
+      successAt: "{date} at {time}",
+      successOnDay: "on {date}",
+      successWhatNext: "What happens next",
+      successCopyLink: "Copy private link",
+      passShowAtCheckIn: "Show at check-in",
+      passDownloadIcs: "Download .ics",
+      passAbout: "About",
+      linkTitle: "Your private link",
+      linkBody: "Reschedule or cancel anytime — no account, no phone call. Anyone with this link can manage the {booking}, so keep it to yourself.",
+      linkBodyShort: "Reschedule or cancel anytime — no account, no phone call. Keep it to yourself.",
+      linkOpen: "Open",
+      actionsNeedChange: "Need to change something?",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
       passTime: "Time",
@@ -1329,6 +1389,36 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       managementUrlLabel: "Enlace para gestionar la reserva",
       headerTimesShownIn: "Horarios en",
       headerHoldingSpot: "Apartando tu lugar…",
+      headerNoAccount: "Sin crear cuenta",
+      headerTimesIn: "Horarios de {city}",
+      stepOfTotal: "Paso {n} de {total}",
+      where: "Dónde",
+      whereShared: "Aplica a cada {service}",
+      detailsReassurance: "Sin cuenta ni contraseña.",
+      optionalSuffix: "(opcional)",
+      summaryLive: "En vivo",
+      summaryAddField: "Agregue {field}",
+      summaryNoNotes: "Sin notas",
+      summaryHeldFor: "Lugar apartado para usted · quedan {time}",
+      confirmBooking: "Confirmar {booking}",
+      aboutBooking: "Sobre su {booking}",
+      successTitle: "Todo listo, {name}.",
+      successTitleNoName: "Todo listo.",
+      successTitleEvents: "Ya está dentro, {name}.",
+      successTitleEventsNoName: "Ya está dentro.",
+      successTitleCancelled: "Se canceló su {booking}.",
+      successAt: "{date}, {time}",
+      successOnDay: "el {date}",
+      successWhatNext: "Qué sigue",
+      successCopyLink: "Copiar enlace privado",
+      passShowAtCheckIn: "Muéstrelo al llegar",
+      passDownloadIcs: "Descargar .ics",
+      passAbout: "Acerca de",
+      linkTitle: "Su enlace privado",
+      linkBody: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Cualquiera con este enlace puede administrar su {booking}, así que guárdelo solo para usted.",
+      linkBodyShort: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Guárdelo solo para usted.",
+      linkOpen: "Abrir",
+      actionsNeedChange: "¿Necesita cambiar algo?",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",
       passTime: "Horario",

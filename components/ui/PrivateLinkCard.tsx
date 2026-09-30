@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { Lang } from "@/lib/types";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
+import { shortenManageUrl } from "@/lib/success-copy";
 
 /**
  * The private management link is the client's only key to this booking — there
@@ -13,6 +14,8 @@ export function PrivateLinkCard({
   copied = false,
   onCopy,
   showOpenLink = true,
+  variant = "classic",
+  bookingNoun = "booking",
   className,
 }: {
   url: string;
@@ -21,9 +24,109 @@ export function PrivateLinkCard({
   onCopy?: () => void;
   /** Hidden on the management page itself — the visitor is already there. */
   showOpenLink?: boolean;
+  /**
+   * `refined` is the dedicated page's card: a lock tile, one merged sentence and
+   * a field that shortens the link in the middle so the token is never the part
+   * that gets cut off. `classic` is the original and stays the default.
+   */
+  variant?: "classic" | "refined";
+  /** The vertical's noun, for "manage the appointment". Refined only. */
+  bookingNoun?: string;
   className?: string;
 }) {
   const t = bookingTranslations[lang];
+
+  if (variant === "refined") {
+    // Buttons carry `!` on their type: globals.css resets `font` on buttons
+    // outside any layer, which outranks every layered utility.
+    const pill =
+      "inline-flex h-[46px] items-center justify-center whitespace-nowrap rounded-full px-4 !text-[14.5px] !font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:h-12 lg:px-5";
+
+    return (
+      <section
+        aria-label={t.publicFlow.managementUrlLabel}
+        className={cn(
+          "flex flex-col gap-3 rounded-3xl bg-[rgba(248,249,250,0.85)] p-[18px] ring-1 ring-[rgba(255,255,255,0.9)] lg:gap-3.5 lg:rounded-[28px] lg:bg-[rgba(248,249,250,0.82)] lg:px-[26px] lg:py-6",
+          className,
+        )}
+      >
+        <div className="flex items-center gap-3 lg:gap-3.5">
+          <span
+            aria-hidden="true"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[var(--tile-blue)] text-[#0b57d0] lg:h-10 lg:w-10 lg:rounded-xl"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="5" y="11" width="14" height="10" rx="2" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            </svg>
+          </span>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <p className="text-[15.5px] font-semibold text-[var(--ink)] lg:text-base">
+              {t.publicFlow.linkTitle}
+            </p>
+            <p className="hidden text-sm leading-[1.5] text-[var(--muted)] lg:block">
+              {fillTemplate(t.publicFlow.linkBody, { booking: bookingNoun })}
+            </p>
+          </div>
+        </div>
+        <p className="text-[13.5px] leading-[1.5] text-[var(--muted)] lg:hidden">
+          {t.publicFlow.linkBodyShort}
+        </p>
+
+        <div className="flex flex-col gap-2.5 lg:flex-row">
+          {/* A plain box, not an <input>: an input can only clip the end of a
+              value, and the end is the token. The full address is in the
+              accessible text, in `title`, and is what Copy and Open use. */}
+          <div
+            title={url}
+            className="flex min-h-12 min-w-0 flex-1 items-center rounded-[14px] border border-[#d6dbe3] bg-white px-3.5 py-3 text-[12.5px] text-[#3c4043] [font-family:var(--font-plex-mono)] lg:px-4 lg:py-0 lg:text-[13.5px]"
+          >
+            <span className="sr-only">{url}</span>
+            <span aria-hidden="true" className="min-w-0 break-all lg:hidden">
+              {shortenManageUrl(url, 34)}
+            </span>
+            <span aria-hidden="true" className="hidden min-w-0 break-all lg:inline">
+              {shortenManageUrl(url, 64)}
+            </span>
+          </div>
+          <div className={cn("grid gap-2 lg:flex", onCopy && showOpenLink ? "grid-cols-2" : "grid-cols-1")}>
+            {onCopy ? (
+              <button
+                type="button"
+                onClick={onCopy}
+                className={cn(pill, "bg-[#0b57d0] text-white hover:opacity-90 lg:px-[22px]")}
+              >
+                {copied ? t.publicFlow.copied : t.publicFlow.copyLink}
+              </button>
+            ) : null}
+            {showOpenLink ? (
+              <a
+                href={url}
+                className={cn(
+                  pill,
+                  "border border-[#cfd5df] bg-white text-[var(--ink)] hover:bg-[var(--surface-soft)]",
+                )}
+              >
+                {t.publicFlow.linkOpen}
+              </a>
+            ) : null}
+          </div>
+        </div>
+        <span className="sr-only" aria-live="polite">
+          {copied ? t.publicFlow.manageLinkCopied : ""}
+        </span>
+      </section>
+    );
+  }
 
   return (
     <section
