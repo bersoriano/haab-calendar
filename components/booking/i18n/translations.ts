@@ -1363,7 +1363,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       detailsReassurance: "Sin cuenta ni contraseña.",
       optionalSuffix: "(opcional)",
       summaryLive: "En vivo",
-      summaryAddField: "Agregue su {field}",
+      summaryAddField: "Agregue {field}",
       summaryNoNotes: "Sin notas",
       summaryHeldFor: "Lugar apartado para usted · quedan {time}",
       confirmBooking: "Confirmar {booking}",

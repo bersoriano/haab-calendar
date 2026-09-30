@@ -28,7 +28,7 @@ import type { Lang, Service, VerticalId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
-const VERTICAL_ICONS: Record<
+export const VERTICAL_ICONS: Record<
   VerticalId,
   ComponentType<{ className?: string; weight?: "regular" | "bold"; "aria-hidden"?: boolean | "true" }>
 > = {

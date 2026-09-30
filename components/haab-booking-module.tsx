@@ -82,6 +82,7 @@ import {
   formatCompactDate,
   formatMonthLabel,
   formatTimeLabel,
+  formatCompactTimeRange,
   formatTimeRange,
   formatDuration,
   formatCapacityLabel,
@@ -135,6 +136,7 @@ import {
 } from "@/lib/booking-flow-machine";
 import { getServiceSelectCta } from "@/lib/service-select-cta";
 import { getServiceContact, resolveSharedServiceContact } from "@/lib/service-card";
+import { getDateTile, getSummaryClientRows } from "@/lib/details-summary";
 import { getPublicSlotStates } from "@/lib/slot-states";
 import {
   scrollPublicBookingStepToTop,
@@ -181,6 +183,14 @@ import {
 import { BookingPass, type PassField } from "@/components/booking/BookingPass";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
+import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
+import {
+  AppointmentSummary,
+  CompactAppointmentSummary,
+  MobileConfirmBar,
+  type SummaryFooter,
+} from "@/components/booking/AppointmentSummary";
+import { DetailsForm } from "@/components/booking/DetailsForm";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
 import {
@@ -4463,6 +4473,91 @@ export function HaabBookingModule({
       dispatchBookingFlow({ type: "RESTART" });
     };
 
+    // Step 3, dedicated page: what the new details layout shows. Everything
+    // here is read from state the flow already owns; nothing is decided here.
+    const useDetailsLayout = isPublicDetailsStep && isDedicatedPublicPage;
+    const detailsErrorId = "booking-error";
+    const detailsFieldsRefused = bookingError === copy.phrases.clientFieldsRequiredError;
+    const detailsContact = selectedService
+      ? getServiceContact(selectedService, provider)
+      : { addresses: [], phones: [] };
+    // With several priced locations only the one the booker chose is shown.
+    const detailsAddresses =
+      selectionLocations.length >= 2 && selectedLocation
+        ? [selectedLocation.address]
+        : detailsContact.addresses;
+    const detailsPhones = detailsContact.phones;
+    const detailsCost = effectiveCost.trim() || null;
+    const detailsDateKey = bookingFlow.dateKey || selectedService?.occurrenceDate || "";
+    const detailsStart = selectedService
+      ? resolveBookingStartTime(selectedService, bookingFlow.time)
+      : undefined;
+    const detailsEnd = selectedService
+      ? resolveBookingEndTime(selectedService, bookingFlow.time)
+      : undefined;
+    const detailsTimeRange = formatCompactTimeRange(detailsStart, detailsEnd, lang);
+    const detailsDate = {
+      tile: detailsDateKey ? getDateTile(detailsDateKey, lang) : null,
+      label: detailsDateKey ? formatDateLabel(detailsDateKey, lang) : t.publicFlow.notSelected,
+      timeLine: detailsTimeRange
+        ? // Only a timed appointment has a length worth repeating beside its range.
+          `${detailsTimeRange}${
+            selectedService?.bookingType === "appointment" &&
+            selectedService.durationMinutes &&
+            !selectionIsSingle
+              ? ` · ${formatDuration(selectedService, lang)}`
+              : ""
+          }`
+        : detailsStart
+          ? formatTimeLabel(detailsStart, lang)
+          : t.publicFlow.fullDay,
+      timeShort:
+        detailsTimeRange ||
+        (detailsStart ? formatTimeLabel(detailsStart, lang) : t.publicFlow.fullDay),
+    };
+    const detailsMeta = [
+      selectedService?.medicalSpecialty?.trim(),
+      provider.businessName || provider.fullName,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    const detailsRows = getSummaryClientRows({
+      values: bookingFlow,
+      requiresPartySize: Boolean(selectedService && hasSlotCapacity(selectedService)),
+      labels: {
+        name: t.publicFlow.fullName,
+        email: t.publicFlow.email,
+        phone: t.publicFlow.phoneNumber,
+        partySize: t.admin.partySizeLabel,
+        notes: t.publicFlow.notes,
+      },
+    });
+    // The same three outcomes the old action row had, in the same order.
+    const detailsFooter: SummaryFooter = {
+      primaryLabel:
+        integratedMode && !isNetworkOnline
+          ? t.public.onlineRequired
+          : isBookingHoldExpired
+            ? isCreatingHold
+              ? t.public.holdingAgain
+              : t.public.holdAgain
+            : fillTemplate(t.publicFlow.confirmBooking, { booking: copy.booking }),
+      onPrimary: isBookingHoldExpired ? () => void retryExpiredBookingHold() : confirmBooking,
+      primaryDisabled:
+        isConfirmingBooking || isCreatingHold || (integratedMode && !isNetworkOnline),
+      isExpired: isBookingHoldExpired,
+      heldText:
+        bookingHold && !isBookingHoldExpired
+          ? fillTemplate(t.publicFlow.summaryHeldFor, {
+              time: formatCountdown(bookingHoldRemainingMs),
+            })
+          : null,
+      error: null,
+      errorId: detailsErrorId,
+      chooseAnotherLabel: t.public.chooseAnotherTime,
+      onChooseAnother: goBackToSelectionStep,
+    };
+
     // Step 1, dedicated page. One address and phone set shared by every service
     // is said once under the grid; otherwise each card carries its own.
     const sharedServiceContact = resolveSharedServiceContact(services, provider);
@@ -4535,6 +4630,8 @@ export function HaabBookingModule({
                     <PublicProgressIndicator
                       currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                       isDedicatedPublicPage={isDedicatedPublicPage}
+                      showServiceStep={hasMultipleServices}
+                      serviceLabel={copy.Service}
                       lang={lang}
                       onStepSelect={
                         resolvedBookingFlow.step === 3 ? () => goBackToSelectionStep() : undefined
@@ -4549,6 +4646,8 @@ export function HaabBookingModule({
                     compact
                     currentStep={resolvedBookingFlow.step as 2 | 3 | 4}
                     isDedicatedPublicPage={isDedicatedPublicPage}
+                    showServiceStep={hasMultipleServices}
+                    serviceLabel={copy.Service}
                     lang={lang}
                   />
                 </div>
@@ -4560,6 +4659,7 @@ export function HaabBookingModule({
                     remainingMs={bookingHoldRemainingMs}
                     remainingRatio={bookingHoldRemainingRatio}
                     helperDesktopHidden
+                    layout={isDedicatedPublicPage ? "inline" : "stacked"}
                     isOnline={!integratedMode || isNetworkOnline}
                     canExtend={shouldOfferHoldExtension}
                     isExtending={isExtendingHold}
@@ -4687,7 +4787,7 @@ export function HaabBookingModule({
                     </div>
                   </div>
                 </>
-              ) : isPublicDetailsStep ? (
+              ) : isPublicDetailsStep && !isDedicatedPublicPage ? (
                 <>
                   <div className="h-px bg-[rgba(15,23,42,0.06)]" aria-hidden="true" />
                   <div className="px-5 pb-5 pt-4 sm:px-7 sm:pb-6 sm:pt-5">
@@ -5013,7 +5113,73 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) && selectedService ? (
+        {useDetailsLayout && selectedService ? (
+          <>
+            <div className="grid gap-4 p-4 sm:gap-5 sm:p-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start xl:px-10 xl:py-10">
+              <div className="order-2 flex min-w-0 flex-col gap-4 sm:gap-5 lg:order-1">
+                <DetailsForm
+                  values={{
+                    clientName: bookingFlow.clientName,
+                    clientEmail: bookingFlow.clientEmail,
+                    clientPhone: bookingFlow.clientPhone,
+                    partySize: bookingFlow.partySize,
+                    notes: bookingFlow.notes,
+                  }}
+                  onChange={updateBookingFlow}
+                  showPartySize={hasSlotCapacity(selectedService)}
+                  invalidRequired={detailsFieldsRefused}
+                  errorId={detailsErrorId}
+                  copy={copy}
+                  lang={lang}
+                />
+                <AppointmentAbout
+                  service={selectedService}
+                  vertical={vertical ?? undefined}
+                  isEvent={selectionIsEvent}
+                  isSingle={selectionIsSingle}
+                  singleDateLabel={singleDateLabel}
+                  addresses={detailsAddresses}
+                  phones={detailsPhones}
+                  isDesktop={isDesktopColumns}
+                  copy={copy}
+                  lang={lang}
+                />
+              </div>
+              <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:self-stretch">
+                <CompactAppointmentSummary
+                  title={copy.bookingSummary}
+                  serviceName={selectedService.name}
+                  date={detailsDate}
+                  changeLabel={t.publicFlow.changeDateTime}
+                  onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  cost={detailsCost}
+                />
+                <AppointmentSummary
+                  title={copy.bookingSummary}
+                  serviceName={selectedService.name}
+                  meta={detailsMeta}
+                  date={detailsDate}
+                  changeLabel={t.publicFlow.changeDateTime}
+                  onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  clientTitle={copy.phrases.clientLabel}
+                  rows={detailsRows}
+                  cost={detailsCost}
+                  footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}
+                  lang={lang}
+                />
+              </div>
+            </div>
+            <MobileConfirmBar
+              total={detailsCost}
+              totalLabel={t.publicFlow.total}
+              footer={{ ...detailsFooter, error: isDesktopColumns ? null : bookingError }}
+            />
+          </>
+        ) : null}
+
+        {(isPublicSelectionStep || isPublicDetailsStep || isPublicSuccessStep) &&
+        !useDetailsLayout &&
+        selectedService ? (
           <div
             className={cn(
               "grid gap-4 p-4 sm:gap-5 sm:p-8",
@@ -5836,7 +6002,7 @@ export function HaabBookingModule({
           </div>
         ) : null}
 
-        {(isPublicSelectionStep || isPublicDetailsStep) && selectedService ? (
+        {(isPublicSelectionStep || isPublicDetailsStep) && !useDetailsLayout && selectedService ? (
           <div className="sticky bottom-0 z-30 mt-2 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 lg:hidden">
             <div
               className={cn(
@@ -6539,7 +6705,9 @@ export function HaabBookingModule({
             // The two flags that already gate the transition, read for the
             // first time from outside the region they fade out.
             isAdvancing={isPublicFlowFadingOut || isCreatingHold}
-            errorMessage={bookingError}
+            // On the details step a refusal is shown above the confirm button,
+            // where the eye already is, not in the band's one-line meta slot.
+            errorMessage={resolvedBookingFlow.step === 3 ? null : bookingError}
             languageChooser={renderPublicLanguageChooser("", "inset", true)}
             lang={lang}
             variant="enhanced"
