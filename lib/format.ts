@@ -40,6 +40,27 @@ export function formatTimeRange(startTime?: string, endTime?: string, lang: Lang
   return `${formatTimeLabel(startTime, lang)} - ${formatTimeLabel(endTime, lang)}`;
 }
 
+/**
+ * "9:00 – 9:30 AM": one meridiem when both ends share it, two when they do not
+ * ("11:30 AM – 12:30 PM"). Spanish is 24h and has no meridiem to merge. Empty
+ * when either end is missing, so a caller can fall back to its own wording.
+ */
+export function formatCompactTimeRange(
+  startTime?: string,
+  endTime?: string,
+  lang: Lang = "en",
+) {
+  if (!startTime || !endTime) return "";
+  const start = formatTimeLabel(startTime, lang);
+  const end = formatTimeLabel(endTime, lang);
+  if (lang === "es") return `${start} – ${end}`;
+  const [startClock, startMeridiem] = start.split(" ");
+  const [, endMeridiem] = end.split(" ");
+  return startMeridiem === endMeridiem
+    ? `${startClock} – ${end}`
+    : `${start} – ${end}`;
+}
+
 export function formatCountdown(milliseconds: number) {
   const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
   const minutes = Math.floor(totalSeconds / 60);
