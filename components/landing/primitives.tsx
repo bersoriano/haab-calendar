@@ -83,11 +83,14 @@ export function SectionHeading({
   layout = "split",
   tone = "teal",
   night = false,
+  as: Heading = "h2",
   className,
 }: {
   eyebrow?: string;
   title: string;
   body?: string;
+  /** A page's own heading is the h1; sections keep the default h2. */
+  as?: "h1" | "h2";
   layout?: "split" | "centered";
   tone?: EyebrowTone;
   /** Set on the dark band so the heading and intro switch to light ink. */
@@ -114,7 +117,7 @@ export function SectionHeading({
         )}
       >
         {eyebrow ? <Eyebrow tone={night ? "night" : tone}>{eyebrow}</Eyebrow> : null}
-        <h2
+        <Heading
           className={cn(
             lpDisplay,
             "text-balance text-[36px] font-bold leading-[1.05] tracking-[-0.035em] sm:text-[44px] lg:text-[54px] lg:leading-[1.04]",
@@ -123,7 +126,7 @@ export function SectionHeading({
           )}
         >
           {title}
-        </h2>
+        </Heading>
       </div>
       {body ? (
         <p

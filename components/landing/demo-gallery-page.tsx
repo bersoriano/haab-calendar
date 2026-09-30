@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { DEMO_PAGES } from "@/lib/demo-pages";
+import { cn } from "@/lib/utils";
 import {
   DemoGrid,
   Footer,
@@ -11,7 +12,7 @@ import {
   formatDemoCount,
 } from "./landing-ui";
 import { LanguageProvider, useLanguage } from "./language-provider";
-import { LandingScope } from "./primitives";
+import { LandingScope, SectionHeading, lpBody, lpButtonClass } from "./primitives";
 import type { Lang } from "./translations";
 
 function GalleryContent({ indexes }: { indexes: number[] }) {
@@ -20,27 +21,24 @@ function GalleryContent({ indexes }: { indexes: number[] }) {
   return (
     <LandingScope>
       <StickyNav alwaysShowCta anchorsGoHome showUseCases={false} />
-      <main className="flex-1 px-5 py-14 sm:px-8 sm:py-16">
-        <div className="mx-auto max-w-[1280px]">
-          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--primary)]">
-            {t.gallery.eyebrow}
-          </p>
-          <h1 className="mt-3 text-balance text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-            {t.gallery.title}
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--muted)]">
-            {formatDemoCount(t.gallery.body, DEMO_PAGES.length)}
-          </p>
+      <main className={cn(lpBody, "flex-1 bg-white px-5 pb-[72px] pt-14 sm:px-8 lg:pb-[120px] lg:pt-20")}>
+        <div className="mx-auto max-w-[1200px]">
+          <SectionHeading
+            as="h1"
+            eyebrow={t.gallery.eyebrow}
+            title={t.gallery.title}
+            body={formatDemoCount(t.gallery.body, DEMO_PAGES.length)}
+          />
           <DemoGrid indexes={indexes} />
-          <p className="mt-8 text-center text-xs text-[var(--muted)]">{t.gallery.note}</p>
-          <p className="mt-6 text-center">
+          <div className="mt-10 flex flex-col items-center gap-4 text-center lg:mt-14">
+            <p className="text-[13.5px] text-[var(--lp-muted)] sm:text-[14.5px]">{t.gallery.note}</p>
             <Link
               href={`/?lang=${lang}`}
-              className="text-sm font-semibold text-[var(--primary)] hover:underline"
+              className={lpButtonClass({ variant: "outline-ink", size: "card" })}
             >
               {t.gallery.back}
             </Link>
-          </p>
+          </div>
         </div>
       </main>
       <Footer anchorsGoHome showUseCases={false} />
