@@ -428,6 +428,7 @@ export const translations = {
     faq: {
       eyebrow: "Preguntas",
       title: "Preguntas, respondidas.",
+      aside: "La respuesta más rápida suele ser una página real. Reserva una demo como lo haría un cliente.",
       items: [
         {
           q: "¿Qué funciona hoy?",
@@ -453,6 +454,7 @@ export const translations = {
     },
     finalCta: {
       title: "Un enlace. Después, piloto automático.",
+      titleLines: ["Un enlace.", "Después, piloto automático."],
       body: "Nombra tu página y compártela hoy.",
       ownerBody: "Tu página está en vivo. Comparte el enlace y déjala correr.",
       ctaPrimary: "Crear mi página",
@@ -460,6 +462,7 @@ export const translations = {
     },
     footer: {
       tagline: "Un enlace de reservas. Disponibilidad protegida. Sin cuentas para tus clientes.",
+      getStarted: "Empieza",
       productHeading: "Producto",
       product: {
         how: "Cómo funciona",
@@ -907,6 +910,7 @@ export const translations = {
     faq: {
       eyebrow: "FAQ",
       title: "Questions, answered.",
+      aside: "The quickest answer is usually a real page. Book one of the demos like a client would.",
       items: [
         {
           q: "What works today?",
@@ -932,6 +936,7 @@ export const translations = {
     },
     finalCta: {
       title: "One link. Then autopilot.",
+      titleLines: ["One link.", "Then autopilot."],
       body: "Name your page and share it today.",
       ownerBody: "Your page is live. Share the link and let it run.",
       ctaPrimary: "Create your page",
@@ -939,6 +944,7 @@ export const translations = {
     },
     footer: {
       tagline: "One booking link. Protected availability. No client accounts.",
+      getStarted: "Get started",
       productHeading: "Product",
       product: {
         how: "How it works",

@@ -16,10 +16,16 @@ export function LangPill({
   lang,
   onChange,
   className,
+  variant = "light",
+  long = false,
 }: {
   lang: Lang;
   onChange: (lang: Lang) => void;
   className?: string;
+  /** "night" is the footer's dark pill. */
+  variant?: "light" | "night";
+  /** Full names (English / Español) instead of EN / ES. */
+  long?: boolean;
 }) {
   const t = bookingTranslations[lang];
 
@@ -29,7 +35,10 @@ export function LangPill({
       aria-label={t.language.chooseLanguage}
       className={cn(
         lpBody,
-        "inline-flex gap-0.5 rounded-full border border-[#d6e3e0] bg-white/80 p-[3px] sm:p-1",
+        "inline-flex gap-0.5 rounded-full p-[3px] sm:p-1",
+        variant === "night"
+          ? "bg-[var(--lp-night-3)]"
+          : "border border-[#d6e3e0] bg-white/80",
         className,
       )}
     >
@@ -46,13 +55,24 @@ export function LangPill({
             aria-pressed={active}
             onClick={() => onChange(language)}
             className={cn(
-              "min-h-8 rounded-full px-2.5 text-[12px] font-bold uppercase transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] sm:min-h-9 sm:px-3.5 sm:text-[13.5px]",
-              active
-                ? "bg-[var(--lp-ink)] text-white"
-                : "text-[var(--lp-muted)] hover:text-[var(--lp-ink)]",
+              "min-h-8 rounded-full px-2.5 text-[12px] font-bold transition focus-visible:outline-none focus-visible:ring-2 sm:min-h-9 sm:px-3.5 sm:text-[13.5px]",
+              !long && "uppercase",
+              variant === "night"
+                ? cn(
+                    "focus-visible:ring-[var(--lp-mint-300)]",
+                    active
+                      ? "bg-white text-[var(--lp-night)]"
+                      : "text-[var(--lp-night-ink)] hover:text-white",
+                  )
+                : cn(
+                    "focus-visible:ring-[var(--lp-teal-600)]",
+                    active
+                      ? "bg-[var(--lp-ink)] text-white"
+                      : "text-[var(--lp-muted)] hover:text-[var(--lp-ink)]",
+                  ),
             )}
           >
-            {language}
+            {long ? (language === "en" ? t.language.english : t.language.spanish) : language}
           </button>
         );
       })}

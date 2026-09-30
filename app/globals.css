@@ -219,39 +219,6 @@ code {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Landing signature: the slot rule.
-   A booking page is a day cut into slots, so the landing's one repeated
-   graphic device is that cut - evenly spaced hairline ticks with a heavier
-   tick every fourth, the way an hour rule sits over quarter-hours. Used as
-   the rail that connects the three setup steps and as the texture on the
-   night band. Nowhere else.
-   ------------------------------------------------------------------------ */
-.haab-slot-rule {
-  background-image: repeating-linear-gradient(
-      to right,
-      currentColor 0 1px,
-      transparent 1px 12px
-    );
-  opacity: 0.28;
-}
-
-/* Over a filled band the full-strength rule reads as a barcode, so the band
-   variants fade it out into the surface below. */
-.haab-slot-rule-fade {
-  -webkit-mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1), transparent);
-  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 1), transparent);
-}
-
-.haab-slot-rule-dense {
-  background-image:
-    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 48px),
-    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 12px);
-  background-size: 100% 100%, 100% 60%;
-  background-position: 0 0, 0 100%;
-  background-repeat: no-repeat, no-repeat;
-}
-
 /* Section entrance. One transform, one fade, triggered by the reveal
    observer in landing-ui. Sections start visible and are only hidden once
    the observer confirms it can take over, so a failed script never leaves a

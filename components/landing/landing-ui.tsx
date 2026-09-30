@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, List } from "@phosphor-icons/react";
+import { ArrowRight, List, Minus, Plus } from "@phosphor-icons/react";
 import {
   createContext,
   useContext,
@@ -16,6 +16,7 @@ import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
 import { LiveDemoDialog } from "./live-demo-dialog";
+import { BrandLink } from "./brand";
 import { DemoGrid } from "./demo-card";
 import { formatDemoCount } from "./demo-count";
 import { FactStrip } from "./fact-strip";
@@ -29,11 +30,13 @@ import { Trust } from "./trust";
 import {
   CheckChip,
   LandingScope,
+  Eyebrow,
   LpButton,
   SectionHeading as LpSectionHeading,
   lpBody,
   lpButtonClass,
   lpDisplay,
+  lpMono,
 } from "./primitives";
 import { StartPageDialog } from "./start-page-dialog";
 
@@ -219,7 +222,7 @@ function AccountEntryListItem() {
 
   return (
     <li>
-      <AccountEntry className="text-left hover:text-[var(--ink)]" />
+      <AccountEntry className="rounded-sm text-left text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]" />
     </li>
   );
 }
@@ -242,8 +245,6 @@ function AccountEntry({ className }: { className: string }) {
   );
 }
 
-const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
-
 function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
 }
@@ -261,95 +262,6 @@ export function galleryPath(lang: "en" | "es") {
 }
 
 export { DemoGrid, GoogleIntegration, formatDemoCount };
-
-/**
- * Which band a heading is being set on, so its type and rules pick the right
- * contrast. Sections used to alternate between `white/70` and `white/55` — a
- * difference nobody can see — so nine of them read as one uninterrupted plane;
- * the bands are now `--band-paper`, `--band-tint`, and the single `--night`
- * stop, and only that last one changes the heading's colours.
- */
-type BandTone = "paper" | "night";
-
-/**
- * An eyebrow, set in the mono face.
- *
- * Not a stylistic tic: this product is a timetable, and mono is the face a
- * timetable is set in. It also keeps the section indices — 01, 02 — on a
- * fixed advance so they line up down the page.
- */
-function Eyebrow({
-  children,
-  tone = "paper",
-}: {
-  children: ReactNode;
-  tone?: BandTone;
-}) {
-  return (
-    <p
-      className={cn(
-        "flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em]",
-        tone === "night" ? "text-[var(--secondary-fixed)]" : "text-[var(--primary)]",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "h-px w-8 shrink-0",
-          tone === "night" ? "bg-[var(--night-line)]" : "bg-[var(--line)]",
-        )}
-      />
-      {children}
-    </p>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  body,
-  align = "center",
-  tone = "paper",
-}: {
-  eyebrow?: string;
-  title: string;
-  body?: string;
-  /** Six centred headings in a row is the monotony; alternate them. */
-  align?: "center" | "left";
-  tone?: BandTone;
-}) {
-  const centered = align === "center";
-
-  return (
-    <div className={cn("max-w-3xl", centered && "mx-auto")}>
-      {eyebrow ? (
-        <div className={cn(centered && "justify-center", "flex")}>
-          <Eyebrow tone={tone}>{eyebrow}</Eyebrow>
-        </div>
-      ) : null}
-      <h2
-        className={cn(
-          "mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] sm:text-[2.6rem] lg:text-[3.1rem]",
-          tone === "night" ? "text-[var(--night-ink)]" : "text-[var(--ink)]",
-          centered && "text-center",
-        )}
-      >
-        {title}
-      </h2>
-      {body ? (
-        <p
-          className={cn(
-            "mt-4 text-base leading-7 sm:text-lg",
-            tone === "night" ? "text-[var(--night-muted)]" : "text-[var(--muted)]",
-            centered && "text-center",
-          )}
-        >
-          {body}
-        </p>
-      ) : null}
-    </div>
-  );
-}
 
 /**
  * True once the hero's action row has scrolled out of view, so the nav's own
@@ -413,28 +325,7 @@ export function StickyNav({
       )}
     >
       <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap xl:gap-3">
-          <span
-            className={cn(
-              lpDisplay,
-              "relative grid h-[34px] w-[34px] place-items-center rounded-[11px] bg-[var(--lp-blue-600)] text-[18px] font-extrabold text-white shadow-[var(--lp-shadow-logo)] xl:h-[38px] xl:w-[38px] xl:rounded-[12px] xl:text-[20px]",
-            )}
-          >
-            H
-            <span
-              aria-hidden="true"
-              className="absolute -right-[3px] -top-[3px] h-[11px] w-[11px] rounded-full border-2 border-[var(--lp-paper)] bg-[var(--lp-teal-400)] xl:h-3 xl:w-3"
-            />
-          </span>
-          <span
-            className={cn(
-              lpDisplay,
-              "text-[18px] font-bold tracking-[-0.02em] text-[var(--lp-ink)] max-[379px]:sr-only xl:text-[20px]",
-            )}
-          >
-            {t.nav.brand}
-          </span>
-        </Link>
+        <BrandLink label={t.nav.brand} hideLabelOnTiny />
         <nav className="hidden items-center gap-7 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href} className={navLinkClass}>
@@ -649,63 +540,136 @@ export function LiveExamples({ featured }: { featured: number[] }) {
 
 export function FAQ() {
   const { t } = useLanguage();
+
   return (
-    <section id="faq" className={cn(sectionPadding, "bg-[var(--band-paper)]")}>
-      {/* No box around the questions: after the night band the page wants a
-          quiet, plainly typeset column, not another panel. */}
-      <div className="mx-auto max-w-[820px]">
-        <SectionHeading eyebrow={t.faq.eyebrow} title={t.faq.title} align="left" />
-        <div className="mt-12 divide-y divide-[var(--line)] border-y border-[var(--line)]">
-          {t.faq.items.map((item) => (
-            <details key={item.q} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]">
-                <span className="text-base font-semibold text-[var(--ink)] transition group-hover:text-[var(--primary)] sm:text-lg">
+    <section
+      id="faq"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 py-[72px] sm:px-8 lg:py-[120px]")}
+    >
+      {/* No ancestor clips overflow: the left column is sticky. */}
+      <div className="mx-auto grid max-w-[1200px] gap-6 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start lg:gap-20">
+        <div className="flex flex-col gap-3.5 lg:sticky lg:top-28 lg:gap-5">
+          <Eyebrow>{t.faq.eyebrow}</Eyebrow>
+          <h2
+            className={cn(
+              lpDisplay,
+              "text-[36px] font-bold leading-[1.05] tracking-[-0.035em] text-[var(--lp-ink)] lg:text-[54px] lg:leading-[1.04]",
+            )}
+          >
+            {t.faq.title}
+          </h2>
+          <p className="hidden text-[17px] leading-[1.6] text-[var(--lp-muted)] lg:block">
+            {t.faq.aside}
+          </p>
+          <DemoButton className="hidden items-center gap-2 self-start rounded-md text-[16px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:inline-flex">
+            {t.hero.ctaSecondary}
+            <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+          </DemoButton>
+        </div>
+        <div className="flex flex-col gap-2.5 lg:gap-3">
+          {t.faq.items.map((item, index) => (
+            <details
+              key={item.q}
+              open={index === 0}
+              className="group rounded-[18px] border border-[var(--lp-line-soft)] bg-white p-[18px] open:border-[#d5eae4] open:bg-[var(--lp-paper)] lg:rounded-[20px] lg:px-7 lg:py-6"
+            >
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-left marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:gap-4 [&::-webkit-details-marker]:hidden">
+                <span
+                  className={cn(
+                    lpDisplay,
+                    "text-[18px] font-bold leading-[1.25] tracking-[-0.015em] text-[var(--lp-ink)] lg:text-[21px]",
+                  )}
+                >
                   {item.q}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--muted)] transition duration-300 group-open:rotate-45 group-open:border-[var(--primary)] group-open:text-[var(--primary)]"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#eef3f2] text-[var(--lp-ink)] group-open:bg-[var(--lp-teal-600)] group-open:text-white lg:h-[34px] lg:w-[34px]"
                 >
-                  +
+                  <Plus weight="bold" className="h-3.5 w-3.5 group-open:hidden lg:h-4 lg:w-4" />
+                  <Minus weight="bold" className="hidden h-3.5 w-3.5 group-open:block lg:h-4 lg:w-4" />
                 </span>
               </summary>
-              <p className="mt-4 max-w-[68ch] text-[15px] leading-7 text-[var(--muted)]">{item.a}</p>
+              <p className="mt-2.5 max-w-[640px] text-[15px] leading-[1.55] text-[var(--lp-body)] lg:mt-3 lg:text-[16.5px] lg:leading-[1.6]">
+                {item.a}
+              </p>
             </details>
           ))}
+        </div>
+        {/* Below lg the aside and link follow the accordion instead of
+            crowding the heading. */}
+        <div className="flex flex-col gap-3 lg:hidden">
+          <p className="text-[15px] leading-[1.55] text-[var(--lp-muted)]">{t.faq.aside}</p>
+          <DemoButton className="inline-flex items-center gap-2 self-start rounded-md text-[15.5px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]">
+            {t.hero.ctaSecondary}
+            <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+          </DemoButton>
         </div>
       </div>
     </section>
   );
 }
 
-
-
 export function FinalCTA() {
   const { t } = useLanguage();
   const { hasPage } = useLandingActions();
   const primaryLabel = usePrimaryCtaLabel();
+
   return (
-    <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-24 sm:px-8 lg:py-28">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(26,115,232,0.95),rgba(79,142,241,0.92))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule haab-slot-rule-fade pointer-events-none absolute inset-x-0 top-0 h-12 text-white"
-      />
-      <div className="relative mx-auto max-w-[920px] text-center">
-        <h2 className="text-balance text-4xl font-semibold tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.4rem]">
-          {t.finalCta.title}
-        </h2>
-        <p className="mt-5 text-lg leading-8 text-white/85">
-          {hasPage ? t.finalCta.ownerBody : t.finalCta.body}
-        </p>
-        <div className="mt-9 flex flex-col items-center gap-4">
-          <StartButton className="inline-flex items-center justify-center rounded-lg bg-white px-8 py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white/90">
-            {primaryLabel}
-          </StartButton>
-          {hasPage ? null : (
-            <p className="text-sm !text-white/70">{t.finalCta.fineprint}</p>
-          )}
+    <section
+      id="early-access"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 pb-[72px] sm:px-8 lg:pb-[120px]")}
+    >
+      <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[var(--lp-teal-700)] px-6 py-12 text-white sm:px-10 lg:rounded-[36px] lg:px-20 lg:py-[88px]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="lp-dot-grid-light absolute inset-0" />
+          <div className="absolute -right-[140px] -top-[140px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(closest-side,rgba(104,250,221,0.45),transparent)] lg:-right-[140px] lg:-top-[180px] lg:h-[520px] lg:w-[520px]" />
+          <div className="absolute -bottom-[220px] left-[38%] hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(26,107,224,0.45),transparent)] lg:block" />
+        </div>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+          <div className="flex flex-col gap-3 lg:gap-4">
+            <h2
+              className={cn(
+                lpDisplay,
+                "text-[44px] font-bold leading-none tracking-[-0.04em] lg:text-[72px]",
+              )}
+            >
+              {t.finalCta.titleLines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </h2>
+            <p className="text-[17px] leading-[1.5] text-[var(--lp-mint-100)] lg:text-[20px]">
+              {hasPage ? t.finalCta.ownerBody : t.finalCta.body}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5 lg:items-end lg:gap-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+              <StartButton
+                className={cn(
+                  lpButtonClass({ variant: "inverse", size: "hero" }),
+                  "w-full text-[17px] sm:w-auto lg:h-[60px] lg:px-[30px] lg:text-[18px]",
+                )}
+              >
+                {primaryLabel}
+                <ArrowRight aria-hidden="true" weight="bold" className="h-[18px] w-[18px]" />
+              </StartButton>
+              <DemoButton
+                className={cn(
+                  lpButtonClass({ variant: "ghost-inverse", size: "hero" }),
+                  "w-full text-[17px] sm:w-auto lg:h-[60px] lg:px-[26px] lg:text-[18px]",
+                )}
+              >
+                {t.hero.ctaSecondary}
+              </DemoButton>
+            </div>
+            {hasPage ? null : (
+              <p className="text-center text-[14px] text-[var(--lp-mint-100)] lg:text-[15px]">
+                {t.finalCta.fineprint}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -719,61 +683,64 @@ export function Footer({
   showUseCases?: boolean;
   anchorsGoHome?: boolean;
 } = {}) {
-  const { lang, t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
+  const linkClass =
+    "rounded-sm text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]";
+  const headingClass = cn(lpMono, "text-[11.5px] uppercase tracking-[0.14em] text-[var(--lp-mint-300)] lg:text-[12px]");
+
   return (
-    <footer className="border-t border-[var(--line)] bg-[var(--band-tint)] px-5 py-14 sm:px-8">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <Link href="/" className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-sm font-bold text-white">
-                H
-              </span>
-              <span className="text-base font-semibold text-[var(--ink)]">{t.nav.brand}</span>
-            </Link>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--muted)]">
+    <footer className={cn(lpBody, "bg-[var(--lp-night)] px-5 pb-10 pt-14 text-[var(--lp-night-ink)] sm:px-8 lg:pb-12 lg:pt-20")}>
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-9 lg:gap-14">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr] lg:gap-12">
+          <div className="col-span-2 flex flex-col items-start gap-3.5 lg:col-span-1 lg:gap-4">
+            <BrandLink label={t.nav.brand} onNight />
+            <p className="max-w-[320px] text-[15px] leading-[1.6] text-[#9fb2c3] lg:text-[16px]">
               {t.footer.tagline}
             </p>
+            {/* Phones get the action under the tagline; wider screens keep it in
+                the last column. */}
+            {hasPage ? null : (
+              <StartButton className={cn(footerCtaClass, "lg:hidden")}>
+                {t.footer.createLink.replace(/\s*→\s*$/, "")}
+                <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+              </StartButton>
+            )}
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ink)]">
-              {t.footer.productHeading}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <div className="flex flex-col gap-3">
+            <p className={headingClass}>{t.footer.productHeading}</p>
+            <ul className="flex flex-col gap-3">
               <li>
-                <a href={anchor("how")} className="hover:text-[var(--ink)]">
+                <a href={anchor("how")} className={linkClass}>
                   {t.footer.product.how}
                 </a>
               </li>
               <li>
-                <a href={anchor("features")} className="hover:text-[var(--ink)]">
+                <a href={anchor("features")} className={linkClass}>
                   {t.footer.product.features}
                 </a>
               </li>
               {showUseCases ? (
                 <li>
-                  <a href={anchor("verticals")} className="hover:text-[var(--ink)]">
+                  <a href={anchor("verticals")} className={linkClass}>
                     {t.footer.product.useCases}
                   </a>
                 </li>
               ) : null}
               <li>
-                <a href={tryBookingPath(lang)} className="text-left hover:text-[var(--ink)]">
+                <a href={tryBookingPath(lang)} className={linkClass}>
                   {t.footer.product.seeLivePage}
                 </a>
               </li>
               <AccountEntryListItem />
             </ul>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ink)]">
-              {t.footer.companyHeading}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <div className="flex flex-col gap-3">
+            <p className={headingClass}>{t.footer.companyHeading}</p>
+            <ul className="flex flex-col gap-3">
               <li>
-                <a href={anchor("early-access")} className="hover:text-[var(--ink)]">
+                <a href={anchor("early-access")} className={linkClass}>
                   {t.footer.company.pricing}
                 </a>
               </li>
@@ -781,30 +748,44 @@ export function Footer({
                   checks they are reachable from the app itself, not only by
                   their bare URLs. */}
               <li>
-                <Link href={`/privacy?lang=${lang}`} className="hover:text-[var(--ink)]">
+                <Link href={`/privacy?lang=${lang}`} className={linkClass}>
                   {t.footer.company.privacy}
                 </Link>
               </li>
               <li>
-                <Link href={`/terms?lang=${lang}`} className="hover:text-[var(--ink)]">
+                <Link href={`/terms?lang=${lang}`} className={linkClass}>
                   {t.footer.company.terms}
                 </Link>
               </li>
             </ul>
           </div>
+          <div className="col-span-2 hidden flex-col items-start gap-4 lg:col-span-1 lg:flex">
+            {hasPage ? null : (
+              <>
+                <p className={headingClass}>{t.footer.getStarted}</p>
+                <StartButton className={footerCtaClass}>
+                  {t.footer.createLink.replace(/\s*→\s*$/, "")}
+                  <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+                </StartButton>
+              </>
+            )}
+            <LangPill lang={lang} onChange={setLang} variant="night" long />
+          </div>
         </div>
-        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-[var(--line)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center">
+        {/* Phones: the language switch sits above the rule, not in a column. */}
+        <div className="lg:hidden">
+          <LangPill lang={lang} onChange={setLang} variant="night" long />
+        </div>
+        <div className="border-t border-[var(--lp-night-line)] pt-[22px] text-[13px] leading-[1.5] text-[var(--lp-night-muted)] lg:pt-7 lg:text-[14px]">
           <p>{t.footer.copyright}</p>
-          {hasPage ? null : (
-            <StartButton className="font-semibold text-[var(--primary)] hover:underline">
-              {t.footer.createLink}
-            </StartButton>
-          )}
         </div>
       </div>
     </footer>
   );
 }
+
+const footerCtaClass =
+  "inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-full bg-[var(--lp-teal-400)] px-[22px] text-[16px] font-bold text-[var(--lp-teal-on-400)] transition hover:bg-[var(--lp-mint-300)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-night)] active:translate-y-px";
 
 // Full marketing landing. `afterHero` is slotted directly below the hero — the
 // host (HomeExperience) injects the verticals picker or the "go to dashboard"
