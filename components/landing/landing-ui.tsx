@@ -19,10 +19,13 @@ import { LiveDemoDialog } from "./live-demo-dialog";
 import { DemoGrid } from "./demo-card";
 import { formatDemoCount } from "./demo-count";
 import { FactStrip } from "./fact-strip";
+import { GoogleIntegration } from "./google-integration";
 import { HowItWorks } from "./how-it-works";
+import { Features } from "./night-features";
 import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
 import { LangPill } from "./lang-pill";
 import { Reveal } from "./reveal";
+import { Trust } from "./trust";
 import {
   CheckChip,
   LandingScope,
@@ -239,12 +242,6 @@ function AccountEntry({ className }: { className: string }) {
   );
 }
 
-// Secondary actions read as links with a rule under them. Only the one action
-// that starts a page is allowed a filled button, so nothing competes with it.
-const secondaryLinkClass =
-  "inline-flex items-center border-b border-[var(--primary)] pb-0.5 text-sm font-semibold text-[var(--primary)] transition hover:border-[var(--ink)] hover:text-[var(--ink)]";
-
-
 const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
 
 function tryBookingPath(lang: "en" | "es") {
@@ -263,51 +260,7 @@ export function galleryPath(lang: "en" | "es") {
   return `/gallery?lang=${lang}`;
 }
 
-export { DemoGrid, formatDemoCount };
-
-function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
-  const toneClass =
-    tone === "teal"
-      ? "from-[rgba(13,148,136,0.16)] to-[rgba(26,115,232,0.06)] text-[var(--teal)]"
-      : tone === "gold"
-        ? "from-[rgba(217,119,6,0.16)] to-[rgba(26,115,232,0.05)] text-[#b45309]"
-        : "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]";
-
-  return (
-    <div
-      aria-hidden="true"
-      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${toneClass}`}
-    >
-      {label}
-    </div>
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-function GlassCard({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
+export { DemoGrid, GoogleIntegration, formatDemoCount };
 
 /**
  * Which band a heading is being set on, so its type and rules pick the right
@@ -689,163 +642,6 @@ export function LiveExamples({ featured }: { featured: number[] }) {
             {formatDemoCount(t.liveExamples.note, DEMO_PAGES.length)}
           </p>
         </div>
-      </div>
-    </section>
-  );
-}
-
-export function Features() {
-  const { t } = useLanguage();
-  const meta = [
-    { glyph: "0", tone: "blue" as const },
-    { glyph: "H", tone: "gold" as const },
-    { glyph: "3", tone: "teal" as const },
-    { glyph: "#", tone: "teal" as const },
-    { glyph: "↗", tone: "blue" as const },
-  ];
-  return (
-    <section
-      id="features"
-      className="scroll-mt-20 bg-[var(--band-tint)] px-5 py-20 sm:px-8 sm:py-24"
-    >
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.features.eyebrow} title={t.features.title} />
-        {/* Five equal cards say all five matter equally. The first one is the
-            reason the product exists, so it gets the width and the larger
-            type; the rest fall in behind it. */}
-        <Reveal className="mt-14 grid gap-4 md:grid-cols-2">
-          {t.features.items.map((f, i) => (
-            <GlassCard
-              key={f.title}
-              className={cn(
-                "flex flex-col gap-4 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
-                i === 0 && "md:col-span-2 md:p-8",
-              )}
-            >
-              <div className={cn("flex items-start gap-4", i === 0 && "md:gap-5")}>
-                <BrandGlyph label={meta[i].glyph} tone={meta[i].tone} />
-                <div>
-                  <h3
-                    className={cn(
-                      "font-semibold tracking-[-0.02em] text-[var(--ink)]",
-                      i === 0 ? "text-xl md:text-3xl" : "text-xl",
-                    )}
-                  >
-                    {f.title}
-                  </h3>
-                  <p
-                    className={cn(
-                      "mt-2 leading-7 text-[var(--muted)]",
-                      i === 0 ? "text-[15px] md:max-w-2xl md:text-lg md:leading-8" : "text-[15px]",
-                    )}
-                  >
-                    {f.body}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-auto font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-                {f.tag}
-              </p>
-            </GlassCard>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-
-
-
-
-/**
- * Reliability, privacy, and scope. Every claim here describes behavior that
- * ships today; the last item names what does not, which is the part that makes
- * the other three believable while the product is in early access.
- */
-/**
- * The Google Calendar integration, explained on the home page.
- *
- * Not a marketing section. Google's OAuth review reads the home page of any app
- * requesting a sensitive scope and checks that the page explains what the app
- * does and why it needs that access; this one was rejected for "does not
- * explain the purpose of your app" while the page said nothing about Google at
- * all. The claims here mirror lib/legal/content.ts and the behaviour in
- * lib/google/, and components/landing/__tests__/google-disclosure.test.tsx
- * pins the parts the review depends on.
- */
-export function GoogleIntegration() {
-  const { lang, t } = useLanguage();
-  return (
-    <section
-      id="google-calendar"
-      className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24"
-    >
-      {/* Two columns rather than another three-across row of cards: the
-          explanation stays alongside the claims it covers as they scroll. */}
-      <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <SectionHeading
-            eyebrow={t.googleIntegration.eyebrow}
-            title={t.googleIntegration.title}
-            align="left"
-          />
-          <p className="mt-5 max-w-[52ch] text-[15px] leading-7 text-[var(--muted)]">
-            {t.googleIntegration.purpose}
-          </p>
-          <Link
-            href={`/privacy?lang=${lang}#google`}
-            className={cn(secondaryLinkClass, "mt-7")}
-          >
-            {t.googleIntegration.privacyLink}
-          </Link>
-        </div>
-        <Reveal className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
-          {t.googleIntegration.items.map((item) => (
-            <div key={item.title} className="py-7 first:pt-0 last:pb-0 sm:py-8">
-              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
-                {item.title}
-              </h3>
-              <p className="mt-2.5 max-w-[62ch] text-[15px] leading-7 text-[var(--muted)]">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-export function Trust() {
-  const { t } = useLanguage();
-
-  return (
-    /* The page's one dark stop. Trust used to render exactly like the Google
-       section directly above it — same hairline grid, same three cells — so
-       the two read as one long panel. Dropping the cards here and letting the
-       claims sit on the night band separates them and gives the scroll a
-       floor to land on before the closing CTA. */
-    <section
-      id="trust"
-      className="relative scroll-mt-20 overflow-hidden bg-[var(--night)] px-5 py-20 sm:px-8 sm:py-28"
-    >
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule haab-slot-rule-fade absolute inset-x-0 top-0 h-10 text-[var(--secondary-fixed)]"
-      />
-      <div className="relative mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} tone="night" />
-        <Reveal className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
-          {t.trust.items.map((item) => (
-            <div key={item.title} className="border-t border-[var(--night-line)] pt-6">
-              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--night-ink)]">
-                {item.title}
-              </h3>
-              <p className="mt-3 text-[15px] leading-7 text-[var(--night-muted)]">{item.body}</p>
-            </div>
-          ))}
-        </Reveal>
       </div>
     </section>
   );

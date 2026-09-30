@@ -311,8 +311,21 @@ export const translations = {
       },
     },
     features: {
-      eyebrow: "Por qué se siente diferente",
-      title: "Tres decisiones que notarás la primera semana.",
+      eyebrow: "Por qué se siente distinto",
+      title: "Una sola página que se adapta a tu forma de trabajar.",
+      modes: [
+        { label: "Hora de consultoría", pill: "Cita" },
+        { label: "Salón para un sábado", pill: "Día completo" },
+        { label: "Cuarenta lugares en una clase", pill: "Boletos" },
+      ],
+      words: ["Pacientes", "Invitados", "Clientes", "Asistentes", "Comensales"],
+      wordsExample: "“Patient” · “Paciente”",
+      selfService: {
+        lock: "Enlace privado · solo para esta reserva",
+        when: "Mar 29 sep · 9:00 AM",
+        reschedule: "Reagendar",
+        cancel: "Cancelar",
+      },
       items: [
         {
           title: "Citas, días completos y boletos en una página.",
@@ -382,11 +395,21 @@ export const translations = {
           body: "Los eventos llevan el nombre del servicio y nada más. El nombre, correo, teléfono y notas de un cliente nunca se escriben en Google, porque un calendario puede compartirse y Haab no decide quién puede leerlos.",
         },
       ],
+      visual: {
+        calendar: "Tu Google Calendar",
+        day: "Mar 29",
+        busy: "Ocupado: ya está en tu calendario",
+        event: "Consulta para pacientes nuevos",
+        eventNote: "Solo el nombre del servicio",
+        stays: "Se queda en Haab",
+        fields: ["Nombre del cliente", "Correo", "Teléfono", "Notas"],
+      },
       privacyLink: "Cómo tratamos los datos de Google →",
     },
     trust: {
-      eyebrow: "Confianza",
+      eyebrow: "Confianza y privacidad",
       title: "Hecho para cuidar un calendario real.",
+      intro: "Sobre todo cuando el calendario es de una clínica y quienes reservan son pacientes.",
       items: [
         {
           title: "Decide el servidor, no el navegador.",
@@ -768,7 +791,20 @@ export const translations = {
     },
     features: {
       eyebrow: "Why it feels different",
-      title: "Three decisions you will notice in week one.",
+      title: "One page that fits the way you actually work.",
+      modes: [
+        { label: "Consulting hour", pill: "Appointment" },
+        { label: "Venue for a Saturday", pill: "Full day" },
+        { label: "Forty seats at a class", pill: "Tickets" },
+      ],
+      words: ["Patients", "Guests", "Clients", "Attendees", "Diners"],
+      wordsExample: "“Patient” · “Paciente”",
+      selfService: {
+        lock: "Private link · only for this booking",
+        when: "Tue 29 Sep · 9:00 AM",
+        reschedule: "Reschedule",
+        cancel: "Cancel",
+      },
       items: [
         {
           title: "Appointments, full days, and tickets on one page.",
@@ -838,11 +874,21 @@ export const translations = {
           body: "Events carry the service name and nothing else. A client's name, email, phone, and notes are never written to Google, because a calendar can be shared and Haab does not decide who may read them.",
         },
       ],
+      visual: {
+        calendar: "Your Google Calendar",
+        day: "Tue 29",
+        busy: "Busy — already on your calendar",
+        event: "New patient consultation",
+        eventNote: "Service name only",
+        stays: "Stays in Haab",
+        fields: ["Client name", "Email", "Phone", "Notes"],
+      },
       privacyLink: "How we handle Google data →",
     },
     trust: {
-      eyebrow: "Trust",
+      eyebrow: "Trust & privacy",
       title: "Built to be trusted with a real calendar.",
+      intro: "Especially when the calendar belongs to a clinic, and the people booking are patients.",
       items: [
         {
           title: "The server decides, not the browser.",
