@@ -18,12 +18,15 @@ export function LanguageSwitcher({
   onChange,
   hrefFor,
   tone = "floating",
+  compact = false,
   className = "",
 }: {
   lang: Lang;
   onChange?: (lang: Lang) => void;
   hrefFor?: (lang: Lang) => string;
   tone?: "floating" | "inset";
+  /** Short "EN | ES" labels below `sm`, for a header with little room. */
+  compact?: boolean;
   className?: string;
 }) {
   const t = bookingTranslations[lang];
@@ -45,6 +48,16 @@ export function LanguageSwitcher({
         const active = lang === language;
         const label =
           language === "en" ? t.language.english : t.language.spanish;
+        const content = compact ? (
+          <>
+            <span aria-hidden="true" className="sm:hidden">
+              {language.toUpperCase()}
+            </span>
+            <span className="hidden sm:inline">{label}</span>
+          </>
+        ) : (
+          label
+        );
         const actionLabel =
           language === "en"
             ? t.language.switchToEnglish
@@ -67,7 +80,7 @@ export function LanguageSwitcher({
               aria-current={active ? "page" : undefined}
               className={cn(classes, "inline-flex items-center justify-center")}
             >
-              {label}
+              {content}
             </Link>
           );
         }
@@ -81,7 +94,7 @@ export function LanguageSwitcher({
             onClick={() => onChange?.(language)}
             className={classes}
           >
-            {label}
+            {content}
           </button>
         );
       })}

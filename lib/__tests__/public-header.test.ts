@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatTimeZoneLabel,
+  getBusinessMonogram,
   resolvePublicHeaderSlot,
+  resolveTimeZoneChip,
   shouldShowProviderNameVisually,
 } from "../public-header";
 import { getVerticalCopy } from "../vertical-copy";
@@ -126,5 +128,58 @@ describe("resolvePublicHeaderSlot", () => {
 
     expect(events.text).toContain("Registros");
     expect(healthcare.text).toContain("Appointments");
+  });
+});
+
+describe("getBusinessMonogram", () => {
+  it("takes the first letter of the first two words", () => {
+    expect(getBusinessMonogram("Rivera Family Medicine")).toBe("RF");
+  });
+
+  it("uses one letter for a one-word name", () => {
+    expect(getBusinessMonogram("Patitas")).toBe("P");
+  });
+
+  it("skips words that carry no letter", () => {
+    expect(getBusinessMonogram("Smith & Sons")).toBe("SS");
+  });
+
+  it("upper-cases and keeps accented and non-latin letters whole", () => {
+    expect(getBusinessMonogram("  ángel  ñandú ")).toBe("ÁÑ");
+    expect(getBusinessMonogram("東京 クリニック")).toBe("東ク");
+  });
+
+  it("is empty when there is no name", () => {
+    expect(getBusinessMonogram(undefined)).toBe("");
+    expect(getBusinessMonogram("  ")).toBe("");
+  });
+});
+
+describe("resolveTimeZoneChip", () => {
+  const winter = new Date("2026-01-15T12:00:00Z");
+
+  it("splits the place from the offset", () => {
+    expect(resolveTimeZoneChip("America/New_York", "en", winter)).toEqual({
+      city: "New York",
+      offset: "GMT-5",
+    });
+  });
+
+  it("names the place in the page's language", () => {
+    expect(resolveTimeZoneChip("America/Mexico_City", "es", winter)?.city).toBe(
+      "Ciudad de México",
+    );
+  });
+
+  it("falls back to the zone's own city when it is not curated", () => {
+    expect(resolveTimeZoneChip("America/Argentina/Salta", "en", winter)?.city).toBe(
+      "Salta",
+    );
+  });
+
+  it("says nothing for a missing, invalid or default zone", () => {
+    expect(resolveTimeZoneChip(undefined)).toBeNull();
+    expect(resolveTimeZoneChip("Not/AZone")).toBeNull();
+    expect(resolveTimeZoneChip("UTC")).toBeNull();
   });
 });

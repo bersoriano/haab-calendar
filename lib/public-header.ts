@@ -1,7 +1,10 @@
 import {
+  findTimeZoneEntry,
   formatTimeZoneChoice,
+  formatTimeZoneOffset,
   isUnsetTimeZone,
   normalizeTimeZone,
+  prettifyTimeZoneId,
 } from "./timezone";
 import type { Lang } from "./types";
 
@@ -57,6 +60,42 @@ export function formatTimeZoneLabel(
   }
 
   return formatTimeZoneChoice(zone, lang, now);
+}
+
+/**
+ * The place and the offset, kept apart so the header can lay them out as a chip
+ * ("Times in New York · GMT-4") instead of the single parenthesised label.
+ * Follows the same rules as {@link formatTimeZoneLabel}: an unset, default or
+ * unsupported zone yields nothing rather than a wrong label.
+ */
+export function resolveTimeZoneChip(
+  timeZone: string | undefined,
+  lang: Lang = "en",
+  now: Date = new Date(),
+): { city: string; offset: string } | null {
+  const zone = normalizeTimeZone(timeZone);
+
+  if (!zone || isUnsetTimeZone(zone)) {
+    return null;
+  }
+
+  const city = findTimeZoneEntry(zone)?.city[lang] ?? prettifyTimeZoneId(zone);
+
+  return { city, offset: formatTimeZoneOffset(zone, lang, now) };
+}
+
+/**
+ * The initials on the header's monogram tile: the first letter of the first two
+ * words of the business name. Words with no letter or digit in them ("&", "-")
+ * are skipped so "Smith & Sons" reads "SS", not "S&".
+ */
+export function getBusinessMonogram(name: string | undefined): string {
+  const words = (name ?? "")
+    .split(/\s+/)
+    .map((word) => Array.from(word).find((char) => /[\p{L}\p{N}]/u.test(char)))
+    .filter((char): char is string => Boolean(char));
+
+  return words.slice(0, 2).join("").toLocaleUpperCase();
 }
 
 /**

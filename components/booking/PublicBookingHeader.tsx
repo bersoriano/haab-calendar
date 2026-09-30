@@ -5,7 +5,9 @@ import type { ReactNode } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   formatTimeZoneLabel,
+  getBusinessMonogram,
   resolvePublicHeaderSlot,
+  resolveTimeZoneChip,
   shouldShowProviderNameVisually,
 } from "@/lib/public-header";
 import type { Lang } from "@/lib/types";
@@ -39,6 +41,9 @@ const slotToneClass = {
   error: "text-[#be123c]",
 } as const;
 
+const headerChipClass =
+  "inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,255,255,0.8)] px-2.5 py-1 text-xs font-medium text-[#3c4043] sm:text-[12.5px]";
+
 export function PublicBookingHeader({
   businessName,
   serviceName,
@@ -51,6 +56,7 @@ export function PublicBookingHeader({
   warningMessage,
   languageChooser,
   lang = "en",
+  variant = "classic",
   className,
 }: {
   businessName?: string;
@@ -68,6 +74,12 @@ export function PublicBookingHeader({
   /** Rendered at the band's top right; the module owns the control itself. */
   languageChooser?: ReactNode;
   lang?: Lang;
+  /**
+   * `classic` is the band as it always was and stays the default, so the
+   * embedded surface is untouched. `enhanced` is the dedicated page's band:
+   * a monogram, a name that wraps, and chips in place of the mono meta line.
+   */
+  variant?: "classic" | "enhanced";
   /**
    * The band's own inset. The embedded surface already sits inside a padded
    * container; the dedicated page does not, and has to match the gutter its
@@ -90,6 +102,135 @@ export function PublicBookingHeader({
     errorMessage,
     warningMessage,
   });
+
+  if (variant === "enhanced") {
+    const monogram = getBusinessMonogram(name);
+    const zoneChip = resolveTimeZoneChip(providerTimeZone, lang);
+    const zoneText = zoneChip
+      ? `${t.publicFlow.headerTimesIn.replace("{city}", zoneChip.city)}${
+          zoneChip.offset ? ` · ${zoneChip.offset}` : ""
+        }`
+      : "";
+
+    return (
+      <div
+        className={cn(
+          "grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-[28px] border border-[rgba(255,255,255,0.6)] bg-[var(--panel-glass-55)] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_18px_42px_rgba(25,28,29,0.07)] backdrop-blur-[20px] [-webkit-backdrop-filter:blur(20px)] sm:gap-x-4 sm:gap-y-0 sm:px-[26px] sm:py-5 xl:px-8",
+          className,
+        )}
+      >
+        {logo ? (
+          // eslint-disable-next-line @next/next/no-img-element -- remote Blob URL
+          <img
+            src={logo}
+            alt={
+              name
+                ? `${name} — ${t.publicFlow.providerLogoAlt}`
+                : logoAltFallback ?? t.publicFlow.providerLogoAlt
+            }
+            className="col-start-1 row-start-1 h-11 w-auto max-w-[9rem] self-center object-contain object-left sm:h-16 sm:max-w-[18rem]"
+          />
+        ) : monogram ? (
+          <span
+            aria-hidden="true"
+            className="col-start-1 row-start-1 flex h-11 w-11 items-center justify-center self-center rounded-[14px] bg-[linear-gradient(135deg,var(--accent),var(--action-teal))] text-base font-bold tracking-[-0.02em] text-white shadow-[0_10px_22px_rgba(26,115,232,0.28)] sm:h-[54px] sm:w-[54px] sm:rounded-[17px] sm:text-[19px]"
+          >
+            {monogram}
+          </span>
+        ) : null}
+
+        {/* On a phone this wrapper dissolves, so the name sits beside the tile
+            and the language switch while the chips take the row beneath; from
+            `sm` it is one column beside the tile. */}
+        <div className="contents sm:col-start-2 sm:row-start-1 sm:flex sm:min-w-0 sm:flex-col sm:self-center">
+          <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 self-center sm:col-auto sm:row-auto">
+            {name ? (
+              showNameVisually ? (
+                <h1 className="min-w-0 break-words text-[19px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ink)] sm:text-[24px] sm:leading-[1.1]">
+                  {name}
+                </h1>
+              ) : (
+                <h1 className="sr-only">{name}</h1>
+              )
+            ) : null}
+            {service ? (
+              <span className="max-w-full break-words rounded-full bg-[var(--panel-glass-72)] px-3 py-1 text-xs font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.55)] sm:text-[0.8125rem]">
+                {service}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="col-span-3 flex flex-wrap gap-1.5 sm:mt-2 sm:gap-2">
+            {zoneText ? (
+              <span className={headerChipClass}>
+                <svg
+                  aria-hidden="true"
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="var(--accent)"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="hidden shrink-0 sm:block"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                {zoneText}
+              </span>
+            ) : null}
+            <span className={headerChipClass}>
+              <svg
+                aria-hidden="true"
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#00897b"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="hidden shrink-0 sm:block"
+              >
+                <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              {t.publicFlow.headerNoAccount}
+            </span>
+          </div>
+
+          {/* Always mounted so assistive tech hears the change; only the busy,
+              warning and error states have anything to say. Sentence case and
+              free to wrap, because a failure is the one line that has to be
+              read in full. */}
+          <p
+            aria-live="polite"
+            className={cn(
+              "col-span-3 min-w-0 break-words text-sm font-medium leading-5 transition-colors duration-200",
+              // Idle has no text; taking it out of flow keeps it from holding
+              // an empty grid row (and its gap) open.
+              slot.tone === "idle" ? "sr-only" : "sm:mt-2",
+              slotToneClass[slot.tone],
+            )}
+          >
+            {slot.tone === "pending" ? (
+              <span
+                aria-hidden="true"
+                className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-current align-middle [animation:haab-live-pulse_1.2s_ease-in-out_infinite]"
+              />
+            ) : null}
+            {slot.tone === "idle" ? null : slot.text}
+          </p>
+        </div>
+
+        {languageChooser ? (
+          <div className="col-start-3 row-start-1 shrink-0 self-center">{languageChooser}</div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     // The same frosted material the sticky bar uses. Every other panel on the
