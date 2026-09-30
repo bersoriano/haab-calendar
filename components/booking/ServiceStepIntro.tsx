@@ -68,7 +68,7 @@ export function ServiceStepIntro({
 
       <ol
         aria-label={t.publicFlow.progressLabel}
-        className="relative m-0 hidden list-none items-center gap-2 p-0 text-[13px] font-semibold lg:flex"
+        className="relative m-0 hidden shrink-0 list-none items-center gap-2 whitespace-nowrap p-0 text-[13px] font-semibold lg:flex"
       >
         {steps.flatMap((step, index) => {
           const current = index === 0;

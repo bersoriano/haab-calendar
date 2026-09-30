@@ -42,7 +42,7 @@ const slotToneClass = {
 } as const;
 
 const headerChipClass =
-  "inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,255,255,0.8)] px-2.5 py-1 text-xs font-medium text-[#3c4043] sm:text-[12.5px]";
+  "inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,255,255,0.8)] px-[9px] py-1 text-[12px] font-medium text-[#3c4043] sm:px-2.5 sm:text-[12.5px]";
 
 export function PublicBookingHeader({
   businessName,
@@ -143,7 +143,7 @@ export function PublicBookingHeader({
             and the language switch while the chips take the row beneath; from
             `sm` it is one column beside the tile. */}
         <div className="contents sm:col-start-2 sm:row-start-1 sm:flex sm:min-w-0 sm:flex-col sm:self-center">
-          <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 self-center sm:col-auto sm:row-auto">
+          <div className="col-start-2 row-start-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1.5 self-center sm:col-auto sm:row-auto sm:self-start">
             {name ? (
               showNameVisually ? (
                 <h1 className="min-w-0 break-words text-[19px] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--ink)] sm:text-[24px] sm:leading-[1.1]">
