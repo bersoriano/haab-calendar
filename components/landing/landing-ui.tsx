@@ -1,23 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { List } from "@phosphor-icons/react";
+import { ArrowRight, List, Minus, Plus } from "@phosphor-icons/react";
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
-import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { DEMO_PAGES } from "@/lib/demo-pages";
 import { resolveLandingAccountEntry } from "@/lib/landing-account-entry";
 import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { LiveDemoDialog } from "./live-demo-dialog";
+import { BrandLink } from "./brand";
+import { DemoGrid } from "./demo-card";
+import { formatDemoCount } from "./demo-count";
+import { FactStrip } from "./fact-strip";
+import { GoogleIntegration } from "./google-integration";
+import { HowItWorks } from "./how-it-works";
+import { Features } from "./night-features";
+import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
+import { LangPill } from "./lang-pill";
+import { Reveal } from "./reveal";
+import { Trust } from "./trust";
+import {
+  CheckChip,
+  LandingScope,
+  Eyebrow,
+  LpButton,
+  SectionHeading as LpSectionHeading,
+  lpBody,
+  lpButtonClass,
+  lpDisplay,
+  lpMono,
+} from "./primitives";
 import { StartPageDialog } from "./start-page-dialog";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
@@ -202,7 +222,7 @@ function AccountEntryListItem() {
 
   return (
     <li>
-      <AccountEntry className="text-left hover:text-[var(--ink)]" />
+      <AccountEntry className="inline-flex min-h-11 items-center rounded-sm text-left text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]" />
     </li>
   );
 }
@@ -225,22 +245,6 @@ function AccountEntry({ className }: { className: string }) {
   );
 }
 
-const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-lg bg-[var(--ink)] px-7 py-3 text-sm font-semibold !text-white transition hover:bg-[var(--ink)]/90 active:translate-y-px";
-
-// Secondary actions read as links with a rule under them. Only the one action
-// that starts a page is allowed a filled button, so nothing competes with it.
-const secondaryLinkClass =
-  "inline-flex items-center border-b border-[var(--primary)] pb-0.5 text-sm font-semibold text-[var(--primary)] transition hover:border-[var(--ink)] hover:text-[var(--ink)]";
-
-
-const sectionPadding = "px-5 py-20 sm:px-8 sm:py-24 lg:py-28";
-const liveExamplePaths = DEMO_PAGES.map(getDemoPagePath);
-
-function localizedExamplePath(path: string, lang: "en" | "es") {
-  return `${path}?lang=${lang}`;
-}
-
 function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
 }
@@ -257,207 +261,7 @@ export function galleryPath(lang: "en" | "es") {
   return `/gallery?lang=${lang}`;
 }
 
-/**
- * How many examples there are is written once, in DEMO_PAGES. Copy that names
- * the number carries a {n} placeholder instead, because a hand-written count
- * goes stale the moment a demo is added.
- */
-export function formatDemoCount(template: string, count: number) {
-  return template.replace("{n}", String(count));
-}
-
-function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
-  const toneClass =
-    tone === "teal"
-      ? "from-[rgba(13,148,136,0.16)] to-[rgba(26,115,232,0.06)] text-[var(--teal)]"
-      : tone === "gold"
-        ? "from-[rgba(217,119,6,0.16)] to-[rgba(26,115,232,0.05)] text-[#b45309]"
-        : "from-[rgba(26,115,232,0.16)] to-[rgba(13,148,136,0.07)] text-[var(--primary)]";
-
-  return (
-    <div
-      aria-hidden="true"
-      className={`grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-sm font-bold ${toneClass}`}
-    >
-      {label}
-    </div>
-  );
-}
-
-
-
-
-
-
-
-
-
-
-
-function GlassCard({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-6 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * Fades a section in the first time it reaches the viewport.
- *
- * The hidden class is added by script rather than sitting in the markup, so a
- * visitor whose JS never runs — or whose browser lacks IntersectionObserver —
- * gets the fully visible page instead of an empty one. Reduced motion is
- * handled in CSS, where both reveal classes collapse to "visible, no
- * transition".
- */
-function Reveal({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  const [state, setState] = useState<"idle" | "hidden" | "shown">("idle");
-
-  // A ref callback rather than an effect: the hidden class is only ever
-  // applied to an element that was measured as below the fold, so nothing
-  // already on screen flashes out and back in.
-  const attach = useCallback((node: HTMLDivElement | null) => {
-    if (!node || typeof IntersectionObserver === "undefined") {
-      return;
-    }
-
-    if (node.getBoundingClientRect().top < window.innerHeight) {
-      return;
-    }
-
-    setState("hidden");
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setState("shown");
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "0px 0px -12% 0px" },
-    );
-
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div
-      ref={attach}
-      className={cn(
-        state === "hidden" && "haab-reveal",
-        state === "shown" && "haab-reveal-in",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
-}
-
-/**
- * Which band a heading is being set on, so its type and rules pick the right
- * contrast. Sections used to alternate between `white/70` and `white/55` — a
- * difference nobody can see — so nine of them read as one uninterrupted plane;
- * the bands are now `--band-paper`, `--band-tint`, and the single `--night`
- * stop, and only that last one changes the heading's colours.
- */
-type BandTone = "paper" | "night";
-
-/**
- * An eyebrow, set in the mono face.
- *
- * Not a stylistic tic: this product is a timetable, and mono is the face a
- * timetable is set in. It also keeps the section indices — 01, 02 — on a
- * fixed advance so they line up down the page.
- */
-function Eyebrow({
-  children,
-  tone = "paper",
-}: {
-  children: ReactNode;
-  tone?: BandTone;
-}) {
-  return (
-    <p
-      className={cn(
-        "flex items-center gap-3 font-mono text-[11px] font-semibold uppercase tracking-[0.22em]",
-        tone === "night" ? "text-[var(--secondary-fixed)]" : "text-[var(--primary)]",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "h-px w-8 shrink-0",
-          tone === "night" ? "bg-[var(--night-line)]" : "bg-[var(--line)]",
-        )}
-      />
-      {children}
-    </p>
-  );
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  body,
-  align = "center",
-  tone = "paper",
-}: {
-  eyebrow?: string;
-  title: string;
-  body?: string;
-  /** Six centred headings in a row is the monotony; alternate them. */
-  align?: "center" | "left";
-  tone?: BandTone;
-}) {
-  const centered = align === "center";
-
-  return (
-    <div className={cn("max-w-3xl", centered && "mx-auto")}>
-      {eyebrow ? (
-        <div className={cn(centered && "justify-center", "flex")}>
-          <Eyebrow tone={tone}>{eyebrow}</Eyebrow>
-        </div>
-      ) : null}
-      <h2
-        className={cn(
-          "mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] sm:text-[2.6rem] lg:text-[3.1rem]",
-          tone === "night" ? "text-[var(--night-ink)]" : "text-[var(--ink)]",
-          centered && "text-center",
-        )}
-      >
-        {title}
-      </h2>
-      {body ? (
-        <p
-          className={cn(
-            "mt-4 text-base leading-7 sm:text-lg",
-            tone === "night" ? "text-[var(--night-muted)]" : "text-[var(--muted)]",
-            centered && "text-center",
-          )}
-        >
-          {body}
-        </p>
-      ) : null}
-    </div>
-  );
-}
+export { DemoGrid, GoogleIntegration, formatDemoCount };
 
 /**
  * True once the hero's action row has scrolled out of view, so the nav's own
@@ -510,73 +314,70 @@ export function StickyNav({
     ...(showUseCases ? [{ href: anchor("verticals"), label: t.nav.links.useCases }] : []),
     { href: anchor("faq"), label: t.nav.links.faq },
   ];
+  const navLinkClass =
+    "inline-flex min-h-11 items-center rounded-md px-1 text-[15.5px] font-semibold text-[var(--lp-ink-2)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[rgba(193,198,214,0.72)] bg-[rgba(248,249,252,0.86)] shadow-[0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-2xl">
-      <div className="mx-auto flex min-h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 py-3 sm:min-h-[80px] sm:px-8 sm:py-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--primary-container)] text-sm font-bold text-white shadow-[0_8px_22px_rgba(26,115,232,0.26)] sm:h-10 sm:w-10">
-            H
-          </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)] max-[379px]:sr-only sm:text-base">
-            {t.nav.brand}
-          </span>
-        </Link>
+    <header
+      className={cn(
+        lpBody,
+        "sticky top-0 z-40 w-full bg-[rgba(243,249,247,0.86)] backdrop-blur-xl",
+      )}
+    >
+      <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
+        <BrandLink label={t.nav.brand} hideLabelOnTiny />
         <nav className="hidden items-center gap-7 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
-            >
+            <a key={link.href} href={link.href} className={navLinkClass}>
               {link.label}
             </a>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:gap-5">
-          <div className="hidden xl:block">
-            <LanguageSwitcher lang={lang} onChange={setLang} />
-          </div>
-          <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
+        <div className="flex shrink-0 items-center gap-2 xl:gap-3.5">
+          <LangPill lang={lang} onChange={setLang} />
+          <AccountEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
           {hasPage ? null : (
-          <StartButton
-            className={cn(
-              "inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ink)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5",
-              // Hidden rather than unmounted: the layout stays put as it appears.
-              heroPassed ? "opacity-100" : "pointer-events-none opacity-0",
-            )}
-          >
-            <span className="sm:hidden">{t.nav.createPageShort}</span>
-            <span className="hidden sm:inline">{t.nav.createPageLong}</span>
-          </StartButton>
+            <StartButton
+              className={cn(
+                lpButtonClass({ variant: "primary", size: "nav" }),
+                // Phones have no room beside the pill and menu; the menu
+                // carries the action there instead.
+                "max-sm:hidden",
+                // Hidden rather than unmounted: the layout stays put as it appears.
+                heroPassed ? "opacity-100" : "pointer-events-none opacity-0",
+              )}
+            >
+              {t.nav.createPageLong}
+              <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+            </StartButton>
           )}
           <details className="group relative xl:hidden">
             <summary
               aria-label={t.nav.openMenu}
-              className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-[var(--line)] bg-white/55 text-[var(--ink)] transition marker:content-none hover:border-[var(--muted)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+              className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-[14px] border border-[#d6e3e0] bg-white text-[var(--lp-ink)] transition marker:content-none hover:border-[var(--lp-teal-600)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]"
             >
               <List aria-hidden="true" weight="bold" className="h-5 w-5" />
             </summary>
             <nav
               aria-label="Mobile"
-              className="absolute right-0 top-full mt-3 w-64 rounded-2xl border border-[var(--line)] bg-[rgba(248,249,252,0.98)] p-2.5 shadow-[0_18px_46px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+              className="absolute right-0 top-full mt-3 w-64 rounded-[20px] border border-[var(--lp-line)] bg-white p-2.5 shadow-[var(--lp-shadow-raised)]"
             >
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="block rounded-xl px-4 py-2.5 text-sm font-medium text-[var(--muted)] transition hover:bg-white hover:text-[var(--ink)]"
+                  className="block rounded-xl px-4 py-3 text-[15px] font-semibold text-[var(--lp-ink-2)] transition hover:bg-[var(--lp-paper)] hover:text-[var(--lp-teal-700)]"
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="mt-1 border-t border-[var(--line)] pt-1.5">
-                <LanguageSwitcher
-                  lang={lang}
-                  onChange={setLang}
-                  className="w-full justify-start"
-                />
-                <AccountEntry className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white" />
+              <div className="mt-1 border-t border-[var(--lp-line-soft)] pt-1.5">
+                {hasPage ? null : (
+                  <StartButton className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-bold text-[var(--lp-teal-700)] transition hover:bg-[var(--lp-paper)] sm:hidden">
+                    {t.nav.createPageLong}
+                  </StartButton>
+                )}
+                <AccountEntry className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-semibold text-[var(--lp-blue-700)] transition hover:bg-[var(--lp-paper)]" />
               </div>
             </nav>
           </details>
@@ -586,6 +387,7 @@ export function StickyNav({
   );
 }
 
+/** The returning-owner line's tail: "Already have a page? Log in". */
 function HeroAccountLine() {
   const entry = useAccountEntry();
   const { hasPage } = useLandingActions();
@@ -597,10 +399,11 @@ function HeroAccountLine() {
   }
 
   return (
-    <p className="mt-2 text-sm text-[var(--muted)]">
+    <>
+      {" "}
       {entry.kind === "login" ? `${t.hero.returningPrompt} ` : ""}
-      <AccountEntry className="font-semibold text-[var(--primary)] underline-offset-4 hover:underline" />
-    </p>
+      <AccountEntry className="font-bold text-[var(--lp-blue-700)] underline-offset-4 hover:underline" />
+    </>
   );
 }
 
@@ -608,102 +411,95 @@ export function Hero() {
   const { t } = useLanguage();
   const { hasPage } = useLandingActions();
   const primaryLabel = usePrimaryCtaLabel();
+  const [lineOne, lineTwo, lineThree] = t.hero.titleLines;
+
   return (
-    <section className="relative overflow-hidden border-b border-[var(--line)] bg-[linear-gradient(145deg,#f5f7fb_0%,#edf4ff_54%,#e9f8f5_100%)]">
-      <div className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(26,115,232,0.16),transparent_68%)]" />
-      <div className="pointer-events-none absolute -bottom-56 left-1/3 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(13,148,136,0.12),transparent_68%)]" />
+    <section className="relative overflow-hidden bg-[var(--lp-paper)] pb-24 lg:pb-32">
+      <HeroBackdrop />
       {/* On phones the preview slots between the headline and the supporting
           copy so the running hold is on screen without scrolling. On large
-          screens it moves into its own column beside the full text block. */}
-      <div className="relative mx-auto grid max-w-[1280px] gap-5 px-5 pb-8 pt-5 sm:gap-6 sm:px-8 sm:py-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-x-14 lg:gap-y-6 lg:py-18">
-        <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
-          <h1 className="mt-3 max-w-3xl text-balance text-[2.1rem] font-semibold leading-[1.05] tracking-[-0.045em] text-[var(--ink)] sm:mt-5 sm:text-5xl lg:text-[3.65rem] lg:leading-[1.02]">
-            {t.hero.title}
+          screens it moves into its own column beside the full text block. The
+          preview's own column carries no landing font class: the booking card
+          keeps Inter. */}
+      <div className="relative mx-auto grid max-w-[1264px] grid-cols-[minmax(0,1fr)] gap-5 px-5 pt-5 sm:px-8 lg:grid-cols-[minmax(0,596fr)_minmax(0,556fr)] lg:items-center lg:gap-x-12 lg:gap-y-7 lg:pt-12">
+        <div className={cn(lpBody, "flex flex-col gap-5 lg:col-start-1 lg:row-start-1 lg:gap-7 lg:self-end")}>
+          <div className="flex items-center gap-2 self-start rounded-full border border-[#cde7e0] bg-white py-[5px] pl-[5px] pr-3 text-[12.5px] font-semibold text-[var(--lp-ink-2)] shadow-[0_4px_14px_rgba(0,105,92,0.08)] lg:gap-2.5 lg:py-1.5 lg:pl-1.5 lg:pr-3.5 lg:text-[14px]">
+            <span className="rounded-full bg-[var(--lp-teal-700)] px-2 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.04em] text-white lg:px-2.5 lg:py-1 lg:text-[12px]">
+              {t.hero.badge}
+            </span>
+            <span className="lg:hidden">{t.hero.badgeTextShort}</span>
+            <span className="hidden lg:inline">{t.hero.badgeText}</span>
+          </div>
+          <h1
+            className={cn(
+              lpDisplay,
+              "flex flex-col gap-0.5 text-[38px] font-bold leading-none tracking-[-0.035em] text-[var(--lp-ink)] sm:text-[44px] lg:gap-1 lg:text-[56px] xl:text-[66px]",
+            )}
+          >
+            <span>{lineOne}</span>
+            <span>{lineTwo}</span>
+            <span className="relative self-start text-[var(--lp-teal-600)]">
+              {lineThree}
+              <HeadlineUnderline />
+            </span>
           </h1>
         </div>
 
-        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center lg:pl-2">
-          <HeroBookingPreview className="mx-auto w-full max-w-[440px] lg:max-w-none" />
-          <p className="mt-3 text-center text-xs text-[var(--muted)] lg:text-left">
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
+          <HeroBookingPreview className="lp-booking-card mx-auto mt-2 w-full max-w-[440px] lg:mt-0 lg:max-w-none" />
+          <p
+            className={cn(
+              lpBody,
+              "mt-2.5 text-center text-[12px] text-[var(--lp-muted)] lg:mt-3 lg:text-left lg:text-[13px]",
+            )}
+          >
             {t.hero.previewCaption}
           </p>
         </div>
 
-        <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
-          <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
+        <div className={cn(lpBody, "flex flex-col gap-5 lg:col-start-1 lg:row-start-2 lg:gap-7 lg:self-start")}>
+          <p className="max-w-[540px] text-pretty text-[17px] leading-[1.55] text-[var(--lp-body)] lg:text-[20px]">
             {t.hero.body}
           </p>
-          <div id="hero-cta-anchor" className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <StartButton className={primaryButtonClass}>{primaryLabel}</StartButton>
-            <DemoButton className={secondaryLinkClass}>
-              <span className="haab-live-dot mr-2 h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
+          <div
+            id="hero-cta-anchor"
+            className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3.5"
+          >
+            <StartButton
+              className={cn(lpButtonClass({ variant: "primary", size: "hero" }), "w-full sm:w-auto")}
+            >
+              {primaryLabel}
+              <ArrowRight aria-hidden="true" weight="bold" className="h-[18px] w-[18px] shrink-0" />
+            </StartButton>
+            <DemoButton
+              className={cn(lpButtonClass({ variant: "secondary", size: "hero" }), "w-full sm:w-auto")}
+            >
+              <span
+                aria-hidden="true"
+                className="haab-live-dot h-2 w-2 rounded-full bg-[var(--lp-teal-400)] shadow-[0_0_0_4px_rgba(31,209,178,0.2)]"
+              />
               {t.hero.ctaSecondary}
             </DemoButton>
           </div>
+          <ul className="flex flex-wrap gap-2 lg:gap-2.5">
+            {t.hero.chips.map((chip) => (
+              <li key={chip}>
+                <CheckChip>{chip}</CheckChip>
+              </li>
+            ))}
+          </ul>
+          {/* The account line rides on the fine print, at the exact moment
+              someone realises the primary CTA is not for them: they already
+              have a page. */}
           {hasPage ? null : (
-            <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
+            <p className="text-[14px] leading-[1.5] text-[var(--lp-muted)] lg:text-[15px]">
+              {t.hero.fineprint}
+              <HeroAccountLine />
+            </p>
           )}
-          {/* Second placement, at the exact moment someone realises the primary
-              CTA is not for them: they already have a page. */}
-          <HeroAccountLine />
         </div>
       </div>
     </section>
-  );
-}
-
-/**
- * A single example page. `index` addresses both DEMO_PAGES and the landing
- * copy's items list, which are kept the same length by demo-pages.test.ts — so
- * one number is enough to pair a card with the page it opens.
- */
-export function DemoCard({ index }: { index: number }) {
-  const { lang, t } = useLanguage();
-  const item = t.liveExamples.items[index];
-
-  if (!item) {
-    return null;
-  }
-
-  return (
-    <Link
-      href={localizedExamplePath(liveExamplePaths[index], lang)}
-      className="group relative flex min-h-56 flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-5 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.32)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-    >
-      {/* The card's own slot rule, drawn along the top edge and filled in on
-          hover: the same hour-rule device the setup steps use. */}
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule absolute inset-x-0 top-0 h-1.5 text-[var(--primary)] opacity-25 transition-opacity duration-300 group-hover:opacity-70"
-      />
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-          {item.vertical}
-        </p>
-        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--teal)]">
-          <span className="haab-live-dot h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
-          {t.liveExamples.liveBadge}
-        </span>
-      </div>
-      <h3 className="mt-4 text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">{item.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{item.proof}</p>
-      <span className="mt-auto pt-5 text-sm font-semibold text-[var(--primary)] group-hover:underline">
-        {item.cta} →
-      </span>
-    </Link>
-  );
-}
-
-// Four featured demos left an orphan in a three-up grid. Two-up through lg and
-// four-up above it both divide the landing's four and the gallery's twelve
-// without a ragged last row.
-export function DemoGrid({ indexes }: { indexes: number[] }) {
-  return (
-    <div className="mt-9 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {indexes.map((index) => (
-        <DemoCard key={index} index={index} />
-      ))}
-    </div>
   );
 }
 
@@ -716,27 +512,24 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   const { lang, t } = useLanguage();
 
   return (
-    <section id="live-examples" className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-16 sm:px-8 sm:py-20">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-          <div className="max-w-3xl">
-            <Eyebrow>{t.liveExamples.eyebrow}</Eyebrow>
-            <h2 className="mt-5 text-balance text-[2rem] font-semibold leading-[1.06] tracking-[-0.035em] text-[var(--ink)] sm:text-[2.6rem]">
-              {t.liveExamples.title}
-            </h2>
-          </div>
-          <p className="max-w-xl text-base leading-7 text-[var(--muted)]">
-            {formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
-          </p>
-        </div>
+    <section
+      id="live-examples"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 py-[72px] sm:px-8 lg:py-[120px]")}
+    >
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-7 lg:gap-12">
+        <LpSectionHeading
+          eyebrow={t.liveExamples.eyebrow}
+          title={t.liveExamples.title}
+          body={formatDemoCount(t.liveExamples.body, DEMO_PAGES.length)}
+        />
         <Reveal>
-          <DemoGrid indexes={featured} />
+          <DemoGrid indexes={featured} carousel />
         </Reveal>
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <Link href={galleryPath(lang)} className={secondaryLinkClass}>
-            {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length)}
-          </Link>
-          <p className="text-center text-xs text-[var(--muted)]">
+        <div className="flex flex-col items-stretch gap-2.5 text-center sm:items-center sm:gap-3">
+          <LpButton variant="outline-ink" size="card" arrow href={galleryPath(lang)} className="sm:px-[26px]">
+            {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length).replace(/\s*→\s*$/, "")}
+          </LpButton>
+          <p className="text-[13.5px] text-[var(--lp-muted)] sm:text-[14.5px]">
             {formatDemoCount(t.liveExamples.note, DEMO_PAGES.length)}
           </p>
         </div>
@@ -745,272 +538,138 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   );
 }
 
-
-
-/**
- * Setup, as a rail rather than three boxes.
- *
- * These steps are a real sequence — you cannot publish a page you have not
- * named — so the numbering carries information, and the layout should show the
- * order instead of leaving three interchangeable cards to imply it. The rail is
- * the slot rule: an hour line with the three steps marked on it.
- */
-export function HowItWorks() {
-  const { t } = useLanguage();
-  const stepNumbers = ["01", "02", "03"];
-  return (
-    <section id="how" className="scroll-mt-20 bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24">
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.how.eyebrow} title={t.how.title} align="left" />
-        <Reveal className="relative mt-14">
-          {/* The rail. Vertical on phones, where the steps stack; horizontal
-              from lg, where they sit side by side. */}
-          <span
-            aria-hidden="true"
-            className="haab-slot-rule-y absolute bottom-2 left-[15px] top-2 w-1.5 text-[var(--primary)] lg:hidden"
-          />
-          <span
-            aria-hidden="true"
-            className="haab-slot-rule absolute left-0 right-0 top-[15px] hidden h-1.5 text-[var(--primary)] lg:block"
-          />
-          <ol className="relative grid gap-10 lg:grid-cols-3 lg:gap-8">
-            {t.how.steps.map((s, i) => (
-              <li key={stepNumbers[i]} className="relative pl-14 lg:pl-0">
-                <span className="absolute left-0 top-0 grid h-8 w-8 place-items-center rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] font-mono text-[11px] font-semibold tabular-nums text-[var(--primary)] lg:relative lg:mb-6">
-                  {/* The marker carries the number; naming it again in a line
-                      of its own would say "step" twice. */}
-                  <span className="sr-only">{t.how.stepLabel} </span>
-                  {stepNumbers[i]}
-                </span>
-                <h3 className="text-2xl font-semibold tracking-[-0.02em] text-[var(--ink)]">
-                  {s.title}
-                </h3>
-                <p className="mt-3 max-w-md text-[15px] leading-7 text-[var(--muted)]">{s.body}</p>
-              </li>
-            ))}
-          </ol>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-export function Features() {
-  const { t } = useLanguage();
-  const meta = [
-    { glyph: "0", tone: "blue" as const },
-    { glyph: "H", tone: "gold" as const },
-    { glyph: "3", tone: "teal" as const },
-    { glyph: "#", tone: "teal" as const },
-    { glyph: "↗", tone: "blue" as const },
-  ];
-  return (
-    <section
-      id="features"
-      className="scroll-mt-20 bg-[var(--band-tint)] px-5 py-20 sm:px-8 sm:py-24"
-    >
-      <div className="mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.features.eyebrow} title={t.features.title} />
-        {/* Five equal cards say all five matter equally. The first one is the
-            reason the product exists, so it gets the width and the larger
-            type; the rest fall in behind it. */}
-        <Reveal className="mt-14 grid gap-4 md:grid-cols-2">
-          {t.features.items.map((f, i) => (
-            <GlassCard
-              key={f.title}
-              className={cn(
-                "flex flex-col gap-4 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,115,232,0.28)] hover:shadow-[0_18px_40px_rgba(15,23,42,0.07)]",
-                i === 0 && "md:col-span-2 md:p-8",
-              )}
-            >
-              <div className={cn("flex items-start gap-4", i === 0 && "md:gap-5")}>
-                <BrandGlyph label={meta[i].glyph} tone={meta[i].tone} />
-                <div>
-                  <h3
-                    className={cn(
-                      "font-semibold tracking-[-0.02em] text-[var(--ink)]",
-                      i === 0 ? "text-xl md:text-3xl" : "text-xl",
-                    )}
-                  >
-                    {f.title}
-                  </h3>
-                  <p
-                    className={cn(
-                      "mt-2 leading-7 text-[var(--muted)]",
-                      i === 0 ? "text-[15px] md:max-w-2xl md:text-lg md:leading-8" : "text-[15px]",
-                    )}
-                  >
-                    {f.body}
-                  </p>
-                </div>
-              </div>
-              <p className="mt-auto font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--teal)]">
-                {f.tag}
-              </p>
-            </GlassCard>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-
-
-
-
-/**
- * Reliability, privacy, and scope. Every claim here describes behavior that
- * ships today; the last item names what does not, which is the part that makes
- * the other three believable while the product is in early access.
- */
-/**
- * The Google Calendar integration, explained on the home page.
- *
- * Not a marketing section. Google's OAuth review reads the home page of any app
- * requesting a sensitive scope and checks that the page explains what the app
- * does and why it needs that access; this one was rejected for "does not
- * explain the purpose of your app" while the page said nothing about Google at
- * all. The claims here mirror lib/legal/content.ts and the behaviour in
- * lib/google/, and components/landing/__tests__/google-disclosure.test.tsx
- * pins the parts the review depends on.
- */
-export function GoogleIntegration() {
-  const { lang, t } = useLanguage();
-  return (
-    <section
-      id="google-calendar"
-      className="scroll-mt-20 border-b border-[var(--line)] bg-[var(--band-paper)] px-5 py-20 sm:px-8 sm:py-24"
-    >
-      {/* Two columns rather than another three-across row of cards: the
-          explanation stays alongside the claims it covers as they scroll. */}
-      <div className="mx-auto grid max-w-[1280px] gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <SectionHeading
-            eyebrow={t.googleIntegration.eyebrow}
-            title={t.googleIntegration.title}
-            align="left"
-          />
-          <p className="mt-5 max-w-[52ch] text-[15px] leading-7 text-[var(--muted)]">
-            {t.googleIntegration.purpose}
-          </p>
-          <Link
-            href={`/privacy?lang=${lang}#google`}
-            className={cn(secondaryLinkClass, "mt-7")}
-          >
-            {t.googleIntegration.privacyLink}
-          </Link>
-        </div>
-        <Reveal className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
-          {t.googleIntegration.items.map((item) => (
-            <div key={item.title} className="py-7 first:pt-0 last:pb-0 sm:py-8">
-              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--ink)]">
-                {item.title}
-              </h3>
-              <p className="mt-2.5 max-w-[62ch] text-[15px] leading-7 text-[var(--muted)]">
-                {item.body}
-              </p>
-            </div>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-export function Trust() {
-  const { t } = useLanguage();
-
-  return (
-    /* The page's one dark stop. Trust used to render exactly like the Google
-       section directly above it — same hairline grid, same three cells — so
-       the two read as one long panel. Dropping the cards here and letting the
-       claims sit on the night band separates them and gives the scroll a
-       floor to land on before the closing CTA. */
-    <section
-      id="trust"
-      className="relative scroll-mt-20 overflow-hidden bg-[var(--night)] px-5 py-20 sm:px-8 sm:py-28"
-    >
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule haab-slot-rule-fade absolute inset-x-0 top-0 h-10 text-[var(--secondary-fixed)]"
-      />
-      <div className="relative mx-auto max-w-[1280px]">
-        <SectionHeading eyebrow={t.trust.eyebrow} title={t.trust.title} tone="night" />
-        <Reveal className="mt-14 grid gap-10 sm:grid-cols-3 sm:gap-8">
-          {t.trust.items.map((item) => (
-            <div key={item.title} className="border-t border-[var(--night-line)] pt-6">
-              <h3 className="text-lg font-semibold tracking-[-0.015em] text-[var(--night-ink)]">
-                {item.title}
-              </h3>
-              <p className="mt-3 text-[15px] leading-7 text-[var(--night-muted)]">{item.body}</p>
-            </div>
-          ))}
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
 export function FAQ() {
   const { t } = useLanguage();
+
   return (
-    <section id="faq" className={cn(sectionPadding, "bg-[var(--band-paper)]")}>
-      {/* No box around the questions: after the night band the page wants a
-          quiet, plainly typeset column, not another panel. */}
-      <div className="mx-auto max-w-[820px]">
-        <SectionHeading eyebrow={t.faq.eyebrow} title={t.faq.title} align="left" />
-        <div className="mt-12 divide-y divide-[var(--line)] border-y border-[var(--line)]">
-          {t.faq.items.map((item) => (
-            <details key={item.q} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]">
-                <span className="text-base font-semibold text-[var(--ink)] transition group-hover:text-[var(--primary)] sm:text-lg">
+    <section
+      id="faq"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 py-[72px] sm:px-8 lg:py-[120px]")}
+    >
+      {/* No ancestor clips overflow: the left column is sticky. */}
+      <div className="mx-auto grid max-w-[1200px] gap-6 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start lg:gap-20">
+        <div className="flex flex-col gap-3.5 lg:sticky lg:top-28 lg:gap-5">
+          <Eyebrow>{t.faq.eyebrow}</Eyebrow>
+          <h2
+            className={cn(
+              lpDisplay,
+              "text-[36px] font-bold leading-[1.05] tracking-[-0.035em] text-[var(--lp-ink)] lg:text-[54px] lg:leading-[1.04]",
+            )}
+          >
+            {t.faq.title}
+          </h2>
+          <p className="hidden text-[17px] leading-[1.6] text-[var(--lp-muted)] lg:block">
+            {t.faq.aside}
+          </p>
+          <DemoButton className="hidden min-h-11 items-center gap-2 self-start rounded-md text-[16px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:inline-flex">
+            {t.hero.ctaSecondary}
+            <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+          </DemoButton>
+        </div>
+        <div className="flex flex-col gap-2.5 lg:gap-3">
+          {t.faq.items.map((item, index) => (
+            <details
+              key={item.q}
+              open={index === 0}
+              className="group rounded-[18px] border border-[var(--lp-line-soft)] bg-white p-[18px] open:border-[#d5eae4] open:bg-[var(--lp-paper)] lg:rounded-[20px] lg:px-7 lg:py-6"
+            >
+              <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-md text-left marker:content-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:gap-4 [&::-webkit-details-marker]:hidden">
+                <span
+                  className={cn(
+                    lpDisplay,
+                    "text-[18px] font-bold leading-[1.25] tracking-[-0.015em] text-[var(--lp-ink)] lg:text-[21px]",
+                  )}
+                >
                   {item.q}
                 </span>
                 <span
                   aria-hidden="true"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--muted)] transition duration-300 group-open:rotate-45 group-open:border-[var(--primary)] group-open:text-[var(--primary)]"
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#eef3f2] text-[var(--lp-ink)] group-open:bg-[var(--lp-teal-600)] group-open:text-white lg:h-[34px] lg:w-[34px]"
                 >
-                  +
+                  <Plus weight="bold" className="h-3.5 w-3.5 group-open:hidden lg:h-4 lg:w-4" />
+                  <Minus weight="bold" className="hidden h-3.5 w-3.5 group-open:block lg:h-4 lg:w-4" />
                 </span>
               </summary>
-              <p className="mt-4 max-w-[68ch] text-[15px] leading-7 text-[var(--muted)]">{item.a}</p>
+              <p className="mt-2.5 max-w-[640px] text-[15px] leading-[1.55] text-[var(--lp-body)] lg:mt-3 lg:text-[16.5px] lg:leading-[1.6]">
+                {item.a}
+              </p>
             </details>
           ))}
+        </div>
+        {/* Below lg the aside and link follow the accordion instead of
+            crowding the heading. */}
+        <div className="flex flex-col gap-3 lg:hidden">
+          <p className="text-[15px] leading-[1.55] text-[var(--lp-muted)]">{t.faq.aside}</p>
+          <DemoButton className="inline-flex min-h-11 items-center gap-2 self-start rounded-md text-[15.5px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]">
+            {t.hero.ctaSecondary}
+            <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+          </DemoButton>
         </div>
       </div>
     </section>
   );
 }
-
-
 
 export function FinalCTA() {
   const { t } = useLanguage();
   const { hasPage } = useLandingActions();
   const primaryLabel = usePrimaryCtaLabel();
+
   return (
-    <section id="early-access" className="relative scroll-mt-20 overflow-hidden px-5 py-24 sm:px-8 lg:py-28">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(26,115,232,0.95),rgba(79,142,241,0.92))]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.18),transparent_55%)]" />
-      <span
-        aria-hidden="true"
-        className="haab-slot-rule haab-slot-rule-fade pointer-events-none absolute inset-x-0 top-0 h-12 text-white"
-      />
-      <div className="relative mx-auto max-w-[920px] text-center">
-        <h2 className="text-balance text-4xl font-semibold tracking-[-0.035em] text-white sm:text-5xl lg:text-[3.4rem]">
-          {t.finalCta.title}
-        </h2>
-        <p className="mt-5 text-lg leading-8 text-white/85">
-          {hasPage ? t.finalCta.ownerBody : t.finalCta.body}
-        </p>
-        <div className="mt-9 flex flex-col items-center gap-4">
-          <StartButton className="inline-flex items-center justify-center rounded-lg bg-white px-8 py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-white/90">
-            {primaryLabel}
-          </StartButton>
-          {hasPage ? null : (
-            <p className="text-sm !text-white/70">{t.finalCta.fineprint}</p>
-          )}
+    <section
+      id="early-access"
+      className={cn(lpBody, "scroll-mt-24 bg-white px-5 pb-[72px] sm:px-8 lg:pb-[120px]")}
+    >
+      <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[var(--lp-teal-700)] px-6 py-12 text-white sm:px-10 lg:rounded-[36px] lg:px-20 lg:py-[88px]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="lp-dot-grid-light absolute inset-0" />
+          <div className="absolute -right-[140px] -top-[140px] h-[360px] w-[360px] rounded-full bg-[radial-gradient(closest-side,rgba(104,250,221,0.45),transparent)] lg:-right-[140px] lg:-top-[180px] lg:h-[520px] lg:w-[520px]" />
+          <div className="absolute -bottom-[220px] left-[38%] hidden h-[420px] w-[420px] rounded-full bg-[radial-gradient(closest-side,rgba(26,107,224,0.45),transparent)] lg:block" />
+        </div>
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
+          <div className="flex flex-col gap-3 lg:gap-4">
+            <h2
+              className={cn(
+                lpDisplay,
+                "text-[44px] font-bold leading-none tracking-[-0.04em] lg:text-[72px]",
+              )}
+            >
+              {t.finalCta.titleLines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </h2>
+            <p className="text-[17px] leading-[1.5] text-[var(--lp-mint-100)] lg:text-[20px]">
+              {hasPage ? t.finalCta.ownerBody : t.finalCta.body}
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5 lg:items-end lg:gap-4">
+            <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-3">
+              <StartButton
+                className={cn(
+                  lpButtonClass({ variant: "inverse", size: "hero" }),
+                  "w-full text-[17px] sm:w-auto lg:h-[60px] lg:px-[30px] lg:text-[18px]",
+                )}
+              >
+                {primaryLabel}
+                <ArrowRight aria-hidden="true" weight="bold" className="h-[18px] w-[18px]" />
+              </StartButton>
+              <DemoButton
+                className={cn(
+                  lpButtonClass({ variant: "ghost-inverse", size: "hero" }),
+                  "w-full text-[17px] sm:w-auto lg:h-[60px] lg:px-[26px] lg:text-[18px]",
+                )}
+              >
+                {t.hero.ctaSecondary}
+              </DemoButton>
+            </div>
+            {hasPage ? null : (
+              <p className="text-center text-[14px] text-[var(--lp-mint-100)] lg:text-[15px]">
+                {t.finalCta.fineprint}
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </section>
@@ -1024,61 +683,64 @@ export function Footer({
   showUseCases?: boolean;
   anchorsGoHome?: boolean;
 } = {}) {
-  const { lang, t } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
+  const linkClass =
+    "inline-flex min-h-11 items-center rounded-sm text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]";
+  const headingClass = cn(lpMono, "text-[11.5px] uppercase tracking-[0.14em] text-[var(--lp-mint-300)] lg:text-[12px]");
+
   return (
-    <footer className="border-t border-[var(--line)] bg-[var(--band-tint)] px-5 py-14 sm:px-8">
-      <div className="mx-auto max-w-[1280px]">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <Link href="/" className="flex items-center gap-2">
-              <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-sm font-bold text-white">
-                H
-              </span>
-              <span className="text-base font-semibold text-[var(--ink)]">{t.nav.brand}</span>
-            </Link>
-            <p className="mt-4 max-w-xs text-sm leading-6 text-[var(--muted)]">
+    <footer className={cn(lpBody, "bg-[var(--lp-night)] px-5 pb-10 pt-14 text-[var(--lp-night-ink)] sm:px-8 lg:pb-12 lg:pt-20")}>
+      <div className="mx-auto flex max-w-[1200px] flex-col gap-9 lg:gap-14">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-9 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr] lg:gap-12">
+          <div className="col-span-2 flex flex-col items-start gap-3.5 lg:col-span-1 lg:gap-4">
+            <BrandLink label={t.nav.brand} onNight />
+            <p className="max-w-[320px] text-[15px] leading-[1.6] text-[#9fb2c3] lg:text-[16px]">
               {t.footer.tagline}
             </p>
+            {/* Phones get the action under the tagline; wider screens keep it in
+                the last column. */}
+            {hasPage ? null : (
+              <StartButton className={cn(footerCtaClass, "lg:hidden")}>
+                {t.footer.createLink.replace(/\s*→\s*$/, "")}
+                <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+              </StartButton>
+            )}
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ink)]">
-              {t.footer.productHeading}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <div className="flex flex-col gap-1">
+            <p className={headingClass}>{t.footer.productHeading}</p>
+            <ul className="flex flex-col">
               <li>
-                <a href={anchor("how")} className="hover:text-[var(--ink)]">
+                <a href={anchor("how")} className={linkClass}>
                   {t.footer.product.how}
                 </a>
               </li>
               <li>
-                <a href={anchor("features")} className="hover:text-[var(--ink)]">
+                <a href={anchor("features")} className={linkClass}>
                   {t.footer.product.features}
                 </a>
               </li>
               {showUseCases ? (
                 <li>
-                  <a href={anchor("verticals")} className="hover:text-[var(--ink)]">
+                  <a href={anchor("verticals")} className={linkClass}>
                     {t.footer.product.useCases}
                   </a>
                 </li>
               ) : null}
               <li>
-                <a href={tryBookingPath(lang)} className="text-left hover:text-[var(--ink)]">
+                <a href={tryBookingPath(lang)} className={linkClass}>
                   {t.footer.product.seeLivePage}
                 </a>
               </li>
               <AccountEntryListItem />
             </ul>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase text-[var(--ink)]">
-              {t.footer.companyHeading}
-            </p>
-            <ul className="mt-4 space-y-2 text-sm text-[var(--muted)]">
+          <div className="flex flex-col gap-1">
+            <p className={headingClass}>{t.footer.companyHeading}</p>
+            <ul className="flex flex-col">
               <li>
-                <a href={anchor("early-access")} className="hover:text-[var(--ink)]">
+                <a href={anchor("early-access")} className={linkClass}>
                   {t.footer.company.pricing}
                 </a>
               </li>
@@ -1086,30 +748,44 @@ export function Footer({
                   checks they are reachable from the app itself, not only by
                   their bare URLs. */}
               <li>
-                <Link href={`/privacy?lang=${lang}`} className="hover:text-[var(--ink)]">
+                <Link href={`/privacy?lang=${lang}`} className={linkClass}>
                   {t.footer.company.privacy}
                 </Link>
               </li>
               <li>
-                <Link href={`/terms?lang=${lang}`} className="hover:text-[var(--ink)]">
+                <Link href={`/terms?lang=${lang}`} className={linkClass}>
                   {t.footer.company.terms}
                 </Link>
               </li>
             </ul>
           </div>
+          <div className="col-span-2 hidden flex-col items-start gap-4 lg:col-span-1 lg:flex">
+            {hasPage ? null : (
+              <>
+                <p className={headingClass}>{t.footer.getStarted}</p>
+                <StartButton className={footerCtaClass}>
+                  {t.footer.createLink.replace(/\s*→\s*$/, "")}
+                  <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+                </StartButton>
+              </>
+            )}
+            <LangPill lang={lang} onChange={setLang} variant="night" long />
+          </div>
         </div>
-        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-[var(--line)] pt-6 text-sm text-[var(--muted)] sm:flex-row sm:items-center">
+        {/* Phones: the language switch sits above the rule, not in a column. */}
+        <div className="lg:hidden">
+          <LangPill lang={lang} onChange={setLang} variant="night" long />
+        </div>
+        <div className="border-t border-[var(--lp-night-line)] pt-[22px] text-[13px] leading-[1.5] text-[var(--lp-night-muted)] lg:pt-7 lg:text-[14px]">
           <p>{t.footer.copyright}</p>
-          {hasPage ? null : (
-            <StartButton className="font-semibold text-[var(--primary)] hover:underline">
-              {t.footer.createLink}
-            </StartButton>
-          )}
         </div>
       </div>
     </footer>
   );
 }
+
+const footerCtaClass =
+  "inline-flex h-12 items-center gap-2 whitespace-nowrap rounded-full bg-[var(--lp-teal-400)] px-[22px] text-[16px] font-bold text-[var(--lp-teal-on-400)] transition hover:bg-[var(--lp-mint-300)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-night)] active:translate-y-px";
 
 // Full marketing landing. `afterHero` is slotted directly below the hero — the
 // host (HomeExperience) injects the verticals picker or the "go to dashboard"
@@ -1131,19 +807,22 @@ export function LandingPage({
 }) {
   return (
     <LandingDialogsProvider>
-      <StickyNav showUseCases={showUseCases} />
-      <main className="flex-1">
-        <Hero />
-        <LiveExamples featured={featuredDemos} />
-        {afterHero}
-        <HowItWorks />
-        <Features />
-        <GoogleIntegration />
-        <Trust />
-        <FAQ />
-        <FinalCTA />
-      </main>
-      <Footer showUseCases={showUseCases} />
+      <LandingScope>
+        <StickyNav showUseCases={showUseCases} />
+        <main className="flex-1">
+          <Hero />
+          <FactStrip />
+          {afterHero}
+          <HowItWorks />
+          <LiveExamples featured={featuredDemos} />
+          <Features />
+          <GoogleIntegration />
+          <Trust />
+          <FAQ />
+          <FinalCTA />
+        </main>
+        <Footer showUseCases={showUseCases} />
+      </LandingScope>
     </LandingDialogsProvider>
   );
 }

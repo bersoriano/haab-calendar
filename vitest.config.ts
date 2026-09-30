@@ -1,8 +1,17 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
+  resolve: {
+    alias: {
+      // Only Next's compiler can evaluate next/font; see the stub.
+      "next/font/google": fileURLToPath(
+        new URL("./test/stubs/next-font-google.ts", import.meta.url),
+      ),
+    },
+  },
   test: {
     environment: "node",
     // Playwright owns e2e/. Vitest would try to run those files as unit tests

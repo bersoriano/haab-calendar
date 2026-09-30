@@ -129,15 +129,26 @@ export const translations = {
         "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
     },
     hero: {
+      badge: "Acceso anticipado",
+      badgeText: "Gratis durante el acceso anticipado · Sin tarjeta",
+      badgeTextShort: "Gratis · Sin tarjeta",
+      titleLines: ["Un enlace.", "Sin registrarse.", "Sin reservas duplicadas."],
       title: "Un enlace. Sin registrarse. Sin reservas duplicadas.",
-      body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
+      body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus pacientes y clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
+      chips: ["Disponibilidad en vivo", "Apartado de 10 minutos", "Enlace privado para reagendar"],
       ctaPrimary: "Crear mi página",
       ctaSecondary: "Ver una página real",
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta y sin instalar nada.",
+      fineprint: "Sin instalar nada.",
       returningPrompt: "¿Ya tienes una página?",
       returningCta: "Inicia sesión",
       previewCaption: "La página real de Dra. Maya Rivera. Tócala: está en vivo.",
     },
+    facts: [
+      { value: "10 min", caption: "de apartado en cada horario mientras el cliente escribe" },
+      { value: "0", caption: "cuentas o contraseñas de clientes que administrar" },
+      { value: "{n}", caption: "páginas de demostración públicas funcionando ahora" },
+      { value: "EN · ES", caption: "cada etiqueta y confirmación, en ambos idiomas" },
+    ],
     startDialog: {
       eyebrow: "Gratis · 20 segundos",
       title: "Reserva tu enlace.",
@@ -287,10 +298,34 @@ export const translations = {
         },
       ],
       cta: "Crear mi página",
+      visual: {
+        urlPrefix: "haabcalendar.com/",
+        slug: "tu-nombre",
+        chips: ["Servicios", "Horarios", "Precios"],
+        share: ["Tu bio", "Tus correos", "QR en la puerta"],
+        eventDay: "MAR",
+        eventDate: "29",
+        eventTitle: "Consulta para pacientes nuevos",
+        eventMeta: "9:00 – 9:30 · Reservado por el cliente",
+        added: "Se agrega a tu calendario, sin mensajes de por medio",
+      },
     },
     features: {
-      eyebrow: "Por qué se siente diferente",
-      title: "Tres decisiones que notarás la primera semana.",
+      eyebrow: "Por qué se siente distinto",
+      title: "Una sola página que se adapta a tu forma de trabajar.",
+      modes: [
+        { label: "Hora de consultoría", pill: "Cita" },
+        { label: "Salón para un sábado", pill: "Día completo" },
+        { label: "Cuarenta lugares en una clase", pill: "Boletos" },
+      ],
+      words: ["Pacientes", "Invitados", "Clientes", "Asistentes", "Comensales"],
+      wordsExample: "“Patient” · “Paciente”",
+      selfService: {
+        lock: "Enlace privado · solo para esta reserva",
+        when: "mar 29 sep · 9:00",
+        reschedule: "Reagendar",
+        cancel: "Cancelar",
+      },
       items: [
         {
           title: "Citas, días completos y boletos en una página.",
@@ -335,6 +370,11 @@ export const translations = {
       note:
         "Gana el más parecido. Todo se edita en la configuración.",
       cta: "Crear mi página",
+      healthBadge: "Nuestro sector principal",
+      healthLanguage: "Tus pacientes leen “pacientes”, no “clientes”.",
+      prefilled: "Precargado para ti",
+      addOwn: "+ Agrega los tuyos · Editable",
+      startShort: "Empezar →",
     },
     googleIntegration: {
       eyebrow: "Google Calendar",
@@ -355,11 +395,22 @@ export const translations = {
           body: "Los eventos llevan el nombre del servicio y nada más. El nombre, correo, teléfono y notas de un cliente nunca se escriben en Google, porque un calendario puede compartirse y Haab no decide quién puede leerlos.",
         },
       ],
+      visual: {
+        calendar: "Tu Google Calendar",
+        day: "Mar 29",
+        hours: ["8:00", "9:00", "10:00", "11:00"],
+        busy: "Ocupado: ya está en tu calendario",
+        event: "Consulta para pacientes nuevos",
+        eventNote: "Solo el nombre del servicio",
+        stays: "Se queda en Haab",
+        fields: ["Nombre del cliente", "Correo", "Teléfono", "Notas"],
+      },
       privacyLink: "Cómo tratamos los datos de Google →",
     },
     trust: {
-      eyebrow: "Confianza",
+      eyebrow: "Confianza y privacidad",
       title: "Hecho para cuidar un calendario real.",
+      intro: "Sobre todo cuando el calendario es de una clínica y quienes reservan son pacientes.",
       items: [
         {
           title: "Decide el servidor, no el navegador.",
@@ -378,6 +429,7 @@ export const translations = {
     faq: {
       eyebrow: "Preguntas",
       title: "Preguntas, respondidas.",
+      aside: "La respuesta más rápida suele ser una página real. Reserva una demo como lo haría un cliente.",
       items: [
         {
           q: "¿Qué funciona hoy?",
@@ -403,6 +455,7 @@ export const translations = {
     },
     finalCta: {
       title: "Un enlace. Después, piloto automático.",
+      titleLines: ["Un enlace.", "Después, piloto automático."],
       body: "Nombra tu página y compártela hoy.",
       ownerBody: "Tu página está en vivo. Comparte el enlace y déjala correr.",
       ctaPrimary: "Crear mi página",
@@ -410,6 +463,7 @@ export const translations = {
     },
     footer: {
       tagline: "Un enlace de reservas. Disponibilidad protegida. Sin cuentas para tus clientes.",
+      getStarted: "Empieza",
       productHeading: "Producto",
       product: {
         how: "Cómo funciona",
@@ -558,15 +612,26 @@ export const translations = {
         "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
     },
     hero: {
-      title: "One link. No registration needed. No double bookings.",
-      body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your clients never make an account, and you never confirm a time by hand.",
+      badge: "Early access",
+      badgeText: "Free while in early access · No card",
+      badgeTextShort: "Free · No card",
+      titleLines: ["One link.", "No sign-up.", "No double bookings."],
+      title: "One link. No sign-up. No double bookings.",
+      body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your patients and clients never make an account — and you never confirm a time by hand.",
+      chips: ["Live availability", "10-minute hold", "Private reschedule link"],
       ctaPrimary: "Create your page",
       ctaSecondary: "See a real page",
-      fineprint: "Free while in early access. No card, nothing to install.",
+      fineprint: "Nothing to install.",
       returningPrompt: "Already have a page?",
       returningCta: "Log in",
       previewCaption: "Dr. Maya Rivera's real page. Touch it — it's live.",
     },
+    facts: [
+      { value: "10 min", caption: "hold on every slot while a client types" },
+      { value: "0", caption: "client accounts or passwords to manage" },
+      { value: "{n}", caption: "public demo pages running right now" },
+      { value: "EN · ES", caption: "every label and confirmation, both languages" },
+    ],
     startDialog: {
       eyebrow: "Free · 20 seconds",
       title: "Claim your booking link.",
@@ -716,10 +781,34 @@ export const translations = {
         },
       ],
       cta: "Create your page",
+      visual: {
+        urlPrefix: "haabcalendar.com/",
+        slug: "your-name",
+        chips: ["Services", "Hours", "Prices"],
+        share: ["Your bio", "Your emails", "Door QR code"],
+        eventDay: "TUE",
+        eventDate: "29",
+        eventTitle: "New patient consultation",
+        eventMeta: "9:00 – 9:30 AM · Booked by the client",
+        added: "Added to your calendar — no message needed",
+      },
     },
     features: {
       eyebrow: "Why it feels different",
-      title: "Three decisions you will notice in week one.",
+      title: "One page that fits the way you actually work.",
+      modes: [
+        { label: "Consulting hour", pill: "Appointment" },
+        { label: "Venue for a Saturday", pill: "Full day" },
+        { label: "Forty seats at a class", pill: "Tickets" },
+      ],
+      words: ["Patients", "Guests", "Clients", "Attendees", "Diners"],
+      wordsExample: "“Patient” · “Paciente”",
+      selfService: {
+        lock: "Private link · only for this booking",
+        when: "Tue 29 Sep · 9:00 AM",
+        reschedule: "Reschedule",
+        cancel: "Cancel",
+      },
       items: [
         {
           title: "Appointments, full days, and tickets on one page.",
@@ -764,6 +853,11 @@ export const translations = {
       note:
         "Closest match wins. Everything is editable during setup.",
       cta: "Create your page",
+      healthBadge: "Our core industry",
+      healthLanguage: "Patients see “patients,” not “customers.”",
+      prefilled: "Pre-filled for you",
+      addOwn: "+ Add your own · Editable",
+      startShort: "Start →",
     },
     googleIntegration: {
       eyebrow: "Google Calendar",
@@ -784,11 +878,22 @@ export const translations = {
           body: "Events carry the service name and nothing else. A client's name, email, phone, and notes are never written to Google, because a calendar can be shared and Haab does not decide who may read them.",
         },
       ],
+      visual: {
+        calendar: "Your Google Calendar",
+        day: "Tue 29",
+        hours: ["8 AM", "9 AM", "10 AM", "11 AM"],
+        busy: "Busy — already on your calendar",
+        event: "New patient consultation",
+        eventNote: "Service name only",
+        stays: "Stays in Haab",
+        fields: ["Client name", "Email", "Phone", "Notes"],
+      },
       privacyLink: "How we handle Google data →",
     },
     trust: {
-      eyebrow: "Trust",
+      eyebrow: "Trust & privacy",
       title: "Built to be trusted with a real calendar.",
+      intro: "Especially when the calendar belongs to a clinic, and the people booking are patients.",
       items: [
         {
           title: "The server decides, not the browser.",
@@ -807,6 +912,7 @@ export const translations = {
     faq: {
       eyebrow: "FAQ",
       title: "Questions, answered.",
+      aside: "The quickest answer is usually a real page. Book one of the demos like a client would.",
       items: [
         {
           q: "What works today?",
@@ -832,6 +938,7 @@ export const translations = {
     },
     finalCta: {
       title: "One link. Then autopilot.",
+      titleLines: ["One link.", "Then autopilot."],
       body: "Name your page and share it today.",
       ownerBody: "Your page is live. Share the link and let it run.",
       ctaPrimary: "Create your page",
@@ -839,6 +946,7 @@ export const translations = {
     },
     footer: {
       tagline: "One booking link. Protected availability. No client accounts.",
+      getStarted: "Get started",
       productHeading: "Product",
       product: {
         how: "How it works",

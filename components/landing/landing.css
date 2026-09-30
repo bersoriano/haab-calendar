@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Haab landing redesign — design tokens
+   SCOPE: landing page only. Every token lives under `.haab-landing`, which is
+   put on the landing wrapper (LandingPage in components/landing/landing-ui.tsx).
+   Do NOT move these into :root and do NOT change the existing :root tokens in
+   app/globals.css — the booking flow and components/landing/hero-preview.tsx
+   read those (--teal, --accent, --surface-soft, --line, --ink ...).
+   ========================================================================== */
+
+.haab-landing {
+  /* Ink & text */
+  --lp-ink: #0b1b2b;          /* headings, primary text */
+  --lp-ink-2: #243447;        /* nav links, chip text */
+  --lp-body: #3a4a5c;         /* lead paragraphs */
+  --lp-muted: #475467;        /* body copy on white (7.7:1) */
+  --lp-subtle: #667085;       /* meta text, never below 14px */
+
+  /* Grounds & lines */
+  --lp-white: #ffffff;
+  --lp-paper: #f3f9f7;        /* hero + "How it works" band (mint-toned white) */
+  --lp-mint-band: #e6f7f2;    /* trust band, step-1 visual */
+  --lp-line: #dceae6;         /* card borders */
+  --lp-line-soft: #e4ecea;    /* dividers, FAQ borders */
+
+  /* Teal — primary brand action (healthcare-first) */
+  --lp-teal-900: #064e47;     /* healthcare feature card, dark demo header */
+  --lp-teal-700: #00695c;     /* PRIMARY BUTTON bg (white text 6.6:1) */
+  --lp-teal-700-hover: #004d43;
+  --lp-teal-600: #00796b;     /* accent text, H1 highlight line, eyebrows */
+  --lp-teal-400: #1fd1b2;     /* bright accent: dots, chips on dark, footer CTA bg */
+  --lp-teal-on-400: #043b35;  /* text on teal-400 */
+  --lp-mint-300: #68fadd;     /* accent text on night band */
+  --lp-mint-200: #8fe3d2;     /* mono labels on teal-900 */
+  --lp-mint-100: #cfefe8;     /* body text on teal-700 / teal-900 */
+
+  /* Blue — existing brand blue, secondary */
+  --lp-blue-600: #1a6be0;     /* logo tile, spaces tile/header */
+  --lp-blue-700: #1a5fd0;     /* link text on white */
+  --lp-blue-800: #0b4fb3;     /* link text on blue-100 */
+  --lp-blue-100: #e8f1ff;
+  --lp-blue-50: #eef4ff;      /* google-calendar visual ground */
+
+  /* Industry accents (use-case tiles + demo card headers) */
+  --lp-violet-600: #5b4bd6;   /* professional services / hair salon */
+  --lp-violet-700: #4535b8;
+  --lp-violet-100: #efecff;
+  --lp-coral-500: #ff7a59;    /* DECOR ONLY (H1 underline, glows) — never text */
+  --lp-coral-600: #f0643a;    /* events tile, icon tiles (non-text 3:1) */
+  --lp-coral-700: #b03c18;    /* coral text on coral-100 */
+  --lp-coral-ink: #3d1204;    /* text on coral-600 fills */
+  --lp-coral-100: #ffede6;
+  --lp-sun-500: #f2b300;      /* restaurants tile */
+  --lp-sun-800: #7a5000;      /* text on sun-100 */
+  --lp-sun-ink: #3d2a00;      /* icon on sun-500 */
+  --lp-sun-100: #fff4d4;
+
+  /* Night band (Why it feels different, footer) */
+  --lp-night: #0a1b2a;
+  --lp-night-2: #10263a;      /* cards on night */
+  --lp-night-3: #173149;      /* rows/chips inside night cards */
+  --lp-night-line: #1e3a52;
+  --lp-night-line-2: #2a4a66; /* outline chips */
+  --lp-night-text: #b4c3d1;   /* body on night-2 (8.6:1) */
+  --lp-night-muted: #8fa6ba;  /* labels on night-2 (6.1:1) */
+  --lp-night-ink: #d6e1ea;
+
+  /* Radii */
+  --lp-r-sm: 12px;
+  --lp-r-md: 14px;
+  --lp-r-lg: 20px;
+  --lp-r-xl: 24px;
+  --lp-r-2xl: 28px;
+  --lp-r-3xl: 36px;           /* final CTA panel */
+
+  /* Shadows */
+  --lp-shadow-card: 0 10px 30px rgba(11, 27, 43, 0.05);
+  --lp-shadow-raised: 0 24px 60px rgba(11, 27, 43, 0.10);   /* fact strip */
+  --lp-shadow-cta: 0 12px 28px rgba(0, 105, 92, 0.28);      /* primary button */
+  --lp-shadow-logo: 0 6px 16px rgba(26, 107, 224, 0.35);
+
+  /* Fonts — wire these to next/font variables (see design-spec.md §2) */
+  --lp-font-display: var(--font-bricolage), "Segoe UI", system-ui, sans-serif;
+  --lp-font-body: var(--font-figtree), "Segoe UI", system-ui, sans-serif;
+  --lp-font-mono: var(--font-plex-mono), ui-monospace, monospace;   /* already loaded */
+
+}
+
+/* Landing text opts in to the landing face and ink. Deliberately NOT set on
+   .haab-landing itself: the hero booking card sits inside the wrapper and must
+   keep inheriting Inter and the app's ink. Layered so utilities such as
+   `text-white` on the same element still win over the default ink. */
+@layer components {
+  .haab-landing .lp-body {
+    font-family: var(--lp-font-body);
+    color: var(--lp-ink);
+  }
+}
+
+/* app/globals.css has an unlayered `button { font: inherit }`, which outranks
+   every layered Tailwind font utility and left landing buttons at weight 400 and
+   the inherited size. Hand the cascade back to the utilities for landing
+   buttons, except inside the hero booking card, which is not part of the
+   redesign and keeps the behaviour it was built against. */
+.haab-landing button:not(.lp-booking-card *) {
+  font: revert-layer;
+}
+
+/* Card hover lift (spec §8). */
+.haab-landing .lp-lift {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.haab-landing .lp-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(11, 27, 43, 0.1);
+}
+
+/* Horizontal swipe row for the demo cards on phones. Only below 640px, so it
+   cannot fight the grid utilities above that. */
+@media (max-width: 639px) {
+  .haab-landing .lp-snap-row {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: none;
+  }
+  .haab-landing .lp-snap-row > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  .haab-landing .lp-snap-row::-webkit-scrollbar {
+    display: none;
+  }
+}

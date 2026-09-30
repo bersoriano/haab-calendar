@@ -4,6 +4,30 @@
 
 ---
 
+## Current implementation (landing redesign)
+
+The page was redesigned in `feat/landing-redesign`; the design handoff (spec, reference HTML, tokens) is in `docs/landing-redesign/`. The sections below are the original copy and conversion brief; where they disagree with this block, this block describes what ships.
+
+**Section order and anchors:** sticky nav -> hero -> fact strip -> use cases (`#verticals`, or the dashboard panel for an owner with a page) -> how it works (`#how`) -> live examples (`#live-examples`) -> why it feels different (`#features`, the dark band) -> Google Calendar (`#google-calendar`) -> trust (`#trust`) -> FAQ (`#faq`) -> final CTA (`#early-access`) -> footer.
+
+**Files (`components/landing/`):**
+- `landing-ui.tsx`: actions/dialog context, `StickyNav`, `Hero`, `LiveExamples`, `FAQ`, `FinalCTA`, `Footer`, `LandingPage`.
+- `primitives.tsx`: `LandingScope`, `LpButton`, `CheckChip`, `IconTile`, `StatCell`, `Eyebrow`, `SectionHeading`. Other sections live in `fact-strip.tsx`, `use-cases.tsx`, `how-it-works.tsx`, `demo-card.tsx`, `night-features.tsx`, `google-integration.tsx`, `trust.tsx`; small pieces in `brand.tsx`, `lang-pill.tsx`, `hero-art.tsx`, `reveal.tsx`, `demo-count.ts`.
+- `landing.css` (tokens, atmosphere helpers) and `fonts.ts` (Bricolage Grotesque + Figtree via `next/font/google`).
+- `translations.ts`: all copy, EN and ES in parallel.
+
+**Scoping rules (do not break these):**
+- Tokens are `--lp-*` and live only under `.haab-landing`, set by `LandingScope` on the landing and gallery pages. Never redefine the app's `:root` tokens (`--teal`, `--ink`, `--line`, ...).
+- The landing fonts are not on `<html>`/`<body>`. Landing text opts in with the `lp-body` class; the hero booking card (`hero-preview.tsx`) stays Inter and is never edited, only wrapped.
+- `app/globals.css` has an unlayered `button { font: inherit }` that overrides Tailwind font utilities. `landing.css` hands the cascade back for landing buttons (`font: revert-layer`), excluding anything inside `.lp-booking-card`.
+- `html` is 106.25% of 16px, so rem utilities scale up; the landing uses px arbitrary values.
+
+**Data, not literals:** the demo count is `DEMO_PAGES.length` (copy carries `{n}`); the healthcare tile lists the first two services of the real healthcare preset (`config/verticals.ts`), so its prices can differ from the mock in the hero card; featured demos come from `pickFeaturedDemos` with Dr. Maya Rivera always first and the rest shuffled server-side.
+
+**Google Calendar section:** the copy in `googleIntegration` (`title`, `purpose`, `items`, `privacyLink`) is what Google's OAuth review reads. Only its layout is designed; `components/landing/__tests__/google-disclosure.test.tsx` pins the parts the review depends on.
+
+---
+
 ## 0. Page-Level Decisions
 
 - **Primary audience (assumption — retarget if wrong):** service providers and small businesses who need to take bookings — clinics, coaches/advisors, padel & sports courts, salons, venues/banquet halls, coworking spaces. They are the buyer and the setup user. Their clients are the *end bookers* (a secondary audience addressed only through the provider's eyes).
