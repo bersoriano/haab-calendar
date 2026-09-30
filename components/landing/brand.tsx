@@ -18,7 +18,7 @@ export function BrandLink({
   hideLabelOnTiny?: boolean;
 }) {
   return (
-    <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap xl:gap-3">
+    <Link href="/" className="flex min-h-11 shrink-0 items-center gap-2.5 whitespace-nowrap xl:gap-3">
       <span
         className={cn(
           lpDisplay,

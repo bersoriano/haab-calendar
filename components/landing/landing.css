@@ -96,6 +96,15 @@
   }
 }
 
+/* app/globals.css has an unlayered `button { font: inherit }`, which outranks
+   every layered Tailwind font utility and left landing buttons at weight 400 and
+   the inherited size. Hand the cascade back to the utilities for landing
+   buttons, except inside the hero booking card, which is not part of the
+   redesign and keeps the behaviour it was built against. */
+.haab-landing button:not(.lp-booking-card *) {
+  font: revert-layer;
+}
+
 /* Card hover lift (spec §8). */
 .haab-landing .lp-lift {
   transition: transform 160ms ease, box-shadow 160ms ease;

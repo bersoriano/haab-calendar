@@ -222,7 +222,7 @@ function AccountEntryListItem() {
 
   return (
     <li>
-      <AccountEntry className="rounded-sm text-left text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]" />
+      <AccountEntry className="inline-flex min-h-11 items-center rounded-sm text-left text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]" />
     </li>
   );
 }
@@ -315,7 +315,7 @@ export function StickyNav({
     { href: anchor("faq"), label: t.nav.links.faq },
   ];
   const navLinkClass =
-    "rounded-md px-1 py-2 text-[15.5px] font-semibold text-[var(--lp-ink-2)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]";
+    "inline-flex min-h-11 items-center rounded-md px-1 text-[15.5px] font-semibold text-[var(--lp-ink-2)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]";
 
   return (
     <header
@@ -335,7 +335,7 @@ export function StickyNav({
         </nav>
         <div className="flex shrink-0 items-center gap-2 xl:gap-3.5">
           <LangPill lang={lang} onChange={setLang} />
-          <AccountEntry className="hidden rounded-md px-2 py-2.5 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
+          <AccountEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
           {hasPage ? null : (
             <StartButton
               className={cn(
@@ -446,7 +446,7 @@ export function Hero() {
         </div>
 
         <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
-          <HeroBookingPreview className="mx-auto mt-2 w-full max-w-[440px] lg:mt-0 lg:max-w-none" />
+          <HeroBookingPreview className="lp-booking-card mx-auto mt-2 w-full max-w-[440px] lg:mt-0 lg:max-w-none" />
           <p
             className={cn(
               lpBody,
@@ -561,7 +561,7 @@ export function FAQ() {
           <p className="hidden text-[17px] leading-[1.6] text-[var(--lp-muted)] lg:block">
             {t.faq.aside}
           </p>
-          <DemoButton className="hidden items-center gap-2 self-start rounded-md text-[16px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:inline-flex">
+          <DemoButton className="hidden min-h-11 items-center gap-2 self-start rounded-md text-[16px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:inline-flex">
             {t.hero.ctaSecondary}
             <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
           </DemoButton>
@@ -600,7 +600,7 @@ export function FAQ() {
             crowding the heading. */}
         <div className="flex flex-col gap-3 lg:hidden">
           <p className="text-[15px] leading-[1.55] text-[var(--lp-muted)]">{t.faq.aside}</p>
-          <DemoButton className="inline-flex items-center gap-2 self-start rounded-md text-[15.5px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]">
+          <DemoButton className="inline-flex min-h-11 items-center gap-2 self-start rounded-md text-[15.5px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]">
             {t.hero.ctaSecondary}
             <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
           </DemoButton>
@@ -687,7 +687,7 @@ export function Footer({
   const { hasPage } = useLandingActions();
   const anchor = sectionAnchor(anchorsGoHome, lang);
   const linkClass =
-    "rounded-sm text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]";
+    "inline-flex min-h-11 items-center rounded-sm text-[15px] text-[var(--lp-night-ink)] transition hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)] lg:text-[15.5px]";
   const headingClass = cn(lpMono, "text-[11.5px] uppercase tracking-[0.14em] text-[var(--lp-mint-300)] lg:text-[12px]");
 
   return (
@@ -708,9 +708,9 @@ export function Footer({
               </StartButton>
             )}
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
             <p className={headingClass}>{t.footer.productHeading}</p>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col">
               <li>
                 <a href={anchor("how")} className={linkClass}>
                   {t.footer.product.how}
@@ -736,9 +736,9 @@ export function Footer({
               <AccountEntryListItem />
             </ul>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
             <p className={headingClass}>{t.footer.companyHeading}</p>
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col">
               <li>
                 <a href={anchor("early-access")} className={linkClass}>
                   {t.footer.company.pricing}

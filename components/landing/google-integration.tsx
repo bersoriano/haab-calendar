@@ -31,7 +31,7 @@ function DisclosureVisual() {
           <span className="uppercase">{v.calendar}</span>
           <span className="font-medium text-[var(--lp-subtle)]">{v.day}</span>
         </div>
-        <div className="flex flex-col gap-1.5 text-[11.5px] text-[#98a2b3] sm:text-[12px]">
+        <div className="flex flex-col gap-1.5 text-[11.5px] text-[var(--lp-subtle)] sm:text-[12px]">
           <div className="flex items-start gap-2.5">
             <span className="w-9 shrink-0 pt-1.5 sm:w-10">8 AM</span>
             <span className="flex-1 rounded-lg bg-[#f2f4f7] px-2.5 py-1.5 text-[12px] text-[var(--lp-subtle)] sm:text-[12.5px]">
@@ -42,7 +42,7 @@ function DisclosureVisual() {
             <span className="w-9 shrink-0 pt-2 sm:w-10">9 AM</span>
             <span className="flex-1 rounded-lg bg-[var(--lp-teal-600)] px-2.5 py-2 text-[13px] font-bold text-white sm:text-[13.5px]">
               {v.event}
-              <span className="mt-0.5 block text-[11.5px] font-medium text-[var(--lp-mint-100)] sm:text-[12px]">
+              <span className="mt-0.5 block text-[11.5px] font-medium text-white/90 sm:text-[12px]">
                 {v.eventNote}
               </span>
             </span>
@@ -112,7 +112,7 @@ export function GoogleIntegration() {
             </p>
             <Link
               href={`/privacy?lang=${lang}#google`}
-              className="self-start rounded-md text-[15.5px] font-bold text-[var(--lp-blue-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-blue-700)] lg:text-[16px]"
+              className="inline-flex min-h-11 items-center self-start rounded-md text-[15.5px] font-bold text-[var(--lp-blue-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-blue-700)] lg:text-[16px]"
             >
               {t.googleIntegration.privacyLink}
             </Link>

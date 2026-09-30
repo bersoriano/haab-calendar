@@ -55,7 +55,7 @@ export function LangPill({
             aria-pressed={active}
             onClick={() => onChange(language)}
             className={cn(
-              "min-h-8 rounded-full px-2.5 text-[12px] font-bold transition focus-visible:outline-none focus-visible:ring-2 sm:min-h-9 sm:px-3.5 sm:text-[13.5px]",
+              "relative min-h-8 rounded-full px-2.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[''] text-[12px] font-bold transition focus-visible:outline-none focus-visible:ring-2 sm:min-h-9 sm:px-3.5 sm:text-[13.5px]",
               !long && "uppercase",
               variant === "night"
                 ? cn(
