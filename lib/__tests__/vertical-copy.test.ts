@@ -77,3 +77,17 @@ describe("restaurant copy", () => {
     expect(copy.phrases.spotsLeftSuffix).toBe("mesas disponibles");
   });
 });
+
+describe("beforeVisitLabel", () => {
+  it("names the visit for healthcare and the appointment for professional", () => {
+    expect(getVerticalCopy("healthcare", "en").phrases.beforeVisitLabel).toBe("Before your visit:");
+    expect(getVerticalCopy("professional", "es").phrases.beforeVisitLabel).toBe("Antes de su cita:");
+  });
+
+  it("falls back to a generic label elsewhere, in both languages", () => {
+    for (const vertical of ["spaces", "events", "restaurant"] as const) {
+      expect(getVerticalCopy(vertical, "en").phrases.beforeVisitLabel).toBe("Before you arrive:");
+      expect(getVerticalCopy(vertical, "es").phrases.beforeVisitLabel).toBe("Antes de llegar:");
+    }
+  });
+});

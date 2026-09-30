@@ -237,6 +237,11 @@ export type BookingDict = {
     // Public header live slot
     headerTimesShownIn: string;
     headerHoldingSpot: string;
+    headerNoAccount: string;
+    headerTimesIn: string;
+    stepOfTotal: string;
+    where: string;
+    whereShared: string;
     // Boarding-pass confirmation
     passEyebrow: string;
     passDate: string;
@@ -778,6 +783,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       managementUrlLabel: "Booking management link",
       headerTimesShownIn: "Times shown in",
       headerHoldingSpot: "Holding your spot…",
+      headerNoAccount: "No account needed",
+      headerTimesIn: "Times in {city}",
+      stepOfTotal: "Step {n} of {total}",
+      where: "Where",
+      whereShared: "Same for every {service}",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
       passTime: "Time",
@@ -1329,6 +1339,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       managementUrlLabel: "Enlace para gestionar la reserva",
       headerTimesShownIn: "Horarios en",
       headerHoldingSpot: "Apartando tu lugar…",
+      headerNoAccount: "Sin crear cuenta",
+      headerTimesIn: "Horarios de {city}",
+      stepOfTotal: "Paso {n} de {total}",
+      where: "Dónde",
+      whereShared: "Aplica a cada {service}",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",
       passTime: "Horario",
