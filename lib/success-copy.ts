@@ -64,7 +64,14 @@ export function getSuccessHeadline(
  * yields a bare protocol.
  */
 export function shortenManageUrl(url: string, maxChars: number): string {
-  const bare = url.trim().replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  const full = url.trim().replace(/^https?:\/\//i, "");
+
+  if (full.length <= maxChars) {
+    return full.replace(/\/+$/, "");
+  }
+
+  // A query ("?lang=es") is not part of the key, and is the first thing to go.
+  const bare = full.replace(/[?#].*$/, "").replace(/\/+$/, "");
 
   if (bare.length <= maxChars) {
     return bare;

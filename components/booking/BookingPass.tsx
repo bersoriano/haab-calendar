@@ -355,3 +355,363 @@ export function BookingPass({
   );
 }
 
+
+/* ── Refined pass ───────────────────────────────────────────────────────── */
+
+const refinedLabel = cn(microLabel, "text-[0.65625rem] tracking-[0.16em]");
+const dottedRule = "border-t border-dotted border-[rgba(15,23,42,0.22)]";
+
+/** Human values are set in the body face; only machine values stay mono. */
+function RefinedCell({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+      <p className={refinedLabel}>{label}</p>
+      {children}
+    </div>
+  );
+}
+
+const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
+
+/**
+ * The confirmation pass as the dedicated page shows it: a header with the type
+ * badge, the moment on an inset block, the people and places in auto-fitting
+ * columns, the sentences banded below, and the tear-off stub beside (above the
+ * fields on a phone, where it becomes a horizontal band between tear lines).
+ *
+ * The classic `BookingPass` above stays as it was for the embedded surface.
+ * Takes structured fields rather than a list of cells, because each one has a
+ * place in this layout.
+ */
+export function RefinedBookingPass({
+  booking,
+  providerName,
+  serviceName,
+  typeBadge,
+  dateLabel,
+  dateLabelCompact,
+  timeLabel,
+  isFullDay,
+  durationLabel,
+  clientFieldLabel,
+  addresses,
+  providerPhones,
+  providerEmail,
+  category,
+  description,
+  bringLabel,
+  notes,
+  clientNotes,
+  costLabel,
+  admitLabel,
+  reference,
+  issuedLabel,
+  qrDataUrl,
+  qrError,
+  onOpenQr,
+  onDownloadIcs,
+  confirmationLabel,
+  copy,
+  lang = "en",
+}: {
+  booking: BookingRecord;
+  providerName: string;
+  serviceName: string;
+  typeBadge?: { label: string; tone: "primary" | "secondary" };
+  dateLabel: string;
+  /** A shorter form of the date for a phone; falls back to `dateLabel`. */
+  dateLabelCompact?: string;
+  timeLabel: string;
+  isFullDay: boolean;
+  durationLabel: string;
+  clientFieldLabel: string;
+  addresses: string[];
+  providerPhones: string[];
+  providerEmail?: string;
+  /** Specialty or category. Omitted when the service has none. */
+  category?: PassField;
+  description?: string;
+  /** The vertical's heading over the notes: "Bring with you", "Before you arrive". */
+  bringLabel: string;
+  notes?: string;
+  /** What the client wrote on the booking, when they wrote something. */
+  clientNotes?: PassField;
+  costLabel?: string;
+  admitLabel?: string;
+  reference: string;
+  issuedLabel: string;
+  qrDataUrl?: string;
+  qrError?: string;
+  onOpenQr: () => void;
+  onDownloadIcs: () => void;
+  /** Kept for views that want the moment on the pass itself. */
+  confirmationLabel?: string;
+  copy: VerticalCopy;
+  lang?: Lang;
+}) {
+  const t = bookingTranslations[lang];
+  const isCancelled = booking.status === "cancelled";
+  const hasWhere = addresses.length > 0 || providerPhones.length > 0 || Boolean(providerEmail);
+  const hasProse = Boolean(description || notes || clientNotes);
+  const headline = cn(
+    "text-[19px] font-semibold leading-[1.15] tracking-[-0.03em] lg:text-[28px] lg:tracking-[-0.035em]",
+    isCancelled ? "text-[var(--muted)] line-through" : "text-[var(--ink)]",
+  );
+
+  return (
+    <article
+      aria-label={t.publicFlow.passEyebrow}
+      className="overflow-hidden rounded-[26px] bg-[var(--surface-lowest)] shadow-[0_24px_54px_rgba(15,23,42,0.10)] ring-1 ring-[rgba(15,23,42,0.06)] lg:rounded-[30px] lg:shadow-[0_30px_70px_rgba(15,23,42,0.10)]"
+    >
+      <div
+        aria-hidden="true"
+        className={cn(
+          "h-[5px] w-full lg:h-1.5",
+          isCancelled
+            ? "bg-[#e11d48]"
+            : "bg-[linear-gradient(90deg,var(--accent-strong),var(--accent)_45%,var(--action-teal))]",
+        )}
+      />
+
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
+        {/* On a phone this wrapper dissolves so the stub can sit between the
+            moment and the fields; from lg it is the pass's left column. */}
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-[26px] lg:p-8">
+          <div className="order-1 flex items-start justify-between gap-4 px-5 pt-5 sm:px-8 sm:pt-8 lg:p-0">
+            <div className="flex min-w-0 flex-col gap-1">
+              <p className="break-words text-base font-semibold tracking-[-0.02em] text-[var(--ink)] lg:text-lg">
+                {providerName}
+              </p>
+              <p className={cn("break-words", refinedLabel)}>{serviceName}</p>
+              {confirmationLabel ? (
+                <p
+                  className={cn(
+                    "mt-1 self-start rounded-full px-2.5 py-1 font-semibold [font-family:var(--font-plex-mono)] text-[0.625rem] uppercase tracking-[0.14em]",
+                    isCancelled
+                      ? "bg-[#fff1f2] text-[#be123c]"
+                      : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]",
+                  )}
+                >
+                  {confirmationLabel}
+                </p>
+              ) : null}
+            </div>
+            {typeBadge ? (
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.06em]",
+                  typeBadge.tone === "primary"
+                    ? "bg-[#dfe8fb] text-[#0b57d0]"
+                    : "bg-[#eef0f3] text-[#3c4043]",
+                )}
+              >
+                {typeBadge.label}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="order-2 mx-5 mt-[18px] grid grid-cols-2 gap-3.5 rounded-2xl bg-[var(--summary-surface)] p-4 sm:mx-8 lg:mx-0 lg:mt-0 lg:gap-5 lg:rounded-[20px] lg:px-6 lg:py-[22px]">
+            <RefinedCell label={t.publicFlow.passDate}>
+              <p className={headline}>
+                {dateLabelCompact ? (
+                  <>
+                    <span className="lg:hidden">{dateLabelCompact}</span>
+                    <span className="hidden lg:inline">{dateLabel}</span>
+                  </>
+                ) : (
+                  dateLabel
+                )}
+              </p>
+            </RefinedCell>
+            <RefinedCell label={isFullDay ? t.publicFlow.when : t.publicFlow.passTime}>
+              <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1.5">
+                <p className={cn("whitespace-nowrap", headline)}>
+                  {isFullDay ? t.publicFlow.fullDay : timeLabel}
+                </p>
+                {!isFullDay && durationLabel ? (
+                  <span
+                    className={cn(
+                      "rounded-full bg-white px-2.5 py-1 uppercase text-[var(--ink)]",
+                      microLabel,
+                    )}
+                  >
+                    {durationLabel}
+                  </span>
+                ) : null}
+              </div>
+            </RefinedCell>
+          </div>
+
+          <div className="order-4 flex flex-col gap-4 p-5 sm:p-8 lg:gap-[26px] lg:p-0">
+            <div className="grid gap-x-6 gap-y-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))] lg:gap-y-[22px]">
+              <RefinedCell label={clientFieldLabel}>
+                <p className="break-words text-[15px] font-semibold text-[var(--ink)]">
+                  {booking.clientName || "—"}
+                </p>
+                {booking.clientEmail || booking.clientPhone ? (
+                  <p className="break-all text-sm leading-[1.5] text-[#3c4043]">
+                    {booking.clientEmail}
+                    {booking.clientEmail && booking.clientPhone ? <br /> : null}
+                    {booking.clientPhone}
+                  </p>
+                ) : null}
+              </RefinedCell>
+              {hasWhere ? (
+                <RefinedCell label={t.publicFlow.where}>
+                  {addresses.map((address) => (
+                    <p key={address} className="break-words text-[15px] font-medium leading-[1.45] text-[var(--ink)]">
+                      {address}
+                    </p>
+                  ))}
+                  {providerPhones.map((phone) => (
+                    <a
+                      key={phone}
+                      href={telHref(phone)}
+                      className="text-sm font-medium text-[var(--primary)]"
+                    >
+                      {phone}
+                    </a>
+                  ))}
+                  {providerEmail ? (
+                    <a
+                      href={`mailto:${providerEmail}`}
+                      className="break-all text-sm font-medium text-[var(--primary)]"
+                    >
+                      {providerEmail}
+                    </a>
+                  ) : null}
+                </RefinedCell>
+              ) : null}
+              {category ? (
+                <RefinedCell label={category.label}>
+                  <p className="break-words text-[15px] font-medium text-[var(--ink)]">
+                    {category.value}
+                  </p>
+                </RefinedCell>
+              ) : null}
+            </div>
+
+            {hasProse ? (
+              <div className={cn("grid gap-x-6 gap-y-4 pt-4 sm:grid-cols-2 lg:pt-[22px]", dottedRule)}>
+                {description ? (
+                  <RefinedCell label={t.publicFlow.passAbout}>
+                    <p className="text-sm leading-[1.6] text-[#3c4043]">{description}</p>
+                  </RefinedCell>
+                ) : null}
+                {notes ? (
+                  <RefinedCell label={bringLabel}>
+                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[#3c4043]">
+                      {notes}
+                    </p>
+                  </RefinedCell>
+                ) : null}
+                {clientNotes ? (
+                  <RefinedCell label={clientNotes.label} className="sm:col-span-2">
+                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[#3c4043]">
+                      {clientNotes.value}
+                    </p>
+                  </RefinedCell>
+                ) : null}
+              </div>
+            ) : null}
+
+            {costLabel ? (
+              <div
+                className={cn(
+                  "flex items-baseline justify-between gap-4 pt-3.5 lg:pt-5",
+                  dottedRule,
+                )}
+              >
+                <p className={refinedLabel}>{t.publicFlow.total}</p>
+                <p
+                  className={cn(
+                    "break-words text-right font-bold tracking-[-0.03em] text-[var(--ink)]",
+                    costLabel.length > 10 ? "text-xl" : "text-2xl lg:text-[30px]",
+                  )}
+                >
+                  {costLabel}
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        {/* ── Tear-off stub ─────────────────────────────────────── */}
+        <div className="haab-pass-stub order-3 mt-5 border-y-2 border-dashed border-[rgba(15,23,42,0.16)] bg-[#f3f4f6] p-5 lg:order-none lg:mt-0 lg:border-y-0 lg:border-l-2 lg:p-8">
+          <p className="[grid-area:title] text-sm font-semibold text-[var(--ink)]">
+            {t.publicFlow.passShowAtCheckIn}
+          </p>
+
+          {isCancelled ? (
+            <p
+              aria-hidden="true"
+              className="[grid-area:qr] max-w-full rotate-[-8deg] justify-self-center rounded-lg border-[3px] border-[#be123c] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#be123c] opacity-80 lg:my-6 lg:px-4 lg:py-2 lg:text-lg lg:tracking-[0.14em]"
+            >
+              {t.publicFlow.statusCancelled}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenQr}
+              aria-label={copy.phrases.calendarQrLabel}
+              className="[grid-area:qr] flex aspect-square w-full max-w-[120px] items-center justify-center overflow-hidden rounded-2xl bg-white p-[9px] shadow-[0_6px_16px_rgba(15,23,42,0.08)] transition hover:ring-2 hover:ring-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:max-w-[176px] lg:rounded-[20px] lg:p-3 lg:shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+            >
+              {qrDataUrl ? (
+                <span
+                  className="h-full w-full bg-contain bg-center bg-no-repeat"
+                  role="img"
+                  aria-label={copy.phrases.calendarQrLabel}
+                  style={{ backgroundImage: `url(${qrDataUrl})` }}
+                />
+              ) : (
+                <span className="px-2 text-center text-xs leading-5 text-[var(--muted)]">
+                  {qrError || t.manage.preparingQr}
+                </span>
+              )}
+            </button>
+          )}
+
+          {admitLabel ? (
+            <span
+              className={cn(
+                "[grid-area:pill] self-start rounded-full bg-white px-2.5 py-1 uppercase text-[#3c4043] lg:self-auto lg:px-3 lg:py-[5px]",
+                microLabel,
+              )}
+            >
+              {admitLabel}
+            </span>
+          ) : null}
+
+          <div className="[grid-area:meta] grid w-full grid-cols-1 gap-2.5 text-left lg:grid-cols-2 lg:pt-1 lg:text-center">
+            <div className="flex flex-col gap-1">
+              <p className={refinedLabel}>{t.publicFlow.receiptReference}</p>
+              <p className={cn("uppercase", monoValue)}>{reference}</p>
+            </div>
+            <div className="hidden flex-col gap-1 lg:flex">
+              <p className={refinedLabel}>{t.publicFlow.receiptIssued}</p>
+              <p className={monoValue}>{issuedLabel}</p>
+            </div>
+          </div>
+
+          {!isCancelled ? (
+            <button
+              type="button"
+              onClick={onDownloadIcs}
+              className="[grid-area:ics] mt-1 hidden h-[46px] w-full items-center justify-center rounded-full border border-[#cfd5df] bg-white px-4 !text-sm !font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:inline-flex"
+            >
+              {t.publicFlow.passDownloadIcs}
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </article>
+  );
+}

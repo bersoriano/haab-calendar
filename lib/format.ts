@@ -27,6 +27,25 @@ export function formatWeekdayDate(dateKey: string, lang: Lang = "en") {
   }).format(parseDateKey(dateKey));
 }
 
+/** "Thu, October 1, 2026" — the pass's date block, where the long weekday would wrap. */
+export function formatPassDate(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "short",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
+/** "Thu, Oct 1" — the same date for a phone, where the long form wraps to three lines. */
+export function formatPassDateCompact(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(parseDateKey(dateKey));
+}
+
 export function formatCompactDate(dateKey: string, lang: Lang = "en") {
   return getCompactDateFormatter(lang).format(parseDateKey(dateKey));
 }

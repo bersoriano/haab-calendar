@@ -252,3 +252,33 @@ code {
     transition: none;
   }
 }
+
+/* Confirmation pass stub (see components/booking/BookingPass.tsx). One element,
+   two layouts: a horizontal band on phones with the code beside the facts, and
+   the tear-off column from lg. Children pick their area with `grid-area`. */
+.haab-pass-stub {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-areas:
+    "qr title"
+    "qr meta"
+    "qr pill";
+  align-items: center;
+  gap: 10px 16px;
+}
+
+@media (min-width: 1024px) {
+  .haab-pass-stub {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "qr"
+      "pill"
+      "meta"
+      "ics";
+    justify-items: center;
+    align-content: start;
+    gap: 14px;
+    text-align: center;
+  }
+}

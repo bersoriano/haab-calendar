@@ -80,6 +80,9 @@ import {
 import {
   formatDateLabel,
   formatCompactDate,
+  formatWeekdayDate,
+  formatPassDate,
+  formatPassDateCompact,
   formatMonthLabel,
   formatTimeLabel,
   formatCompactTimeRange,
@@ -180,7 +183,9 @@ import {
   ManageBookingPanel,
   type ManageNoteStatus,
 } from "@/components/booking/ManageBookingPanel";
-import { BookingPass, type PassField } from "@/components/booking/BookingPass";
+import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
+import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
+import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
@@ -5787,7 +5792,13 @@ export function HaabBookingModule({
             ) : null}
 
             {isPublicSuccessStep && successfulBooking ? (
-              <div className="[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5">
+              <div
+                className={
+                  isDedicatedPublicPage
+                    ? "space-y-4 sm:space-y-5"
+                    : "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5"
+                }
+              >
                 {(() => {
                   // The booked location, else the service's linked addresses.
                   const successAddresses = successfulBooking.location
@@ -5875,6 +5886,148 @@ export function HaabBookingModule({
                           value: successAddresses.join("\n"),
                         }
                       : undefined;
+
+                  if (isDedicatedPublicPage) {
+                    // The moment first, then the record (the pass), then the
+                    // key to it (the private link), then what can be changed.
+                    const rise =
+                      "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.35s_both]";
+                    const statusLabel = isSuccessfulBookingCancelled
+                      ? t.publicFlow.bookingCancelled
+                      : successfulBooking.status === "rescheduled"
+                        ? t.publicFlow.bookingUpdated
+                        : t.publicFlow.bookingConfirmed;
+                    const hasLink = Boolean(
+                      successfulBooking.manageToken && successfulManageUrl,
+                    );
+
+                    return (
+                      <>
+                        <BookingSuccessPanel
+                          status={successfulBooking.status}
+                          clientName={successfulBooking.clientName}
+                          serviceName={selectedService.name}
+                          dateLabel={formatWeekdayDate(successfulBooking.dateKey, lang)}
+                          timeLabel={
+                            isFullDayBooking
+                              ? null
+                              : formatTimeLabel(successfulBooking.startTime, lang)
+                          }
+                          isEvents={selectionIsEvent}
+                          statusLabel={statusLabel}
+                          whatHappensNext={copy.phrases.whatHappensNext}
+                          onAddToCalendar={() => downloadBookingCalendarFile(successfulBooking)}
+                          onCopyLink={hasLink ? () => void copyManageLink() : undefined}
+                          copied={copiedManageLink}
+                          copy={copy}
+                          lang={lang}
+                        />
+
+                        <div className={rise}>
+                          <RefinedBookingPass
+                            booking={successfulBooking}
+                            providerName={
+                              provider.businessName || provider.fullName || copy.bookingPage
+                            }
+                            serviceName={selectedService.name}
+                            typeBadge={
+                              selectionIsEvent
+                                ? {
+                                    label: getOccurrenceModeLabel(
+                                      selectedService.occurrenceMode,
+                                      lang,
+                                    ),
+                                    tone: "secondary",
+                                  }
+                                : {
+                                    label: getBookingTypeLabel(
+                                      successfulBooking.bookingType,
+                                      lang,
+                                    ),
+                                    tone: bookingTypeTone(successfulBooking.bookingType),
+                                  }
+                            }
+                            dateLabel={formatPassDate(successfulBooking.dateKey, lang)}
+                            dateLabelCompact={formatPassDateCompact(
+                              successfulBooking.dateKey,
+                              lang,
+                            )}
+                            timeLabel={formatTimeLabel(successfulBooking.startTime, lang)}
+                            isFullDay={isFullDayBooking}
+                            durationLabel={formatDuration(selectedService, lang)}
+                            clientFieldLabel={copy.phrases.clientLabel}
+                            addresses={successAddresses}
+                            providerPhones={successPhones}
+                            providerEmail={provider.email?.trim() || undefined}
+                            category={
+                              selectedService.medicalSpecialty
+                                ? {
+                                    label: t.publicFlow.specialty,
+                                    value: selectedService.medicalSpecialty,
+                                  }
+                                : undefined
+                            }
+                            description={selectedService.description?.trim() || undefined}
+                            bringLabel={copy.phrases.bringWithYouLabel}
+                            notes={selectedService.notes?.trim() || undefined}
+                            clientNotes={
+                              successfulBooking.notes.trim()
+                                ? {
+                                    label: fillTemplate(t.publicFlow.passClientNotes, {
+                                      client: copy.phrases.clientLabel.toLowerCase(),
+                                      Client: copy.phrases.clientLabel,
+                                    }),
+                                    value: successfulBooking.notes,
+                                  }
+                                : undefined
+                            }
+                            costLabel={successfulBooking.cost || effectiveCost}
+                            admitLabel={
+                              successfulBooking.capacitySnapshot ||
+                              formatCapacityLabel(selectedService, lang)
+                            }
+                            reference={successfulBooking.id.slice(-10)}
+                            issuedLabel={formatCompactDate(
+                              getDateKey(new Date(successfulBooking.createdAt)),
+                              lang,
+                            )}
+                            qrDataUrl={qrForBooking?.url || undefined}
+                            qrError={qrForBooking?.error || undefined}
+                            onOpenQr={() => setIsCalendarQrModalOpen(true)}
+                            onDownloadIcs={() => downloadBookingCalendarFile(successfulBooking)}
+                            copy={copy}
+                            lang={lang}
+                          />
+                        </div>
+
+                        {hasLink ? (
+                          <div className={rise}>
+                            <PrivateLinkCard
+                              variant="refined"
+                              url={successfulManageUrl}
+                              lang={lang}
+                              copied={copiedManageLink}
+                              onCopy={() => void copyManageLink()}
+                              bookingNoun={copy.booking}
+                            />
+                          </div>
+                        ) : null}
+
+                        <div className={rise}>
+                          <SuccessActions
+                            canReschedule={!isServiceSingleOccurrence(successfulBooking.serviceId)}
+                            isCancelled={isSuccessfulBookingCancelled}
+                            cancelLabel={copy.phrases.cancelBookingButton}
+                            onReschedule={() => openReschedule(successfulBooking.id)}
+                            onCancel={() => openCancellation(successfulBooking.id)}
+                            bookAnotherHref={manageBookingToken ? publicUrl : undefined}
+                            onBookAnother={() => startFreshBooking()}
+                            lang={lang}
+                          />
+                        </div>
+                      </>
+                    );
+                  }
 
                   return (
                     <>

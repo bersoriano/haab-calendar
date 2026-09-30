@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatWeekdayDate } from "../format";
+import { formatPassDate, formatPassDateCompact, formatWeekdayDate } from "../format";
 import { getFirstName, getSuccessHeadline, shortenManageUrl } from "../success-copy";
 
 const templates = {
@@ -85,6 +85,16 @@ describe("shortenManageUrl", () => {
     }
   });
 
+  it("drops a language query before it touches the token", () => {
+    const withQuery = `${url}?lang=es`;
+
+    expect(shortenManageUrl(withQuery, 100)).toBe(
+      "haab-calendar.vercel.app/doctors/dr-maya-rivera/manage/CFjeaQWERTYUIOPBkV?lang=es",
+    );
+    expect(shortenManageUrl(withQuery, 34)).toBe("…/dr-maya-rivera/manage/CFje…PBkV");
+    expect(shortenManageUrl(withQuery, 45)).toBe("…/doctors/dr-maya-rivera/manage/CFje…PBkV");
+  });
+
   it("handles a url with no path", () => {
     expect(shortenManageUrl("https://example.test", 30)).toBe("example.test");
     expect(shortenManageUrl("https://a-very-long-host-name.example.test", 12)).toHaveLength(12);
@@ -95,5 +105,18 @@ describe("formatWeekdayDate", () => {
   it("says the weekday, month and day, without the year", () => {
     expect(formatWeekdayDate("2026-10-01", "en")).toBe("Thursday, October 1");
     expect(formatWeekdayDate("2026-10-01", "es")).toBe("jueves, 1 de octubre");
+  });
+});
+
+describe("formatPassDateCompact", () => {
+  it("drops the year and abbreviates the month", () => {
+    expect(formatPassDateCompact("2026-10-01", "en")).toBe("Thu, Oct 1");
+  });
+});
+
+describe("formatPassDate", () => {
+  it("abbreviates the weekday and keeps the year", () => {
+    expect(formatPassDate("2026-10-01", "en")).toBe("Thu, October 1, 2026");
+    expect(formatPassDate("2026-10-01", "es")).toContain("2026");
   });
 });
