@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { List } from "@phosphor-icons/react";
+import { ArrowRight, List } from "@phosphor-icons/react";
 import {
   createContext,
   useCallback,
@@ -16,9 +16,18 @@ import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
 import { HeroBookingPreview } from "./hero-preview";
 import { useLanguage } from "./language-provider";
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { LiveDemoDialog } from "./live-demo-dialog";
-import { LandingScope } from "./primitives";
+import { formatDemoCount } from "./demo-count";
+import { FactStrip } from "./fact-strip";
+import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
+import { LangPill } from "./lang-pill";
+import {
+  CheckChip,
+  LandingScope,
+  lpBody,
+  lpButtonClass,
+  lpDisplay,
+} from "./primitives";
 import { StartPageDialog } from "./start-page-dialog";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
@@ -226,9 +235,6 @@ function AccountEntry({ className }: { className: string }) {
   );
 }
 
-const primaryButtonClass =
-  "inline-flex items-center justify-center rounded-lg bg-[var(--ink)] px-7 py-3 text-sm font-semibold !text-white transition hover:bg-[var(--ink)]/90 active:translate-y-px";
-
 // Secondary actions read as links with a rule under them. Only the one action
 // that starts a page is allowed a filled button, so nothing competes with it.
 const secondaryLinkClass =
@@ -258,14 +264,7 @@ export function galleryPath(lang: "en" | "es") {
   return `/gallery?lang=${lang}`;
 }
 
-/**
- * How many examples there are is written once, in DEMO_PAGES. Copy that names
- * the number carries a {n} placeholder instead, because a hand-written count
- * goes stale the moment a demo is added.
- */
-export function formatDemoCount(template: string, count: number) {
-  return template.replace("{n}", String(count));
-}
+export { formatDemoCount };
 
 function BrandGlyph({ label, tone = "blue" }: { label: string; tone?: "blue" | "teal" | "gold" }) {
   const toneClass =
@@ -511,73 +510,91 @@ export function StickyNav({
     ...(showUseCases ? [{ href: anchor("verticals"), label: t.nav.links.useCases }] : []),
     { href: anchor("faq"), label: t.nav.links.faq },
   ];
+  const navLinkClass =
+    "rounded-md px-1 py-2 text-[15.5px] font-semibold text-[var(--lp-ink-2)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]";
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[rgba(193,198,214,0.72)] bg-[rgba(248,249,252,0.86)] shadow-[0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-2xl">
-      <div className="mx-auto flex min-h-[72px] max-w-[1344px] items-center justify-between gap-4 px-4 py-3 sm:min-h-[80px] sm:px-8 sm:py-4">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-[var(--primary-container)] text-sm font-bold text-white shadow-[0_8px_22px_rgba(26,115,232,0.26)] sm:h-10 sm:w-10">
+    <header
+      className={cn(
+        lpBody,
+        "sticky top-0 z-40 w-full bg-[rgba(243,249,247,0.86)] backdrop-blur-xl",
+      )}
+    >
+      <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5 whitespace-nowrap xl:gap-3">
+          <span
+            className={cn(
+              lpDisplay,
+              "relative grid h-[34px] w-[34px] place-items-center rounded-[11px] bg-[var(--lp-blue-600)] text-[18px] font-extrabold text-white shadow-[var(--lp-shadow-logo)] xl:h-[38px] xl:w-[38px] xl:rounded-[12px] xl:text-[20px]",
+            )}
+          >
             H
+            <span
+              aria-hidden="true"
+              className="absolute -right-[3px] -top-[3px] h-[11px] w-[11px] rounded-full border-2 border-[var(--lp-paper)] bg-[var(--lp-teal-400)] xl:h-3 xl:w-3"
+            />
           </span>
-          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--ink)] max-[379px]:sr-only sm:text-base">
+          <span
+            className={cn(
+              lpDisplay,
+              "text-[18px] font-bold tracking-[-0.02em] text-[var(--lp-ink)] max-[379px]:sr-only xl:text-[20px]",
+            )}
+          >
             {t.nav.brand}
           </span>
         </Link>
         <nav className="hidden items-center gap-7 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
-            >
+            <a key={link.href} href={link.href} className={navLinkClass}>
               {link.label}
             </a>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 xl:gap-5">
-          <div className="hidden xl:block">
-            <LanguageSwitcher lang={lang} onChange={setLang} />
-          </div>
-          <AccountEntry className="hidden rounded-md px-1 py-2 text-sm font-semibold text-[var(--ink)] transition hover:text-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)] xl:inline-flex" />
+        <div className="flex shrink-0 items-center gap-2 xl:gap-3.5">
+          <LangPill lang={lang} onChange={setLang} />
+          <AccountEntry className="hidden rounded-md px-2 py-2.5 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
           {hasPage ? null : (
-          <StartButton
-            className={cn(
-              "inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--ink)] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--ink)]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ink)] focus-visible:ring-offset-2 active:translate-y-px sm:min-h-12 sm:px-5",
-              // Hidden rather than unmounted: the layout stays put as it appears.
-              heroPassed ? "opacity-100" : "pointer-events-none opacity-0",
-            )}
-          >
-            <span className="sm:hidden">{t.nav.createPageShort}</span>
-            <span className="hidden sm:inline">{t.nav.createPageLong}</span>
-          </StartButton>
+            <StartButton
+              className={cn(
+                lpButtonClass({ variant: "primary", size: "nav" }),
+                // Phones have no room beside the pill and menu; the menu
+                // carries the action there instead.
+                "max-sm:hidden",
+                // Hidden rather than unmounted: the layout stays put as it appears.
+                heroPassed ? "opacity-100" : "pointer-events-none opacity-0",
+              )}
+            >
+              {t.nav.createPageLong}
+              <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+            </StartButton>
           )}
           <details className="group relative xl:hidden">
             <summary
               aria-label={t.nav.openMenu}
-              className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-[var(--line)] bg-white/55 text-[var(--ink)] transition marker:content-none hover:border-[var(--muted)] hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-soft)]"
+              className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-[14px] border border-[#d6e3e0] bg-white text-[var(--lp-ink)] transition marker:content-none hover:border-[var(--lp-teal-600)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]"
             >
               <List aria-hidden="true" weight="bold" className="h-5 w-5" />
             </summary>
             <nav
               aria-label="Mobile"
-              className="absolute right-0 top-full mt-3 w-64 rounded-2xl border border-[var(--line)] bg-[rgba(248,249,252,0.98)] p-2.5 shadow-[0_18px_46px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+              className="absolute right-0 top-full mt-3 w-64 rounded-[20px] border border-[var(--lp-line)] bg-white p-2.5 shadow-[var(--lp-shadow-raised)]"
             >
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
-                  className="block rounded-xl px-4 py-2.5 text-sm font-medium text-[var(--muted)] transition hover:bg-white hover:text-[var(--ink)]"
+                  className="block rounded-xl px-4 py-3 text-[15px] font-semibold text-[var(--lp-ink-2)] transition hover:bg-[var(--lp-paper)] hover:text-[var(--lp-teal-700)]"
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="mt-1 border-t border-[var(--line)] pt-1.5">
-                <LanguageSwitcher
-                  lang={lang}
-                  onChange={setLang}
-                  className="w-full justify-start"
-                />
-                <AccountEntry className="block w-full rounded-xl px-4 py-2.5 text-left text-sm font-semibold text-[var(--primary)] transition hover:bg-white" />
+              <div className="mt-1 border-t border-[var(--lp-line-soft)] pt-1.5">
+                {hasPage ? null : (
+                  <StartButton className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-bold text-[var(--lp-teal-700)] transition hover:bg-[var(--lp-paper)] sm:hidden">
+                    {t.nav.createPageLong}
+                  </StartButton>
+                )}
+                <AccountEntry className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-semibold text-[var(--lp-blue-700)] transition hover:bg-[var(--lp-paper)]" />
               </div>
             </nav>
           </details>
@@ -587,6 +604,7 @@ export function StickyNav({
   );
 }
 
+/** The returning-owner line's tail: "Already have a page? Log in". */
 function HeroAccountLine() {
   const entry = useAccountEntry();
   const { hasPage } = useLandingActions();
@@ -598,10 +616,11 @@ function HeroAccountLine() {
   }
 
   return (
-    <p className="mt-2 text-sm text-[var(--muted)]">
+    <>
+      {" "}
       {entry.kind === "login" ? `${t.hero.returningPrompt} ` : ""}
-      <AccountEntry className="font-semibold text-[var(--primary)] underline-offset-4 hover:underline" />
-    </p>
+      <AccountEntry className="font-bold text-[var(--lp-blue-700)] underline-offset-4 hover:underline" />
+    </>
   );
 }
 
@@ -609,44 +628,92 @@ export function Hero() {
   const { t } = useLanguage();
   const { hasPage } = useLandingActions();
   const primaryLabel = usePrimaryCtaLabel();
+  const [lineOne, lineTwo, lineThree] = t.hero.titleLines;
+
   return (
-    <section className="relative overflow-hidden border-b border-[var(--line)] bg-[linear-gradient(145deg,#f5f7fb_0%,#edf4ff_54%,#e9f8f5_100%)]">
-      <div className="pointer-events-none absolute -right-24 -top-32 h-[520px] w-[520px] rounded-full bg-[radial-gradient(circle,rgba(26,115,232,0.16),transparent_68%)]" />
-      <div className="pointer-events-none absolute -bottom-56 left-1/3 h-[480px] w-[480px] rounded-full bg-[radial-gradient(circle,rgba(13,148,136,0.12),transparent_68%)]" />
+    <section className="relative overflow-hidden bg-[var(--lp-paper)] pb-24 lg:pb-32">
+      <HeroBackdrop />
       {/* On phones the preview slots between the headline and the supporting
           copy so the running hold is on screen without scrolling. On large
-          screens it moves into its own column beside the full text block. */}
-      <div className="relative mx-auto grid max-w-[1280px] gap-5 px-5 pb-8 pt-5 sm:gap-6 sm:px-8 sm:py-14 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-x-14 lg:gap-y-6 lg:py-18">
-        <div className="lg:col-start-1 lg:row-start-1 lg:self-end">
-          <h1 className="mt-3 max-w-3xl text-balance text-[2.1rem] font-semibold leading-[1.05] tracking-[-0.045em] text-[var(--ink)] sm:mt-5 sm:text-5xl lg:text-[3.65rem] lg:leading-[1.02]">
-            {t.hero.title}
+          screens it moves into its own column beside the full text block. The
+          preview's own column carries no landing font class: the booking card
+          keeps Inter. */}
+      <div className="relative mx-auto grid max-w-[1264px] grid-cols-[minmax(0,1fr)] gap-5 px-5 pt-5 sm:px-8 lg:grid-cols-[minmax(0,596fr)_minmax(0,556fr)] lg:items-center lg:gap-x-12 lg:gap-y-7 lg:pt-12">
+        <div className={cn(lpBody, "flex flex-col gap-5 lg:col-start-1 lg:row-start-1 lg:gap-7 lg:self-end")}>
+          <div className="flex items-center gap-2 self-start rounded-full border border-[#cde7e0] bg-white py-[5px] pl-[5px] pr-3 text-[12.5px] font-semibold text-[var(--lp-ink-2)] shadow-[0_4px_14px_rgba(0,105,92,0.08)] lg:gap-2.5 lg:py-1.5 lg:pl-1.5 lg:pr-3.5 lg:text-[14px]">
+            <span className="rounded-full bg-[var(--lp-teal-700)] px-2 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.04em] text-white lg:px-2.5 lg:py-1 lg:text-[12px]">
+              {t.hero.badge}
+            </span>
+            <span className="lg:hidden">{t.hero.badgeTextShort}</span>
+            <span className="hidden lg:inline">{t.hero.badgeText}</span>
+          </div>
+          <h1
+            className={cn(
+              lpDisplay,
+              "flex flex-col gap-0.5 text-[38px] font-bold leading-none tracking-[-0.035em] text-[var(--lp-ink)] sm:text-[44px] lg:gap-1 lg:text-[56px] xl:text-[66px]",
+            )}
+          >
+            <span>{lineOne}</span>
+            <span>{lineTwo}</span>
+            <span className="relative self-start text-[var(--lp-teal-600)]">
+              {lineThree}
+              <HeadlineUnderline />
+            </span>
           </h1>
         </div>
 
-        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center lg:pl-2">
-          <HeroBookingPreview className="mx-auto w-full max-w-[440px] lg:max-w-none" />
-          <p className="mt-3 text-center text-xs text-[var(--muted)] lg:text-left">
+        <div className="lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:self-center">
+          <HeroBookingPreview className="mx-auto mt-2 w-full max-w-[440px] lg:mt-0 lg:max-w-none" />
+          <p
+            className={cn(
+              lpBody,
+              "mt-2.5 text-center text-[12px] text-[var(--lp-muted)] lg:mt-3 lg:text-left lg:text-[13px]",
+            )}
+          >
             {t.hero.previewCaption}
           </p>
         </div>
 
-        <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
-          <p className="max-w-2xl text-base leading-7 text-[var(--muted)] sm:text-lg sm:leading-8">
+        <div className={cn(lpBody, "flex flex-col gap-5 lg:col-start-1 lg:row-start-2 lg:gap-7 lg:self-start")}>
+          <p className="max-w-[540px] text-pretty text-[17px] leading-[1.55] text-[var(--lp-body)] lg:text-[20px]">
             {t.hero.body}
           </p>
-          <div id="hero-cta-anchor" className="mt-5 flex flex-wrap items-center gap-3 sm:mt-7">
-            <StartButton className={primaryButtonClass}>{primaryLabel}</StartButton>
-            <DemoButton className={secondaryLinkClass}>
-              <span className="haab-live-dot mr-2 h-1.5 w-1.5 rounded-full bg-[var(--teal)]" aria-hidden="true" />
+          <div
+            id="hero-cta-anchor"
+            className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3.5"
+          >
+            <StartButton
+              className={cn(lpButtonClass({ variant: "primary", size: "hero" }), "w-full sm:w-auto")}
+            >
+              {primaryLabel}
+              <ArrowRight aria-hidden="true" weight="bold" className="h-[18px] w-[18px] shrink-0" />
+            </StartButton>
+            <DemoButton
+              className={cn(lpButtonClass({ variant: "secondary", size: "hero" }), "w-full sm:w-auto")}
+            >
+              <span
+                aria-hidden="true"
+                className="haab-live-dot h-2 w-2 rounded-full bg-[var(--lp-teal-400)] shadow-[0_0_0_4px_rgba(31,209,178,0.2)]"
+              />
               {t.hero.ctaSecondary}
             </DemoButton>
           </div>
+          <ul className="flex flex-wrap gap-2 lg:gap-2.5">
+            {t.hero.chips.map((chip) => (
+              <li key={chip}>
+                <CheckChip>{chip}</CheckChip>
+              </li>
+            ))}
+          </ul>
+          {/* The account line rides on the fine print, at the exact moment
+              someone realises the primary CTA is not for them: they already
+              have a page. */}
           {hasPage ? null : (
-            <p className="mt-4 text-sm text-[var(--muted)]">{t.hero.fineprint}</p>
+            <p className="text-[14px] leading-[1.5] text-[var(--lp-muted)] lg:text-[15px]">
+              {t.hero.fineprint}
+              <HeroAccountLine />
+            </p>
           )}
-          {/* Second placement, at the exact moment someone realises the primary
-              CTA is not for them: they already have a page. */}
-          <HeroAccountLine />
         </div>
       </div>
     </section>
@@ -1136,6 +1203,7 @@ export function LandingPage({
         <StickyNav showUseCases={showUseCases} />
         <main className="flex-1">
           <Hero />
+          <FactStrip />
           <LiveExamples featured={featuredDemos} />
           {afterHero}
           <HowItWorks />
