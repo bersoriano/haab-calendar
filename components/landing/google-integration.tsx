@@ -33,13 +33,13 @@ function DisclosureVisual() {
         </div>
         <div className="flex flex-col gap-1.5 text-[11.5px] text-[var(--lp-subtle)] sm:text-[12px]">
           <div className="flex items-start gap-2.5">
-            <span className="w-9 shrink-0 pt-1.5 sm:w-10">8 AM</span>
+            <span className="w-9 shrink-0 pt-1.5 sm:w-10">{v.hours[0]}</span>
             <span className="flex-1 rounded-lg bg-[#f2f4f7] px-2.5 py-1.5 text-[12px] text-[var(--lp-subtle)] sm:text-[12.5px]">
               {v.busy}
             </span>
           </div>
           <div className="flex items-start gap-2.5">
-            <span className="w-9 shrink-0 pt-2 sm:w-10">9 AM</span>
+            <span className="w-9 shrink-0 pt-2 sm:w-10">{v.hours[1]}</span>
             <span className="flex-1 rounded-lg bg-[var(--lp-teal-600)] px-2.5 py-2 text-[13px] font-bold text-white sm:text-[13.5px]">
               {v.event}
               <span className="mt-0.5 block text-[11.5px] font-medium text-white/90 sm:text-[12px]">
@@ -47,7 +47,7 @@ function DisclosureVisual() {
               </span>
             </span>
           </div>
-          {["10 AM", "11 AM"].map((hour) => (
+          {v.hours.slice(2).map((hour) => (
             <div key={hour} className="hidden items-start gap-2.5 sm:flex">
               <span className="w-10 shrink-0 pt-2">{hour}</span>
               <span className="h-[34px] flex-1 rounded-lg border border-dashed border-[#d0d5dd]" />

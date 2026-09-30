@@ -306,8 +306,8 @@ export const translations = {
         eventDay: "MAR",
         eventDate: "29",
         eventTitle: "Consulta para pacientes nuevos",
-        eventMeta: "9:00 – 9:30 AM · Reservado por el cliente",
-        added: "Agregado a tu calendario, sin mensajes de por medio",
+        eventMeta: "9:00 – 9:30 · Reservado por el cliente",
+        added: "Se agrega a tu calendario, sin mensajes de por medio",
       },
     },
     features: {
@@ -322,7 +322,7 @@ export const translations = {
       wordsExample: "“Patient” · “Paciente”",
       selfService: {
         lock: "Enlace privado · solo para esta reserva",
-        when: "Mar 29 sep · 9:00 AM",
+        when: "mar 29 sep · 9:00",
         reschedule: "Reagendar",
         cancel: "Cancelar",
       },
@@ -370,7 +370,7 @@ export const translations = {
       note:
         "Gana el más parecido. Todo se edita en la configuración.",
       cta: "Crear mi página",
-      healthBadge: "Nuestra industria principal",
+      healthBadge: "Nuestro sector principal",
       healthLanguage: "Tus pacientes leen “pacientes”, no “clientes”.",
       prefilled: "Precargado para ti",
       addOwn: "+ Agrega los tuyos · Editable",
@@ -398,6 +398,7 @@ export const translations = {
       visual: {
         calendar: "Tu Google Calendar",
         day: "Mar 29",
+        hours: ["8:00", "9:00", "10:00", "11:00"],
         busy: "Ocupado: ya está en tu calendario",
         event: "Consulta para pacientes nuevos",
         eventNote: "Solo el nombre del servicio",
@@ -880,6 +881,7 @@ export const translations = {
       visual: {
         calendar: "Your Google Calendar",
         day: "Tue 29",
+        hours: ["8 AM", "9 AM", "10 AM", "11 AM"],
         busy: "Busy — already on your calendar",
         event: "New patient consultation",
         eventNote: "Service name only",
