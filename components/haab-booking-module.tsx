@@ -134,6 +134,7 @@ import {
   type BookingFlowNotice,
 } from "@/lib/booking-flow-machine";
 import { getServiceSelectCta } from "@/lib/service-select-cta";
+import { getServiceContact, resolveSharedServiceContact } from "@/lib/service-card";
 import { getPublicSlotStates } from "@/lib/slot-states";
 import {
   scrollPublicBookingStepToTop,
@@ -180,6 +181,8 @@ import {
 import { BookingPass, type PassField } from "@/components/booking/BookingPass";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
+import { ServiceCard } from "@/components/booking/ServiceCard";
+import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
 import {
   isGuestDraftMeaningful,
   prepareGuestPreviewStore,
@@ -1040,6 +1043,7 @@ export function HaabBookingModule({
   function renderPublicLanguageChooser(
     className = "",
     variant: "floating" | "inset" = "floating",
+    compact = false,
   ) {
     if (surface !== "public") return null;
 
@@ -1048,6 +1052,7 @@ export function HaabBookingModule({
         lang={lang}
         onChange={choosePublicLanguage}
         tone={variant}
+        compact={compact}
         className={className}
       />
     );
@@ -4458,6 +4463,42 @@ export function HaabBookingModule({
       dispatchBookingFlow({ type: "RESTART" });
     };
 
+    // Step 1, dedicated page. One address and phone set shared by every service
+    // is said once under the grid; otherwise each card carries its own.
+    const sharedServiceContact = resolveSharedServiceContact(services, provider);
+    // A weekly service has a different count on every date, so only a fixed
+    // occurrence can state one on its card.
+    const getServiceSeatsNote = (service: Service) => {
+      if (service.occurrenceMode !== "single" || !service.occurrenceDate) {
+        return null;
+      }
+
+      const left = getSpotsLeft(
+        service,
+        service.occurrenceDate,
+        bookings,
+        undefined,
+        activeBookingHolds,
+      );
+
+      if (!Number.isFinite(left) || typeof service.maxSpots !== "number") {
+        return null;
+      }
+
+      const remaining = Math.max(0, left);
+
+      return {
+        text:
+          remaining === 0
+            ? copy.phrases.fullyBookedLabel
+            : `${remaining} ${copy.phrases.spotsLeftSuffix}`,
+        tone:
+          remaining > 0 && remaining <= service.maxSpots * 0.25
+            ? ("scarce" as const)
+            : ("muted" as const),
+      };
+    };
+
     return (
       <div
         className={cn(
@@ -4704,7 +4745,103 @@ export function HaabBookingModule({
           </div>
           </>
         ) : null}
-        {resolvedBookingFlow.step === 1 ? (
+        {resolvedBookingFlow.step === 1 && isDedicatedPublicPage ? (
+          <div className="space-y-4 p-5 sm:space-y-[22px] sm:p-8 xl:px-10 xl:py-10">
+            {headerBanner}
+            <ServiceStepIntro
+              title={copy.phrases.chooseServiceTitle}
+              body={
+                services.length === 1
+                  ? copy.phrases.onlyOneServiceBody
+                  : copy.phrases.chooseServiceBody
+              }
+              serviceLabel={copy.Service}
+              lang={lang}
+            />
+            <div className="grid gap-4 sm:gap-5 lg:grid-cols-2">
+              {services.map((service, index) => (
+                <ServiceCard
+                  key={service.id}
+                  service={service}
+                  index={index}
+                  vertical={vertical ?? undefined}
+                  copy={copy}
+                  lang={lang}
+                  contact={sharedServiceContact ? null : getServiceContact(service, provider)}
+                  seatsNote={getServiceSeatsNote(service)}
+                  className={
+                    services.length % 2 === 1 && index === services.length - 1
+                      ? "lg:col-span-2"
+                      : undefined
+                  }
+                  onSelect={() => {
+                    setBookingFlow((current) => ({
+                      ...current,
+                      serviceId: service.id,
+                      dateKey: "",
+                      time: "",
+                      step: 2,
+                    }));
+                  }}
+                />
+              ))}
+            </div>
+            {sharedServiceContact ? (
+              <section
+                aria-label={t.publicFlow.where}
+                className="flex flex-col gap-2.5 rounded-[22px] bg-[var(--panel-tint-72)] px-[18px] py-4 text-sm text-[#3c4043] ring-1 ring-[rgba(255,255,255,0.86)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:rounded-3xl sm:px-[26px] sm:py-[18px]"
+              >
+                <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-7 sm:gap-y-2">
+                  <span className="text-[10.5px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)] sm:text-[11px]">
+                    {t.publicFlow.where}
+                  </span>
+                  {sharedServiceContact.addresses.map((address) => (
+                    <span key={`addr-${address}`} className="flex items-center gap-2">
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="h-4 w-4 shrink-0 text-[var(--accent)]"
+                      >
+                        <path
+                          d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      {address}
+                    </span>
+                  ))}
+                  {sharedServiceContact.phones.map((phone) => (
+                    <a
+                      key={`phone-${phone}`}
+                      href={`tel:${phone.replace(/[^\d+]/g, "")}`}
+                      className="flex items-center gap-2 font-medium text-[var(--primary)] sm:text-[var(--ink)]"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-4 w-4 shrink-0 text-[var(--accent)]"
+                      >
+                        <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />
+                      </svg>
+                      {phone}
+                    </a>
+                  ))}
+                </div>
+                {services.length > 1 ? (
+                  <span className="hidden text-[13px] text-[var(--muted)] sm:block">
+                    {t.publicFlow.whereShared.replace("{service}", copy.service)}
+                  </span>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+        ) : null}
+        {resolvedBookingFlow.step === 1 && !isDedicatedPublicPage ? (
           <div className={cn("space-y-6 p-5 sm:p-8", isDedicatedPublicPage && "xl:px-10 xl:py-10")}>
             {headerBanner}
             <div className="relative isolate overflow-hidden rounded-[28px] bg-[var(--panel-glass-62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
@@ -6403,8 +6540,9 @@ export function HaabBookingModule({
             // first time from outside the region they fade out.
             isAdvancing={isPublicFlowFadingOut || isCreatingHold}
             errorMessage={bookingError}
-            languageChooser={renderPublicLanguageChooser("", "inset")}
+            languageChooser={renderPublicLanguageChooser("", "inset", true)}
             lang={lang}
+            variant="enhanced"
             // Matches the gutter the flow's own panels use, so the band's edges
             // line up with the banner and the cards below it.
             className="mx-4 mt-4 sm:mx-8 sm:mt-8 xl:mx-10"
