@@ -157,6 +157,10 @@ export type BookingDict = {
     holdExpiredNoticeBody: string;
     conflictNoticeTitle: string;
     conflictNoticeBody: string;
+    serviceSwitchedNoticeTitle: string;
+    serviceSwitchedNoticeBody: string;
+    selectedServiceTitle: string;
+    selectedServiceHint: string;
     holdingSlot: string;
     tapTimeHint: string;
     // Section titles & misc actions
@@ -732,6 +736,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdExpiredNoticeBody: "The time was released. Pick another one — it's held again straight away.",
       conflictNoticeTitle: "Someone confirmed that time first",
       conflictNoticeBody: "Nothing was booked. Pick another time to continue.",
+      serviceSwitchedNoticeTitle: "That time isn't open for this {service}",
+      serviceSwitchedNoticeBody: "Your details are saved. Pick a time to continue.",
+      selectedServiceTitle: "Selected {service}",
+      selectedServiceHint: "Changing it keeps your time when it's free for the new {service}.",
       holdingSlot: "Holding your time…",
       tapTimeHint: "Tap a time — it's held for 10 minutes.",
       bookingCancelled: "Booking Cancelled",
@@ -1311,6 +1319,10 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       holdExpiredNoticeBody: "El horario se liberó. Elija otro: se aparta de nuevo al instante.",
       conflictNoticeTitle: "Alguien confirmó ese horario primero",
       conflictNoticeBody: "No se reservó nada. Elija otro horario para continuar.",
+      serviceSwitchedNoticeTitle: "Ese horario no está disponible para este {service}",
+      serviceSwitchedNoticeBody: "Sus datos se guardaron. Elija un horario para continuar.",
+      selectedServiceTitle: "{Service} seleccionado",
+      selectedServiceHint: "Si lo cambia, conservamos su horario cuando esté libre para el nuevo {service}.",
       holdingSlot: "Apartando su horario…",
       tapTimeHint: "Toque un horario: se aparta por 10 minutos.",
       bookingCancelled: "Reserva cancelada",
