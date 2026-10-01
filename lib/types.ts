@@ -148,6 +148,8 @@ export type BookingRecord = {
   sharedCapacity?: boolean;
   /** Restaurants: guests in the party. Stored in the booking details payload. */
   partySize?: number;
+  /** Optional, "YYYY-MM-DD". Stored in the booking details payload. */
+  dateOfBirth?: string;
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
@@ -226,6 +228,11 @@ export type BookingFlow = {
   clientPhone: string;
   /** Restaurants: guests in the party, collected on the details step. */
   partySize: string;
+  /**
+   * Optional, as the date input gives it ("YYYY-MM-DD"). Optional here too so
+   * a flow saved before the field existed still reads.
+   */
+  dateOfBirth?: string;
   notes: string;
   successBookingId?: string;
 };

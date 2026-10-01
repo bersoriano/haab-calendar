@@ -238,6 +238,7 @@ export function createInitialBookingFlow(
     clientEmail: "",
     clientPhone: "",
     partySize: "",
+    dateOfBirth: "",
     notes: "",
     successBookingId: undefined,
   };
@@ -388,6 +389,7 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       // the first party to take a seating hides it from everyone else.
       sharedCapacity: booking.sharedCapacity ?? false,
       partySize: booking.partySize,
+      dateOfBirth: booking.dateOfBirth,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       manageToken: booking.manageToken ?? "",

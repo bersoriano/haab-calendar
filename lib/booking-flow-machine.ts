@@ -1,4 +1,4 @@
-import type { BookingFlow, BookingStep } from "@/lib/types";
+import type { BookingFlow, BookingStep, LocationKey } from "@/lib/types";
 
 /**
  * Transitions for the public booking flow.
@@ -12,6 +12,18 @@ import type { BookingFlow, BookingStep } from "@/lib/types";
  */
 export type BookingFlowEvent =
   | { type: "SELECT_SERVICE"; serviceId: string }
+  /**
+   * The service was changed on the details step and the new one cannot keep
+   * the held slot. Back to time selection for it, keeping the date if it fits.
+   */
+  | {
+      type: "SWITCH_SERVICE";
+      serviceId: string;
+      dateKey: string;
+      locationKey?: LocationKey;
+      /** Explain on step 2 that the time did not carry over. */
+      notify: boolean;
+    }
   | { type: "SELECT_DATE"; dateKey: string }
   | { type: "SELECT_TIME"; time: string }
   /** A server hold exists for the current selection; details can be collected. */
@@ -25,7 +37,11 @@ export type BookingFlowEvent =
   | { type: "BACK" }
   | { type: "RESTART" };
 
-export type BookingFlowNotice = "hold-expired" | "selection-conflict" | null;
+export type BookingFlowNotice =
+  | "hold-expired"
+  | "selection-conflict"
+  | "service-switched"
+  | null;
 
 export type BookingFlowState = {
   flow: BookingFlow;
@@ -59,6 +75,19 @@ export function bookingFlowReducer(
           ...flow,
           ...EMPTY_SELECTION,
           serviceId: event.serviceId,
+          step: 2,
+        },
+      };
+
+    case "SWITCH_SERVICE":
+      return {
+        notice: event.notify ? "service-switched" : null,
+        flow: {
+          ...flow,
+          serviceId: event.serviceId,
+          dateKey: event.dateKey,
+          time: "",
+          locationKey: event.locationKey,
           step: 2,
         },
       };

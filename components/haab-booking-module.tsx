@@ -77,8 +77,10 @@ import {
   getDateTimeKeysInTimeZone,
   isValidTimeWindow,
 } from "@/lib/date";
+import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import {
   formatDateLabel,
+  formatDateOfBirth,
   formatCompactDate,
   formatWeekdayDate,
   formatPassDate,
@@ -122,6 +124,7 @@ import {
 import type { AvailabilityClock, DayAvailabilityLevel } from "@/lib/availability";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { getServiceLocations, getEffectiveCost } from "@/lib/locations";
+import { planServiceSwitch } from "@/lib/service-switch";
 import {
   canExtendBookingHold,
   expireBookingHoldAtServerTime,
@@ -196,6 +199,7 @@ import {
   type SummaryFooter,
 } from "@/components/booking/AppointmentSummary";
 import { DetailsForm } from "@/components/booking/DetailsForm";
+import { ServicePicker } from "@/components/booking/ServicePicker";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
 import {
@@ -1349,12 +1353,14 @@ export function HaabBookingModule({
     };
   }, [calendarQrRequestKey, t.errors.qrGenerationFailed]);
 
-  function releaseSupabaseBookingHold(holdId?: string, keepalive = false) {
+  // Resolves once the server has answered, for the one caller that must wait
+  // (switching service re-holds the same slot); everyone else fires and forgets.
+  function releaseSupabaseBookingHold(holdId?: string, keepalive = false): Promise<void> {
     if (!holdId || !integratedMode || !isDedicatedPublicPage || !vertical) {
-      return;
+      return Promise.resolve();
     }
 
-    void fetch(
+    return fetch(
       `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/holds`,
       {
         method: "DELETE",
@@ -1362,7 +1368,10 @@ export function HaabBookingModule({
         body: JSON.stringify({ holdId }),
         keepalive,
       },
-    ).catch(() => undefined);
+    ).then(
+      () => undefined,
+      () => undefined,
+    );
   }
 
   const releaseExpiredBookingHold = useEffectEvent((holdId: string) => {
@@ -2420,12 +2429,14 @@ export function HaabBookingModule({
   async function beginClientDetailsStep(
     dateKey = bookingFlow.dateKey,
     time = bookingFlow.time,
+    // Another service than the selected one: changing it on the details step.
+    service = selectedService,
   ): Promise<"held" | "unavailable" | "failed"> {
-    if (!selectedService || !dateKey) {
+    if (!service || !dateKey) {
       return "failed";
     }
 
-    if (selectedService.bookingType === "appointment" && !time) {
+    if (service.bookingType === "appointment" && !time) {
       return "failed";
     }
 
@@ -2433,7 +2444,7 @@ export function HaabBookingModule({
     const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
     const baseStore = latestStandaloneStore ?? activeStore;
     const latestService =
-      baseStore.services.find((service) => service.id === selectedService.id) ?? selectedService;
+      baseStore.services.find((candidate) => candidate.id === service.id) ?? service;
     const currentHoldId = bookingHold?.released ? undefined : bookingHold?.id;
     const previousHoldId = currentHoldId;
     const currentHolds = pruneBookingHolds(baseStore.bookingHolds, now).filter(
@@ -2702,6 +2713,14 @@ export function HaabBookingModule({
       hasSlotCapacity(validationService) && Number.isFinite(parsedPartySize) && parsedPartySize > 0
         ? parsedPartySize
         : undefined;
+    const parsedDateOfBirth = collectsDateOfBirth(vertical)
+      ? parseDateOfBirth(bookingFlow.dateOfBirth, todayKey())
+      : ({ ok: true, value: undefined } as const);
+    if (!parsedDateOfBirth.ok) {
+      setBookingError(t.publicFlow.dateOfBirthInvalidError);
+      return;
+    }
+    const dateOfBirthForBooking = parsedDateOfBirth.value;
     const nextBooking: BookingRecord = {
       id: createId("booking"),
       serviceId: validationService.id,
@@ -2718,6 +2737,7 @@ export function HaabBookingModule({
       // taking it, offline exactly as the database records it on the server.
       sharedCapacity: hasSlotCapacity(validationService) || undefined,
       partySize: partySizeForBooking,
+      dateOfBirth: dateOfBirthForBooking,
       capacitySnapshot:
         typeof validationService.maxSpots === "number"
           ? formatCapacityLabel(validationService)
@@ -2751,6 +2771,7 @@ export function HaabBookingModule({
               clientEmail: bookingFlow.clientEmail.trim(),
               clientPhone: bookingFlow.clientPhone.trim(),
               partySize: partySizeForBooking,
+              dateOfBirth: dateOfBirthForBooking,
               notes: bookingFlow.notes.trim(),
               location: bookingLocationAddress,
               locationKey: bookingFlow.locationKey,
@@ -3712,6 +3733,11 @@ export function HaabBookingModule({
                       <span>
                         {booking.clientEmail} · {booking.clientPhone}
                       </span>
+                      {booking.dateOfBirth ? (
+                        <span>
+                          {t.publicFlow.dateOfBirth}: {formatDateOfBirth(booking.dateOfBirth, lang)}
+                        </span>
+                      ) : null}
                       {booking.capacitySnapshot ? (
                         <span>{t.publicFlow.capacity}: {booking.capacitySnapshot}</span>
                       ) : null}
@@ -4459,13 +4485,14 @@ export function HaabBookingModule({
     const releaseHoldForNavigation = () => {
       const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
       actions.releaseBookingHold(holdIdToRelease);
-      releaseSupabaseBookingHold(holdIdToRelease);
+      const released = releaseSupabaseBookingHold(holdIdToRelease);
       setBookingHold(null);
       setBookingHoldClockOffsetMs(0);
       setBookingHoldNow(currentTimestamp());
       setHoldExtensionMessage(null);
       setBookingError(null);
       setPendingHoldTime(null);
+      return released;
     };
 
     const goBackToSelectionStep = () => {
@@ -4476,6 +4503,47 @@ export function HaabBookingModule({
     const goBackToServiceChoice = () => {
       releaseHoldForNavigation();
       dispatchBookingFlow({ type: "RESTART" });
+    };
+
+    // Changing the service on the details step. The old hold goes first (the
+    // server would count it against the same slot), then the same date and time
+    // are asked for the new service: free, and the visitor stays on this step;
+    // taken or unusable, and they pick a time for it, with what they typed kept.
+    const switchServiceOnDetails = async (serviceId: string) => {
+      const next = services.find((service) => service.id === serviceId);
+      if (!next || next.id === selectedService?.id || isCreatingHold) {
+        return;
+      }
+
+      const plan = planServiceSwitch(
+        next,
+        bookingFlow,
+        getServiceLocations(next, provider).map((location) => location.key),
+      );
+      await releaseHoldForNavigation();
+
+      const outcome =
+        plan.kind === "hold"
+          ? await beginClientDetailsStep(plan.dateKey, plan.time, next)
+          : "unavailable";
+
+      if (outcome === "held") {
+        setBookingFlow((current) => ({ ...current, locationKey: plan.locationKey }));
+        return;
+      }
+
+      // A failed request keeps its own error on screen; the notice is only for
+      // a time that does not fit the new service.
+      if (outcome === "unavailable") {
+        setBookingError(null);
+      }
+      dispatchBookingFlow({
+        type: "SWITCH_SERVICE",
+        serviceId: next.id,
+        dateKey: plan.dateKey,
+        locationKey: plan.locationKey,
+        notify: outcome === "unavailable",
+      });
     };
 
     // Step 3, dedicated page: what the new details layout shows. Everything
@@ -4493,6 +4561,21 @@ export function HaabBookingModule({
         : detailsContact.addresses;
     const detailsPhones = detailsContact.phones;
     const detailsCost = effectiveCost.trim() || null;
+    // "About the appointment" rides inside the summary: open under the client rows
+    // on desktop, folded at the foot of the compact card on a phone.
+    const detailsAboutProps = selectedService
+      ? {
+          service: selectedService,
+          vertical: vertical ?? undefined,
+          isEvent: selectionIsEvent,
+          isSingle: selectionIsSingle,
+          singleDateLabel,
+          addresses: detailsAddresses,
+          phones: detailsPhones,
+          copy,
+          lang,
+        }
+      : null;
     const detailsDateKey = bookingFlow.dateKey || selectedService?.occurrenceDate || "";
     const detailsStart = selectedService
       ? resolveBookingStartTime(selectedService, bookingFlow.time)
@@ -4526,6 +4609,7 @@ export function HaabBookingModule({
     ]
       .filter(Boolean)
       .join(" · ");
+    // Same rule confirming applies: the details card turns green once it holds.
     const detailsRows = getSummaryClientRows({
       values: bookingFlow,
       requiresPartySize: Boolean(selectedService && hasSlotCapacity(selectedService)),
@@ -4537,6 +4621,7 @@ export function HaabBookingModule({
         notes: t.publicFlow.notes,
       },
     });
+    const detailsComplete = detailsRows.every((row) => row.status !== "missing");
     // The same three outcomes the old action row had, in the same order.
     const detailsFooter: SummaryFooter = {
       primaryLabel:
@@ -4561,6 +4646,8 @@ export function HaabBookingModule({
       errorId: detailsErrorId,
       chooseAnotherLabel: t.public.chooseAnotherTime,
       onChooseAnother: goBackToSelectionStep,
+      // A fixed-date event has no other date or time to go back to.
+      changeDateTimeLabel: selectionIsSingle ? null : t.publicFlow.changeDateTime,
     };
 
     // Step 1, dedicated page. One address and phone set shared by every service
@@ -5128,27 +5215,28 @@ export function HaabBookingModule({
                     clientEmail: bookingFlow.clientEmail,
                     clientPhone: bookingFlow.clientPhone,
                     partySize: bookingFlow.partySize,
+                    dateOfBirth: bookingFlow.dateOfBirth ?? "",
                     notes: bookingFlow.notes,
                   }}
                   onChange={updateBookingFlow}
                   showPartySize={hasSlotCapacity(selectedService)}
+                  showDateOfBirth={collectsDateOfBirth(vertical)}
                   invalidRequired={detailsFieldsRefused}
+                  complete={detailsComplete}
                   errorId={detailsErrorId}
                   copy={copy}
                   lang={lang}
                 />
-                <AppointmentAbout
-                  service={selectedService}
-                  vertical={vertical ?? undefined}
-                  isEvent={selectionIsEvent}
-                  isSingle={selectionIsSingle}
-                  singleDateLabel={singleDateLabel}
-                  addresses={detailsAddresses}
-                  phones={detailsPhones}
-                  isDesktop={isDesktopColumns}
-                  copy={copy}
-                  lang={lang}
-                />
+                {hasMultipleServices && !isManageRescheduling ? (
+                  <ServicePicker
+                    services={services}
+                    value={selectedService.id}
+                    onChange={(serviceId) => void switchServiceOnDetails(serviceId)}
+                    disabled={isCreatingHold || isConfirmingBooking}
+                    copy={copy}
+                    lang={lang}
+                  />
+                ) : null}
               </div>
               <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:self-stretch">
                 <CompactAppointmentSummary
@@ -5157,6 +5245,7 @@ export function HaabBookingModule({
                   date={detailsDate}
                   changeLabel={t.publicFlow.changeDateTime}
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} collapsible />}
                   cost={detailsCost}
                 />
                 <AppointmentSummary
@@ -5166,8 +5255,7 @@ export function HaabBookingModule({
                   date={detailsDate}
                   changeLabel={t.publicFlow.changeDateTime}
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
-                  clientTitle={copy.phrases.clientLabel}
-                  rows={detailsRows}
+                  about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} />}
                   cost={detailsCost}
                   footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}
                   lang={lang}
@@ -5545,8 +5633,9 @@ export function HaabBookingModule({
                       {selectedService.description}
                     </p>
                   ) : null}
-                  {/* Why the visitor is back on this step: an expired hold, or a
-                      slot someone else confirmed first. */}
+                  {/* Why the visitor is back on this step: an expired hold, a slot
+                      someone else confirmed first, or a new service that could
+                      not keep the time. */}
                   {flowNotice ? (
                     <div
                       ref={flowNoticeRef}
@@ -5557,12 +5646,18 @@ export function HaabBookingModule({
                       <p className="text-[0.9375rem] font-semibold">
                         {flowNotice === "hold-expired"
                           ? t.publicFlow.holdExpiredNoticeTitle
-                          : t.publicFlow.conflictNoticeTitle}
+                          : flowNotice === "service-switched"
+                            ? fillTemplate(t.publicFlow.serviceSwitchedNoticeTitle, {
+                                service: copy.service,
+                              })
+                            : t.publicFlow.conflictNoticeTitle}
                       </p>
                       <p className="mt-1 text-sm leading-5">
                         {flowNotice === "hold-expired"
                           ? t.publicFlow.holdExpiredNoticeBody
-                          : t.publicFlow.conflictNoticeBody}
+                          : flowNotice === "service-switched"
+                            ? t.publicFlow.serviceSwitchedNoticeBody
+                            : t.publicFlow.conflictNoticeBody}
                       </p>
                     </div>
                   ) : null}

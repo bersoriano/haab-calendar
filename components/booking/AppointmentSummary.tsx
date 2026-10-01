@@ -1,7 +1,9 @@
-import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
-import type { DateTile, SummaryRow } from "@/lib/details-summary";
+import { BackPillButton } from "@/components/booking/BackPillButton";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
+import type { DateTile } from "@/lib/details-summary";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 /**
  * The live summary on the details step. Two shapes of one thing: the receipt-like
@@ -31,10 +33,16 @@ export type SummaryFooter = {
   errorId: string;
   chooseAnotherLabel: string;
   onChooseAnother: () => void;
+  /**
+   * "Change date/time" beside the confirm button, wired to `onChooseAnother`.
+   * Null hides it (a fixed-date event has nothing to change); it also steps
+   * aside once the hold expires, when the choose-another link says the same.
+   */
+  changeDateTimeLabel: string | null;
 };
 
-const eyebrowClass =
-  "text-[11px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)]";
+const backButtonClass = "shrink-0 !text-sm !font-semibold";
+
 const livery = "bg-[linear-gradient(90deg,#005bbf,#1a73e8_45%,#00bfa5)]";
 // `!` on the button type: globals.css resets `font` on buttons outside any
 // layer, which outranks layered utilities.
@@ -111,44 +119,6 @@ export function BookingErrorAlert({
   );
 }
 
-function StatusIcon({ status }: { status: SummaryRow["status"] }) {
-  if (status === "filled") {
-    return (
-      <span
-        aria-hidden="true"
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--action-teal)] text-white"
-      >
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 7 9 18l-5-5" />
-        </svg>
-      </span>
-    );
-  }
-
-  return status === "missing" ? (
-    <span
-      aria-hidden="true"
-      className="h-5 w-5 shrink-0 rounded-full border-2 border-dashed border-[#b4bac4]"
-    />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eef0f3] text-xs font-bold text-[#8a9097]"
-    >
-      –
-    </span>
-  );
-}
-
 export function AppointmentSummary({
   title,
   serviceName,
@@ -156,8 +126,7 @@ export function AppointmentSummary({
   date,
   changeLabel,
   onChangeDateTime,
-  clientTitle,
-  rows,
+  about,
   cost,
   footer,
   lang,
@@ -170,9 +139,8 @@ export function AppointmentSummary({
   changeLabel: string;
   /** Null when there is no date to change (a fixed-date event). */
   onChangeDateTime: (() => void) | null;
-  /** The vertical's word for the person: Patient, Guest, Attendee. */
-  clientTitle: string;
-  rows: SummaryRow[];
+  /** "About the appointment", set under the service. */
+  about?: ReactNode;
   /** Null hides the Total row entirely. */
   cost: string | null;
   footer: SummaryFooter;
@@ -222,30 +190,7 @@ export function AppointmentSummary({
           {meta ? <span className="break-words text-[13.5px] text-[var(--muted)]">{meta}</span> : null}
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-dashed border-[#d3d8e0] pt-4">
-          <span className={eyebrowClass}>{clientTitle}</span>
-          {rows.map((row) => (
-            <div key={row.key} className="flex items-center gap-2.5">
-              <StatusIcon status={row.status} />
-              <span
-                className={cn(
-                  "min-w-0 break-words text-[14.5px]",
-                  row.status === "filled"
-                    ? "line-clamp-2 font-medium text-[var(--ink)]"
-                    : "text-[var(--muted)]",
-                )}
-              >
-                {row.status === "filled"
-                  ? row.value
-                  : row.status === "missing"
-                    ? fillTemplate(t.publicFlow.summaryAddField, {
-                        field: row.label.toLocaleLowerCase(lang),
-                      })
-                    : t.publicFlow.summaryNoNotes}
-              </span>
-            </div>
-          ))}
-        </div>
+        {about ? <div className="border-t border-dashed border-[#d3d8e0] pt-4">{about}</div> : null}
 
         {cost ? (
           <div className="flex items-baseline justify-between gap-3 border-t border-dashed border-[#d3d8e0] pt-4">
@@ -264,14 +209,23 @@ export function AppointmentSummary({
 
       <div className="mt-[22px] flex flex-col gap-2.5 border-t border-[#e8ebf0] bg-[#f6f8fb] px-[26px] pb-6 pt-5">
         {footer.error ? <BookingErrorAlert id={footer.errorId} message={footer.error} /> : null}
-        <button
-          type="button"
-          disabled={footer.primaryDisabled}
-          onClick={footer.onPrimary}
-          className={cn(primaryButtonClass, "h-[54px]")}
-        >
-          {footer.primaryLabel}
-        </button>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {footer.changeDateTimeLabel && !footer.isExpired ? (
+            <BackPillButton
+              label={footer.changeDateTimeLabel}
+              onClick={footer.onChooseAnother}
+              className={cn(backButtonClass, "h-[54px] px-5")}
+            />
+          ) : null}
+          <button
+            type="button"
+            disabled={footer.primaryDisabled}
+            onClick={footer.onPrimary}
+            className={cn(primaryButtonClass, "h-[54px] w-auto min-w-[12rem] flex-1")}
+          >
+            {footer.primaryLabel}
+          </button>
+        </div>
         {footer.isExpired ? (
           <button
             type="button"
@@ -310,6 +264,7 @@ export function CompactAppointmentSummary({
   date,
   changeLabel,
   onChangeDateTime,
+  about,
   cost,
 }: {
   title: string;
@@ -317,6 +272,8 @@ export function CompactAppointmentSummary({
   date: SummaryDate | null;
   changeLabel: string;
   onChangeDateTime: (() => void) | null;
+  /** "About the appointment", folded under the card's main row. */
+  about?: ReactNode;
   cost: string | null;
 }) {
   return (
@@ -353,6 +310,9 @@ export function CompactAppointmentSummary({
           </span>
         ) : null}
       </div>
+      {about ? (
+        <div className="mx-4 border-t border-dashed border-[#d3d8e0] pb-2 pt-1">{about}</div>
+      ) : null}
     </section>
   );
 }
@@ -373,6 +333,8 @@ export function MobileConfirmBar({
   totalLabel: string;
   footer: SummaryFooter;
 }) {
+  const showBack = Boolean(footer.changeDateTimeLabel) && !footer.isExpired;
+
   return (
     <div className="sticky bottom-0 z-30 flex flex-col gap-2 border-t border-[rgba(193,198,214,0.5)] bg-[rgba(248,249,250,0.94)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-[18px] lg:hidden">
       {footer.error ? <BookingErrorAlert id={footer.errorId} message={footer.error} /> : null}
@@ -387,8 +349,23 @@ export function MobileConfirmBar({
       ) : footer.heldText ? (
         <p className="text-center text-xs text-[var(--muted)]">{footer.heldText}</p>
       ) : null}
+      {/* The back pill takes the total's seat beside the button; the total moves up a line. */}
+      {showBack && total ? (
+        <p className="flex items-baseline justify-between gap-3 text-xs text-[var(--muted)]">
+          <span>{totalLabel}</span>
+          <span className="break-words text-right text-base font-bold tracking-[-0.03em] text-[var(--ink)]">
+            {total}
+          </span>
+        </p>
+      ) : null}
       <div className="flex items-center gap-3.5">
-        {total ? (
+        {showBack ? (
+          <BackPillButton
+            label={footer.changeDateTimeLabel ?? ""}
+            onClick={footer.onChooseAnother}
+            className={cn(backButtonClass, "h-[52px] max-w-[45%] px-4 text-center leading-tight")}
+          />
+        ) : total ? (
           <div className="flex max-w-[45%] shrink-0 flex-col">
             <span className="text-xs text-[var(--muted)]">{totalLabel}</span>
             <span

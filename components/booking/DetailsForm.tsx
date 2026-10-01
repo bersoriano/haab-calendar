@@ -1,6 +1,8 @@
 import { useId } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { todayKey } from "@/lib/date";
+import { EARLIEST_DATE_OF_BIRTH } from "@/lib/date-of-birth";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
@@ -10,6 +12,7 @@ export type DetailsField =
   | "clientEmail"
   | "clientPhone"
   | "partySize"
+  | "dateOfBirth"
   | "notes";
 
 // 16px on a phone because anything smaller makes iOS zoom the page on focus.
@@ -24,13 +27,16 @@ const labelClass = "text-[13px] font-semibold text-[#3c4043]";
 /**
  * The "Your details" card. Controlled by the caller: nothing here holds state,
  * validates, or decides what a missing field means. `invalidRequired` only
- * paints the empty required fields once confirming has already said so.
+ * paints the empty required fields once confirming has already said so, and
+ * `complete` paints the whole card green once nothing required is left.
  */
 export function DetailsForm({
   values,
   onChange,
   showPartySize,
+  showDateOfBirth,
   invalidRequired,
+  complete,
   errorId,
   copy,
   lang,
@@ -39,8 +45,12 @@ export function DetailsForm({
   onChange: (field: DetailsField, value: string) => void;
   /** Services that seat a number of guests ask for one. */
   showPartySize: boolean;
+  /** Only healthcare asks for a date of birth. */
+  showDateOfBirth: boolean;
   /** Confirming was refused for empty required fields. */
   invalidRequired: boolean;
+  /** Every required field is filled: the card turns green and says so. */
+  complete: boolean;
   /** The alert that explains it, so the fields can point at it. */
   errorId: string;
   copy: VerticalCopy;
@@ -55,11 +65,43 @@ export function DetailsForm({
     invalid(field, required) ? errorId : undefined;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 rounded-3xl bg-[var(--panel-tint-94)] px-[18px] py-5 ring-1 ring-[rgba(255,255,255,0.7)] shadow-[0_14px_34px_rgba(25,28,29,0.06)] sm:gap-5 sm:rounded-[30px] sm:p-7 sm:shadow-[0_18px_42px_rgba(25,28,29,0.06)]">
+    <section
+      data-complete={complete || undefined}
+      className={cn(
+        "flex min-w-0 flex-col gap-4 rounded-3xl px-[18px] py-5 shadow-[0_14px_34px_rgba(25,28,29,0.06)] transition-[background-color,box-shadow] duration-300 sm:gap-5 sm:rounded-[30px] sm:p-7 sm:shadow-[0_18px_42px_rgba(25,28,29,0.06)]",
+        complete
+          ? "bg-[var(--callout-mint)] ring-2 ring-[var(--action-teal)]"
+          : "bg-[var(--panel-tint-94)] ring-1 ring-[rgba(255,255,255,0.7)]",
+      )}
+    >
       <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-[22px]">
-          {t.publicFlow.myDetails}
-        </h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-xl font-semibold tracking-[-0.02em] text-[var(--ink)] sm:text-[22px]">
+            {t.publicFlow.myDetails}
+          </h2>
+          {/* Said in words too, so the state never rests on colour alone. The
+              live region stays mounted so the change is announced. */}
+          <span role="status" className="shrink-0">
+            {complete ? (
+              <span className="flex items-center gap-1.5 rounded-full bg-[var(--action-teal-deep)] py-1 pl-1.5 pr-2.5 text-xs font-semibold text-white">
+                <svg
+                  aria-hidden="true"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 7 9 18l-5-5" />
+                </svg>
+                {t.publicFlow.detailsComplete}
+              </span>
+            ) : null}
+          </span>
+        </div>
         <p className="text-[13.5px] text-[var(--muted)] sm:text-sm">
           {t.publicFlow.detailsReassurance}
         </p>
@@ -123,6 +165,26 @@ export function DetailsForm({
           />
         </div>
       </div>
+
+      {showDateOfBirth ? (
+        <div className="flex flex-col gap-1.5 sm:w-[calc(50%-0.4375rem)]">
+          <label htmlFor={fieldId("dateOfBirth")} className={labelClass}>
+            {t.publicFlow.dateOfBirth}{" "}
+            <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
+          </label>
+          <input
+            id={fieldId("dateOfBirth")}
+            type="date"
+            value={values.dateOfBirth}
+            onChange={(event) => onChange("dateOfBirth", event.target.value)}
+            min={EARLIEST_DATE_OF_BIRTH}
+            max={todayKey()}
+            autoComplete="bday"
+            enterKeyHint="next"
+            className={cn(inputClass, "h-[50px]")}
+          />
+        </div>
+      ) : null}
 
       {showPartySize ? (
         <div className="flex flex-col gap-1.5">

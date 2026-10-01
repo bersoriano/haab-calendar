@@ -18,6 +18,13 @@ export function formatDateLabel(dateKey: string, lang: Lang = "en") {
   return getLongDateFormatter(lang).format(parseDateKey(dateKey));
 }
 
+/** "April 12, 1989": a birthday reads without the weekday. */
+export function formatDateOfBirth(dateKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, { year: "numeric", month: "long", day: "numeric" }).format(
+    parseDateKey(dateKey),
+  );
+}
+
 /** "Thursday, October 1" — the year is left off where the page already says when. */
 export function formatWeekdayDate(dateKey: string, lang: Lang = "en") {
   return new Intl.DateTimeFormat(lang, {

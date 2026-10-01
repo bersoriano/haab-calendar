@@ -9,20 +9,18 @@ import {
   type SummaryFooter,
 } from "@/components/booking/AppointmentSummary";
 import { DetailsForm } from "@/components/booking/DetailsForm";
-import { getSummaryClientRows } from "@/lib/details-summary";
 import type { Service } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 const copy = getVerticalCopy("healthcare", "en");
-const empty = { clientName: "", clientEmail: "", clientPhone: "", partySize: "", notes: "" };
-const labels = {
-  name: "Full name",
-  email: "Email",
-  phone: "Phone number",
-  partySize: "Guests",
-  notes: "Notes",
+const empty = {
+  clientName: "",
+  clientEmail: "",
+  clientPhone: "",
+  partySize: "",
+  dateOfBirth: "",
+  notes: "",
 };
-
 const footer: SummaryFooter = {
   primaryLabel: "Confirm appointment",
   onPrimary: () => undefined,
@@ -32,6 +30,7 @@ const footer: SummaryFooter = {
   error: null,
   errorId: "booking-error",
   chooseAnotherLabel: "Choose another time",
+  changeDateTimeLabel: "Change date/time",
   onChooseAnother: () => undefined,
 };
 
@@ -54,10 +53,7 @@ const service: Service = {
   notes: "Bring a photo ID.",
 };
 
-function summary(
-  overrides: Partial<Parameters<typeof AppointmentSummary>[0]> = {},
-  rowValues = empty,
-) {
+function summary(overrides: Partial<Parameters<typeof AppointmentSummary>[0]> = {}) {
   return renderToStaticMarkup(
     <AppointmentSummary
       title="Appointment summary"
@@ -66,8 +62,6 @@ function summary(
       date={date}
       changeLabel="Change date/time"
       onChangeDateTime={() => undefined}
-      clientTitle="Patient"
-      rows={getSummaryClientRows({ values: rowValues, requiresPartySize: false, labels })}
       cost="$95"
       footer={footer}
       lang="en"
@@ -83,7 +77,9 @@ describe("DetailsForm", () => {
         values={empty}
         onChange={() => undefined}
         showPartySize={false}
+        showDateOfBirth={false}
         invalidRequired={false}
+        complete={false}
         errorId="booking-error"
         copy={copy}
         lang="en"
@@ -112,8 +108,19 @@ describe("DetailsForm", () => {
     expect(html).toContain("No account, no password.");
     expect(renderToStaticMarkup(
       <DetailsForm values={empty} onChange={() => undefined} showPartySize={false}
-        invalidRequired={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
+        showDateOfBirth={false} invalidRequired={false} complete={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
     )).toContain("Sin cuenta ni contraseña.");
+  });
+
+  it("asks for an optional date of birth as a date, autofilled from the browser", () => {
+    expect(render()).not.toContain("Date of birth");
+    const html = render({ showDateOfBirth: true });
+
+    expect(html).toContain("Date of birth");
+    expect(html).toMatch(/Date of birth <span[^>]*>\(optional\)/);
+    expect(html).toContain('type="date"');
+    expect(html).toContain('autoComplete="bday"');
+    expect(html).toContain('min="1900-01-01"');
   });
 
   it("asks for a party size only when the service seats guests", () => {
@@ -131,23 +138,26 @@ describe("DetailsForm", () => {
     expect(html).toContain('aria-describedby="booking-error"');
     expect(render()).not.toContain("aria-invalid");
   });
+
+  it("turns green and says so once every required field is filled", () => {
+    const done = render({ complete: true });
+
+    expect(done).toContain("data-complete");
+    expect(done).toContain("ring-[var(--action-teal)]");
+    expect(done).toContain("Complete</span>");
+    expect(render()).not.toContain("data-complete");
+    expect(render()).not.toContain("Complete</span>");
+    // The live region is there before the change, so it gets announced.
+    expect(render()).toContain('role="status"');
+  });
 });
 
 describe("AppointmentSummary", () => {
-  it("shows one row per field with the status the data implies", () => {
-    const html = summary({}, { ...empty, clientName: "Jamie Rivera" });
+  it("leaves the client's details to the form and hides a missing price", () => {
+    const html = summary({ cost: null });
 
-    expect(html).toContain("Jamie Rivera");
-    expect(html).toContain("Add your email");
-    expect(html).toContain("Add your phone number");
-    expect(html).toContain("No notes");
-    expect(html).not.toContain("Not entered yet");
-  });
-
-  it("uses the vertical's client word and hides a missing price", () => {
-    const html = summary({ clientTitle: "Guest", cost: null });
-
-    expect(html).toContain("Guest");
+    expect(html).not.toContain("Patient");
+    expect(html).not.toContain("Add your");
     expect(html).not.toContain("Total");
   });
 
@@ -160,7 +170,17 @@ describe("AppointmentSummary", () => {
   });
 
   it("hides the change link when there is no date to change", () => {
-    expect(summary({ onChangeDateTime: null })).not.toContain("Change date/time");
+    expect(
+      summary({ onChangeDateTime: null, footer: { ...footer, changeDateTimeLabel: null } }),
+    ).not.toContain("Change date/time");
+  });
+
+  it("offers Change date/time right beside the confirm button", () => {
+    const html = summary({ onChangeDateTime: null });
+    const back = html.indexOf("Change date/time");
+
+    expect(back).toBeGreaterThan(-1);
+    expect(back).toBeLessThan(html.indexOf("Confirm appointment"));
   });
 
   it("puts the alert above the confirm button, never in a header", () => {
@@ -178,6 +198,7 @@ describe("AppointmentSummary", () => {
     expect(html).toContain("Hold this time again");
     expect(html).toContain("Choose another time");
     expect(html).not.toContain("Held for you");
+    expect(html.indexOf("Change date/time")).toBe(html.lastIndexOf("Change date/time"));
   });
 });
 
@@ -199,7 +220,7 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html).toContain("$95");
   });
 
-  it("carries the total, the alert and the hold line above one confirm button", () => {
+  it("carries the total, the alert and the hold line above the change and confirm buttons", () => {
     const html = renderToStaticMarkup(
       <MobileConfirmBar
         total="$95"
@@ -211,8 +232,19 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html).toContain("$95");
     expect(html).toContain("Held for you · 9:57 left");
     expect(html).toContain('role="alert"');
-    expect(html.match(/<button/g)).toHaveLength(1);
+    expect(html.match(/<button/g)).toHaveLength(2);
+    expect(html.indexOf("Change date/time")).toBeLessThan(html.indexOf("Confirm appointment"));
     expect(html).toContain("safe-area-inset-bottom");
+  });
+
+  it("keeps only the confirm button for a fixed-date event or an expired hold", () => {
+    for (const bar of [
+      { ...footer, changeDateTimeLabel: null },
+      { ...footer, isExpired: true, heldText: null },
+    ]) {
+      const html = renderToStaticMarkup(<MobileConfirmBar total="$95" totalLabel="Total" footer={bar} />);
+      expect(html).not.toContain("Change date/time");
+    }
   });
 
   it("drops the total when there is no price", () => {
@@ -233,7 +265,6 @@ describe("AppointmentAbout", () => {
         singleDateLabel=""
         addresses={["245 West 29th Street"]}
         phones={["+1 212 555 0142"]}
-        isDesktop
         copy={copy}
         lang="en"
         {...props}
@@ -263,9 +294,32 @@ describe("AppointmentAbout", () => {
     expect(html).not.toContain("tel:");
   });
 
-  it("is a details element that starts open on a phone and a plain card on desktop", () => {
-    expect(render({}, { isDesktop: false })).toMatch(/<details open/);
+  it("folds away in the compact summary and stays open in the full one", () => {
+    const folded = render({}, { collapsible: true });
+    expect(folded).toContain("<details");
+    expect(folded).not.toMatch(/<details[^>]*open/);
     expect(render()).not.toContain("<details");
+  });
+
+  it("sits under the service and above the total in the summary", () => {
+    const html = summary({ about: <p>About section</p> });
+    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("Rivera Family Medicine"));
+    expect(html.indexOf("About section")).toBeLessThan(html.indexOf("$95"));
+  });
+
+  it("closes the compact summary card on a phone", () => {
+    const html = renderToStaticMarkup(
+      <CompactAppointmentSummary
+        title="Appointment summary"
+        serviceName="New patient consultation"
+        date={date}
+        changeLabel="Change date/time"
+        onChangeDateTime={() => undefined}
+        about={<p>About section</p>}
+        cost="$95"
+      />,
+    );
+    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("$95"));
   });
 
   it("names a fixed-date event by when, not by length", () => {
