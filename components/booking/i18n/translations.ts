@@ -250,6 +250,8 @@ export type BookingDict = {
     optionalSuffix: string;
     summaryLive: string;
     detailsComplete: string;
+    dateOfBirth: string;
+    dateOfBirthInvalidError: string;
     summaryHeldFor: string;
     confirmBooking: string;
     aboutBooking: string;
@@ -824,6 +826,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       optionalSuffix: "(optional)",
       summaryLive: "Live",
       detailsComplete: "Complete",
+      dateOfBirth: "Date of birth",
+      dateOfBirthInvalidError: "Enter a valid date of birth, or leave it empty.",
       summaryHeldFor: "Held for you · {time} left",
       confirmBooking: "Confirm {booking}",
       aboutBooking: "About the {booking}",
@@ -1408,6 +1412,8 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       optionalSuffix: "(opcional)",
       summaryLive: "En vivo",
       detailsComplete: "Completo",
+      dateOfBirth: "Fecha de nacimiento",
+      dateOfBirthInvalidError: "Ingrese una fecha de nacimiento válida o deje el campo vacío.",
       summaryHeldFor: "Lugar apartado para usted · quedan {time}",
       confirmBooking: "Confirmar {booking}",
       aboutBooking: "Sobre su {booking}",
