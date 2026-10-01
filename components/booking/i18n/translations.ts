@@ -249,8 +249,7 @@ export type BookingDict = {
     detailsReassurance: string;
     optionalSuffix: string;
     summaryLive: string;
-    summaryAddField: string;
-    summaryNoNotes: string;
+    detailsComplete: string;
     summaryHeldFor: string;
     confirmBooking: string;
     aboutBooking: string;
@@ -824,8 +823,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       detailsReassurance: "No account, no password.",
       optionalSuffix: "(optional)",
       summaryLive: "Live",
-      summaryAddField: "Add your {field}",
-      summaryNoNotes: "No notes",
+      detailsComplete: "Complete",
       summaryHeldFor: "Held for you · {time} left",
       confirmBooking: "Confirm {booking}",
       aboutBooking: "About the {booking}",
@@ -1409,8 +1407,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       detailsReassurance: "Sin cuenta ni contraseña.",
       optionalSuffix: "(opcional)",
       summaryLive: "En vivo",
-      summaryAddField: "Agregue {field}",
-      summaryNoNotes: "Sin notas",
+      detailsComplete: "Completo",
       summaryHeldFor: "Lugar apartado para usted · quedan {time}",
       confirmBooking: "Confirmar {booking}",
       aboutBooking: "Sobre su {booking}",

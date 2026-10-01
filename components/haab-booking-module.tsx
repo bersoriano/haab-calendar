@@ -4592,6 +4592,7 @@ export function HaabBookingModule({
     ]
       .filter(Boolean)
       .join(" · ");
+    // Same rule confirming applies: the details card turns green once it holds.
     const detailsRows = getSummaryClientRows({
       values: bookingFlow,
       requiresPartySize: Boolean(selectedService && hasSlotCapacity(selectedService)),
@@ -4603,6 +4604,7 @@ export function HaabBookingModule({
         notes: t.publicFlow.notes,
       },
     });
+    const detailsComplete = detailsRows.every((row) => row.status !== "missing");
     // The same three outcomes the old action row had, in the same order.
     const detailsFooter: SummaryFooter = {
       primaryLabel:
@@ -5201,6 +5203,7 @@ export function HaabBookingModule({
                   onChange={updateBookingFlow}
                   showPartySize={hasSlotCapacity(selectedService)}
                   invalidRequired={detailsFieldsRefused}
+                  complete={detailsComplete}
                   errorId={detailsErrorId}
                   copy={copy}
                   lang={lang}
@@ -5233,8 +5236,6 @@ export function HaabBookingModule({
                   date={detailsDate}
                   changeLabel={t.publicFlow.changeDateTime}
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
-                  clientTitle={copy.phrases.clientLabel}
-                  rows={detailsRows}
                   about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} />}
                   cost={detailsCost}
                   footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}

@@ -1,6 +1,6 @@
 import { BackPillButton } from "@/components/booking/BackPillButton";
-import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
-import type { DateTile, SummaryRow } from "@/lib/details-summary";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
+import type { DateTile } from "@/lib/details-summary";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -43,8 +43,6 @@ export type SummaryFooter = {
 
 const backButtonClass = "shrink-0 !text-sm !font-semibold";
 
-const eyebrowClass =
-  "text-[11px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)]";
 const livery = "bg-[linear-gradient(90deg,#005bbf,#1a73e8_45%,#00bfa5)]";
 // `!` on the button type: globals.css resets `font` on buttons outside any
 // layer, which outranks layered utilities.
@@ -121,44 +119,6 @@ export function BookingErrorAlert({
   );
 }
 
-function StatusIcon({ status }: { status: SummaryRow["status"] }) {
-  if (status === "filled") {
-    return (
-      <span
-        aria-hidden="true"
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--action-teal)] text-white"
-      >
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M20 7 9 18l-5-5" />
-        </svg>
-      </span>
-    );
-  }
-
-  return status === "missing" ? (
-    <span
-      aria-hidden="true"
-      className="h-5 w-5 shrink-0 rounded-full border-2 border-dashed border-[#b4bac4]"
-    />
-  ) : (
-    <span
-      aria-hidden="true"
-      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eef0f3] text-xs font-bold text-[#8a9097]"
-    >
-      –
-    </span>
-  );
-}
-
 export function AppointmentSummary({
   title,
   serviceName,
@@ -166,8 +126,6 @@ export function AppointmentSummary({
   date,
   changeLabel,
   onChangeDateTime,
-  clientTitle,
-  rows,
   about,
   cost,
   footer,
@@ -181,10 +139,7 @@ export function AppointmentSummary({
   changeLabel: string;
   /** Null when there is no date to change (a fixed-date event). */
   onChangeDateTime: (() => void) | null;
-  /** The vertical's word for the person: Patient, Guest, Attendee. */
-  clientTitle: string;
-  rows: SummaryRow[];
-  /** "About the appointment", set under the client rows. */
+  /** "About the appointment", set under the service. */
   about?: ReactNode;
   /** Null hides the Total row entirely. */
   cost: string | null;
@@ -233,31 +188,6 @@ export function AppointmentSummary({
         <div className="flex flex-col gap-0.5">
           <span className="break-words text-[15px] font-semibold text-[var(--ink)]">{serviceName}</span>
           {meta ? <span className="break-words text-[13.5px] text-[var(--muted)]">{meta}</span> : null}
-        </div>
-
-        <div className="flex flex-col gap-3 border-t border-dashed border-[#d3d8e0] pt-4">
-          <span className={eyebrowClass}>{clientTitle}</span>
-          {rows.map((row) => (
-            <div key={row.key} className="flex items-center gap-2.5">
-              <StatusIcon status={row.status} />
-              <span
-                className={cn(
-                  "min-w-0 break-words text-[14.5px]",
-                  row.status === "filled"
-                    ? "line-clamp-2 font-medium text-[var(--ink)]"
-                    : "text-[var(--muted)]",
-                )}
-              >
-                {row.status === "filled"
-                  ? row.value
-                  : row.status === "missing"
-                    ? fillTemplate(t.publicFlow.summaryAddField, {
-                        field: row.label.toLocaleLowerCase(lang),
-                      })
-                    : t.publicFlow.summaryNoNotes}
-              </span>
-            </div>
-          ))}
         </div>
 
         {about ? <div className="border-t border-dashed border-[#d3d8e0] pt-4">{about}</div> : null}

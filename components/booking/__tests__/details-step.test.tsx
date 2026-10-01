@@ -9,20 +9,11 @@ import {
   type SummaryFooter,
 } from "@/components/booking/AppointmentSummary";
 import { DetailsForm } from "@/components/booking/DetailsForm";
-import { getSummaryClientRows } from "@/lib/details-summary";
 import type { Service } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 const copy = getVerticalCopy("healthcare", "en");
 const empty = { clientName: "", clientEmail: "", clientPhone: "", partySize: "", notes: "" };
-const labels = {
-  name: "Full name",
-  email: "Email",
-  phone: "Phone number",
-  partySize: "Guests",
-  notes: "Notes",
-};
-
 const footer: SummaryFooter = {
   primaryLabel: "Confirm appointment",
   onPrimary: () => undefined,
@@ -55,10 +46,7 @@ const service: Service = {
   notes: "Bring a photo ID.",
 };
 
-function summary(
-  overrides: Partial<Parameters<typeof AppointmentSummary>[0]> = {},
-  rowValues = empty,
-) {
+function summary(overrides: Partial<Parameters<typeof AppointmentSummary>[0]> = {}) {
   return renderToStaticMarkup(
     <AppointmentSummary
       title="Appointment summary"
@@ -67,8 +55,6 @@ function summary(
       date={date}
       changeLabel="Change date/time"
       onChangeDateTime={() => undefined}
-      clientTitle="Patient"
-      rows={getSummaryClientRows({ values: rowValues, requiresPartySize: false, labels })}
       cost="$95"
       footer={footer}
       lang="en"
@@ -85,6 +71,7 @@ describe("DetailsForm", () => {
         onChange={() => undefined}
         showPartySize={false}
         invalidRequired={false}
+        complete={false}
         errorId="booking-error"
         copy={copy}
         lang="en"
@@ -113,7 +100,7 @@ describe("DetailsForm", () => {
     expect(html).toContain("No account, no password.");
     expect(renderToStaticMarkup(
       <DetailsForm values={empty} onChange={() => undefined} showPartySize={false}
-        invalidRequired={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
+        invalidRequired={false} complete={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
     )).toContain("Sin cuenta ni contraseña.");
   });
 
@@ -132,23 +119,26 @@ describe("DetailsForm", () => {
     expect(html).toContain('aria-describedby="booking-error"');
     expect(render()).not.toContain("aria-invalid");
   });
+
+  it("turns green and says so once every required field is filled", () => {
+    const done = render({ complete: true });
+
+    expect(done).toContain("data-complete");
+    expect(done).toContain("ring-[var(--action-teal)]");
+    expect(done).toContain("Complete</span>");
+    expect(render()).not.toContain("data-complete");
+    expect(render()).not.toContain("Complete</span>");
+    // The live region is there before the change, so it gets announced.
+    expect(render()).toContain('role="status"');
+  });
 });
 
 describe("AppointmentSummary", () => {
-  it("shows one row per field with the status the data implies", () => {
-    const html = summary({}, { ...empty, clientName: "Jamie Rivera" });
+  it("leaves the client's details to the form and hides a missing price", () => {
+    const html = summary({ cost: null });
 
-    expect(html).toContain("Jamie Rivera");
-    expect(html).toContain("Add your email");
-    expect(html).toContain("Add your phone number");
-    expect(html).toContain("No notes");
-    expect(html).not.toContain("Not entered yet");
-  });
-
-  it("uses the vertical's client word and hides a missing price", () => {
-    const html = summary({ clientTitle: "Guest", cost: null });
-
-    expect(html).toContain("Guest");
+    expect(html).not.toContain("Patient");
+    expect(html).not.toContain("Add your");
     expect(html).not.toContain("Total");
   });
 
@@ -292,9 +282,9 @@ describe("AppointmentAbout", () => {
     expect(render()).not.toContain("<details");
   });
 
-  it("sits under the client rows and above the total in the summary", () => {
+  it("sits under the service and above the total in the summary", () => {
     const html = summary({ about: <p>About section</p> });
-    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("Patient"));
+    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("Rivera Family Medicine"));
     expect(html.indexOf("About section")).toBeLessThan(html.indexOf("$95"));
   });
 
