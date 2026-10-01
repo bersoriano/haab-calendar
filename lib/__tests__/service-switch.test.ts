@@ -36,11 +36,16 @@ describe("planServiceSwitch", () => {
     });
   });
 
-  it("clears a date a weekly event does not run on", () => {
+  it("keeps a date a weekly event runs on and clears one it does not", () => {
     // 2026-08-10 is a Monday.
-    const weekly = { ...appointment, occurrenceMode: "weekly", weekdays: ["fri"] } as Service;
+    const weekly = (weekdays: Service["weekdays"]) =>
+      ({ ...appointment, occurrenceMode: "weekly", weekdays }) as Service;
 
-    expect(planServiceSwitch(weekly, flow, [])).toEqual({
+    expect(planServiceSwitch(weekly(["monday"]), flow, [])).toMatchObject({
+      kind: "hold",
+      dateKey: "2026-08-10",
+    });
+    expect(planServiceSwitch(weekly(["friday"]), flow, [])).toEqual({
       kind: "pick-time",
       dateKey: "",
       locationKey: undefined,
