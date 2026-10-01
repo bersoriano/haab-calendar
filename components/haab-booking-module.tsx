@@ -18,6 +18,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useBookingStepHistory } from "@/components/booking/state/useBookingStepHistory";
 import { useModuleStore } from "@/components/booking/state/useModuleStore";
 import type {
   AdminTab,
@@ -811,6 +812,13 @@ export function HaabBookingModule({
         ? (2 as BookingStep)
         : bookingFlow.step,
   };
+
+  useBookingStepHistory({
+    enabled: hydrated && surface === "public" && isDedicatedPublicPage && !manageBookingToken,
+    step: resolvedBookingFlow.step,
+    onBack: goBackToBookingStep,
+    onRestart: () => startFreshBooking(),
+  });
 
   // Keep the public grid honest while the visitor is looking at it.
   //
@@ -2401,6 +2409,28 @@ export function HaabBookingModule({
     setBookingError(null);
     setPendingHoldTime(null);
     dispatchBookingFlow({ type: reason });
+  }
+
+  // Every back path releases the hold first; the machine decides what survives
+  // (BACK from details keeps the service and the date, BACK from the calendar
+  // is the only place the service is dropped).
+  function releaseHoldForNavigation() {
+    const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
+    actions.releaseBookingHold(holdIdToRelease);
+    const released = releaseSupabaseBookingHold(holdIdToRelease);
+    setBookingHold(null);
+    setBookingHoldClockOffsetMs(0);
+    setBookingHoldNow(currentTimestamp());
+    setHoldExtensionMessage(null);
+    setBookingError(null);
+    setPendingHoldTime(null);
+    return released;
+  }
+
+  // The on-screen back buttons and the browser's Back button both land here.
+  function goBackToBookingStep(step: BookingStep) {
+    releaseHoldForNavigation();
+    dispatchBookingFlow({ type: step === 1 ? "RESTART" : "BACK" });
   }
 
   function updateBookingFlow<K extends keyof BookingFlow>(key: K, value: BookingFlow[K]) {
@@ -4479,31 +4509,8 @@ export function HaabBookingModule({
       window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    // Both back paths release the hold first; the machine decides what survives
-    // (BACK from details keeps the service and the date, BACK from the calendar
-    // is the only place the service is dropped).
-    const releaseHoldForNavigation = () => {
-      const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
-      actions.releaseBookingHold(holdIdToRelease);
-      const released = releaseSupabaseBookingHold(holdIdToRelease);
-      setBookingHold(null);
-      setBookingHoldClockOffsetMs(0);
-      setBookingHoldNow(currentTimestamp());
-      setHoldExtensionMessage(null);
-      setBookingError(null);
-      setPendingHoldTime(null);
-      return released;
-    };
-
-    const goBackToSelectionStep = () => {
-      releaseHoldForNavigation();
-      dispatchBookingFlow({ type: "BACK" });
-    };
-
-    const goBackToServiceChoice = () => {
-      releaseHoldForNavigation();
-      dispatchBookingFlow({ type: "RESTART" });
-    };
+    const goBackToSelectionStep = () => goBackToBookingStep(2);
+    const goBackToServiceChoice = () => goBackToBookingStep(1);
 
     // Changing the service on the details step. The old hold goes first (the
     // server would count it against the same slot), then the same date and time
