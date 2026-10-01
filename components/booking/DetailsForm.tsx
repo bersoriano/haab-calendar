@@ -1,6 +1,8 @@
 import { useId } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { todayKey } from "@/lib/date";
+import { EARLIEST_DATE_OF_BIRTH } from "@/lib/date-of-birth";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
@@ -10,6 +12,7 @@ export type DetailsField =
   | "clientEmail"
   | "clientPhone"
   | "partySize"
+  | "dateOfBirth"
   | "notes";
 
 // 16px on a phone because anything smaller makes iOS zoom the page on focus.
@@ -158,6 +161,24 @@ export function DetailsForm({
             className={cn(inputClass, "h-[50px]")}
           />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5 sm:w-[calc(50%-0.4375rem)]">
+        <label htmlFor={fieldId("dateOfBirth")} className={labelClass}>
+          {t.publicFlow.dateOfBirth}{" "}
+          <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
+        </label>
+        <input
+          id={fieldId("dateOfBirth")}
+          type="date"
+          value={values.dateOfBirth}
+          onChange={(event) => onChange("dateOfBirth", event.target.value)}
+          min={EARLIEST_DATE_OF_BIRTH}
+          max={todayKey()}
+          autoComplete="bday"
+          enterKeyHint="next"
+          className={cn(inputClass, "h-[50px]")}
+        />
       </div>
 
       {showPartySize ? (

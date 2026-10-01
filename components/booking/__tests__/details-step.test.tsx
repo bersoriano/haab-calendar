@@ -13,7 +13,14 @@ import type { Service } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 const copy = getVerticalCopy("healthcare", "en");
-const empty = { clientName: "", clientEmail: "", clientPhone: "", partySize: "", notes: "" };
+const empty = {
+  clientName: "",
+  clientEmail: "",
+  clientPhone: "",
+  partySize: "",
+  dateOfBirth: "",
+  notes: "",
+};
 const footer: SummaryFooter = {
   primaryLabel: "Confirm appointment",
   onPrimary: () => undefined,
@@ -102,6 +109,16 @@ describe("DetailsForm", () => {
       <DetailsForm values={empty} onChange={() => undefined} showPartySize={false}
         invalidRequired={false} complete={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
     )).toContain("Sin cuenta ni contraseña.");
+  });
+
+  it("asks for an optional date of birth as a date, autofilled from the browser", () => {
+    const html = render();
+
+    expect(html).toContain("Date of birth");
+    expect(html).toMatch(/Date of birth <span[^>]*>\(optional\)/);
+    expect(html).toContain('type="date"');
+    expect(html).toContain('autoComplete="bday"');
+    expect(html).toContain('min="1900-01-01"');
   });
 
   it("asks for a party size only when the service seats guests", () => {

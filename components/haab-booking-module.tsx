@@ -77,8 +77,10 @@ import {
   getDateTimeKeysInTimeZone,
   isValidTimeWindow,
 } from "@/lib/date";
+import { parseDateOfBirth } from "@/lib/date-of-birth";
 import {
   formatDateLabel,
+  formatDateOfBirth,
   formatCompactDate,
   formatWeekdayDate,
   formatPassDate,
@@ -2711,6 +2713,12 @@ export function HaabBookingModule({
       hasSlotCapacity(validationService) && Number.isFinite(parsedPartySize) && parsedPartySize > 0
         ? parsedPartySize
         : undefined;
+    const parsedDateOfBirth = parseDateOfBirth(bookingFlow.dateOfBirth, todayKey());
+    if (!parsedDateOfBirth.ok) {
+      setBookingError(t.publicFlow.dateOfBirthInvalidError);
+      return;
+    }
+    const dateOfBirthForBooking = parsedDateOfBirth.value;
     const nextBooking: BookingRecord = {
       id: createId("booking"),
       serviceId: validationService.id,
@@ -2727,6 +2735,7 @@ export function HaabBookingModule({
       // taking it, offline exactly as the database records it on the server.
       sharedCapacity: hasSlotCapacity(validationService) || undefined,
       partySize: partySizeForBooking,
+      dateOfBirth: dateOfBirthForBooking,
       capacitySnapshot:
         typeof validationService.maxSpots === "number"
           ? formatCapacityLabel(validationService)
@@ -2760,6 +2769,7 @@ export function HaabBookingModule({
               clientEmail: bookingFlow.clientEmail.trim(),
               clientPhone: bookingFlow.clientPhone.trim(),
               partySize: partySizeForBooking,
+              dateOfBirth: dateOfBirthForBooking,
               notes: bookingFlow.notes.trim(),
               location: bookingLocationAddress,
               locationKey: bookingFlow.locationKey,
@@ -3721,6 +3731,11 @@ export function HaabBookingModule({
                       <span>
                         {booking.clientEmail} · {booking.clientPhone}
                       </span>
+                      {booking.dateOfBirth ? (
+                        <span>
+                          {t.publicFlow.dateOfBirth}: {formatDateOfBirth(booking.dateOfBirth, lang)}
+                        </span>
+                      ) : null}
                       {booking.capacitySnapshot ? (
                         <span>{t.publicFlow.capacity}: {booking.capacitySnapshot}</span>
                       ) : null}
@@ -5198,6 +5213,7 @@ export function HaabBookingModule({
                     clientEmail: bookingFlow.clientEmail,
                     clientPhone: bookingFlow.clientPhone,
                     partySize: bookingFlow.partySize,
+                    dateOfBirth: bookingFlow.dateOfBirth ?? "",
                     notes: bookingFlow.notes,
                   }}
                   onChange={updateBookingFlow}
