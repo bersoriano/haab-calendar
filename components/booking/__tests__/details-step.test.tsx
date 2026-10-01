@@ -32,6 +32,7 @@ const footer: SummaryFooter = {
   error: null,
   errorId: "booking-error",
   chooseAnotherLabel: "Choose another time",
+  changeDateTimeLabel: "Change date/time",
   onChooseAnother: () => undefined,
 };
 
@@ -160,7 +161,17 @@ describe("AppointmentSummary", () => {
   });
 
   it("hides the change link when there is no date to change", () => {
-    expect(summary({ onChangeDateTime: null })).not.toContain("Change date/time");
+    expect(
+      summary({ onChangeDateTime: null, footer: { ...footer, changeDateTimeLabel: null } }),
+    ).not.toContain("Change date/time");
+  });
+
+  it("offers Change date/time right beside the confirm button", () => {
+    const html = summary({ onChangeDateTime: null });
+    const back = html.indexOf("Change date/time");
+
+    expect(back).toBeGreaterThan(-1);
+    expect(back).toBeLessThan(html.indexOf("Confirm appointment"));
   });
 
   it("puts the alert above the confirm button, never in a header", () => {
@@ -178,6 +189,7 @@ describe("AppointmentSummary", () => {
     expect(html).toContain("Hold this time again");
     expect(html).toContain("Choose another time");
     expect(html).not.toContain("Held for you");
+    expect(html.indexOf("Change date/time")).toBe(html.lastIndexOf("Change date/time"));
   });
 });
 
@@ -199,7 +211,7 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html).toContain("$95");
   });
 
-  it("carries the total, the alert and the hold line above one confirm button", () => {
+  it("carries the total, the alert and the hold line above the change and confirm buttons", () => {
     const html = renderToStaticMarkup(
       <MobileConfirmBar
         total="$95"
@@ -211,8 +223,19 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html).toContain("$95");
     expect(html).toContain("Held for you · 9:57 left");
     expect(html).toContain('role="alert"');
-    expect(html.match(/<button/g)).toHaveLength(1);
+    expect(html.match(/<button/g)).toHaveLength(2);
+    expect(html.indexOf("Change date/time")).toBeLessThan(html.indexOf("Confirm appointment"));
     expect(html).toContain("safe-area-inset-bottom");
+  });
+
+  it("keeps only the confirm button for a fixed-date event or an expired hold", () => {
+    for (const bar of [
+      { ...footer, changeDateTimeLabel: null },
+      { ...footer, isExpired: true, heldText: null },
+    ]) {
+      const html = renderToStaticMarkup(<MobileConfirmBar total="$95" totalLabel="Total" footer={bar} />);
+      expect(html).not.toContain("Change date/time");
+    }
   });
 
   it("drops the total when there is no price", () => {

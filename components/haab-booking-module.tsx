@@ -189,7 +189,6 @@ import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
-import { BackPillButton } from "@/components/booking/BackPillButton";
 import {
   AppointmentSummary,
   CompactAppointmentSummary,
@@ -4562,6 +4561,8 @@ export function HaabBookingModule({
       errorId: detailsErrorId,
       chooseAnotherLabel: t.public.chooseAnotherTime,
       onChooseAnother: goBackToSelectionStep,
+      // A fixed-date event has no other date or time to go back to.
+      changeDateTimeLabel: selectionIsSingle ? null : t.publicFlow.changeDateTime,
     };
 
     // Step 1, dedicated page. One address and phone set shared by every service
@@ -5122,12 +5123,6 @@ export function HaabBookingModule({
         {useDetailsLayout && selectedService ? (
           <>
             <div className="grid gap-4 p-4 sm:gap-5 sm:p-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start xl:px-10 xl:py-10">
-              {/* A fixed-date event has no other date or time to go back to. */}
-              {selectionIsSingle ? null : (
-                <div className="flex lg:col-span-2">
-                  <BackPillButton label={t.publicFlow.changeDateTime} onClick={goBackToSelectionStep} />
-                </div>
-              )}
               <div className="order-2 flex min-w-0 flex-col gap-4 sm:gap-5 lg:order-1">
                 <DetailsForm
                   values={{
