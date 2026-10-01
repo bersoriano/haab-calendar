@@ -152,6 +152,8 @@ export type ConfirmPublicBookingInput = {
   clientPhone: string;
   /** Restaurants: guests in the party. Validated against the table's cap. */
   partySize?: number;
+  /** Already validated by the caller ("YYYY-MM-DD"); rides in `details`. */
+  dateOfBirth?: string;
   notes?: string;
   location?: string;
   locationKey?: LocationKey;
@@ -310,6 +312,12 @@ function readPartySize(details: BookingRow["details"]) {
     : undefined;
 }
 
+/** The optional date of birth lives in `details`, so it needs no column. */
+function readDateOfBirth(details: BookingRow["details"]) {
+  const value = isPlainRecord(details) ? details.dateOfBirth : undefined;
+  return typeof value === "string" && value ? value : undefined;
+}
+
 /** The client's post-booking note lives in `details`, so it needs no column. */
 function readClientNote(details: BookingRow["details"]) {
   const value = isPlainRecord(details) ? details.clientNote : undefined;
@@ -333,6 +341,7 @@ function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
     capacitySnapshot: row.capacity_snapshot ?? undefined,
     sharedCapacity: row.allows_shared_capacity ?? false,
     partySize: readPartySize(row.details),
+    dateOfBirth: readDateOfBirth(row.details),
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
     status: row.status,
@@ -936,10 +945,15 @@ export async function confirmPublicBooking(
   const service = toService(serviceRow);
   validatePartySize(service, input.partySize);
 
-  const details =
-    input.partySize === undefined
-      ? safeDetails(input.details)
-      : { ...safeDetails(input.details), partySize: input.partySize };
+  // The free-form payload never gets to set the date of birth itself: only
+  // the validated field does.
+  const payload = { ...safeDetails(input.details) };
+  delete payload.dateOfBirth;
+  const details = {
+    ...payload,
+    ...(input.partySize === undefined ? {} : { partySize: input.partySize }),
+    ...(input.dateOfBirth ? { dateOfBirth: input.dateOfBirth } : {}),
+  };
 
   const detailsSchemaKey =
     input.detailsSchemaKey?.trim() ||

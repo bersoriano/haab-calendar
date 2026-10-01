@@ -4,6 +4,7 @@ import {
   confirmPublicBooking,
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
+import { parseDateOfBirth } from "@/lib/date-of-birth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   normalizeUrlSlugSegment,
@@ -23,6 +24,7 @@ type PublicBookingBody = {
   clientEmail?: unknown;
   clientPhone?: unknown;
   partySize?: unknown;
+  dateOfBirth?: unknown;
   notes?: unknown;
   location?: unknown;
   locationKey?: unknown;
@@ -101,6 +103,17 @@ export async function POST(
     );
   }
 
+  // A day of slack past UTC today: the client's "today" may already be tomorrow.
+  const latestDateOfBirth = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const dateOfBirth = parseDateOfBirth(body.dateOfBirth, latestDateOfBirth);
+
+  if (!dateOfBirth.ok) {
+    return NextResponse.json(
+      { userMessage: "Date of birth is not a valid date." },
+      { status: 400 },
+    );
+  }
+
   try {
     const result = await confirmPublicBooking(createAdminClient(), {
       vertical,
@@ -112,6 +125,7 @@ export async function POST(
       clientEmail,
       clientPhone,
       partySize: readPositiveInteger(body.partySize),
+      dateOfBirth: dateOfBirth.value,
       notes: readOptionalString(body.notes),
       location: readOptionalString(body.location),
       locationKey: readLocationKey(body.locationKey),
