@@ -817,6 +817,7 @@ export function HaabBookingModule({
     enabled: hydrated && surface === "public" && isDedicatedPublicPage && !manageBookingToken,
     step: resolvedBookingFlow.step,
     onBack: goBackToBookingStep,
+    onRestart: () => startFreshBooking(),
   });
 
   // Keep the public grid honest while the visitor is looking at it.

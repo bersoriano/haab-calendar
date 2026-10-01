@@ -13,8 +13,9 @@ import type { BookingStep } from "@/lib/types";
  *
  *   - Moving forward into 2 or 3 pushes an entry.
  *   - Confirming (4) replaces the current entry: the details form behind it
- *     is for a slot that is now booked, so Back from the confirmation leaves
- *     the page instead of reopening it.
+ *     is for a slot that is now booked, so it can never be reopened. Back from
+ *     the confirmation starts a fresh booking on the service list, rewinding
+ *     to the first entry so the next Back leaves the page.
  *   - Moving back in-app (a back button, an expired hold) rewinds history to
  *     the matching entry, so the stack never holds steps the visitor left.
  *   - Forward never re-enters a step: going back clears the selection the
@@ -108,6 +109,11 @@ export type PopStatePlan =
   | { kind: "settle"; depth: number }
   /** Leave the page: rewind past every booking entry before this one. */
   | { kind: "leave"; delta: number }
+  /**
+   * Start a fresh booking from the confirmation, rewinding `delta` entries
+   * (zero or negative) to the first one.
+   */
+  | { kind: "restart"; delta: number }
   /** Forward into a step that cannot be re-entered; go back where we were. */
   | { kind: "undo"; depth: number; delta: number }
   /** Back to an earlier step of this flow. */
@@ -140,9 +146,10 @@ export function planPopState({
     return { kind: "settle", depth: entry.depth };
   }
 
-  // The booking is made; nothing behind the confirmation can be redone.
+  // The booking is made; nothing behind the confirmation can be redone, so
+  // Back means "book again" from the start.
   if (currentStep === 4) {
-    return { kind: "leave", delta: -(entry.depth + 1) };
+    return { kind: "restart", delta: entry.depth === 0 ? 0 : -entry.depth };
   }
 
   if (entry.depth > cursor.index) {

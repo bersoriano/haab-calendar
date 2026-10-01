@@ -23,6 +23,7 @@ export function useBookingStepHistory({
   enabled,
   step,
   onBack,
+  onRestart,
 }: {
   enabled: boolean;
   step: BookingStep;
@@ -31,6 +32,8 @@ export function useBookingStepHistory({
    * (releasing a hold on the way, as the on-screen back buttons do).
    */
   onBack: (step: BookingStep) => void;
+  /** The visitor pressed Back on the confirmation: start a fresh booking. */
+  onRestart: () => void;
 }) {
   const loadIdRef = useRef<string | null>(null);
   const cursorRef = useRef<BookingHistoryCursor>({ steps: [], index: 0 });
@@ -91,6 +94,16 @@ export function useBookingStepHistory({
       case "leave":
         pendingDepthRef.current = null;
         window.history.go(plan.delta);
+        return;
+      case "restart":
+        // The fresh flow's first step lands on the first entry; once the
+        // rewind settles there, the next Back leaves the page.
+        pendingDepthRef.current = plan.delta < 0 ? 0 : null;
+        cursorRef.current = { ...cursorRef.current, index: 0 };
+        onRestart();
+        if (plan.delta < 0) {
+          window.history.go(plan.delta);
+        }
         return;
       case "undo":
         pendingDepthRef.current = plan.depth;

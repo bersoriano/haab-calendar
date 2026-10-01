@@ -115,7 +115,7 @@ describe("planPopState", () => {
     ).toEqual({ kind: "undo", depth: 1, delta: -1 });
   });
 
-  it("leaves the page on Back from the confirmation", () => {
+  it("starts over from the first entry on Back from the confirmation", () => {
     expect(
       planPopState({
         entry: { id: LOAD, depth: 1, step: 2 },
@@ -124,7 +124,20 @@ describe("planPopState", () => {
         pendingDepth: null,
         currentStep: 4,
       }),
-    ).toEqual({ kind: "leave", delta: -2 });
+    ).toEqual({ kind: "restart", delta: -1 });
+  });
+
+  it("starts over in place when the confirmation sits right after the first entry", () => {
+    // A single-service page: [calendar, confirmation].
+    expect(
+      planPopState({
+        entry: { id: LOAD, depth: 0, step: 2 },
+        loadId: LOAD,
+        cursor: { steps: [2, 4], index: 1 },
+        pendingDepth: null,
+        currentStep: 4,
+      }),
+    ).toEqual({ kind: "restart", delta: 0 });
   });
 
   it("leaves through entries written by an earlier load of the page", () => {
