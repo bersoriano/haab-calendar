@@ -3,6 +3,7 @@ import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/tra
 import type { DateTile, SummaryRow } from "@/lib/details-summary";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 /**
  * The live summary on the details step. Two shapes of one thing: the receipt-like
@@ -167,6 +168,7 @@ export function AppointmentSummary({
   onChangeDateTime,
   clientTitle,
   rows,
+  about,
   cost,
   footer,
   lang,
@@ -182,6 +184,8 @@ export function AppointmentSummary({
   /** The vertical's word for the person: Patient, Guest, Attendee. */
   clientTitle: string;
   rows: SummaryRow[];
+  /** "About the appointment", set under the client rows. */
+  about?: ReactNode;
   /** Null hides the Total row entirely. */
   cost: string | null;
   footer: SummaryFooter;
@@ -256,6 +260,8 @@ export function AppointmentSummary({
           ))}
         </div>
 
+        {about ? <div className="border-t border-dashed border-[#d3d8e0] pt-4">{about}</div> : null}
+
         {cost ? (
           <div className="flex items-baseline justify-between gap-3 border-t border-dashed border-[#d3d8e0] pt-4">
             <span className="text-sm font-semibold text-[#3c4043]">{t.publicFlow.total}</span>
@@ -328,6 +334,7 @@ export function CompactAppointmentSummary({
   date,
   changeLabel,
   onChangeDateTime,
+  about,
   cost,
 }: {
   title: string;
@@ -335,6 +342,8 @@ export function CompactAppointmentSummary({
   date: SummaryDate | null;
   changeLabel: string;
   onChangeDateTime: (() => void) | null;
+  /** "About the appointment", folded under the card's main row. */
+  about?: ReactNode;
   cost: string | null;
 }) {
   return (
@@ -371,6 +380,9 @@ export function CompactAppointmentSummary({
           </span>
         ) : null}
       </div>
+      {about ? (
+        <div className="mx-4 border-t border-dashed border-[#d3d8e0] pb-2 pt-1">{about}</div>
+      ) : null}
     </section>
   );
 }

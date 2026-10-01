@@ -256,7 +256,6 @@ describe("AppointmentAbout", () => {
         singleDateLabel=""
         addresses={["245 West 29th Street"]}
         phones={["+1 212 555 0142"]}
-        isDesktop
         copy={copy}
         lang="en"
         {...props}
@@ -286,9 +285,32 @@ describe("AppointmentAbout", () => {
     expect(html).not.toContain("tel:");
   });
 
-  it("is a details element that starts open on a phone and a plain card on desktop", () => {
-    expect(render({}, { isDesktop: false })).toMatch(/<details open/);
+  it("folds away in the compact summary and stays open in the full one", () => {
+    const folded = render({}, { collapsible: true });
+    expect(folded).toContain("<details");
+    expect(folded).not.toMatch(/<details[^>]*open/);
     expect(render()).not.toContain("<details");
+  });
+
+  it("sits under the client rows and above the total in the summary", () => {
+    const html = summary({ about: <p>About section</p> });
+    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("Patient"));
+    expect(html.indexOf("About section")).toBeLessThan(html.indexOf("$95"));
+  });
+
+  it("closes the compact summary card on a phone", () => {
+    const html = renderToStaticMarkup(
+      <CompactAppointmentSummary
+        title="Appointment summary"
+        serviceName="New patient consultation"
+        date={date}
+        changeLabel="Change date/time"
+        onChangeDateTime={() => undefined}
+        about={<p>About section</p>}
+        cost="$95"
+      />,
+    );
+    expect(html.indexOf("About section")).toBeGreaterThan(html.indexOf("$95"));
   });
 
   it("names a fixed-date event by when, not by length", () => {

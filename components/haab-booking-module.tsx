@@ -4493,6 +4493,21 @@ export function HaabBookingModule({
         : detailsContact.addresses;
     const detailsPhones = detailsContact.phones;
     const detailsCost = effectiveCost.trim() || null;
+    // "About the appointment" rides inside the summary: open under the client rows
+    // on desktop, folded at the foot of the compact card on a phone.
+    const detailsAboutProps = selectedService
+      ? {
+          service: selectedService,
+          vertical: vertical ?? undefined,
+          isEvent: selectionIsEvent,
+          isSingle: selectionIsSingle,
+          singleDateLabel,
+          addresses: detailsAddresses,
+          phones: detailsPhones,
+          copy,
+          lang,
+        }
+      : null;
     const detailsDateKey = bookingFlow.dateKey || selectedService?.occurrenceDate || "";
     const detailsStart = selectedService
       ? resolveBookingStartTime(selectedService, bookingFlow.time)
@@ -5139,18 +5154,6 @@ export function HaabBookingModule({
                   copy={copy}
                   lang={lang}
                 />
-                <AppointmentAbout
-                  service={selectedService}
-                  vertical={vertical ?? undefined}
-                  isEvent={selectionIsEvent}
-                  isSingle={selectionIsSingle}
-                  singleDateLabel={singleDateLabel}
-                  addresses={detailsAddresses}
-                  phones={detailsPhones}
-                  isDesktop={isDesktopColumns}
-                  copy={copy}
-                  lang={lang}
-                />
               </div>
               <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:self-stretch">
                 <CompactAppointmentSummary
@@ -5159,6 +5162,7 @@ export function HaabBookingModule({
                   date={detailsDate}
                   changeLabel={t.publicFlow.changeDateTime}
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
+                  about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} collapsible />}
                   cost={detailsCost}
                 />
                 <AppointmentSummary
@@ -5170,6 +5174,7 @@ export function HaabBookingModule({
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
                   clientTitle={copy.phrases.clientLabel}
                   rows={detailsRows}
+                  about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} />}
                   cost={detailsCost}
                   footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}
                   lang={lang}
