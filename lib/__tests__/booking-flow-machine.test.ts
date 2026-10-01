@@ -140,4 +140,28 @@ describe("booking flow machine", () => {
       true,
     );
   });
+
+  it("switches service from details back to time selection, keeping what was typed", () => {
+    const state = run(
+      makeFlow({
+        step: 3,
+        serviceId: "svc_1",
+        dateKey: "2026-08-10",
+        time: "09:30",
+        locationKey: "address1",
+        clientName: "Ana",
+      }),
+      [{ type: "SWITCH_SERVICE", serviceId: "svc_2", dateKey: "2026-08-10", notify: true }],
+    );
+
+    expect(state.notice).toBe("service-switched");
+    expect(state.flow).toMatchObject({
+      step: 2,
+      serviceId: "svc_2",
+      dateKey: "2026-08-10",
+      time: "",
+      locationKey: undefined,
+      clientName: "Ana",
+    });
+  });
 });
