@@ -1,8 +1,15 @@
+import type { VerticalId } from "@/lib/types";
+
 /**
  * Date of birth, an optional field on the details step. Stored as the
  * date input gives it ("YYYY-MM-DD") in the booking's `details` payload.
  */
 export const EARLIEST_DATE_OF_BIRTH = "1900-01-01";
+
+/** Only a clinic has a reason to ask; nowhere else is it asked or kept. */
+export function collectsDateOfBirth(vertical: VerticalId | null | undefined) {
+  return vertical === "healthcare";
+}
 
 export type DateOfBirthResult = { ok: true; value: string | undefined } | { ok: false };
 

@@ -4,7 +4,7 @@ import {
   confirmPublicBooking,
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
-import { parseDateOfBirth } from "@/lib/date-of-birth";
+import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   normalizeUrlSlugSegment,
@@ -105,7 +105,10 @@ export async function POST(
 
   // A day of slack past UTC today: the client's "today" may already be tomorrow.
   const latestDateOfBirth = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-  const dateOfBirth = parseDateOfBirth(body.dateOfBirth, latestDateOfBirth);
+  // Outside healthcare the field is never asked, so whatever arrives is dropped.
+  const dateOfBirth = collectsDateOfBirth(vertical)
+    ? parseDateOfBirth(body.dateOfBirth, latestDateOfBirth)
+    : ({ ok: true, value: undefined } as const);
 
   if (!dateOfBirth.ok) {
     return NextResponse.json(

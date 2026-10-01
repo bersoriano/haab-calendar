@@ -77,6 +77,7 @@ describe("DetailsForm", () => {
         values={empty}
         onChange={() => undefined}
         showPartySize={false}
+        showDateOfBirth={false}
         invalidRequired={false}
         complete={false}
         errorId="booking-error"
@@ -107,12 +108,13 @@ describe("DetailsForm", () => {
     expect(html).toContain("No account, no password.");
     expect(renderToStaticMarkup(
       <DetailsForm values={empty} onChange={() => undefined} showPartySize={false}
-        invalidRequired={false} complete={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
+        showDateOfBirth={false} invalidRequired={false} complete={false} errorId="e" copy={getVerticalCopy("healthcare", "es")} lang="es" />,
     )).toContain("Sin cuenta ni contraseña.");
   });
 
   it("asks for an optional date of birth as a date, autofilled from the browser", () => {
-    const html = render();
+    expect(render()).not.toContain("Date of birth");
+    const html = render({ showDateOfBirth: true });
 
     expect(html).toContain("Date of birth");
     expect(html).toMatch(/Date of birth <span[^>]*>\(optional\)/);

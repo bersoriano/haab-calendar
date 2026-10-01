@@ -77,7 +77,7 @@ import {
   getDateTimeKeysInTimeZone,
   isValidTimeWindow,
 } from "@/lib/date";
-import { parseDateOfBirth } from "@/lib/date-of-birth";
+import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import {
   formatDateLabel,
   formatDateOfBirth,
@@ -2713,7 +2713,9 @@ export function HaabBookingModule({
       hasSlotCapacity(validationService) && Number.isFinite(parsedPartySize) && parsedPartySize > 0
         ? parsedPartySize
         : undefined;
-    const parsedDateOfBirth = parseDateOfBirth(bookingFlow.dateOfBirth, todayKey());
+    const parsedDateOfBirth = collectsDateOfBirth(vertical)
+      ? parseDateOfBirth(bookingFlow.dateOfBirth, todayKey())
+      : ({ ok: true, value: undefined } as const);
     if (!parsedDateOfBirth.ok) {
       setBookingError(t.publicFlow.dateOfBirthInvalidError);
       return;
@@ -5218,6 +5220,7 @@ export function HaabBookingModule({
                   }}
                   onChange={updateBookingFlow}
                   showPartySize={hasSlotCapacity(selectedService)}
+                  showDateOfBirth={collectsDateOfBirth(vertical)}
                   invalidRequired={detailsFieldsRefused}
                   complete={detailsComplete}
                   errorId={detailsErrorId}

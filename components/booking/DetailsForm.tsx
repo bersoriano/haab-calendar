@@ -34,6 +34,7 @@ export function DetailsForm({
   values,
   onChange,
   showPartySize,
+  showDateOfBirth,
   invalidRequired,
   complete,
   errorId,
@@ -44,6 +45,8 @@ export function DetailsForm({
   onChange: (field: DetailsField, value: string) => void;
   /** Services that seat a number of guests ask for one. */
   showPartySize: boolean;
+  /** Only healthcare asks for a date of birth. */
+  showDateOfBirth: boolean;
   /** Confirming was refused for empty required fields. */
   invalidRequired: boolean;
   /** Every required field is filled: the card turns green and says so. */
@@ -163,23 +166,25 @@ export function DetailsForm({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5 sm:w-[calc(50%-0.4375rem)]">
-        <label htmlFor={fieldId("dateOfBirth")} className={labelClass}>
-          {t.publicFlow.dateOfBirth}{" "}
-          <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
-        </label>
-        <input
-          id={fieldId("dateOfBirth")}
-          type="date"
-          value={values.dateOfBirth}
-          onChange={(event) => onChange("dateOfBirth", event.target.value)}
-          min={EARLIEST_DATE_OF_BIRTH}
-          max={todayKey()}
-          autoComplete="bday"
-          enterKeyHint="next"
-          className={cn(inputClass, "h-[50px]")}
-        />
-      </div>
+      {showDateOfBirth ? (
+        <div className="flex flex-col gap-1.5 sm:w-[calc(50%-0.4375rem)]">
+          <label htmlFor={fieldId("dateOfBirth")} className={labelClass}>
+            {t.publicFlow.dateOfBirth}{" "}
+            <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
+          </label>
+          <input
+            id={fieldId("dateOfBirth")}
+            type="date"
+            value={values.dateOfBirth}
+            onChange={(event) => onChange("dateOfBirth", event.target.value)}
+            min={EARLIEST_DATE_OF_BIRTH}
+            max={todayKey()}
+            autoComplete="bday"
+            enterKeyHint="next"
+            className={cn(inputClass, "h-[50px]")}
+          />
+        </div>
+      ) : null}
 
       {showPartySize ? (
         <div className="flex flex-col gap-1.5">

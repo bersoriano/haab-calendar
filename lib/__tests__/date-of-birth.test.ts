@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { parseDateOfBirth } from "@/lib/date-of-birth";
+import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
+import { VERTICAL_IDS } from "@/lib/types";
 
 const today = "2026-09-30";
 
@@ -19,5 +20,15 @@ describe("parseDateOfBirth", () => {
     for (const raw of ["12/04/1989", "1989-4-12", "1989-02-30", "2026-10-01", "1899-12-31", 19890412]) {
       expect(parseDateOfBirth(raw, today), String(raw)).toEqual({ ok: false });
     }
+  });
+});
+
+describe("collectsDateOfBirth", () => {
+  it("is asked only by healthcare", () => {
+    expect(collectsDateOfBirth("healthcare")).toBe(true);
+    for (const vertical of VERTICAL_IDS.filter((id) => id !== "healthcare")) {
+      expect(collectsDateOfBirth(vertical), vertical).toBe(false);
+    }
+    expect(collectsDateOfBirth(undefined)).toBe(false);
   });
 });
