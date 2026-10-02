@@ -124,7 +124,7 @@ export function DetailsForm({
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 sm:gap-3.5">
+      <div className="flex flex-col gap-4 sm:gap-5">
         <div className="flex min-w-0 flex-col gap-1.5">
           <label htmlFor={fieldId("clientPhone")} className={labelClass}>
             {t.publicFlow.phoneNumber}
