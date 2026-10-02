@@ -161,6 +161,10 @@ export type BookingDict = {
     serviceSwitchedNoticeBody: string;
     selectedServiceTitle: string;
     selectedServiceHint: string;
+    serviceSwitchDialogTitle: string;
+    serviceSwitchDialogBody: string;
+    serviceSwitchDialogAccept: string;
+    serviceSwitchDialogCancel: string;
     holdingSlot: string;
     tapTimeHint: string;
     // Section titles & misc actions
@@ -741,6 +745,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       serviceSwitchedNoticeBody: "Your details are saved. Pick a time to continue.",
       selectedServiceTitle: "Selected {service}",
       selectedServiceHint: "Changing it keeps your time when it's free for the new {service}.",
+      serviceSwitchDialogTitle: "This date and time aren't available for {service}",
+      serviceSwitchDialogBody:
+        "If you continue, you'll choose a new date and time. Cancel to keep your current service and selection.",
+      serviceSwitchDialogAccept: "Choose a new date and time",
+      serviceSwitchDialogCancel: "Cancel",
       holdingSlot: "Holding your time…",
       tapTimeHint: "Tap a time — it's held for 10 minutes.",
       bookingCancelled: "Booking Cancelled",
@@ -1325,6 +1334,11 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       serviceSwitchedNoticeBody: "Sus datos se guardaron. Elija un horario para continuar.",
       selectedServiceTitle: "{Service} seleccionado",
       selectedServiceHint: "Si lo cambia, conservamos su horario cuando esté libre para el nuevo {service}.",
+      serviceSwitchDialogTitle: "Esta fecha y hora no están disponibles para {service}",
+      serviceSwitchDialogBody:
+        "Si continúa, elegirá una nueva fecha y hora. Cancele para conservar el servicio y la selección actuales.",
+      serviceSwitchDialogAccept: "Elegir nueva fecha y hora",
+      serviceSwitchDialogCancel: "Cancelar",
       holdingSlot: "Apartando su horario…",
       tapTimeHint: "Toque un horario: se aparta por 10 minutos.",
       bookingCancelled: "Reserva cancelada",
