@@ -5214,7 +5214,7 @@ export function HaabBookingModule({
 
         {useDetailsLayout && selectedService ? (
           <>
-            <div className="grid gap-4 p-4 sm:gap-5 sm:p-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-start xl:px-10 xl:py-10">
+            <div className="grid gap-4 p-4 sm:gap-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:items-start xl:px-10 xl:py-10">
               <div className="order-2 flex min-w-0 flex-col gap-4 sm:gap-5 lg:order-1">
                 <DetailsForm
                   values={{

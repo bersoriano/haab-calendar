@@ -153,15 +153,10 @@ export function PublicBookingHeader({
                 <h1 className="sr-only">{name}</h1>
               )
             ) : null}
-            {service ? (
-              <span className="max-w-full break-words rounded-full bg-[var(--panel-glass-72)] px-3 py-1 text-xs font-semibold text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.55)] sm:text-[0.8125rem]">
-                {service}
-              </span>
-            ) : null}
           </div>
 
-          <div className="col-span-3 flex flex-wrap gap-1.5 sm:mt-2 sm:gap-2">
-            {zoneText ? (
+          {zoneText ? (
+            <div className="col-span-3 flex flex-wrap gap-1.5 sm:mt-2 sm:gap-2">
               <span className={headerChipClass}>
                 <svg
                   aria-hidden="true"
@@ -180,26 +175,8 @@ export function PublicBookingHeader({
                 </svg>
                 {zoneText}
               </span>
-            ) : null}
-            <span className={headerChipClass}>
-              <svg
-                aria-hidden="true"
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#00897b"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="hidden shrink-0 sm:block"
-              >
-                <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z" />
-                <path d="M9 12l2 2 4-4" />
-              </svg>
-              {t.publicFlow.headerNoAccount}
-            </span>
-          </div>
+            </div>
+          ) : null}
 
           {/* Always mounted so assistive tech hears the change; only the busy,
               warning and error states have anything to say. Sentence case and
