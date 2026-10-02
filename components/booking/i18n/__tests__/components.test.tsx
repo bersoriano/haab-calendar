@@ -10,10 +10,8 @@ import { BookingStatusPill } from "@/components/ui/BookingStatusPill";
 import { PrivateLinkCard } from "@/components/ui/PrivateLinkCard";
 import { PublicProgressIndicator } from "@/components/ui/PublicProgressIndicator";
 import { SummaryStatusTitle } from "@/components/ui/SummaryStatusTitle";
-import { ManageBookingPanel } from "@/components/booking/ManageBookingPanel";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { createBlankServiceDraft, createEmptyStore } from "@/lib/store";
-import type { BookingRecord } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
 describe("shared booking components", () => {
@@ -241,7 +239,7 @@ describe("shared booking components", () => {
       "Save this link – you can reschedule or cancel anytime without an account",
     );
     expect(english).toContain("https://example.test/manage/abc");
-    expect(english).toContain("Open private link");
+    expect(english).not.toContain("Open private link");
     expect(spanish).toContain(
       "Guarde este enlace: puede reagendar o cancelar cuando quiera, sin crear una cuenta",
     );
@@ -257,129 +255,6 @@ describe("shared booking components", () => {
     expect(renderToStaticMarkup(<BookingStatusPill status="cancelled" />)).toContain(
       "Cancelled",
     );
-  });
-});
-
-const managedBooking: BookingRecord = {
-  id: "booking-1234567890",
-  serviceId: "service-1",
-  serviceName: "Deep clean",
-  bookingType: "appointment",
-  dateKey: "2026-09-14",
-  startTime: "10:00",
-  endTime: "11:00",
-  clientName: "Ana Ruiz",
-  clientEmail: "ana@example.test",
-  clientPhone: "555-0100",
-  notes: "",
-  clientNote: "",
-  cost: "$80",
-  status: "confirmed",
-  createdAt: "2026-08-05T10:00:00.000Z",
-  updatedAt: "2026-08-05T10:00:00.000Z",
-  manageToken: "token-abc",
-};
-
-function renderManagePanel(overrides: Partial<BookingRecord> = {}, lang: "en" | "es" = "en") {
-  return renderToStaticMarkup(
-    <ManageBookingPanel
-      booking={{ ...managedBooking, ...overrides }}
-      providerName="Sparkle Studio"
-      addresses={["12 Market Street"]}
-      phones={["555-0199"]}
-      costLabel="$80"
-      manageUrl="https://example.test/manage/token-abc"
-      copiedManageLink={false}
-      onCopyManageLink={() => undefined}
-      canReschedule
-      onReschedule={() => undefined}
-      onCancel={() => undefined}
-      onAddToCalendar={() => undefined}
-      onShowQr={() => undefined}
-      noteDraft=""
-      onNoteDraftChange={() => undefined}
-      onSaveNote={() => undefined}
-      isSavingNote={false}
-      noteStatus="idle"
-      savedNote=""
-      bookAnotherAction={null}
-      copy={getVerticalCopy("spaces", lang)}
-      lang={lang}
-      panelClass="panel"
-      insetClass="inset"
-    />,
-  );
-}
-
-describe("private management page", () => {
-  it("leads with status, then the booking, then what can be changed", () => {
-    const html = renderManagePanel();
-
-    expect(html).toContain("Your booking");
-    expect(html).toContain("Confirmed");
-    expect(html).toContain("You are booked in.");
-    expect(html).toContain("Pick a new time");
-    expect(html).toContain("Cancel booking");
-    expect(html).toContain("Sparkle Studio");
-    expect(html).toContain("12 Market Street");
-  });
-
-  it("offers the optional note and repeats the private-link promise", () => {
-    const html = renderManagePanel({ clientNote: "Buzzer is broken" });
-
-    expect(html).toContain("Note for the provider");
-    expect(html).toContain("Save note");
-    expect(html).toContain("Save this link");
-    expect(html).toContain(
-      "Save this link – you can reschedule or cancel anytime without an account",
-    );
-    expect(html).toContain("No account, no password");
-  });
-
-  it("shows an already-saved note back to the client", () => {
-    const html = renderManagePanel({}, "en");
-    expect(html).not.toContain("Your note");
-
-    const withNote = renderToStaticMarkup(
-      <ManageBookingPanel
-        booking={managedBooking}
-        providerName="Sparkle Studio"
-        addresses={[]}
-        phones={[]}
-        costLabel=""
-        manageUrl="https://example.test/manage/token-abc"
-        copiedManageLink={false}
-        onCopyManageLink={() => undefined}
-        canReschedule
-        onReschedule={() => undefined}
-        onCancel={() => undefined}
-        onAddToCalendar={() => undefined}
-        onShowQr={() => undefined}
-        noteDraft="Buzzer is broken"
-        onNoteDraftChange={() => undefined}
-        onSaveNote={() => undefined}
-        isSavingNote={false}
-        noteStatus="saved"
-        savedNote="Buzzer is broken"
-        bookAnotherAction={null}
-        copy={getVerticalCopy("spaces", "en")}
-        lang="en"
-        panelClass="panel"
-        insetClass="inset"
-      />,
-    );
-
-    expect(withNote).toContain("Your note");
-    expect(withNote).toContain("Buzzer is broken");
-    expect(withNote).toContain("Note sent to the provider.");
-  });
-
-  it("drops the note box and keeps the record readable once cancelled", () => {
-    const html = renderManagePanel({ status: "cancelled" }, "es");
-
-    expect(html).toContain("Cancelada");
-    expect(html).toContain("El horario quedó libre para otras personas.");
-    expect(html).not.toContain("Nota para el administrador");
   });
 });
 

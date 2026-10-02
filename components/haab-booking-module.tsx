@@ -183,10 +183,7 @@ import {
   SummaryField,
   ToneBadge,
 } from "@/components/ui";
-import {
-  ManageBookingPanel,
-  type ManageNoteStatus,
-} from "@/components/booking/ManageBookingPanel";
+import { BookingNotePanel, type BookingNoteStatus } from "@/components/booking/BookingNotePanel";
 import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
@@ -461,7 +458,7 @@ export function HaabBookingModule({
   const [isManageRescheduling, setIsManageRescheduling] = useState(false);
   const [clientNoteDraft, setClientNoteDraft] = useState("");
   const [isSavingClientNote, setIsSavingClientNote] = useState(false);
-  const [clientNoteStatus, setClientNoteStatus] = useState<ManageNoteStatus>("idle");
+  const [clientNoteStatus, setClientNoteStatus] = useState<BookingNoteStatus>("idle");
   const publicPrimaryPanelRef = useRef<HTMLDivElement | null>(null);
   const publicAboutPanelRef = useRef<HTMLDivElement | null>(null);
   const publicSummaryPanelRef = useRef<HTMLDivElement | null>(null);
@@ -905,9 +902,17 @@ export function HaabBookingModule({
     resolvedBookingFlow.step,
     vertical,
   ]);
-  const selectedService = services.find(
-    (service) => service.id === resolvedBookingFlow.serviceId,
-  );
+  const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
+  const selectedService =
+    services.find((service) => service.id === resolvedBookingFlow.serviceId) ??
+    (resolvedBookingFlow.step === 4 && successfulBooking
+      ? {
+          id: successfulBooking.serviceId,
+          name: successfulBooking.serviceName,
+          bookingType: successfulBooking.bookingType,
+          description: "",
+        } as Service
+      : undefined);
   // Single-occurrence events have one fixed date + time: auto-select it so the
   // public flow can skip the calendar entirely.
   useEffect(() => {
@@ -936,7 +941,6 @@ export function HaabBookingModule({
     setBookingFlow((current) => ({ ...current, locationKey: desired }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- key off service + its linked addresses
   }, [selectedService?.id, selectedService?.linkedAddress1, selectedService?.linkedAddress2, selectedService?.customAddress, provider.address1, provider.address2]);
-  const successfulBooking = bookings.find((booking) => booking.id === bookingFlow.successBookingId);
   const successfulManageUrl =
     successfulBooking?.manageToken && vertical
       ? buildManageUrl(businessSlug, successfulBooking.manageToken, vertical, lang)
@@ -950,8 +954,15 @@ export function HaabBookingModule({
       }
     : undefined;
   const isSuccessfulBookingCancelled = successfulBooking?.status === "cancelled";
-  // The private-link page: a found booking, shown as its own screen rather than
-  // as the confirmation receipt the booker just came from.
+  const canRescheduleSuccessfulBooking = Boolean(
+    successfulBooking &&
+      services.some(
+        (service) =>
+          service.id === successfulBooking.serviceId &&
+          !isServiceSingleOccurrence(service.id),
+      ),
+  );
+  // The private link returns to the same confirmation step as the original booking.
   const isManageView = Boolean(manageBookingToken) && manageLookupState === "found";
   // While moving an existing booking, its own slot must read as free.
   const flowIgnoredBookingId =
@@ -1698,6 +1709,8 @@ export function HaabBookingModule({
     }
 
     setBookingError(null);
+    setClientNoteDraft("");
+    setClientNoteStatus("idle");
     setHoldExtensionMessage(null);
     setIsCalendarQrModalOpen(false);
     const holdIdToRelease = bookingHold?.released ? undefined : bookingHold?.id;
@@ -6255,6 +6268,24 @@ export function HaabBookingModule({
                           />
                         </div>
 
+                        {!isSuccessfulBookingCancelled ? (
+                          <BookingNotePanel
+                            noteDraft={clientNoteDraft}
+                            onNoteDraftChange={(value) => {
+                              setClientNoteDraft(value);
+                              setClientNoteStatus("idle");
+                            }}
+                            onSaveNote={() => void saveClientNote()}
+                            isSavingNote={isSavingClientNote}
+                            noteStatus={clientNoteStatus}
+                            savedNote={successfulBooking.clientNote ?? ""}
+                            lang={lang}
+                            className={publicElevatedPanelClass}
+                            insetClass={publicInsetCardClass}
+                            buttonClass={publicPillButtonClass}
+                          />
+                        ) : null}
+
                         {hasLink ? (
                           <div className={rise}>
                             <PrivateLinkCard
@@ -6270,10 +6301,14 @@ export function HaabBookingModule({
 
                         <div className={rise}>
                           <SuccessActions
-                            canReschedule={!isServiceSingleOccurrence(successfulBooking.serviceId)}
+                            canReschedule={canRescheduleSuccessfulBooking}
                             isCancelled={isSuccessfulBookingCancelled}
                             cancelLabel={copy.phrases.cancelBookingButton}
-                            onReschedule={() => openReschedule(successfulBooking.id)}
+                            onReschedule={() =>
+                              isManageView
+                                ? startManageReschedule()
+                                : openReschedule(successfulBooking.id)
+                            }
                             onCancel={() => openCancellation(successfulBooking.id)}
                             bookAnotherHref={manageBookingToken ? publicUrl : undefined}
                             onBookAnother={() => startFreshBooking()}
@@ -6286,15 +6321,6 @@ export function HaabBookingModule({
 
                   return (
                     <>
-                      {successfulBooking.manageToken && successfulManageUrl ? (
-                        <PrivateLinkCard
-                          url={successfulManageUrl}
-                          lang={lang}
-                          copied={copiedManageLink}
-                          onCopy={() => void copyManageLink()}
-                        />
-                      ) : null}
-
                       <BookingPass
                         confirmationLabel={
                           isSuccessfulBookingCancelled
@@ -6343,6 +6369,32 @@ export function HaabBookingModule({
                         lang={lang}
                       />
 
+                      {successfulBooking.manageToken && successfulManageUrl ? (
+                        <PrivateLinkCard
+                          url={successfulManageUrl}
+                          lang={lang}
+                          copied={copiedManageLink}
+                          onCopy={() => void copyManageLink()}
+                        />
+                      ) : null}
+
+                      {!isSuccessfulBookingCancelled ? (
+                        <BookingNotePanel
+                          noteDraft={clientNoteDraft}
+                          onNoteDraftChange={(value) => {
+                            setClientNoteDraft(value);
+                            setClientNoteStatus("idle");
+                          }}
+                          onSaveNote={() => void saveClientNote()}
+                          isSavingNote={isSavingClientNote}
+                          noteStatus={clientNoteStatus}
+                          savedNote={successfulBooking.clientNote ?? ""}
+                          lang={lang}
+                          className={publicElevatedPanelClass}
+                          insetClass={publicInsetCardClass}
+                        />
+                      ) : null}
+
                       <div
                         className={cn(
                           "flex flex-wrap items-center justify-center gap-3 rounded-[28px] px-4 py-4 sm:px-6",
@@ -6351,7 +6403,7 @@ export function HaabBookingModule({
                             : "border border-[var(--line)] bg-[var(--surface-lowest)]",
                         )}
                       >
-                        {isServiceSingleOccurrence(successfulBooking.serviceId) ? null : (
+                        {canRescheduleSuccessfulBooking ? (
                           <ActionButton
                             tone="ghost"
                             className={cn(
@@ -6360,11 +6412,15 @@ export function HaabBookingModule({
                                 cn(publicPillButtonClass, publicGhostButtonClass),
                             )}
                             disabled={isSuccessfulBookingCancelled}
-                            onClick={() => openReschedule(successfulBooking.id)}
+                            onClick={() =>
+                              isManageView
+                                ? startManageReschedule()
+                                : openReschedule(successfulBooking.id)
+                            }
                           >
                             {t.publicFlow.reschedule}
                           </ActionButton>
-                        )}
+                        ) : null}
                         <ActionButton
                           tone="danger"
                           className={cn(
@@ -6509,88 +6565,6 @@ export function HaabBookingModule({
           />
         ) : null}
       </div>
-    );
-  }
-
-  /**
-   * The private management link's own screen. Deliberately not the confirmation
-   * receipt: someone opening this weeks later wants status and controls, not the
-   * celebration they already saw.
-   */
-  function renderManageBooking() {
-    if (!successfulBooking) {
-      return null;
-    }
-
-    const service = services.find(
-      (candidate) => candidate.id === successfulBooking.serviceId,
-    );
-    const addresses = successfulBooking.location
-      ? [successfulBooking.location]
-      : [
-          service?.linkedAddress1 ? provider.address1 : "",
-          service?.linkedAddress2 ? provider.address2 : "",
-          service?.customAddress ?? "",
-        ].filter((entry): entry is string => Boolean(entry && entry.trim()));
-    const phones = [
-      service?.linkedPhone1 ? provider.phoneNumber1 : "",
-      service?.linkedPhone2 ? provider.phoneNumber2 : "",
-      service?.customPhone ?? "",
-    ].filter((entry): entry is string => Boolean(entry && entry.trim()));
-    const qrForBooking =
-      calendarQrCode?.bookingId === successfulBooking.id ? calendarQrCode : undefined;
-
-    return (
-      <ManageBookingPanel
-        booking={{
-          ...successfulBooking,
-          serviceName: service?.name ?? successfulBooking.serviceName,
-        }}
-        providerName={provider.businessName || provider.fullName}
-        addresses={addresses}
-        phones={phones}
-        costLabel={successfulBooking.cost}
-        manageUrl={successfulManageUrl}
-        copiedManageLink={copiedManageLink}
-        onCopyManageLink={() => void copyManageLink()}
-        canReschedule={!isServiceSingleOccurrence(successfulBooking.serviceId)}
-        onReschedule={startManageReschedule}
-        onCancel={() => openCancellation(successfulBooking.id)}
-        onAddToCalendar={() => downloadBookingCalendarFile(successfulBooking)}
-        onShowQr={() => setIsCalendarQrModalOpen(true)}
-        qrDataUrl={qrForBooking?.url || undefined}
-        qrError={qrForBooking?.error || undefined}
-        noteDraft={clientNoteDraft}
-        onNoteDraftChange={(value) => {
-          setClientNoteDraft(value);
-          setClientNoteStatus("idle");
-        }}
-        onSaveNote={() => void saveClientNote()}
-        isSavingNote={isSavingClientNote}
-        noteStatus={clientNoteStatus}
-        savedNote={successfulBooking.clientNote ?? ""}
-        bookAnotherAction={
-          <Link
-            href={publicUrl}
-            className={cn(
-              "inline-flex min-h-11 min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-5 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-lowest)]",
-              isDedicatedPublicPage && publicPillButtonClass,
-            )}
-          >
-            {t.publicFlow.bookAnother}
-          </Link>
-        }
-        copy={copy}
-        lang={lang}
-        panelClass={publicElevatedPanelClass}
-        insetClass={publicInsetCardClass}
-        buttonClass={isDedicatedPublicPage ? publicPillButtonClass : undefined}
-        ghostButtonClass={
-          isDedicatedPublicPage
-            ? cn(publicPillButtonClass, publicGhostButtonClass)
-            : undefined
-        }
-      />
     );
   }
 
@@ -7256,8 +7230,6 @@ export function HaabBookingModule({
               />
             ) : null}
           </div>
-        ) : isManageView && !isManageRescheduling ? (
-          renderManageBooking()
         ) : (
           renderPublicFlow()
         )}

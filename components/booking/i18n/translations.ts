@@ -227,7 +227,6 @@ export type BookingDict = {
     manageBookingAnytime: string;
     copied: string;
     copyLink: string;
-    openPrivateLink: string;
     manageLinkCopied: string;
     saveThisLinkBody: string;
     progressLabel: string;
@@ -274,7 +273,6 @@ export type BookingDict = {
     linkTitle: string;
     linkBody: string;
     linkBodyShort: string;
-    linkOpen: string;
     actionsNeedChange: string;
     // Boarding-pass confirmation
     passEyebrow: string;
@@ -808,7 +806,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageBookingAnytime: "Manage this booking anytime",
       copied: "Copied",
       copyLink: "Copy link",
-      openPrivateLink: "Open private link",
       manageLinkCopied: "Manage link copied to clipboard",
       saveThisLinkBody:
         "Keep this private link. It lets you reschedule or cancel without an account or contacting the business. Anyone with the link can manage this booking.",
@@ -855,7 +852,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       linkTitle: "Your private link",
       linkBody: "Reschedule or cancel anytime — no account, no phone call. Anyone with this link can manage the {booking}, so keep it to yourself.",
       linkBodyShort: "Reschedule or cancel anytime — no account, no phone call. Keep it to yourself.",
-      linkOpen: "Open",
       actionsNeedChange: "Need to change something?",
       passEyebrow: "Appointment Receipt",
       passDate: "Date",
@@ -1399,7 +1395,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       manageBookingAnytime: "Gestione esta reserva en cualquier momento",
       copied: "Copiado",
       copyLink: "Copiar enlace",
-      openPrivateLink: "Abrir enlace privado",
       manageLinkCopied: "Enlace de gestión copiado al portapapeles",
       saveThisLinkBody:
         "Guarde este enlace privado. Le permite reagendar o cancelar sin crear una cuenta ni contactar al negocio. Cualquier persona con el enlace puede gestionar esta reserva.",
@@ -1446,7 +1441,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       linkTitle: "Su enlace privado",
       linkBody: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Cualquiera con este enlace puede administrar su {booking}, así que guárdelo solo para usted.",
       linkBodyShort: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Guárdelo solo para usted.",
-      linkOpen: "Abrir",
       actionsNeedChange: "¿Necesita cambiar algo?",
       passEyebrow: "Confirmación de cita",
       passDate: "Fecha",

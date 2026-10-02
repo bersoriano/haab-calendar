@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { RefinedBookingPass } from "@/components/booking/BookingPass";
+import { BookingNotePanel } from "@/components/booking/BookingNotePanel";
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
 import { PrivateLinkCard } from "@/components/ui/PrivateLinkCard";
@@ -249,23 +250,49 @@ describe("PrivateLinkCard (refined)", () => {
     expect(html).toContain("Your private link");
     expect(html).toContain("manage the appointment");
     expect(html).toContain("Copy link");
-    expect(html).toContain(">Open<");
+    expect(html).not.toContain(">Open<");
   });
 
   it("shortens in the middle, never to a bare protocol, and keeps the full url", () => {
     expect(html).toContain("…/dr-maya-rivera/manage/CFje…PBkV");
     expect(html).not.toMatch(/>https?:\/?</);
-    // Open, and the accessible text, use the full address.
-    expect(html).toContain(`href="${url}"`);
+    // Copy uses the full address, even though the visible version is shortened.
     expect(html).toContain(`<span class="sr-only">${url}</span>`);
   });
 
-  it("hides Open on the management page itself", () => {
-    expect(
-      renderToStaticMarkup(
-        <PrivateLinkCard variant="refined" url={url} showOpenLink={false} onCopy={() => undefined} />,
-      ),
-    ).not.toContain(">Open<");
+  it("has no Open private link action in either card layout", () => {
+    const classic = renderToStaticMarkup(<PrivateLinkCard url={url} onCopy={() => undefined} />);
+    expect(classic).not.toContain("Open private link");
+    expect(classic).not.toContain(`href="${url}"`);
+  });
+});
+
+describe("BookingNotePanel", () => {
+  const note = (savedNote = "", noteDraft = savedNote, status = "idle" as const) =>
+    renderToStaticMarkup(
+      <BookingNotePanel
+        noteDraft={noteDraft}
+        onNoteDraftChange={() => undefined}
+        onSaveNote={() => undefined}
+        isSavingNote={false}
+        noteStatus={status}
+        savedNote={savedNote}
+      />,
+    );
+
+  it("lets the client add a note from the confirmation view", () => {
+    const html = note("", "Please use the side entrance.");
+    expect(html).toContain("Note for the provider");
+    expect(html).toContain("Please use the side entrance.");
+    expect(html).toContain("Save note");
+    expect(html).not.toContain('disabled=""');
+  });
+
+  it("shows saved note after opening the link", () => {
+    const html = note("Please use the side entrance.");
+    expect(html).toContain("Your note");
+    expect(html).toContain("Please use the side entrance.");
+    expect(html).toContain('disabled=""');
   });
 });
 
