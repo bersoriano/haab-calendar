@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { normalizePublicTheme } from "@/lib/public-theme";
@@ -116,7 +118,6 @@ type PublicScheduleBookingRow = {
 };
 
 type PublicScheduleHoldRow = {
-  id: string;
   service_id: string;
   booking_type: "appointment" | "full-day";
   date: string;
@@ -249,7 +250,8 @@ function toPublicScheduleBooking(row: PublicScheduleBookingRow): BookingRecord {
 
 function toPublicScheduleHold(row: PublicScheduleHoldRow): BookingHoldRecord {
   return {
-    id: row.id,
+    // Public grids need occupied times, never the bearer id that can change a hold.
+    id: randomUUID(),
     serviceId: row.service_id,
     bookingType: row.booking_type,
     dateKey: row.date,
@@ -285,7 +287,7 @@ export async function loadPublicSchedule(
     admin
       .from("booking_holds")
       .select(
-        "id, service_id, booking_type, date, start_time, end_time, created_at, expires_at, allows_shared_capacity",
+        "service_id, booking_type, date, start_time, end_time, created_at, expires_at, allows_shared_capacity",
       )
       .eq("provider_id", providerId)
       .gte("date", dateFrom)
