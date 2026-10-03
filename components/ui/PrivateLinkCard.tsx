@@ -13,7 +13,6 @@ export function PrivateLinkCard({
   lang = "en",
   copied = false,
   onCopy,
-  showOpenLink = true,
   variant = "classic",
   bookingNoun = "booking",
   className,
@@ -22,8 +21,6 @@ export function PrivateLinkCard({
   lang?: Lang;
   copied?: boolean;
   onCopy?: () => void;
-  /** Hidden on the management page itself — the visitor is already there. */
-  showOpenLink?: boolean;
   /**
    * `refined` is the dedicated page's card: a lock tile, one merged sentence and
    * a field that shortens the link in the middle so the token is never the part
@@ -85,7 +82,7 @@ export function PrivateLinkCard({
         <div className="flex flex-col gap-2.5 lg:flex-row">
           {/* A plain box, not an <input>: an input can only clip the end of a
               value, and the end is the token. The full address is in the
-              accessible text, in `title`, and is what Copy and Open use. */}
+              accessible text, in `title`, and is what Copy uses. */}
           <div
             title={url}
             className="flex min-h-12 min-w-0 flex-1 items-center rounded-[14px] border border-[#d6dbe3] bg-white px-3.5 py-3 text-[12.5px] text-[#3c4043] [font-family:var(--font-plex-mono)] lg:px-4 lg:py-0 lg:text-[13.5px]"
@@ -98,7 +95,7 @@ export function PrivateLinkCard({
               {shortenManageUrl(url, 64)}
             </span>
           </div>
-          <div className={cn("grid gap-2 lg:flex", onCopy && showOpenLink ? "grid-cols-2" : "grid-cols-1")}>
+          <div className="grid grid-cols-1 gap-2 lg:flex">
             {onCopy ? (
               <button
                 type="button"
@@ -107,17 +104,6 @@ export function PrivateLinkCard({
               >
                 {copied ? t.publicFlow.copied : t.publicFlow.copyLink}
               </button>
-            ) : null}
-            {showOpenLink ? (
-              <a
-                href={url}
-                className={cn(
-                  pill,
-                  "border border-[#cfd5df] bg-white text-[var(--ink)] hover:bg-[var(--surface-soft)]",
-                )}
-              >
-                {t.publicFlow.linkOpen}
-              </a>
             ) : null}
           </div>
         </div>
@@ -181,14 +167,6 @@ export function PrivateLinkCard({
           >
             {copied ? t.publicFlow.copied : t.publicFlow.copyLink}
           </button>
-        ) : null}
-        {showOpenLink ? (
-          <a
-            href={url}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[var(--surface-lowest)] px-5 text-sm font-semibold text-[var(--ink)] ring-1 ring-[var(--line)] transition hover:bg-[var(--surface-soft)]"
-          >
-            {t.publicFlow.openPrivateLink}
-          </a>
         ) : null}
         <span className="sr-only" aria-live="polite">
           {copied ? t.publicFlow.manageLinkCopied : ""}

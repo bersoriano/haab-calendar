@@ -43,7 +43,7 @@ const SERVICE_SELECT =
 const BOOKING_SELECT =
   "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
-  "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, allows_shared_capacity";
+  "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, extension_count, allows_shared_capacity";
 
 type ProviderRow = {
   id: string;
@@ -170,6 +170,10 @@ export type CreatePublicBookingHoldInput = {
   serviceId: string;
   dateKey: string;
   time?: string;
+};
+
+export type SwitchPublicBookingHoldInput = CreatePublicBookingHoldInput & {
+  holdId: string;
 };
 
 export type ReleasePublicBookingHoldInput = {
@@ -861,6 +865,85 @@ export async function createPublicBookingHold(
     }
 
     throw new PublicBookingWriteError("Could not hold that slot.", 500, error);
+  }
+
+  return { hold: toBookingHoldRecord(data), serverNow: Date.now() };
+}
+
+export async function switchPublicBookingHold(
+  supabase: SupabaseClient,
+  input: SwitchPublicBookingHoldInput,
+) {
+  const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
+  const serviceRow = await getServiceForBooking(supabase, provider.id, input.serviceId);
+  const service = toService(serviceRow);
+  validateDateWindow(provider, input.dateKey);
+
+  const { data: currentHold, error: currentHoldError } = await supabase
+    .from("booking_holds")
+    .select(BOOKING_HOLD_SELECT)
+    .eq("provider_id", provider.id)
+    .eq("id", input.holdId)
+    .gt("expires_at", new Date().toISOString())
+    .maybeSingle<BookingHoldRow>();
+
+  if (currentHoldError) {
+    throw new PublicBookingWriteError("Could not check your current hold.", 500, currentHoldError);
+  }
+  if (!currentHold) {
+    throw new PublicBookingWriteError("Your hold expired. Choose a time again.", 410);
+  }
+
+  const [activeBookings, activeHolds] = await Promise.all([
+    getActiveBookingsForDate(supabase, provider.id, input.dateKey),
+    getActiveBookingHoldsForDate(supabase, provider.id, input.dateKey),
+  ]);
+
+  assertSlotAvailable({
+    service,
+    provider,
+    dateKey: input.dateKey,
+    time: input.time,
+    bookings: activeBookings,
+    bookingHolds: activeHolds,
+    ignoredHoldId: input.holdId,
+  });
+
+  const startTime = service.bookingType === "appointment" ? input.time : undefined;
+  const endTime = getBookingEndTime(service, input.time);
+  await assertExternalAvailability(supabase, {
+    providerId: provider.id,
+    providerTimeZone: provider.timezone,
+    dateKey: input.dateKey,
+    startTime,
+    endTime,
+  });
+
+  // Updating the existing row keeps the original hold when a constraint rejects
+  // the new slot. It also keeps the same expiry and hold id for confirmation.
+  const { data, error } = await supabase
+    .from("booking_holds")
+    .update({
+      service_id: service.id,
+      booking_type: service.bookingType,
+      date: input.dateKey,
+      start_time: startTime ?? null,
+      end_time: endTime ?? null,
+    })
+    .eq("provider_id", provider.id)
+    .eq("id", input.holdId)
+    .gt("expires_at", new Date().toISOString())
+    .select(BOOKING_HOLD_SELECT)
+    .maybeSingle<BookingHoldRow>();
+
+  if (error) {
+    if (isUniqueViolation(error) || isExclusionViolation(error) || isCapacityViolation(error)) {
+      throw new PublicBookingWriteError("That time is no longer available. Choose another slot.", 409, error);
+    }
+    throw new PublicBookingWriteError("Could not change your held service.", 500, error);
+  }
+  if (!data) {
+    throw new PublicBookingWriteError("Your hold expired. Choose a time again.", 410);
   }
 
   return { hold: toBookingHoldRecord(data), serverNow: Date.now() };

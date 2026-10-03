@@ -7,6 +7,7 @@ import {
   getPublicBookingHoldStatus,
   PublicBookingWriteError,
   releasePublicBookingHold,
+  switchPublicBookingHold,
 } from "@/lib/supabase/bookings";
 import {
   normalizeUrlSlugSegment,
@@ -163,6 +164,46 @@ export async function POST(
       { userMessage: "Could not hold that slot." },
       { status: 500 },
     );
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ verticalSegment: string; providerSlug: string }> },
+) {
+  const { verticalSegment, providerSlug } = await context.params;
+  const routeParams = readRouteParams(verticalSegment, providerSlug);
+
+  if (!routeParams) {
+    return NextResponse.json({ userMessage: "This booking link is invalid." }, { status: 400 });
+  }
+
+  const body = await readBody(request);
+  const holdId = readString(body?.holdId);
+  const serviceId = readString(body?.serviceId);
+  const dateKey = readString(body?.dateKey);
+  if (!body || !holdId || !serviceId || !dateKey) {
+    return NextResponse.json(
+      { userMessage: "Hold, service, and date are required." },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const result = await switchPublicBookingHold(createAdminClient(), {
+      ...routeParams,
+      holdId,
+      serviceId,
+      dateKey,
+      time: readOptionalString(body.time),
+    });
+    return NextResponse.json(result);
+  } catch (error) {
+    return writeHoldError(error, {
+      action: "switch",
+      providerSlug: routeParams.providerSlug,
+      holdId,
+    });
   }
 }
 

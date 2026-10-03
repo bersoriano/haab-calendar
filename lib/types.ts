@@ -136,7 +136,7 @@ export type BookingRecord = {
   clientEmail: string;
   clientPhone: string;
   notes: string;
-  /** Left by the client from the private management link, after booking. */
+  /** Note left by the client on confirmation or through the private link. */
   clientNote?: string;
   capacitySnapshot?: string;
   /**
