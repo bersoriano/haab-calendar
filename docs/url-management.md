@@ -103,12 +103,11 @@ redirected through the backend.
   the resolver had just authorized. Format, canonical uniqueness, redirect
   history, RLS, and the protected-column grants all remain — those are the
   boundaries the database can enforce, and they stay the security boundary.
-- There is no custom-slug mutation route today. When one is added it must:
-  authenticate the user server-side, resolve the provider from that identity
-  rather than a client-supplied id, call
-  `requireEntitlement(providerId, "custom_slug")`, run
-  `prepareProviderSlugChange()`, and only then write through the service role.
-  A denied request must mutate nothing.
+- `PUT /api/provider/slug` changes a custom provider slug. It authenticates
+  the owner server-side, resolves the provider from that identity, calls
+  `requireEntitlement(providerId, "custom_slug")`, runs
+  `prepareProviderSlugChange()`, and writes through the service role.
+  A denied request mutates nothing.
 - Losing the entitlement later does not withdraw an already-published slug. The
   entitlement governs *changing* a custom slug; existing public URLs stay
   stable, and rotating them is a separate product decision.

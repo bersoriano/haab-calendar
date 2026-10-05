@@ -1,12 +1,14 @@
 "use client";
 
+import { useState, type FormEvent } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { adminPanelClass } from "@/components/provider/adminGlass";
+import { adminFieldClass, adminPanelClass } from "@/components/provider/adminGlass";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { ActionButton, SectionTitle } from "@/components/ui";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
+import { canUseCustomProviderSlug } from "@/lib/public-url";
 import type {
   Lang,
   ProviderInfo,
@@ -43,6 +45,7 @@ export type ProviderSettingsSurfaceProps = {
     patch: Partial<WeeklyAvailability[WeekdayKey]>,
   ) => void;
   onSave: () => void | Promise<void>;
+  onSavePublicSlug?: (slug: string) => Promise<void>;
   onManageEvents: () => void;
   onResetStandaloneSetup?: () => void;
 };
@@ -73,6 +76,7 @@ export function ProviderSettingsSurface({
   onProviderChange,
   onAvailabilityChange,
   onSave,
+  onSavePublicSlug,
   onManageEvents,
   onResetStandaloneSetup,
 }: ProviderSettingsSurfaceProps) {
@@ -113,6 +117,16 @@ export function ProviderSettingsSurface({
           {publicUrlLabel}{" "}
           <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
         </p>
+        {integratedMode && canPersist && entitlements &&
+        canUseCustomProviderSlug(entitlements) && onSavePublicSlug ? (
+          <PublicSlugEditor
+            key={provider.publicSlug}
+            currentSlug={provider.publicSlug}
+            publicUrl={publicUrl}
+            lang={lang}
+            onSave={onSavePublicSlug}
+          />
+        ) : null}
         {!integratedMode && onResetStandaloneSetup ? (
           <div className="mt-6">
             <ActionButton tone="danger" onClick={onResetStandaloneSetup}>
@@ -140,5 +154,60 @@ export function ProviderSettingsSurface({
         lang={lang}
       />
     </div>
+  );
+}
+
+function PublicSlugEditor({
+  currentSlug,
+  publicUrl,
+  lang,
+  onSave,
+}: {
+  currentSlug: string;
+  publicUrl: string;
+  lang: Lang;
+  onSave: (slug: string) => Promise<void>;
+}) {
+  const t = bookingTranslations[lang];
+  const [slug, setSlug] = useState(currentSlug);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const prefix = publicUrl.slice(0, publicUrl.lastIndexOf("/") + 1);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    try {
+      await onSave(slug);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t.admin.couldNotSavePublicSlug);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="mt-4 grid gap-2" onSubmit={submit}>
+      <label htmlFor="public-slug" className="text-sm font-medium text-[var(--ink)]">
+        {t.admin.publicSlugLabel}
+      </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-[var(--muted)]">{prefix}</span>
+        <input
+          id="public-slug"
+          name="publicSlug"
+          value={slug}
+          onChange={(event) => setSlug(event.target.value)}
+          disabled={saving}
+          maxLength={48}
+          className={cn("min-h-11 min-w-48 flex-1", adminFieldClass)}
+        />
+        <ActionButton type="submit" disabled={saving || slug.trim() === currentSlug}>
+          {saving ? t.common.saving : t.admin.savePublicSlug}
+        </ActionButton>
+      </div>
+      {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
+    </form>
   );
 }
