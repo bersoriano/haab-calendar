@@ -1,4 +1,5 @@
 import { createGoogleCalendarHandler } from "@/lib/google/handler";
+import { createBookingEmailHandler } from "@/lib/email/booking-created";
 import type { IntegrationOutboxHandler } from "@/lib/integrations/outbox/types";
 
 /**
@@ -14,7 +15,10 @@ import type { IntegrationOutboxHandler } from "@/lib/integrations/outbox/types";
  * before a connection existed are picked up by the reconciliation that runs
  * when the provider connects.
  */
-const HANDLERS: IntegrationOutboxHandler[] = [createGoogleCalendarHandler()];
+const HANDLERS: IntegrationOutboxHandler[] = [
+  createGoogleCalendarHandler(),
+  createBookingEmailHandler(),
+];
 
 export function getIntegrationOutboxHandlers(): readonly IntegrationOutboxHandler[] {
   return HANDLERS;

@@ -217,6 +217,7 @@ exactly one thing rather than breaking the app:
 | `STRIPE_*` | The webhook endpoint refuses every request; no subscription grants premium |
 | `GOOGLE_*` | The Google integration reports itself unavailable and no route offers it |
 | `CRON_SECRET` | Both cron routes answer 401 to everything |
+| `RESEND_API_KEY` or `BOOKING_EMAIL_FROM` | Booking email deliveries retry, then dead-letter; set both before accepting live bookings |
 | `BLOB_READ_WRITE_TOKEN` | Image upload is unavailable |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No traces exported; the app runs normally |
 
@@ -348,6 +349,14 @@ GET /api/cron/google-workers       Authorization: Bearer $CRON_SECRET
 Not Vercel cron: the Hobby plan permits one run per day, which for a booking app
 means a change reaching Google the following night. The routes are plain
 authenticated GETs, so the driver is replaceable.
+
+The integration outbox also sends two emails for each new booking: a customer
+confirmation and a provider notification. Configure `RESEND_API_KEY` and
+`BOOKING_EMAIL_FROM` on the host; the sender must use a domain verified in
+Resend. The worker sends both in one idempotent batch. Mail is queued when the
+booking is saved and normally sent on the next worker run (up to five minutes,
+plus scheduler delay). Check `integration.outbox.delivery_dead_letter` logs if
+delivery fails repeatedly.
 
 A deployment needs two secrets, and the job reads them from the `Production`
 GitHub **environment** rather than from repository secrets:
