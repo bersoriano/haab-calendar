@@ -100,6 +100,58 @@ describe("runIntegrationOutboxWorker", () => {
     expect(calls.map((call) => call.op)).toEqual(["claim", "complete"]);
   });
 
+  it("runs email delivery when calendar handler skips", async () => {
+    const { repository, calls } = makeRepository([makeEvent()]);
+    const email = vi.fn(async () => ({ outcome: "succeeded" as const }));
+
+    const summary = await runIntegrationOutboxWorker({
+      repository,
+      handlers: [
+        handler({ outcome: "skipped", reasonCode: "no_google_connection" }),
+        handler(email),
+      ],
+      logger: silentLogger(),
+    });
+
+    expect(email).toHaveBeenCalledOnce();
+    expect(summary).toMatchObject({ succeeded: 1, skipped: 0 });
+    expect(calls.map((call) => call.op)).toEqual(["claim", "complete"]);
+  });
+
+  it("retries an email failure even when calendar delivery skips", async () => {
+    const { repository, calls } = makeRepository([makeEvent()]);
+
+    const summary = await runIntegrationOutboxWorker({
+      repository,
+      handlers: [
+        handler({ outcome: "skipped", reasonCode: "no_google_connection" }),
+        handler({ outcome: "retryable_failure", errorCode: "email_failed" }),
+      ],
+      logger: silentLogger(),
+    });
+
+    expect(summary.retried).toBe(1);
+    expect(calls.map((call) => call.op)).toEqual(["claim", "retry"]);
+  });
+
+  it("still runs email delivery when calendar delivery fails", async () => {
+    const { repository, calls } = makeRepository([makeEvent()]);
+    const email = vi.fn(async () => ({ outcome: "succeeded" as const }));
+
+    const summary = await runIntegrationOutboxWorker({
+      repository,
+      handlers: [
+        handler({ outcome: "retryable_failure", errorCode: "google_timeout" }),
+        handler(email),
+      ],
+      logger: silentLogger(),
+    });
+
+    expect(email).toHaveBeenCalledOnce();
+    expect(summary.retried).toBe(1);
+    expect(calls.map((call) => call.op)).toEqual(["claim", "retry"]);
+  });
+
   it("skips an event no handler applies to, which is today's normal path", async () => {
     const { repository, calls } = makeRepository([makeEvent()]);
 
