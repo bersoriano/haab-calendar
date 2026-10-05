@@ -381,6 +381,9 @@ export type BookingDict = {
     clientsSeeNotice: string;
     dashboardLanguageLabel: string;
     publicBookingLinkFor: string;
+    publicSlugLabel: string;
+    savePublicSlug: string;
+    couldNotSavePublicSlug: string;
     viewPublicPage: string;
     availabilityStart: string;
     availabilityEnd: string;
@@ -955,6 +958,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       clientsSeeNotice: "Your clients see this page in {language}.",
       dashboardLanguageLabel: "Your workspace language",
       publicBookingLinkFor: "Public {booking} link:",
+      publicSlugLabel: "Edit public URL",
+      savePublicSlug: "Save URL",
+      couldNotSavePublicSlug: "Could not save public URL.",
       viewPublicPage: "View public page",
       availabilityStart: "Start",
       availabilityEnd: "End",
@@ -1544,6 +1550,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       clientsSeeNotice: "Sus clientes ven esta página en {language}.",
       dashboardLanguageLabel: "Idioma de su espacio de trabajo",
       publicBookingLinkFor: "Enlace público de {booking}:",
+      publicSlugLabel: "Editar URL pública",
+      savePublicSlug: "Guardar URL",
+      couldNotSavePublicSlug: "No se pudo guardar la URL pública.",
       viewPublicPage: "Ver página pública",
       availabilityStart: "Inicio",
       availabilityEnd: "Fin",

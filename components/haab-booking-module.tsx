@@ -1815,6 +1815,26 @@ export function HaabBookingModule({
     }
   }
 
+  async function persistPublicSlug(slug: string) {
+    const response = await fetch("/api/provider/slug", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slug }),
+    });
+    const payload = (await response.json().catch(() => ({}))) as {
+      slug?: string;
+      userMessage?: string;
+    };
+    if (!response.ok || !payload.slug) {
+      throw new Error(payload.userMessage ?? t.admin.couldNotSavePublicSlug);
+    }
+    const savedSlug = payload.slug;
+    actions.updateStandaloneStore((current) => ({
+      ...current,
+      provider: { ...current.provider, publicSlug: savedSlug },
+    }));
+  }
+
   // Single-occurrence events have one fixed date, so rescheduling is meaningless
   // — offer cancel instead.
   function isServiceSingleOccurrence(serviceId: string) {
@@ -2161,7 +2181,7 @@ export function HaabBookingModule({
         ...current.provider,
         [key]: value,
         publicSlug:
-          key === "businessName"
+          key === "businessName" && !integratedMode
             ? slugify((value as string) || current.provider.fullName || "haab-calendar")
             : current.provider.publicSlug ||
               slugify(current.provider.businessName || current.provider.fullName || "haab-calendar"),
@@ -7225,6 +7245,7 @@ export function HaabBookingModule({
                 onSave={async () => {
                   await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
                 }}
+                onSavePublicSlug={persistPublicSlug}
                 onManageEvents={() => setAdminTab("services")}
                 onResetStandaloneSetup={resetStandaloneSetup}
               />

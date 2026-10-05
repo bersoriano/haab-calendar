@@ -82,6 +82,20 @@ describe("ProviderSettingsSurface", () => {
     expect(html).toContain("https://haab.app/doctors/acis-sports");
   });
 
+  it("offers slug editing when custom URL access is active", () => {
+    const html = render({
+      entitlements: resolveEntitlements({
+        providerId: "00000000-0000-4000-8000-000000000001",
+        planTier: "premium",
+        overrides: [],
+      }),
+      onSavePublicSlug: async () => undefined,
+    });
+
+    expect(html).toContain('name="publicSlug"');
+    expect(html).toContain('value="acis-sports"');
+  });
+
   it("offers the save action when the store can be written", () => {
     const html = render();
 
