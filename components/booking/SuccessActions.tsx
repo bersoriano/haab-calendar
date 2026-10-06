@@ -43,7 +43,7 @@ export function SuccessActions({
     : "h-11 bg-transparent text-[var(--link)] hover:bg-[var(--accent-soft)] lg:h-[46px]";
 
   return (
-    <section className="flex flex-col gap-2.5 rounded-3xl bg-[rgba(248,249,250,0.75)] p-[18px] ring-1 ring-[rgba(255,255,255,0.9)] lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:rounded-[26px] lg:bg-[rgba(248,249,250,0.72)] lg:py-[18px] lg:pl-7 lg:pr-[22px]">
+    <section className="flex flex-col gap-2.5 rounded-3xl bg-[var(--panel-tint-75)] p-[18px] ring-1 ring-[rgba(255,255,255,0.9)] lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:rounded-[26px] lg:bg-[var(--panel-tint-72)] lg:py-[18px] lg:pl-7 lg:pr-[22px]">
       <p className="text-sm font-medium text-[var(--ink-secondary)] lg:text-[15px]">
         {t.publicFlow.actionsNeedChange}
       </p>

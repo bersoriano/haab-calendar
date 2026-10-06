@@ -80,7 +80,7 @@ export function ServiceStepIntro({
                 "flex items-center gap-1.5 rounded-full px-3 py-[7px]",
                 current
                   ? "bg-[var(--primary)] text-[var(--on-primary)]"
-                  : "bg-[rgba(255,255,255,0.75)] text-[var(--muted)]",
+                  : "bg-[var(--panel-glass-75)] text-[var(--muted)]",
               )}
             >
               <span

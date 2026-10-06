@@ -40,10 +40,13 @@
      instead of editing forty class strings. */
   --panel-mute-14: rgba(104,250,221,0.14);
   --panel-mute-45: rgba(193,198,214,0.45);
+  --panel-mute-72: rgba(243,244,245,0.72);
+  --panel-mute-88: rgba(243,244,245,0.88);
   --panel-mute-9: rgba(243,244,245,0.9);
   --panel-mute-94: rgba(243,244,245,0.94);
   --panel-mute-96: rgba(243,244,245,0.96);
   --panel-tint-72: rgba(248,249,250,0.72);
+  --panel-tint-75: rgba(248,249,250,0.75);
   --panel-tint-78: rgba(248,249,250,0.78);
   --panel-tint-9: rgba(248,249,250,0.9);
   --panel-tint-92: rgba(248,249,250,0.92);
@@ -56,6 +59,7 @@
   --panel-glass-58: rgba(255,255,255,0.58);
   --panel-glass-62: rgba(255,255,255,0.62);
   --panel-glass-72: rgba(255,255,255,0.72);
+  --panel-glass-75: rgba(255,255,255,0.75);
   --panel-glass-78: rgba(255,255,255,0.78);
   --panel-glass-88: rgba(255,255,255,0.88);
   --panel-glass-9: rgba(255,255,255,0.9);

@@ -179,7 +179,7 @@ export function PublicProgressIndicator({
                       "bg-[var(--surface-lowest)] text-[var(--primary)] ring-2 ring-[var(--primary)] shadow-[0_10px_24px_rgba(26,115,232,0.28),inset_0_1px_0_rgba(255,255,255,0.95)]",
                     status === "upcoming" &&
                       (isDedicatedPublicPage
-                        ? "bg-[rgba(255,255,255,0.55)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.5)]"
+                        ? "bg-[var(--panel-glass-55)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.5)]"
                         : "bg-[var(--surface-soft)] text-[var(--muted)] ring-1 ring-[var(--line)]"),
                   )}
                 >

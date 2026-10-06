@@ -235,6 +235,7 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html.match(/<button/g)).toHaveLength(2);
     expect(html.indexOf("Change date/time")).toBeLessThan(html.indexOf("Confirm appointment"));
     expect(html).toContain("safe-area-inset-bottom");
+    expect(html).toContain("bg-[var(--panel-tint-94)]");
   });
 
   it("keeps only the confirm button for a fixed-date event or an expired hold", () => {
