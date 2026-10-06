@@ -77,7 +77,7 @@ export function BookingSuccessPanel({
   const tone = isCancelled
     ? {
         disc: "bg-[#e11d48] shadow-[0_0_0_10px_rgba(225,29,72,0.12),0_14px_30px_rgba(190,18,60,0.3)]",
-        eyebrow: "text-[#be123c]",
+        eyebrow: "text-[var(--danger-strong)]",
         glow: "rgba(225,29,72,0.14)",
       }
     : {
@@ -91,7 +91,7 @@ export function BookingSuccessPanel({
       ref={ref}
       role="status"
       tabIndex={-1}
-      className="relative flex flex-col gap-[18px] overflow-hidden rounded-[26px] bg-[rgba(248,249,250,0.92)] px-5 pb-5 pt-[26px] text-center shadow-[0_20px_44px_rgba(15,23,42,0.10)] outline-none ring-1 ring-[rgba(255,255,255,0.9)] lg:gap-[26px] lg:rounded-[30px] lg:px-9 lg:py-[34px] lg:text-left lg:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
+      className="relative flex flex-col gap-[18px] overflow-hidden rounded-[26px] bg-[var(--panel-tint-92)] px-5 pb-5 pt-[26px] text-center shadow-[0_20px_44px_rgba(15,23,42,0.10)] outline-none ring-1 ring-[var(--line)] lg:gap-[26px] lg:rounded-[30px] lg:px-9 lg:py-[34px] lg:text-left lg:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
     >
       <span
         aria-hidden="true"
@@ -104,7 +104,8 @@ export function BookingSuccessPanel({
           <span
             aria-hidden="true"
             className={cn(
-              "flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full text-white [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both] lg:h-[76px] lg:w-[76px]",
+              "flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both] lg:h-[76px] lg:w-[76px]",
+              isCancelled ? "text-white" : "text-[var(--background)]",
               tone.disc,
             )}
           >
@@ -152,7 +153,7 @@ export function BookingSuccessPanel({
             <h2 className="text-[27px] font-semibold leading-[1.15] tracking-[-0.035em] text-[var(--ink)] lg:text-[34px] lg:leading-[1.1]">
               {headline}
             </h2>
-            <p className="text-[15px] leading-[1.5] text-[#3c4043] lg:text-base">
+            <p className="text-[15px] leading-[1.5] text-[var(--ink-secondary)] lg:text-base">
               <span className="block break-words lg:inline">{serviceName}</span>
               <span aria-hidden="true" className="hidden lg:inline">
                 {" · "}
@@ -176,7 +177,7 @@ export function BookingSuccessPanel({
               onClick={onAddToCalendar}
               className={cn(
                 buttonBase,
-                "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125",
+                "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125",
               )}
             >
               <svg
@@ -201,7 +202,7 @@ export function BookingSuccessPanel({
                 onClick={onCopyLink}
                 className={cn(
                   buttonBase,
-                  "border border-[#cfd5df] bg-white text-[var(--ink)] hover:bg-[var(--surface-soft)]",
+                  "border border-[var(--form-border)] bg-[var(--surface-lowest)] text-[var(--ink)] hover:bg-[var(--surface-soft)]",
                 )}
               >
                 <svg
@@ -250,7 +251,7 @@ export function BookingSuccessPanel({
             <p className="text-[13.5px] font-semibold text-[var(--callout-mint-ink)] lg:text-sm">
               {t.publicFlow.successWhatNext}
             </p>
-            <p className="text-[13.5px] leading-[1.55] text-[#2e4a45] lg:text-[14.5px]">
+            <p className="text-[13.5px] leading-[1.55] text-[var(--success-detail-ink)] lg:text-[14.5px]">
               {whatHappensNext}
             </p>
           </div>

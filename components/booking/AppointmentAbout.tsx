@@ -152,7 +152,7 @@ export function AppointmentAbout({
               }
             >
               {addresses.map((address) => (
-                <span key={address} className="break-words text-[14.5px] text-[#3c4043]">
+                <span key={address} className="break-words text-[14.5px] text-[var(--ink-secondary)]">
                   {address}
                 </span>
               ))}

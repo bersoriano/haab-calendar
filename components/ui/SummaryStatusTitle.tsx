@@ -20,7 +20,7 @@ export function SummaryStatusTitle({
         className={cn(
           "inline-flex h-8 w-8 items-center justify-center rounded-full",
           isCancelled
-            ? "bg-[#fff1f2] text-[#be123c]"
+            ? "bg-[var(--danger-soft)] text-[var(--danger-strong)]"
             : isUpdated
               ? "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)]"
               : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",

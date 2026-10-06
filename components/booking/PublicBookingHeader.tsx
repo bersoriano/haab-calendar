@@ -37,12 +37,12 @@ const microLabel =
 const slotToneClass = {
   idle: "text-[var(--muted)]",
   pending: "text-[var(--action-teal)]",
-  warning: "text-[#b45309]",
-  error: "text-[#be123c]",
+  warning: "text-[var(--warning-strong)]",
+  error: "text-[var(--danger-strong)]",
 } as const;
 
 const headerChipClass =
-  "inline-flex items-center gap-1.5 rounded-full bg-[rgba(255,255,255,0.8)] px-[9px] py-1 text-[12px] font-medium text-[#3c4043] sm:px-2.5 sm:text-[12.5px]";
+  "inline-flex items-center gap-1.5 rounded-full bg-[var(--panel-glass-78)] px-[9px] py-1 text-[12px] font-medium text-[var(--ink-secondary)] sm:px-2.5 sm:text-[12.5px]";
 
 export function PublicBookingHeader({
   businessName,
@@ -133,7 +133,7 @@ export function PublicBookingHeader({
         ) : monogram ? (
           <span
             aria-hidden="true"
-            className="col-start-1 row-start-1 flex h-11 w-11 items-center justify-center self-center rounded-[14px] bg-[linear-gradient(135deg,var(--accent),var(--action-teal))] text-base font-bold tracking-[-0.02em] text-white shadow-[0_10px_22px_rgba(26,115,232,0.28)] sm:h-[54px] sm:w-[54px] sm:rounded-[17px] sm:text-[19px]"
+            className="col-start-1 row-start-1 flex h-11 w-11 items-center justify-center self-center rounded-[14px] bg-[linear-gradient(135deg,var(--accent),var(--action-teal))] text-base font-bold tracking-[-0.02em] text-[var(--on-primary)] shadow-[0_10px_22px_rgba(26,115,232,0.28)] sm:h-[54px] sm:w-[54px] sm:rounded-[17px] sm:text-[19px]"
           >
             {monogram}
           </span>

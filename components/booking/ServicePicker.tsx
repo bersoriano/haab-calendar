@@ -7,7 +7,7 @@ import type { VerticalCopy } from "@/lib/vertical-copy";
 // Same field as the details form: 16px on a phone so iOS does not zoom on
 // focus, `!` because globals.css resets `font` on form controls outside any layer.
 const selectClass =
-  "h-[50px] w-full appearance-none rounded-[15px] border border-[#cfd5df] bg-white pl-4 pr-11 !text-[16px] text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_rgba(26,115,232,0.14)] disabled:cursor-wait disabled:opacity-60 sm:rounded-2xl sm:!text-[15px]";
+  "h-[50px] w-full appearance-none rounded-[15px] border border-[var(--form-border)] bg-[var(--surface-lowest)] pl-4 pr-11 !text-[16px] text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_rgba(26,115,232,0.14)] disabled:cursor-wait disabled:opacity-60 sm:rounded-2xl sm:!text-[15px]";
 
 /**
  * "Selected service" on the details step: the service picked on step 1, in a

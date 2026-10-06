@@ -1,4 +1,4 @@
-export const PUBLIC_THEMES = ["default", "pink", "summer", "miami"] as const;
+export const PUBLIC_THEMES = ["default", "dark", "pink", "summer", "miami"] as const;
 
 export type PublicTheme = (typeof PUBLIC_THEMES)[number];
 
@@ -33,6 +33,93 @@ const PHOTO_BACKDROP: PublicThemeStyle = {
     "linear-gradient(160deg,rgba(248,249,250,0.28),rgba(248,249,250,0.54) 34%,rgba(243,244,245,0.74) 100%)",
   ],
   tokens: {},
+};
+
+/** Classic's blue and teal on charcoal, with the same photograph after dark. */
+const DARK: PublicThemeStyle = {
+  base: "#171a20",
+  dark: true,
+  layers: [
+    "url('/bkg2.jpg') center / cover no-repeat",
+    "linear-gradient(160deg,rgba(17,20,27,0.82),rgba(20,25,33,0.88) 44%,rgba(13,17,24,0.94) 100%)",
+  ],
+  tokens: {
+    "--background": "#171a20",
+    "--foreground": "#f3f5f8",
+    "--ink": "#f3f5f8",
+    "--muted": "#b2bdcb",
+    "--line": "#536070",
+    "--outline-ghost": "rgba(154,170,190,0.2)",
+    "--surface": "rgba(34,39,49,0.9)",
+    "--surface-soft": "#29313c",
+    "--surface-lowest": "#222731",
+    "--surface-highest": "#343e4b",
+    "--primary": "#89bdff",
+    "--on-primary": "#102239",
+    "--primary-container": "#5fa6f4",
+    "--accent": "#5fa6f4",
+    "--accent-strong": "#b9d8ff",
+    "--accent-soft": "rgba(137,189,255,0.18)",
+    "--action-teal": "#72d9c9",
+    "--action-teal-deep": "#9be9dc",
+    "--secondary-fixed": "#72d9c9",
+    "--secondary-container": "rgba(114,217,201,0.2)",
+    "--full-day": "#91c8f1",
+    "--teal": "#72d9c9",
+    "--teal-soft": "rgba(114,217,201,0.16)",
+    "--danger-strong": "#ff9ba8",
+    "--danger-soft": "#45232e",
+    "--danger-line": "#a8586b",
+    "--warning-strong": "#f4ca82",
+    "--warning-soft": "#443626",
+    "--warning-line": "#9e7944",
+    "--avail-open": "rgba(114,217,201,0.2)",
+    "--avail-open-line": "rgba(114,217,201,0.5)",
+    "--avail-tight": "rgba(244,202,130,0.2)",
+    "--avail-tight-line": "rgba(244,202,130,0.48)",
+    "--shadow-air": "rgba(0,0,0,0.42)",
+    "--panel-mute-14": "rgba(114,217,201,0.16)",
+    "--panel-mute-45": "rgba(154,170,190,0.34)",
+    "--panel-mute-9": "rgba(34,39,49,0.9)",
+    "--panel-mute-94": "rgba(34,39,49,0.94)",
+    "--panel-mute-96": "rgba(34,39,49,0.96)",
+    "--panel-tint-72": "rgba(34,39,49,0.72)",
+    "--panel-tint-78": "rgba(34,39,49,0.78)",
+    "--panel-tint-9": "rgba(34,39,49,0.9)",
+    "--panel-tint-92": "rgba(34,39,49,0.92)",
+    "--panel-tint-94": "rgba(34,39,49,0.94)",
+    "--panel-tint-98": "rgba(34,39,49,0.98)",
+    "--panel-glass-44": "rgba(47,55,68,0.52)",
+    "--panel-glass-46": "rgba(47,55,68,0.54)",
+    "--panel-glass-5": "rgba(47,55,68,0.58)",
+    "--panel-glass-55": "rgba(47,55,68,0.62)",
+    "--panel-glass-58": "rgba(47,55,68,0.65)",
+    "--panel-glass-62": "rgba(47,55,68,0.68)",
+    "--panel-glass-72": "rgba(43,50,62,0.76)",
+    "--panel-glass-78": "rgba(43,50,62,0.82)",
+    "--panel-glass-88": "rgba(39,46,57,0.9)",
+    "--panel-glass-9": "rgba(39,46,57,0.92)",
+    "--panel-glass-92": "rgba(39,46,57,0.94)",
+    "--panel-glass-98": "rgba(34,39,49,0.98)",
+    "--callout-mint": "#19352f",
+    "--callout-mint-line": "#376d61",
+    "--callout-mint-ink": "#d2f3e8",
+    "--tile-blue": "#233b59",
+    "--tile-teal": "#1d443e",
+    "--chip-duration-bg": "#21443e",
+    "--summary-surface": "#29313c",
+    "--ink-secondary": "#d4dce6",
+    "--link": "#a6d0ff",
+    "--form-border": "#627184",
+    "--field-placeholder": "#9aa9ba",
+    "--neutral-chip": "#343e4b",
+    "--tile-teal-ink": "#9be9dc",
+    "--success-detail-ink": "#d2f3e8",
+    "--receipt-footer": "#29313c",
+    "--success-strong": "#8de0ae",
+    "--success-soft": "#173b2f",
+    "--success-line": "#347a57",
+  },
 };
 
 /**
@@ -100,7 +187,7 @@ const SUMMER: PublicThemeStyle = {
 
 /**
  * Night beach: deep indigo ground lit from three corners — pink, cyan, violet.
- * The only dark theme, so it also flips the page's panel surfaces; neon on
+ * A dark theme, so it also flips the page's panel surfaces; neon on
  * white would be a different look entirely, and a worse one.
  *
  * Order matters. The vignette is painted first and the colour on top of it,
@@ -178,11 +265,30 @@ const MIAMI: PublicThemeStyle = {
     "--panel-glass-9": "rgba(22,30,50,0.92)",
     "--panel-glass-92": "rgba(21,28,48,0.94)",
     "--panel-glass-98": "rgba(19,26,44,0.98)",
+    "--callout-mint": "#163c3d",
+    "--callout-mint-line": "#2e7374",
+    "--callout-mint-ink": "#d0f7f0",
+    "--tile-blue": "#183c54",
+    "--tile-teal": "#18484a",
+    "--chip-duration-bg": "#214a4b",
+    "--summary-surface": "#1b2440",
+    "--ink-secondary": "#cad3ea",
+    "--link": "#67e8f9",
+    "--form-border": "#536180",
+    "--field-placeholder": "#9aa6c9",
+    "--neutral-chip": "#25304b",
+    "--tile-teal-ink": "#5eead4",
+    "--success-detail-ink": "#d0f7f0",
+    "--receipt-footer": "#1b2440",
+    "--success-strong": "#8de0ae",
+    "--success-soft": "#173b2f",
+    "--success-line": "#347a57",
   },
 };
 
 const THEME_STYLES: Record<PublicTheme, PublicThemeStyle> = {
   default: PHOTO_BACKDROP,
+  dark: DARK,
   pink: PINK,
   summer: SUMMER,
   miami: MIAMI,

@@ -39,12 +39,12 @@ export function SuccessActions({
   const t = bookingTranslations[lang];
   // Once cancelled, booking again is the one thing left to do, so it leads.
   const bookAnotherClass = isCancelled
-    ? "h-12 bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125 lg:h-[46px]"
-    : "h-11 bg-transparent text-[#0b57d0] hover:bg-[rgba(11,87,208,0.08)] lg:h-[46px]";
+    ? "h-12 bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125 lg:h-[46px]"
+    : "h-11 bg-transparent text-[var(--link)] hover:bg-[var(--accent-soft)] lg:h-[46px]";
 
   return (
     <section className="flex flex-col gap-2.5 rounded-3xl bg-[rgba(248,249,250,0.75)] p-[18px] ring-1 ring-[rgba(255,255,255,0.9)] lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:rounded-[26px] lg:bg-[rgba(248,249,250,0.72)] lg:py-[18px] lg:pl-7 lg:pr-[22px]">
-      <p className="text-sm font-medium text-[#3c4043] lg:text-[15px]">
+      <p className="text-sm font-medium text-[var(--ink-secondary)] lg:text-[15px]">
         {t.publicFlow.actionsNeedChange}
       </p>
       <div className="flex flex-col gap-2.5 lg:flex-row">
@@ -55,7 +55,7 @@ export function SuccessActions({
             onClick={onReschedule}
             className={cn(
               base,
-              "h-12 border border-[#cfd5df] bg-white text-[var(--ink)] hover:bg-[var(--surface-soft)] lg:h-[46px]",
+              "h-12 border border-[var(--form-border)] bg-[var(--surface-lowest)] text-[var(--ink)] hover:bg-[var(--surface-soft)] lg:h-[46px]",
             )}
           >
             {t.publicFlow.reschedule}
@@ -67,7 +67,7 @@ export function SuccessActions({
           onClick={onCancel}
           className={cn(
             base,
-            "h-12 border border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-strong)] hover:bg-[#ffe4e8] lg:h-[46px]",
+            "h-12 border border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-strong)] hover:opacity-90 lg:h-[46px]",
           )}
         >
           {cancelLabel}

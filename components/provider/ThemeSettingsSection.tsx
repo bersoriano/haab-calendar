@@ -64,7 +64,7 @@ export function ThemeSettingsSection({
               >
                 <span
                   className="block h-full w-full"
-                  style={{ background: style.layers[0] }}
+                  style={{ background: [...style.layers].reverse().join(", ") }}
                 />
               </span>
               <span className="min-w-0">

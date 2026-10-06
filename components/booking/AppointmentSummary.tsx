@@ -47,7 +47,7 @@ const livery = "bg-[linear-gradient(90deg,#005bbf,#1a73e8_45%,#00bfa5)]";
 // `!` on the button type: globals.css resets `font` on buttons outside any
 // layer, which outranks layered utilities.
 const primaryButtonClass =
-  "inline-flex w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-white shadow-[0_14px_30px_rgba(26,115,232,0.28)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-[var(--on-primary)] shadow-[0_14px_30px_rgba(26,115,232,0.28)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * A price is free text: "$95" earns 30px, but "฿1,400 / attendee" or
@@ -60,11 +60,11 @@ function DateTileBox({ tile, small = false }: { tile: DateTile; small?: boolean 
     <div
       aria-hidden="true"
       className={cn(
-        "shrink-0 overflow-hidden rounded-[14px] bg-white text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]",
+        "shrink-0 overflow-hidden rounded-[14px] bg-[var(--surface-lowest)] text-center shadow-[0_4px_12px_rgba(15,23,42,0.08)]",
         small ? "w-14" : "w-[60px]",
       )}
     >
-      <div className="bg-[#0b57d0] py-1 text-[11px] font-bold tracking-[0.1em] text-white">
+      <div className="bg-[var(--link)] py-1 text-[11px] font-bold tracking-[0.1em] text-[var(--on-primary)]">
         {tile.month}
       </div>
       <div
@@ -86,7 +86,7 @@ function ChangeLink({ label, onClick, className }: { label: string; onClick: () 
       type="button"
       onClick={onClick}
       className={cn(
-        "self-start text-left !font-semibold text-[#0b57d0] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
+        "self-start text-left !font-semibold text-[var(--link)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
         className,
       )}
     >
@@ -151,7 +151,7 @@ export function AppointmentSummary({
   return (
     <aside
       aria-label={title}
-      className="relative hidden flex-col overflow-y-auto overflow-x-hidden rounded-[30px] bg-white shadow-[0_30px_70px_rgba(15,23,42,0.12)] ring-1 ring-[rgba(255,255,255,0.9)] lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)]"
+      className="relative hidden flex-col overflow-y-auto overflow-x-hidden rounded-[30px] bg-[var(--surface-lowest)] shadow-[0_30px_70px_rgba(15,23,42,0.12)] ring-1 ring-[var(--line)] lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)]"
     >
       <div aria-hidden="true" className={cn("h-1.5 shrink-0", livery)} />
       <div className="flex flex-col gap-[18px] px-[26px] pt-[26px]">
@@ -172,7 +172,7 @@ export function AppointmentSummary({
             <div className="flex min-w-0 flex-1 flex-col gap-[3px]">
               <span className="text-[15.5px] font-semibold text-[var(--ink)]">{date.label}</span>
               {date.timeLine ? (
-                <span className="text-sm text-[#3c4043]">{date.timeLine}</span>
+                <span className="text-sm text-[var(--ink-secondary)]">{date.timeLine}</span>
               ) : null}
               {onChangeDateTime ? (
                 <ChangeLink
@@ -190,11 +190,11 @@ export function AppointmentSummary({
           {meta ? <span className="break-words text-[13.5px] text-[var(--muted)]">{meta}</span> : null}
         </div>
 
-        {about ? <div className="border-t border-dashed border-[#d3d8e0] pt-4">{about}</div> : null}
+        {about ? <div className="border-t border-dashed border-[var(--line)] pt-4">{about}</div> : null}
 
         {cost ? (
-          <div className="flex items-baseline justify-between gap-3 border-t border-dashed border-[#d3d8e0] pt-4">
-            <span className="text-sm font-semibold text-[#3c4043]">{t.publicFlow.total}</span>
+          <div className="flex items-baseline justify-between gap-3 border-t border-dashed border-[var(--line)] pt-4">
+            <span className="text-sm font-semibold text-[var(--ink-secondary)]">{t.publicFlow.total}</span>
             <span
               className={cn(
                 "break-words text-right font-bold leading-tight tracking-[-0.03em] text-[var(--ink)]",
@@ -207,7 +207,7 @@ export function AppointmentSummary({
         ) : null}
       </div>
 
-      <div className="mt-[22px] flex flex-col gap-2.5 border-t border-[#e8ebf0] bg-[#f6f8fb] px-[26px] pb-6 pt-5">
+      <div className="mt-[22px] flex flex-col gap-2.5 border-t border-[var(--line)] bg-[var(--receipt-footer)] px-[26px] pb-6 pt-5">
         {footer.error ? <BookingErrorAlert id={footer.errorId} message={footer.error} /> : null}
         <div className="flex flex-wrap items-center gap-2.5">
           {footer.changeDateTimeLabel && !footer.isExpired ? (
@@ -230,7 +230,7 @@ export function AppointmentSummary({
           <button
             type="button"
             onClick={footer.onChooseAnother}
-            className="mx-auto min-h-11 rounded-full px-4 !text-sm !font-semibold text-[#0b57d0] hover:underline"
+            className="mx-auto min-h-11 rounded-full px-4 !text-sm !font-semibold text-[var(--link)] hover:underline"
           >
             {footer.chooseAnotherLabel}
           </button>
@@ -279,7 +279,7 @@ export function CompactAppointmentSummary({
   return (
     <section
       aria-label={title}
-      className="overflow-hidden rounded-3xl bg-white shadow-[0_18px_40px_rgba(15,23,42,0.10)] lg:hidden"
+      className="overflow-hidden rounded-3xl bg-[var(--surface-lowest)] shadow-[0_18px_40px_rgba(15,23,42,0.10)] lg:hidden"
     >
       <div aria-hidden="true" className={cn("h-[5px]", livery)} />
       <div className="flex items-center gap-3.5 p-4">
@@ -290,7 +290,7 @@ export function CompactAppointmentSummary({
               {date.timeShort || date.label}
             </span>
           ) : null}
-          <span className="break-words text-[13.5px] text-[#3c4043]">{serviceName}</span>
+          <span className="break-words text-[13.5px] text-[var(--ink-secondary)]">{serviceName}</span>
           {onChangeDateTime ? (
             <ChangeLink
               label={changeLabel}
@@ -311,7 +311,7 @@ export function CompactAppointmentSummary({
         ) : null}
       </div>
       {about ? (
-        <div className="mx-4 border-t border-dashed border-[#d3d8e0] pb-2 pt-1">{about}</div>
+        <div className="mx-4 border-t border-dashed border-[var(--line)] pb-2 pt-1">{about}</div>
       ) : null}
     </section>
   );
@@ -342,7 +342,7 @@ export function MobileConfirmBar({
         <button
           type="button"
           onClick={footer.onChooseAnother}
-          className="min-h-11 self-center rounded-full px-4 !text-sm !font-semibold text-[#0b57d0]"
+          className="min-h-11 self-center rounded-full px-4 !text-sm !font-semibold text-[var(--link)]"
         >
           {footer.chooseAnotherLabel}
         </button>

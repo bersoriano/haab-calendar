@@ -67,7 +67,7 @@ export function LanguageSwitcher({
           active
             ? isInset
               ? "bg-[var(--surface-lowest)] text-[var(--ink)] shadow-[0_1px_2px_rgba(15,23,42,0.14),0_4px_10px_rgba(15,23,42,0.08)]"
-              : "bg-[var(--primary)] text-white shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
+              : "bg-[var(--primary)] text-[var(--on-primary)] shadow-[0_8px_18px_rgba(26,115,232,0.24)]"
             : "text-[var(--muted)] hover:bg-[var(--panel-glass-72)] hover:text-[var(--ink)]",
         );
 
