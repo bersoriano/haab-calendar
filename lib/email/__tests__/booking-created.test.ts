@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}));
 import {
   buildBookingEmails,
   createBookingEmailHandler,
+  sendBookingEmailImmediately,
   sendBookingEmailBatch,
   type BookingEmailContext,
 } from "@/lib/email/booking-created";
@@ -145,5 +146,55 @@ describe("booking creation email", () => {
           new Response(JSON.stringify({ data: [{ id: "mail-1" }] }), { status: 200 }),
       }),
     ).rejects.toThrow("both booking emails");
+  });
+
+  it("sends immediately after booking creation and records delivery for outbox replay", async () => {
+    const send = vi.fn(async () => undefined);
+    const markDelivered = vi.fn(async () => undefined);
+
+    const result = await sendBookingEmailImmediately(
+      { bookingId: event.bookingId, providerId: event.providerId },
+      {
+        findCreatedEvent: async () => event,
+        load: async () => context,
+        send,
+        markDelivered,
+        config: () => ({ apiKey: "test-key", from: "Haab <bookings@example.com>" }),
+      },
+    );
+
+    expect(result).toEqual({ outcome: "succeeded" });
+    expect(send).toHaveBeenCalledOnce();
+    expect(markDelivered).toHaveBeenCalledWith(event);
+  });
+
+  it("does not resend a booking already marked delivered", async () => {
+    const send = vi.fn(async () => undefined);
+    const handler = createBookingEmailHandler({
+      send,
+      config: () => ({ apiKey: "", from: "" }),
+    });
+
+    expect(
+      await handler.deliver({
+        ...event,
+        payload: { ...event.payload, bookingEmailAcceptedAt: "2026-10-06T05:00:00Z" },
+      }),
+    ).toEqual({ outcome: "succeeded" });
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("retries when delivery receipt cannot be saved", async () => {
+    const handler = createBookingEmailHandler({
+      load: async () => context,
+      send: async () => undefined,
+      markDelivered: async () => { throw new Error("database unavailable"); },
+      config: () => ({ apiKey: "test-key", from: "Haab <bookings@example.com>" }),
+    });
+
+    expect(await handler.deliver(event)).toEqual({
+      outcome: "retryable_failure",
+      errorCode: "email_receipt_write_failed",
+    });
   });
 });

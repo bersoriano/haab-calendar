@@ -353,10 +353,10 @@ authenticated GETs, so the driver is replaceable.
 The integration outbox also sends two emails for each new booking: a customer
 confirmation and a provider notification. Configure `RESEND_API_KEY` and
 `BOOKING_EMAIL_FROM` on the host; the sender must use a domain verified in
-Resend. The worker sends both in one idempotent batch. Mail is queued when the
-booking is saved and normally sent on the next worker run (up to five minutes,
-plus scheduler delay). Check `integration.outbox.delivery_dead_letter` logs if
-delivery fails repeatedly.
+Resend. Confirmation attempts both messages immediately in one idempotent
+batch. The booking write also queues an outbox event, so the scheduled worker
+retries failed sends. Check `booking_email_deferred` and
+`integration.outbox.delivery_dead_letter` logs if delivery fails repeatedly.
 
 A deployment needs two secrets, and the job reads them from the `Production`
 GitHub **environment** rather than from repository secrets:

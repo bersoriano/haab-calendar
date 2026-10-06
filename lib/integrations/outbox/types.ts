@@ -27,15 +27,17 @@ export const OUTBOX_STATUSES = [
 export type OutboxStatus = (typeof OUTBOX_STATUSES)[number];
 
 /**
- * Identifiers only, by design. A handler reloads the booking through an
- * authorized read; the event says *that* something changed, never *what* the
- * client wrote.
+ * Identifiers and delivery receipts only. A handler reloads the booking through
+ * an authorized read; the event says *that* something changed, never *what*
+ * the client wrote.
  */
 export type OutboxPayload = {
   bookingId: string;
   providerId: string;
   aggregateVersion: number;
   change: OutboxEventType;
+  /** Set after Resend accepts both messages, so later worker runs do not resend. */
+  bookingEmailAcceptedAt?: string;
 };
 
 /** A claimed event, with the lease that makes a completion writable. */

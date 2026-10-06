@@ -5,6 +5,7 @@ import {
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
 import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
+import { sendBookingEmailImmediately } from "@/lib/email/booking-created";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   normalizeUrlSlugSegment,
@@ -139,7 +140,29 @@ export async function POST(
       holdId: readOptionalString(body.holdId),
     });
 
-    return NextResponse.json(result, { status: 201 });
+    // The database trigger already queued this event. Try email now so a late
+    // scheduler cannot delay confirmation; the outbox retries failed attempts.
+    const { providerId, ...publicResult } = result;
+    try {
+      const delivery = await sendBookingEmailImmediately({
+        bookingId: result.booking.id,
+        providerId,
+      });
+      if (delivery.outcome !== "succeeded") {
+        console.warn("booking_email_deferred", {
+          bookingId: result.booking.id,
+          errorCode: "errorCode" in delivery ? delivery.errorCode : delivery.reasonCode,
+        });
+      }
+    } catch {
+      // Booking is committed. Leave its outbox event available for retry.
+      console.warn("booking_email_deferred", {
+        bookingId: result.booking.id,
+        errorCode: "email_unexpected_failure",
+      });
+    }
+
+    return NextResponse.json(publicResult, { status: 201 });
   } catch (error) {
     if (
       error instanceof Error &&
