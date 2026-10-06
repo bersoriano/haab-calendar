@@ -1188,6 +1188,7 @@ export async function confirmPublicBooking(
   return {
     booking: toBookingRecord(data, manageToken),
     canonicalPath: `/${getPublicVerticalSegment(provider.vertical)}/${provider.slug}`,
+    providerId: provider.id,
   };
 }
 

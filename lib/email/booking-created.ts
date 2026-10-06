@@ -2,9 +2,13 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
+  HandlerResult,
   IntegrationOutboxEvent,
   IntegrationOutboxHandler,
+  OutboxPayload,
 } from "@/lib/integrations/outbox/types";
+
+type EmailEvent = Pick<IntegrationOutboxEvent, "id" | "bookingId" | "providerId" | "payload">;
 
 export type BookingEmailContext = {
   booking: {
@@ -116,7 +120,7 @@ export function buildBookingEmails(
 }
 
 async function loadBookingEmailContext(
-  event: IntegrationOutboxEvent,
+  event: EmailEvent,
 ): Promise<BookingEmailContext | null> {
   const admin = createAdminClient();
   const { data: booking, error: bookingError } = await admin
@@ -138,6 +142,37 @@ async function loadBookingEmailContext(
   if (providerError) throw providerError;
   if (!provider) return null;
   return { booking, provider };
+}
+
+async function findCreatedEvent(input: { bookingId: string; providerId: string }) {
+  const { data, error } = await createAdminClient()
+    .from("integration_outbox_events")
+    .select("id, payload")
+    .eq("booking_id", input.bookingId)
+    .eq("provider_id", input.providerId)
+    .eq("event_type", "booking.created")
+    .maybeSingle<{ id: string; payload: OutboxPayload }>();
+
+  if (error) throw error;
+  return data ? { ...input, id: data.id, payload: data.payload } : null;
+}
+
+async function markEmailDelivered(event: EmailEvent) {
+  const { data, error } = await createAdminClient()
+    .from("integration_outbox_events")
+    .update({
+      payload: {
+        ...event.payload,
+        bookingEmailAcceptedAt: new Date().toISOString(),
+      },
+    })
+    .eq("id", event.id)
+    .eq("booking_id", event.bookingId)
+    .eq("provider_id", event.providerId)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error || !data) throw error ?? new Error("Booking email outbox event missing.");
 }
 
 export async function sendBookingEmailBatch(input: {
@@ -165,38 +200,69 @@ export async function sendBookingEmailBatch(input: {
 }
 
 type HandlerDeps = {
-  load?: (event: IntegrationOutboxEvent) => Promise<BookingEmailContext | null>;
+  findCreatedEvent?: (input: { bookingId: string; providerId: string }) => Promise<EmailEvent | null>;
+  load?: (event: EmailEvent) => Promise<BookingEmailContext | null>;
   send?: typeof sendBookingEmailBatch;
+  markDelivered?: (event: EmailEvent) => Promise<void>;
   config?: () => EmailConfig;
 };
+
+async function deliverBookingCreatedEmail(
+  event: EmailEvent,
+  deps: HandlerDeps,
+): Promise<HandlerResult> {
+  if (event.payload.bookingEmailAcceptedAt) return { outcome: "succeeded" };
+
+  const config = deps.config?.() ?? {
+    apiKey: process.env.RESEND_API_KEY?.trim() ?? "",
+    from: process.env.BOOKING_EMAIL_FROM?.trim() ?? "",
+  };
+  if (!config.apiKey || !config.from) {
+    return { outcome: "retryable_failure", errorCode: "email_unconfigured" };
+  }
+
+  let context: BookingEmailContext | null;
+  try {
+    context = await (deps.load ?? loadBookingEmailContext)(event);
+  } catch {
+    return { outcome: "retryable_failure", errorCode: "email_booking_read_failed" };
+  }
+  if (!context) return { outcome: "skipped", reasonCode: "email_booking_gone" };
+
+  try {
+    await (deps.send ?? sendBookingEmailBatch)({ context, ...config });
+  } catch {
+    return { outcome: "retryable_failure", errorCode: "email_send_failed" };
+  }
+
+  try {
+    await (deps.markDelivered ?? markEmailDelivered)(event);
+  } catch {
+    return { outcome: "retryable_failure", errorCode: "email_receipt_write_failed" };
+  }
+
+  return { outcome: "succeeded" };
+}
+
+/** Attempt delivery in the booking request; the existing outbox retries failures. */
+export async function sendBookingEmailImmediately(
+  input: { bookingId: string; providerId: string },
+  deps: HandlerDeps = {},
+): Promise<HandlerResult> {
+  let event: EmailEvent | null;
+  try {
+    event = await (deps.findCreatedEvent ?? findCreatedEvent)(input);
+  } catch {
+    return { outcome: "retryable_failure", errorCode: "email_outbox_read_failed" };
+  }
+  if (!event) return { outcome: "retryable_failure", errorCode: "email_outbox_missing" };
+  return deliverBookingCreatedEmail(event, deps);
+}
 
 export function createBookingEmailHandler(deps: HandlerDeps = {}): IntegrationOutboxHandler {
   return {
     key: "booking_email",
     supports: (event) => event.eventType === "booking.created",
-    async deliver(event) {
-      const config = deps.config?.() ?? {
-        apiKey: process.env.RESEND_API_KEY?.trim() ?? "",
-        from: process.env.BOOKING_EMAIL_FROM?.trim() ?? "",
-      };
-      if (!config.apiKey || !config.from) {
-        return { outcome: "retryable_failure", errorCode: "email_unconfigured" };
-      }
-
-      let context: BookingEmailContext | null;
-      try {
-        context = await (deps.load ?? loadBookingEmailContext)(event);
-      } catch {
-        return { outcome: "retryable_failure", errorCode: "email_booking_read_failed" };
-      }
-      if (!context) return { outcome: "skipped", reasonCode: "email_booking_gone" };
-
-      try {
-        await (deps.send ?? sendBookingEmailBatch)({ context, ...config });
-        return { outcome: "succeeded" };
-      } catch {
-        return { outcome: "retryable_failure", errorCode: "email_send_failed" };
-      }
-    },
+    deliver: (event) => deliverBookingCreatedEmail(event, deps),
   };
 }
