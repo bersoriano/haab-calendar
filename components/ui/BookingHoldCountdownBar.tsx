@@ -108,7 +108,7 @@ export function BookingHoldCountdownBar({
         <div className="flex items-center gap-3 sm:gap-[22px]">
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:gap-2.5">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-              <p className="hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[#3c4043] sm:flex">
+              <p className="hidden items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ink-secondary)] sm:flex">
                 {fillTemplate(t.public.holdLabelFor, nouns)}
                 {isRunning ? (
                   <InfoTooltip
@@ -120,7 +120,7 @@ export function BookingHoldCountdownBar({
               <p
                 className={cn(
                   "text-[13.5px] font-medium sm:text-sm",
-                  isUrgent || isExpired ? "text-[var(--danger-strong)]" : "text-[#3c4043]",
+                  isUrgent || isExpired ? "text-[var(--danger-strong)]" : "text-[var(--ink-secondary)]",
                 )}
               >
                 {statusLabel || (isRunning ? t.public.holdMeaningTitle : "")}
@@ -158,7 +158,7 @@ export function BookingHoldCountdownBar({
                     ? "border-[var(--danger-line)] bg-[var(--danger-soft)] text-[var(--danger-strong)]"
                     : isWarning
                       ? "border-[var(--warning-line)] bg-[var(--warning-soft)] text-[var(--warning-strong)]"
-                      : "border-[#dfe3ea] bg-white text-[#0b57d0]",
+                    : "border-[var(--form-border)] bg-[var(--surface-lowest)] text-[var(--link)]",
               )}
             >
               {isExpired ? t.public.expired : formatCountdown(remainingMs)}
@@ -248,7 +248,7 @@ export function BookingHoldCountdownBar({
       {!isConfirmed && !isCancelled && isUrgent && !isExpired ? (
         <div
           aria-live="polite"
-          className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff7f8] px-4 py-4 text-[var(--ink)]"
+          className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-4 text-[var(--ink)]"
         >
           <p className="font-semibold">{t.public.stillInterestedTitle}</p>
           <p className="mt-1 text-sm leading-5 text-[var(--muted)]">
@@ -280,7 +280,7 @@ export function BookingHoldCountdownBar({
         <div
           role="status"
           aria-live="polite"
-          className="mt-4 rounded-[24px] border border-[#fecdd3] bg-[#fff7f8] px-4 py-4 text-[var(--ink)]"
+          className="mt-4 rounded-[24px] border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-4 text-[var(--ink)]"
         >
           <p className="text-base font-semibold tracking-[-0.01em]">
             {t.public.holdExpiredTitle}

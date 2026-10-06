@@ -21,8 +21,8 @@ export type DetailsField =
 // The focus state is a 2px accent edge (border + a 1px ring, so nothing shifts)
 // and a 4px soft halo.
 const inputClass =
-  "w-full rounded-[15px] border border-[#cfd5df] bg-white px-4 !text-[16px] text-[var(--ink)] outline-none transition placeholder:text-[#8a9097] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_rgba(26,115,232,0.14)] aria-[invalid=true]:border-[var(--danger-strong)] sm:rounded-2xl sm:!text-[15px]";
-const labelClass = "text-[13px] font-semibold text-[#3c4043]";
+  "w-full rounded-[15px] border border-[var(--form-border)] bg-[var(--surface-lowest)] px-4 !text-[16px] text-[var(--ink)] outline-none transition placeholder:text-[var(--field-placeholder)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_rgba(26,115,232,0.14)] aria-[invalid=true]:border-[var(--danger-strong)] sm:rounded-2xl sm:!text-[15px]";
+const labelClass = "text-[13px] font-semibold text-[var(--ink-secondary)]";
 
 /**
  * The "Your details" card. Controlled by the caller: nothing here holds state,
@@ -83,7 +83,7 @@ export function DetailsForm({
               live region stays mounted so the change is announced. */}
           <span role="status" className="shrink-0">
             {complete ? (
-              <span className="flex items-center gap-1.5 rounded-full bg-[var(--action-teal-deep)] py-1 pl-1.5 pr-2.5 text-xs font-semibold text-white">
+              <span className="flex items-center gap-1.5 rounded-full bg-[var(--action-teal-deep)] py-1 pl-1.5 pr-2.5 text-xs font-semibold text-[var(--background)]">
                 <svg
                   aria-hidden="true"
                   width="12"

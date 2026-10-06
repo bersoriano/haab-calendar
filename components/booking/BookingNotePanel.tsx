@@ -57,7 +57,7 @@ export function BookingNotePanel({
           placeholder={t.manage.notePlaceholder}
           rows={3}
           maxLength={500}
-          className="w-full rounded-[22px] border border-[var(--line)] bg-white px-4 py-3 text-[0.9375rem] leading-6 text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(26,115,232,0.14)]"
+          className="w-full rounded-[22px] border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-3 text-[0.9375rem] leading-6 text-[var(--ink)] outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[rgba(26,115,232,0.14)]"
         />
       </label>
       <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -74,7 +74,7 @@ export function BookingNotePanel({
           aria-live="polite"
           className={cn(
             "text-sm font-semibold",
-            noteStatus === "failed" ? "text-[#be123c]" : "text-[var(--accent-strong)]",
+            noteStatus === "failed" ? "text-[var(--danger-strong)]" : "text-[var(--accent-strong)]",
           )}
         >
           {noteStatus === "saved"

@@ -28,7 +28,7 @@ export function PublicBookingPageShell({
       // A theme is a set of custom-property overrides on this one element;
       // everything below styles itself from the same tokens either way, so
       // "default" is the page untouched.
-      style={{ background: theme.base, ...theme.tokens } as CSSProperties}
+      style={{ background: theme.base, colorScheme: theme.dark ? "dark" : "light", ...theme.tokens } as CSSProperties}
     >
       {theme.layers.map((layer) => (
         <div key={layer} aria-hidden="true" className="absolute inset-0" style={{ background: layer }} />

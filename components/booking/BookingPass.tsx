@@ -251,7 +251,7 @@ export function BookingPass({
               className={cn(
                 "flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 ring-1 [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
                 isCancelled
-                  ? "bg-[#fff1f2] text-[#be123c] ring-[rgba(190,18,60,0.22)]"
+                  ? "bg-[var(--danger-soft)] text-[var(--danger-strong)] ring-[var(--danger-line)]"
                   : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal)] ring-[rgba(0,191,165,0.28)]",
               )}
               role="status"
@@ -496,7 +496,7 @@ export function RefinedBookingPass({
                   className={cn(
                     "mt-1 self-start rounded-full px-2.5 py-1 font-semibold [font-family:var(--font-plex-mono)] text-[0.625rem] uppercase tracking-[0.14em]",
                     isCancelled
-                      ? "bg-[#fff1f2] text-[#be123c]"
+                      ? "bg-[var(--danger-soft)] text-[var(--danger-strong)]"
                       : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]",
                   )}
                 >
@@ -509,8 +509,8 @@ export function RefinedBookingPass({
                 className={cn(
                   "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.06em]",
                   typeBadge.tone === "primary"
-                    ? "bg-[#dfe8fb] text-[#0b57d0]"
-                    : "bg-[#eef0f3] text-[#3c4043]",
+                    ? "bg-[var(--accent-soft)] text-[var(--link)]"
+                    : "bg-[var(--neutral-chip)] text-[var(--ink-secondary)]",
                 )}
               >
                 {typeBadge.label}
@@ -539,7 +539,7 @@ export function RefinedBookingPass({
                 {!isFullDay && durationLabel ? (
                   <span
                     className={cn(
-                      "rounded-full bg-white px-2.5 py-1 uppercase text-[var(--ink)]",
+                      "rounded-full bg-[var(--surface-lowest)] px-2.5 py-1 uppercase text-[var(--ink)]",
                       microLabel,
                     )}
                   >
@@ -557,7 +557,7 @@ export function RefinedBookingPass({
                   {booking.clientName || "—"}
                 </p>
                 {booking.clientEmail || booking.clientPhone ? (
-                  <p className="break-all text-sm leading-[1.5] text-[#3c4043]">
+                  <p className="break-all text-sm leading-[1.5] text-[var(--ink-secondary)]">
                     {booking.clientEmail}
                     {booking.clientEmail && booking.clientPhone ? <br /> : null}
                     {booking.clientPhone}
@@ -603,19 +603,19 @@ export function RefinedBookingPass({
               <div className={cn("grid gap-x-6 gap-y-4 pt-4 sm:grid-cols-2 lg:pt-[22px]", dottedRule)}>
                 {description ? (
                   <RefinedCell label={t.publicFlow.passAbout}>
-                    <p className="text-sm leading-[1.6] text-[#3c4043]">{description}</p>
+                    <p className="text-sm leading-[1.6] text-[var(--ink-secondary)]">{description}</p>
                   </RefinedCell>
                 ) : null}
                 {notes ? (
                   <RefinedCell label={bringLabel}>
-                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[#3c4043]">
+                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[var(--ink-secondary)]">
                       {notes}
                     </p>
                   </RefinedCell>
                 ) : null}
                 {clientNotes ? (
                   <RefinedCell label={clientNotes.label} className="sm:col-span-2">
-                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[#3c4043]">
+                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[var(--ink-secondary)]">
                       {clientNotes.value}
                     </p>
                   </RefinedCell>
@@ -645,7 +645,7 @@ export function RefinedBookingPass({
         </div>
 
         {/* ── Tear-off stub ─────────────────────────────────────── */}
-        <div className="haab-pass-stub order-3 mt-5 border-y-2 border-dashed border-[rgba(15,23,42,0.16)] bg-[#f3f4f6] p-5 lg:order-none lg:mt-0 lg:border-y-0 lg:border-l-2 lg:p-8">
+        <div className="haab-pass-stub order-3 mt-5 border-y-2 border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-5 lg:order-none lg:mt-0 lg:border-y-0 lg:border-l-2 lg:p-8">
           <p className="[grid-area:title] text-sm font-semibold text-[var(--ink)]">
             {t.publicFlow.passShowAtCheckIn}
           </p>
@@ -653,7 +653,7 @@ export function RefinedBookingPass({
           {isCancelled ? (
             <p
               aria-hidden="true"
-              className="[grid-area:qr] max-w-full rotate-[-8deg] justify-self-center rounded-lg border-[3px] border-[#be123c] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[#be123c] opacity-80 lg:my-6 lg:px-4 lg:py-2 lg:text-lg lg:tracking-[0.14em]"
+              className="[grid-area:qr] max-w-full rotate-[-8deg] justify-self-center rounded-lg border-[3px] border-[var(--danger-strong)] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--danger-strong)] opacity-80 lg:my-6 lg:px-4 lg:py-2 lg:text-lg lg:tracking-[0.14em]"
             >
               {t.publicFlow.statusCancelled}
             </p>
@@ -672,7 +672,7 @@ export function RefinedBookingPass({
                   style={{ backgroundImage: `url(${qrDataUrl})` }}
                 />
               ) : (
-                <span className="px-2 text-center text-xs leading-5 text-[var(--muted)]">
+                <span className="px-2 text-center text-xs leading-5 text-[#5f6368]">
                   {qrError || t.manage.preparingQr}
                 </span>
               )}
@@ -682,7 +682,7 @@ export function RefinedBookingPass({
           {admitLabel ? (
             <span
               className={cn(
-                "[grid-area:pill] self-start rounded-full bg-white px-2.5 py-1 uppercase text-[#3c4043] lg:self-auto lg:px-3 lg:py-[5px]",
+                "[grid-area:pill] self-start rounded-full bg-[var(--surface-lowest)] px-2.5 py-1 uppercase text-[var(--ink-secondary)] lg:self-auto lg:px-3 lg:py-[5px]",
                 microLabel,
               )}
             >
@@ -705,7 +705,7 @@ export function RefinedBookingPass({
             <button
               type="button"
               onClick={onDownloadIcs}
-              className="[grid-area:ics] mt-1 hidden h-[46px] w-full items-center justify-center rounded-full border border-[#cfd5df] bg-white px-4 !text-sm !font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:inline-flex"
+              className="[grid-area:ics] mt-1 hidden h-[46px] w-full items-center justify-center rounded-full border border-[var(--form-border)] bg-[var(--surface-lowest)] px-4 !text-sm !font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:inline-flex"
             >
               {t.publicFlow.passDownloadIcs}
             </button>

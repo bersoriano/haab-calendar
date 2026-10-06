@@ -3591,7 +3591,7 @@ export function HaabBookingModule({
         ) : null}
 
         {setupError ? (
-          <div className="mt-8 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+          <div className="mt-8 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
             {setupError}
           </div>
         ) : null}
@@ -3971,7 +3971,7 @@ export function HaabBookingModule({
                           className={cn(
                             "rounded-2xl px-3 py-2 text-xs font-medium",
                             booking.bookingType === "full-day"
-                              ? "bg-[var(--full-day)] text-white"
+                              ? "bg-[var(--full-day)] text-[var(--background)]"
                               : "bg-[var(--accent-soft)] text-[var(--accent)]",
                           )}
                         >
@@ -4039,12 +4039,12 @@ export function HaabBookingModule({
             }
           />
           {adminSaveError ? (
-            <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+            <div className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
               {adminSaveError}
             </div>
           ) : null}
           {adminSaveMessage ? (
-            <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
+            <div className="mt-4 rounded-2xl border border-[var(--success-line)] bg-[var(--success-soft)] px-4 py-3 text-sm font-medium text-[var(--success-strong)]">
               {adminSaveMessage}
             </div>
           ) : null}
@@ -5114,7 +5114,7 @@ export function HaabBookingModule({
                       </div>
                     </div>
                     {bookingError ? (
-                      <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
+                      <div className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
                         {bookingError}
                       </div>
                     ) : null}
@@ -5169,7 +5169,7 @@ export function HaabBookingModule({
             {sharedServiceContact ? (
               <section
                 aria-label={t.publicFlow.where}
-                className="flex flex-col gap-2.5 rounded-[22px] bg-[var(--panel-tint-72)] px-[18px] py-4 text-sm text-[#3c4043] ring-1 ring-[rgba(255,255,255,0.86)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:rounded-3xl sm:px-[26px] sm:py-[18px]"
+                className="flex flex-col gap-2.5 rounded-[22px] bg-[var(--panel-tint-72)] px-[18px] py-4 text-sm text-[var(--ink-secondary)] ring-1 ring-[var(--line)] sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:rounded-3xl sm:px-[26px] sm:py-[18px]"
               >
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-7 sm:gap-y-2">
                   <span className="text-[10.5px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)] sm:text-[11px]">
@@ -5371,7 +5371,7 @@ export function HaabBookingModule({
                           remaining === 0
                             ? "text-[var(--muted)]"
                             : scarce
-                              ? "text-[#92400e]"
+                              ? "text-[var(--warning-strong)]"
                               : "text-[var(--muted)]",
                         )}
                       >
@@ -5547,7 +5547,7 @@ export function HaabBookingModule({
                         className={cn(
                           "mt-3 inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold",
                           singleIsFull
-                            ? "bg-[#fff1f2] text-[#be123c]"
+                            ? "bg-[var(--danger-soft)] text-[var(--danger-strong)]"
                             : "bg-[var(--accent-soft)] text-[var(--accent-strong)]",
                         )}
                       >
@@ -5834,7 +5834,7 @@ export function HaabBookingModule({
                       ref={flowNoticeRef}
                       role="status"
                       aria-live="polite"
-                      className="mt-5 rounded-[22px] border border-[#fcd34d] bg-[#fffbeb] px-4 py-3.5 text-[#92400e]"
+                      className="mt-5 rounded-[22px] border border-[var(--warning-line)] bg-[var(--warning-soft)] px-4 py-3.5 text-[var(--warning-strong)]"
                     >
                       <p className="text-[0.9375rem] font-semibold">
                         {flowNotice === "hold-expired"
@@ -6458,7 +6458,7 @@ export function HaabBookingModule({
                             className={cn(
                               "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
                               isSuccessfulBookingCancelled
-                                ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-white shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
+                                ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
                                 : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-[var(--surface-lowest)]",
                               isDedicatedPublicPage && publicPillButtonClass,
                             )}
@@ -6504,7 +6504,7 @@ export function HaabBookingModule({
                   className={cn(
                     "flex items-center justify-between px-1 text-[0.8125rem] font-semibold",
                     isBookingHoldWarning(bookingHoldRemainingMs)
-                      ? "text-[#92400e]"
+                      ? "text-[var(--warning-strong)]"
                       : "text-[var(--muted)]",
                   )}
                 >
@@ -6689,7 +6689,7 @@ export function HaabBookingModule({
           {cancellationError ? (
             <div
               role="alert"
-              className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]"
+              className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]"
             >
               {cancellationError}
             </div>
@@ -6920,7 +6920,7 @@ export function HaabBookingModule({
               {rescheduleState.error ? (
                 <div
                   role="alert"
-                  className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]"
+                  className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]"
                 >
                   {rescheduleState.error}
                 </div>
@@ -7036,7 +7036,7 @@ export function HaabBookingModule({
           <Link
             href={publicUrl}
             className={cn(
-              "inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--ink)] px-5 text-sm font-semibold text-white transition hover:opacity-90",
+              "inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--ink)] px-5 text-sm font-semibold text-[var(--background)] transition hover:opacity-90",
               isDedicatedPublicPage && publicPillButtonClass,
             )}
           >
@@ -7082,7 +7082,7 @@ export function HaabBookingModule({
           </p>
           <Link
             href="/"
-            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="mt-2 inline-flex min-h-11 items-center justify-center rounded-2xl bg-[var(--accent)] px-5 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90"
           >
             {t.notFound.goHome}
           </Link>
@@ -7194,7 +7194,7 @@ export function HaabBookingModule({
                     className={cn(
                       "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
                       adminTab === value
-                        ? "bg-[var(--ink)] text-white"
+                        ? "bg-[var(--ink)] text-[var(--background)]"
                         : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]",
                     )}
                   >

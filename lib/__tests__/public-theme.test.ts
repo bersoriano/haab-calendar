@@ -51,7 +51,7 @@ describe("theme styles", () => {
     expect(new Set(primaries).size).toBe(PUBLIC_THEMES.length);
   });
 
-  it("marks only Miami as dark, and gives it dark surfaces to match", () => {
+  it("keeps Miami dark with matching panel surfaces", () => {
     expect(isDarkPublicTheme("miami")).toBe(true);
     expect(isDarkPublicTheme("pink")).toBe(false);
     expect(isDarkPublicTheme("summer")).toBe(false);
@@ -63,6 +63,24 @@ describe("theme styles", () => {
     expect(miami["--ink"]).toBeTruthy();
     expect(miami["--surface-lowest"]).toBeTruthy();
     expect(miami["--muted"]).toBeTruthy();
+  });
+
+  it("offers a dark counterpart to Classic with readable public surfaces", () => {
+    expect(PUBLIC_THEMES).toContain("dark");
+    expect(normalizePublicTheme(" DARK ")).toBe("dark");
+    expect(normalizeProvider({ publicTheme: "dark" }).publicTheme).toBe("dark");
+    expect(isDarkPublicTheme("dark")).toBe(true);
+
+    const style = getPublicThemeStyle("dark");
+    expect(style.base).toBe("#171a20");
+    expect(style.tokens).toMatchObject({
+      "--ink": "#f3f5f8",
+      "--surface-lowest": "#222731",
+      "--primary": "#89bdff",
+      "--action-teal": "#72d9c9",
+      "--callout-mint": "#19352f",
+      "--summary-surface": "#29313c",
+    });
   });
 });
 

@@ -43,14 +43,14 @@ export function PrivateLinkCard({
       <section
         aria-label={t.publicFlow.managementUrlLabel}
         className={cn(
-          "flex flex-col gap-3 rounded-3xl bg-[rgba(248,249,250,0.85)] p-[18px] ring-1 ring-[rgba(255,255,255,0.9)] lg:gap-3.5 lg:rounded-[28px] lg:bg-[rgba(248,249,250,0.82)] lg:px-[26px] lg:py-6",
+          "flex flex-col gap-3 rounded-3xl bg-[var(--surface)] p-[18px] ring-1 ring-[var(--line)] lg:gap-3.5 lg:rounded-[28px] lg:px-[26px] lg:py-6",
           className,
         )}
       >
         <div className="flex items-center gap-3 lg:gap-3.5">
           <span
             aria-hidden="true"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[var(--tile-blue)] text-[#0b57d0] lg:h-10 lg:w-10 lg:rounded-xl"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[var(--tile-blue)] text-[var(--link)] lg:h-10 lg:w-10 lg:rounded-xl"
           >
             <svg
               width="18"
@@ -85,7 +85,7 @@ export function PrivateLinkCard({
               accessible text, in `title`, and is what Copy uses. */}
           <div
             title={url}
-            className="flex min-h-12 min-w-0 flex-1 items-center rounded-[14px] border border-[#d6dbe3] bg-white px-3.5 py-3 text-[12.5px] text-[#3c4043] [font-family:var(--font-plex-mono)] lg:px-4 lg:py-0 lg:text-[13.5px]"
+            className="flex min-h-12 min-w-0 flex-1 items-center rounded-[14px] border border-[var(--form-border)] bg-[var(--surface-lowest)] px-3.5 py-3 text-[12.5px] text-[var(--ink-secondary)] [font-family:var(--font-plex-mono)] lg:px-4 lg:py-0 lg:text-[13.5px]"
           >
             <span className="sr-only">{url}</span>
             <span aria-hidden="true" className="min-w-0 break-all lg:hidden">
@@ -100,7 +100,7 @@ export function PrivateLinkCard({
               <button
                 type="button"
                 onClick={onCopy}
-                className={cn(pill, "bg-[#0b57d0] text-white hover:opacity-90 lg:px-[22px]")}
+                className={cn(pill, "bg-[var(--link)] text-[var(--on-primary)] hover:opacity-90 lg:px-[22px]")}
               >
                 {copied ? t.publicFlow.copied : t.publicFlow.copyLink}
               </button>

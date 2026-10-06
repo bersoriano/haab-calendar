@@ -82,7 +82,7 @@ export function InfoTooltip({
         className={cn(
           // The trigger usually rides a label, so the tooltip has to opt out of
           // whatever that label's type is doing — uppercase, tracking, weight.
-          "pointer-events-none absolute top-full z-30 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-2xl bg-[var(--ink)] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-5 tracking-normal text-white shadow-[0_18px_42px_rgba(15,23,42,0.28)] transition-opacity duration-150",
+          "pointer-events-none absolute top-full z-30 mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-2xl bg-[var(--ink)] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-5 tracking-normal text-[var(--background)] shadow-[0_18px_42px_rgba(15,23,42,0.28)] transition-opacity duration-150",
           align === "end" ? "right-0" : "left-0",
           open ? "opacity-100" : "opacity-0",
         )}

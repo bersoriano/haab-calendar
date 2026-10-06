@@ -143,7 +143,7 @@ export function ServiceCard({
         className={cn(
           "flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] sm:h-[52px] sm:w-[52px] sm:rounded-2xl",
           isTeal
-            ? "bg-[var(--tile-teal)] text-[#00897b]"
+            ? "bg-[var(--tile-teal)] text-[var(--tile-teal-ink)]"
             : "bg-[var(--tile-blue)] text-[var(--accent)]",
         )}
       >
@@ -186,7 +186,7 @@ export function ServiceCard({
           </span>
         ) : null}
         {occurrenceLabel ? (
-          <span className={cn(chipClass, "bg-[#eef0f3] text-[#3c4043]")}>
+          <span className={cn(chipClass, "bg-[var(--neutral-chip)] text-[var(--ink-secondary)]")}>
             <ChipIcon>
               <rect x="4" y="5" width="16" height="16" rx="3" />
               <path d="M8 3v4M16 3v4M4 10h16" />
@@ -195,7 +195,7 @@ export function ServiceCard({
           </span>
         ) : null}
         {capacity ? (
-          <span className={cn(chipClass, "bg-[#eef0f3] text-[#3c4043]")}>
+          <span className={cn(chipClass, "bg-[var(--neutral-chip)] text-[var(--ink-secondary)]")}>
             <ChipIcon>
               <circle cx="12" cy="8" r="4" />
               <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
@@ -204,7 +204,7 @@ export function ServiceCard({
           </span>
         ) : null}
         {specialty ? (
-          <span className={cn(chipClass, "bg-[#eef0f3] text-[#3c4043]")}>
+          <span className={cn(chipClass, "bg-[var(--neutral-chip)] text-[var(--ink-secondary)]")}>
             <ChipIcon>
               <path d="M3 12h4l2-5 4 10 2-5h6" />
             </ChipIcon>
@@ -217,7 +217,7 @@ export function ServiceCard({
         <span
           className={cn(
             "text-sm font-semibold tabular-nums",
-            seatsNote.tone === "scarce" ? "text-[#92400e]" : "text-[var(--muted)]",
+            seatsNote.tone === "scarce" ? "text-[var(--warning-strong)]" : "text-[var(--muted)]",
           )}
         >
           {seatsNote.text}
@@ -284,7 +284,7 @@ export function ServiceCard({
       ) : null}
 
       <span className="mt-auto flex border-t border-[rgba(193,198,214,0.6)] pt-3.5 sm:justify-end sm:pt-[18px]">
-        <span className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-[22px] text-[15.5px] font-semibold text-white shadow-[0_12px_26px_rgba(26,115,232,0.28)] sm:h-[46px] sm:w-auto sm:text-[15px]">
+        <span className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-[22px] text-[15.5px] font-semibold text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] sm:h-[46px] sm:w-auto sm:text-[15px]">
           {getServiceCardCta(service, vertical, t.publicFlow)}
           <span aria-hidden="true">→</span>
         </span>

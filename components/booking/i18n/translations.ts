@@ -440,7 +440,7 @@ export type BookingDict = {
     partySizeLabel: string;
     publicThemeLabel: string;
     publicThemeHelper: string;
-    publicThemeNames: Record<"default" | "pink" | "summer" | "miami", string>;
+    publicThemeNames: Record<"default" | "dark" | "pink" | "summer" | "miami", string>;
     partySizeRequiredError: string;
     partySizePlaceholder: string;
     guestsSuffix: string;
@@ -1019,6 +1019,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Changes the colours your clients see. Your dashboard stays as it is.",
       publicThemeNames: {
         default: "Classic",
+        dark: "Dark",
         pink: "Pink",
         summer: "Summer",
         miami: "Miami nights",
@@ -1611,6 +1612,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Cambia los colores que ven tus clientes. Tu panel se queda igual.",
       publicThemeNames: {
         default: "Clásico",
+        dark: "Oscuro",
         pink: "Rosa",
         summer: "Verano",
         miami: "Noches de Miami",

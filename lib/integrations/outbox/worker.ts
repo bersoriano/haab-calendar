@@ -64,18 +64,34 @@ async function runHandlers(
     return { outcome: "skipped", reasonCode: NO_ACTIVE_INTEGRATIONS };
   }
 
-  // Sequential, and the first non-success wins: two adapters writing the same
-  // booking concurrently would race, and a retry has to replay the whole event
-  // anyway, so there is nothing to gain by pressing on after a failure.
-  for (const handler of applicable) {
-    const result = await handler.deliver(event);
+  // Adapters are independent. A provider may have no Google connection, but
+  // that must not suppress the booking email adapter. Deliver sequentially so
+  // retries replay a stable order; each adapter must be idempotent.
+  let succeeded = false;
+  let skipped: HandlerResult | null = null;
+  let retryableFailure: HandlerResult | null = null;
+  let permanentFailure: HandlerResult | null = null;
 
-    if (result.outcome !== "succeeded") {
-      return result;
+  for (const handler of applicable) {
+    let result: HandlerResult;
+    try {
+      result = await handler.deliver(event);
+    } catch {
+      result = { outcome: "retryable_failure", errorCode: "handler_threw" };
+    }
+
+    if (result.outcome === "succeeded") {
+      succeeded = true;
+    } else if (result.outcome === "skipped") {
+      skipped ??= result;
+    } else if (result.outcome === "retryable_failure") {
+      retryableFailure ??= result;
+    } else {
+      permanentFailure ??= result;
     }
   }
 
-  return { outcome: "succeeded" };
+  return retryableFailure ?? permanentFailure ?? (succeeded ? { outcome: "succeeded" } : skipped!);
 }
 
 /**

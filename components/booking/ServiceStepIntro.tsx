@@ -41,7 +41,7 @@ export function ServiceStepIntro({
       />
 
       <div className="relative flex min-w-0 flex-col gap-2.5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[#1a5fd0] [font-family:var(--font-plex-mono)] sm:text-[11.5px]">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--accent-strong)] [font-family:var(--font-plex-mono)] sm:text-[11.5px]">
           {eyebrow}
           <span className="lg:hidden"> · {serviceLabel}</span>
         </p>
@@ -79,7 +79,7 @@ export function ServiceStepIntro({
               className={cn(
                 "flex items-center gap-1.5 rounded-full px-3 py-[7px]",
                 current
-                  ? "bg-[var(--primary)] text-white"
+                  ? "bg-[var(--primary)] text-[var(--on-primary)]"
                   : "bg-[rgba(255,255,255,0.75)] text-[var(--muted)]",
               )}
             >

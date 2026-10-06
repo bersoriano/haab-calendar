@@ -28,9 +28,9 @@ export function BookingStatusPill({
       className={cn(
         "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold ring-1",
         status === "cancelled"
-          ? "bg-[#fff1f2] text-[#be123c] ring-[rgba(254,205,211,0.9)]"
+          ? "bg-[var(--danger-soft)] text-[var(--danger-strong)] ring-[var(--danger-line)]"
           : status === "rescheduled"
-            ? "bg-[#fffbeb] text-[#92400e] ring-[rgba(253,230,138,0.9)]"
+            ? "bg-[var(--warning-soft)] text-[var(--warning-strong)] ring-[var(--warning-line)]"
             : "bg-[rgba(104,250,221,0.2)] text-[var(--action-teal-deep)] ring-[rgba(0,191,165,0.28)]",
         className,
       )}
