@@ -9,6 +9,40 @@ import {
 } from "@/lib/public-theme";
 import { normalizeProvider } from "@/lib/store";
 
+function rgb(value: string): [number, number, number, number] {
+  if (value.startsWith("#")) {
+    return [
+      parseInt(value.slice(1, 3), 16),
+      parseInt(value.slice(3, 5), 16),
+      parseInt(value.slice(5, 7), 16),
+      1,
+    ];
+  }
+
+  const channels = value.match(/^rgba\((\d+),(\d+),(\d+),([\d.]+)\)$/);
+  if (!channels) throw new Error(`Unsupported test colour: ${value}`);
+  return [Number(channels[1]), Number(channels[2]), Number(channels[3]), Number(channels[4])];
+}
+
+function luminance(channels: number[]) {
+  const [red, green, blue] = channels.map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+}
+
+function contrastOnSurface(text: string, surface: string, base: string) {
+  const [red, green, blue, alpha] = rgb(surface);
+  const ground = rgb(base);
+  const painted = [red, green, blue].map((channel, index) =>
+    channel * alpha + ground[index] * (1 - alpha),
+  );
+  const light = Math.max(luminance(rgb(text)), luminance(painted));
+  const dark = Math.min(luminance(rgb(text)), luminance(painted));
+  return (light + 0.05) / (dark + 0.05);
+}
+
 describe("normalizePublicTheme", () => {
   it("accepts every theme, ignoring case and padding", () => {
     for (const theme of PUBLIC_THEMES) {
@@ -81,6 +115,27 @@ describe("theme styles", () => {
       "--callout-mint": "#19352f",
       "--summary-surface": "#29313c",
     });
+  });
+
+  it("provides dark fills for booking panels that use light text", () => {
+    for (const theme of ["dark", "miami"] as const) {
+      const style = getPublicThemeStyle(theme);
+      const pairs = [
+        ["--ink-secondary", "--panel-tint-75"],
+        ["--muted", "--panel-tint-94"],
+        ["--ink", "--panel-mute-72"],
+        ["--ink", "--panel-mute-88"],
+        ["--muted", "--panel-glass-55"],
+        ["--muted", "--panel-glass-75"],
+      ];
+
+      for (const [text, surface] of pairs) {
+        expect(
+          contrastOnSurface(style.tokens[text], style.tokens[surface], style.base),
+          `${theme}: ${text} on ${surface}`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 });
 

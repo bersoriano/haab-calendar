@@ -319,6 +319,10 @@ describe("SuccessActions", () => {
     expect(html).not.toContain('disabled=""');
   });
 
+  it("uses a theme surface behind the question", () => {
+    expect(actions()).toContain("bg-[var(--panel-tint-75)]");
+  });
+
   it("hides Reschedule for services that cannot be moved", () => {
     expect(actions({ canReschedule: false })).not.toContain("Reschedule");
   });

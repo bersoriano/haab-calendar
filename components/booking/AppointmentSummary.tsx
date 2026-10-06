@@ -336,7 +336,7 @@ export function MobileConfirmBar({
   const showBack = Boolean(footer.changeDateTimeLabel) && !footer.isExpired;
 
   return (
-    <div className="sticky bottom-0 z-30 flex flex-col gap-2 border-t border-[rgba(193,198,214,0.5)] bg-[rgba(248,249,250,0.94)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-[18px] lg:hidden">
+    <div className="sticky bottom-0 z-30 flex flex-col gap-2 border-t border-[rgba(193,198,214,0.5)] bg-[var(--panel-tint-94)] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur-[18px] lg:hidden">
       {footer.error ? <BookingErrorAlert id={footer.errorId} message={footer.error} /> : null}
       {footer.isExpired ? (
         <button
