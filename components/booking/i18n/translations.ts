@@ -398,6 +398,7 @@ export type BookingDict = {
     tabDashboard: string;
     tabCalendar: string;
     tabSettings: string;
+    tabAnalytics: string;
     tabAppearance: string;
     backToWorkspace: string;
     signOut: string;
@@ -983,6 +984,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tabDashboard: "Dashboard",
       tabCalendar: "Calendar",
       tabSettings: "Settings",
+      tabAnalytics: "Analytics",
       tabAppearance: "Appearance",
       backToWorkspace: "← Back to workspace",
       signOut: "Sign out",
@@ -1576,6 +1578,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       tabDashboard: "Panel",
       tabCalendar: "Calendario",
       tabSettings: "Ajustes",
+      tabAnalytics: "Analítica",
       tabAppearance: "Apariencia",
       backToWorkspace: "← Volver al espacio de trabajo",
       signOut: "Cerrar sesión",

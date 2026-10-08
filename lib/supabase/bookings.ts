@@ -508,7 +508,7 @@ function isCapacityViolation(error: unknown) {
   );
 }
 
-async function getPublishedProvider(
+export async function getPublishedProvider(
   supabase: SupabaseClient,
   vertical: VerticalId,
   providerSlug: string,

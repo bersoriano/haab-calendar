@@ -220,6 +220,7 @@ exactly one thing rather than breaking the app:
 | `RESEND_API_KEY` or `BOOKING_EMAIL_FROM` | Booking email deliveries retry, then dead-letter; set both before accepting live bookings |
 | `BLOB_READ_WRITE_TOKEN` | Image upload is unavailable |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No traces exported; the app runs normally |
+| `ANALYTICS_HASH_SECRET` | Booking page visitor hashes are keyed with the service role key instead; rotating either resets only that day's visitor counts |
 
 `HAAB_DEPLOYMENT_NAMESPACE` defaults to `local` and should stay distinct per
 environment — it is stamped into every Google Calendar event Haab creates, and
