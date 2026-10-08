@@ -1,13 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { parsePublicPageEventPayload, readReferrerHost } from "@/lib/analytics/events";
-import {
-  classifyDevice,
-  computeVisitorHash,
-  getAnalyticsSecret,
-  isLikelyBot,
-  readClientIp,
-} from "@/lib/analytics/visitor";
+import { parsePublicPageEventPayload } from "@/lib/analytics/events";
+import { recordPublicPageEvent } from "@/lib/analytics/record";
+import { isLikelyBot } from "@/lib/analytics/visitor";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublishedProvider, PublicBookingWriteError } from "@/lib/supabase/bookings";
 import {
@@ -62,40 +57,22 @@ export async function POST(
     return NextResponse.json({ userMessage: "Invalid event." }, { status: 400 });
   }
 
-  const userAgent = request.headers.get("user-agent");
-  if (isLikelyBot(userAgent)) {
-    return noContent();
-  }
-
-  const secret = getAnalyticsSecret();
-  if (!secret) {
+  // Bookings are recorded by the booking route itself. A beacon claiming one
+  // (from a page loaded before that change) would count it twice.
+  if (payload.event === "booking_confirmed" || isLikelyBot(request.headers.get("user-agent"))) {
     return noContent();
   }
 
   try {
     const admin = createAdminClient();
     const provider = await getPublishedProvider(admin, vertical, slug);
-    const { error } = await admin.from("public_page_events").insert({
-      provider_id: provider.id,
+    await recordPublicPageEvent(admin, {
+      providerId: provider.id,
       event: payload.event,
-      service_id: payload.serviceId ?? null,
-      visitor_hash: computeVisitorHash({
-        secret,
-        providerId: provider.id,
-        ip: readClientIp(request.headers),
-        userAgent: userAgent ?? "",
-        now: new Date(),
-      }),
-      utm_source: payload.utmSource ?? null,
-      utm_medium: payload.utmMedium ?? null,
-      utm_campaign: payload.utmCampaign ?? null,
-      referrer_host: readReferrerHost(payload.referrer, request.nextUrl.hostname) ?? null,
-      device_class: classifyDevice(userAgent),
+      serviceId: payload.serviceId,
+      attribution: payload,
+      request,
     });
-
-    if (error) {
-      throw error;
-    }
   } catch (error) {
     if (error instanceof PublicBookingWriteError && error.status === 404) {
       return NextResponse.json({ userMessage: error.userMessage }, { status: 404 });
