@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseServiceKey: () => "service-key" }));
 
-import { recordPublicPageEvent } from "@/lib/analytics/record";
+import { recordPublicPageEvent, VISITOR_HOURLY_EVENT_CAP } from "@/lib/analytics/record";
 
 const insert = vi.fn();
-const admin = { from: () => ({ insert }) } as never;
+const recentCount = vi.fn();
+const recentQuery = { eq: () => recentQuery, gte: () => recentCount() };
+const admin = { from: () => ({ insert, select: () => recentQuery }) } as never;
 
 const SERVICE_ID = "2f1c6a0e-9b7d-4c1e-8a55-0d6f3b2a9c11";
 
@@ -18,7 +20,11 @@ function bookingRequest() {
 }
 
 describe("recordPublicPageEvent", () => {
-  beforeEach(() => insert.mockReset());
+  beforeEach(() => {
+    insert.mockReset();
+    recentCount.mockReset();
+    recentCount.mockResolvedValue({ count: 0, error: null });
+  });
 
   it("writes a booking conversion with its campaign and booking id", async () => {
     insert.mockResolvedValue({ error: null });
@@ -82,5 +88,33 @@ describe("recordPublicPageEvent", () => {
         request: bookingRequest(),
       }),
     ).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("stops counting a visitor past the hourly cap", async () => {
+    recentCount.mockResolvedValue({ count: VISITOR_HOURLY_EVENT_CAP, error: null });
+    await expect(
+      recordPublicPageEvent(admin, {
+        providerId: "provider-1",
+        event: "page_view",
+        attribution: {},
+        request: bookingRequest(),
+      }),
+    ).resolves.toBe(false);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("never caps a booking", async () => {
+    recentCount.mockResolvedValue({ count: VISITOR_HOURLY_EVENT_CAP * 10, error: null });
+    insert.mockResolvedValue({ error: null });
+    await expect(
+      recordPublicPageEvent(admin, {
+        providerId: "provider-1",
+        event: "booking_confirmed",
+        bookingId: "booking-1",
+        attribution: {},
+        request: bookingRequest(),
+      }),
+    ).resolves.toBe(true);
+    expect(recentCount).not.toHaveBeenCalled();
   });
 });
