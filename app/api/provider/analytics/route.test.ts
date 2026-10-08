@@ -79,7 +79,7 @@ describe("GET /api/provider/analytics", () => {
   });
 
   it("refuses providers without the analytics entitlement before reading", async () => {
-    mocks.requireEntitlement.mockRejectedValue(new EntitlementRequiredError());
+    mocks.requireEntitlement.mockRejectedValue(new EntitlementRequiredError("provider-1", "analytics"));
     expect((await GET(request())).status).toBe(403);
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
