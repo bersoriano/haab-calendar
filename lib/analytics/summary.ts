@@ -15,8 +15,11 @@ export type AnalyticsTotals = {
   visitors: number;
   serviceSelected: number;
   slotSelected: number;
+  /** Bookings that still stand; cancelled ones are counted separately. */
   bookings: number;
   bookingVisitors: number;
+  /** Absent from summaries computed before cancellations were tracked. */
+  cancelledBookings?: number;
 };
 
 export type AnalyticsDay = { day: string; views: number; visitors: number; bookings: number };

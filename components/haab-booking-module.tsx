@@ -202,6 +202,7 @@ import { ServicePicker } from "@/components/booking/ServicePicker";
 import { ServiceSwitchDialog } from "@/components/booking/ServiceSwitchDialog";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
+import { BookingCampaignBadge } from "@/components/booking/BookingCampaignBadge";
 import { usePublicPageAnalytics } from "@/lib/analytics/use-public-page-analytics";
 import {
   isGuestDraftMeaningful,
@@ -3706,6 +3707,7 @@ export function HaabBookingModule({
                           <ToneBadge tone={statusTone(booking.status)}>
                             {getBookingStatusLabel(booking.status, lang)}
                           </ToneBadge>
+                          <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
                         </div>
                         <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                           {booking.serviceName}
@@ -3811,6 +3813,7 @@ export function HaabBookingModule({
                       <ToneBadge tone={statusTone(booking.status)}>
                         {getBookingStatusLabel(booking.status, lang)}
                       </ToneBadge>
+                      <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
                     </div>
                     <p className="mt-2 text-sm font-medium text-[var(--ink)]">
                       {booking.serviceName}
