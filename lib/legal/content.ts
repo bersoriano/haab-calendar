@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-08-25";
+export const LEGAL_UPDATED = "2026-10-08";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -97,6 +97,7 @@ const EN_PRIVACY: LegalDocument = {
       body: [
         "Haab Calendar sets only cookies that are strictly necessary for it to work: an authentication cookie that keeps a business signed in, a language preference cookie, short-lived cookies that secure the Google sign-in exchange, and an administrative cookie used when editing example pages.",
         "There are no advertising cookies, no analytics cookies, and no third-party trackers of any kind on this site.",
+        "Public booking pages count visits without cookies so the business can see how its page and campaign links perform. Each visit is recorded as an anonymous identifier that changes every day and differs on every business's page, together with the campaign tags in the link, the referring website's domain and the device type. No IP address, browser fingerprint or personal data is stored, and these records are deleted after 13 months.",
       ],
     },
     {
@@ -327,6 +328,7 @@ const ES_PRIVACY: LegalDocument = {
       body: [
         "Haab Calendar solo utiliza cookies estrictamente necesarias para su funcionamiento: una cookie de autenticación que mantiene la sesión del negocio, una cookie de preferencia de idioma, cookies de corta duración que aseguran el intercambio de inicio de sesión con Google, y una cookie administrativa que se usa al editar páginas de ejemplo.",
         "No hay cookies publicitarias, ni cookies de analítica, ni rastreadores de terceros de ningún tipo en este sitio.",
+        "Las páginas públicas de reserva cuentan visitas sin cookies para que el negocio pueda ver el rendimiento de su página y de sus enlaces de campaña. Cada visita se registra con un identificador anónimo que cambia cada día y es distinto en la página de cada negocio, junto con las etiquetas de campaña del enlace, el dominio del sitio de referencia y el tipo de dispositivo. No se guarda la dirección IP, ninguna huella del navegador ni datos personales, y estos registros se eliminan después de 13 meses.",
       ],
     },
     {
