@@ -4,6 +4,8 @@ import {
   confirmPublicBooking,
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
+import { parsePublicPageAttribution } from "@/lib/analytics/events";
+import { recordPublicPageEvent } from "@/lib/analytics/record";
 import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import { sendBookingEmailImmediately } from "@/lib/email/booking-created";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -34,6 +36,8 @@ type PublicBookingBody = {
   detailsSchemaVersion?: unknown;
   idempotencyKey?: unknown;
   holdId?: unknown;
+  /** Campaign tags and referrer the page was opened with, for analytics. */
+  attribution?: unknown;
 };
 
 function readString(value: unknown) {
@@ -119,7 +123,8 @@ export async function POST(
   }
 
   try {
-    const result = await confirmPublicBooking(createAdminClient(), {
+    const admin = createAdminClient();
+    const result = await confirmPublicBooking(admin, {
       vertical,
       providerSlug: normalizedProviderSlug,
       serviceId,
@@ -140,9 +145,29 @@ export async function POST(
       holdId: readOptionalString(body.holdId),
     });
 
+    const { providerId, ...publicResult } = result;
+
+    // Recorded here rather than by the browser so an ad blocker or a closed tab
+    // cannot lose the conversion. Analytics never decides whether a booking
+    // succeeds: the booking is already committed.
+    try {
+      await recordPublicPageEvent(admin, {
+        providerId,
+        event: "booking_confirmed",
+        serviceId,
+        bookingId: result.booking.id,
+        attribution: parsePublicPageAttribution(body.attribution),
+        request,
+      });
+    } catch (error) {
+      console.warn("booking_analytics_failed", {
+        bookingId: result.booking.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+
     // The database trigger already queued this event. Try email now so a late
     // scheduler cannot delay confirmation; the outbox retries failed attempts.
-    const { providerId, ...publicResult } = result;
     try {
       const delivery = await sendBookingEmailImmediately({
         bookingId: result.booking.id,

@@ -544,7 +544,7 @@ export function HaabBookingModule({
 
   // Only a published page a visitor actually opened: not the dashboard preview,
   // not a local standalone setup, not someone managing an existing booking.
-  usePublicPageAnalytics({
+  const getVisitAttribution = usePublicPageAnalytics({
     enabled:
       isDedicatedPublicPage &&
       integratedMode &&
@@ -556,7 +556,6 @@ export function HaabBookingModule({
       : "",
     step: bookingFlow.step,
     serviceId: bookingFlow.serviceId,
-    successBookingId: bookingFlow.successBookingId,
   });
 
   const refreshProviderDashboardStore = useEffectEvent(async () => {
@@ -2876,6 +2875,7 @@ export function HaabBookingModule({
               idempotencyKey:
                 typeof crypto.randomUUID === "function" ? crypto.randomUUID() : createId("idem"),
               holdId: ignoredHoldId,
+              attribution: getVisitAttribution() ?? undefined,
             }),
           },
         );
