@@ -8,7 +8,7 @@ import { AdminHero } from "@/components/provider/AdminHero";
 import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
 import { logout } from "@/app/login/actions";
 import { stopDemoEdit } from "@/app/super-admin/actions";
-import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
+import type { AdminTab, Lang, ModuleStore, VerticalId } from "@/lib/types";
 import {
   LandingActionsProvider,
   LandingPage,
@@ -78,6 +78,10 @@ type HomeExperienceProps = {
   providerEntitlements?: ProviderEntitlements;
   /** Server-controlled ability to expose public URLs and booking actions. */
   publicationStatus?: PublicationStatus;
+  /** Dashboard tab to open first, e.g. after returning from Checkout. */
+  initialAdminTab?: AdminTab;
+  /** How a Stripe Checkout the provider just left ended. */
+  checkoutResult?: "success" | "cancelled";
   /** Whether the signed-in account can open the super-admin area. */
   isSuperAdmin?: boolean;
   /** Active demo-editing session; the dashboard edits that example page. */
@@ -116,6 +120,8 @@ function HomeExperienceInner({
   dashboardStore,
   providerEntitlements,
   publicationStatus,
+  initialAdminTab,
+  checkoutResult,
   isSuperAdmin,
   demoEdit,
   featuredDemos,
@@ -328,6 +334,8 @@ function HomeExperienceInner({
             initialLanguage={effectiveConfigured ? undefined : lang}
             viewerLanguage={dashboardLanguage}
             providerEntitlements={providerEntitlements}
+            initialAdminTab={effectiveConfigured ? initialAdminTab : undefined}
+            checkoutResult={effectiveConfigured ? checkoutResult : undefined}
             initialVerticalId={
               effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
             }

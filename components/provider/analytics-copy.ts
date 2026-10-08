@@ -10,6 +10,15 @@ export type AnalyticsCopy = {
   retry: string;
   premiumTitle: string;
   premiumBody: string;
+  premiumBenefits: string[];
+  upgradeCta: string;
+  upgradePending: string;
+  upgradeUnavailable: string;
+  upgradeFailed: string;
+  checkoutSucceeded: string;
+  checkoutPending: string;
+  checkoutRefresh: string;
+  checkoutCancelled: string;
   previewTitle: string;
   previewBody: string;
   emptyTitle: string;
@@ -58,9 +67,22 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     loading: "Loading analytics…",
     loadFailed: "Could not load analytics.",
     retry: "Try again",
-    premiumTitle: "Analytics is part of Premium",
-    premiumBody:
-      "Measure visits, booking conversion and campaign performance for your public booking page. Upgrade to Premium to turn it on.",
+    premiumTitle: "See which links bring bookings",
+    premiumBody: "Your visits are counted above. Premium shows what happens next.",
+    premiumBenefits: [
+      "Bookings and conversion rate",
+      "Bookings per campaign link",
+      "Where visitors drop off",
+      "Your most booked services",
+    ],
+    upgradeCta: "Upgrade to Premium",
+    upgradePending: "Opening checkout…",
+    upgradeUnavailable: "Upgrades are not open yet. We'll let you know when they are.",
+    upgradeFailed: "Could not open checkout. Please try again.",
+    checkoutSucceeded: "Welcome to Premium. Your full analytics are below.",
+    checkoutPending: "Payment received. Premium turns on in a few seconds.",
+    checkoutRefresh: "Refresh",
+    checkoutCancelled: "Checkout cancelled. You have not been charged.",
     previewTitle: "Analytics needs a published page",
     previewBody: "Publish your booking page with an account to start measuring visits and bookings.",
     emptyTitle: "No visits yet",
@@ -111,9 +133,22 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     loading: "Cargando analítica…",
     loadFailed: "No se pudo cargar la analítica.",
     retry: "Reintentar",
-    premiumTitle: "La analítica es parte de Premium",
-    premiumBody:
-      "Mide visitas, conversión a reservas y el rendimiento de tus campañas. Cambia a Premium para activarla.",
+    premiumTitle: "Descubre qué enlaces generan reservas",
+    premiumBody: "Arriba están tus visitas. Premium te muestra lo que pasa después.",
+    premiumBenefits: [
+      "Reservas y tasa de conversión",
+      "Reservas por enlace de campaña",
+      "En qué paso se van los visitantes",
+      "Tus servicios más reservados",
+    ],
+    upgradeCta: "Cambiar a Premium",
+    upgradePending: "Abriendo el pago…",
+    upgradeUnavailable: "Las mejoras aún no están abiertas. Te avisaremos cuando lo estén.",
+    upgradeFailed: "No se pudo abrir el pago. Inténtalo de nuevo.",
+    checkoutSucceeded: "Bienvenido a Premium. Tu analítica completa está abajo.",
+    checkoutPending: "Pago recibido. Premium se activa en unos segundos.",
+    checkoutRefresh: "Actualizar",
+    checkoutCancelled: "Pago cancelado. No se te cobró nada.",
     previewTitle: "La analítica necesita una página publicada",
     previewBody: "Publica tu página de reservas con una cuenta para empezar a medir visitas y reservas.",
     emptyTitle: "Aún no hay visitas",

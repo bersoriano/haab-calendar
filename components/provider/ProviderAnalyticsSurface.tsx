@@ -10,8 +10,11 @@ import {
   DEFAULT_ANALYTICS_RANGE,
   buildCampaignUrl,
   conversionRate,
+  isAnalyticsTeaser,
   type AnalyticsRange,
+  type AnalyticsResponse,
   type AnalyticsSummary,
+  type AnalyticsTeaser,
 } from "@/lib/analytics/summary";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { Lang } from "@/lib/types";
@@ -20,7 +23,7 @@ import { cn } from "@/lib/utils";
 /** Tagged with the request it answers, so a stale answer reads as loading. */
 type LoadState =
   | { key: string; status: "error" }
-  | { key: string; status: "ready"; summary: AnalyticsSummary };
+  | { key: string; status: "ready"; summary: AnalyticsResponse };
 
 export type ProviderAnalyticsSurfaceProps = {
   lang: Lang;
@@ -29,31 +32,71 @@ export type ProviderAnalyticsSurfaceProps = {
   integratedMode: boolean;
   /** Resolved server-side. Presentation only — the route re-checks. */
   entitlements?: ProviderEntitlements;
+  /** How a Stripe Checkout the provider just left ended. */
+  checkoutResult?: "success" | "cancelled";
 };
 
 /**
  * The Analytics tab: visits, the booking funnel and campaign performance for
- * the provider's public page. Gated on the `analytics` entitlement here for
- * presentation; /api/provider/analytics is what actually enforces it.
+ * the provider's public page. Free plans get their visit totals and an upgrade
+ * offer; /api/provider/analytics decides which, from the entitlement.
  */
 export function ProviderAnalyticsSurface({
   lang,
   publicUrl,
   integratedMode,
   entitlements,
+  checkoutResult,
 }: ProviderAnalyticsSurfaceProps) {
   const t = analyticsCopy[lang];
-  const enabled = Boolean(integratedMode && entitlements?.features.analytics?.enabled);
 
   if (!integratedMode) {
     return <EmptyState title={t.previewTitle} body={t.previewBody} />;
   }
 
-  if (!enabled) {
-    return <EmptyState title={t.premiumTitle} body={t.premiumBody} />;
+  // Premium is granted by Stripe's webhook, which can land after the redirect.
+  // Until the page is reloaded with the new entitlement, say so plainly.
+  const awaitingPremium =
+    checkoutResult === "success" && !entitlements?.features.analytics?.enabled;
+
+  return (
+    <div className="space-y-6">
+      {checkoutResult ? (
+        <CheckoutResultBanner t={t} result={checkoutResult} awaitingPremium={awaitingPremium} />
+      ) : null}
+      <AnalyticsDashboard t={t} lang={lang} publicUrl={publicUrl} />
+    </div>
+  );
+}
+
+function CheckoutResultBanner({
+  t,
+  result,
+  awaitingPremium,
+}: {
+  t: AnalyticsCopy;
+  result: "success" | "cancelled";
+  awaitingPremium: boolean;
+}) {
+  if (result === "cancelled") {
+    return (
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--panel-mute-88)] px-4 py-3 text-sm text-[var(--muted)]">
+        {t.checkoutCancelled}
+      </div>
+    );
   }
 
-  return <AnalyticsDashboard t={t} lang={lang} publicUrl={publicUrl} />;
+  return (
+    <div
+      role="status"
+      className="flex flex-col gap-3 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d] sm:flex-row sm:items-center sm:justify-between"
+    >
+      <span>{awaitingPremium ? t.checkoutPending : t.checkoutSucceeded}</span>
+      {awaitingPremium ? (
+        <ActionButton onClick={() => window.location.reload()}>{t.checkoutRefresh}</ActionButton>
+      ) : null}
+    </div>
+  );
 }
 
 function AnalyticsDashboard({
@@ -82,7 +125,7 @@ function AnalyticsDashboard({
         if (!response.ok) {
           throw new Error(`analytics ${response.status}`);
         }
-        const summary = (await response.json()) as AnalyticsSummary;
+        const summary = (await response.json()) as AnalyticsResponse;
         setLoaded({ key: requestKey, status: "ready", summary });
       })
       .catch((error: unknown) => {
@@ -137,11 +180,133 @@ function AnalyticsDashboard({
             <ActionButton onClick={() => setReloadKey((key) => key + 1)}>{t.retry}</ActionButton>
           }
         />
+      ) : isAnalyticsTeaser(state.summary) ? (
+        <AnalyticsTeaserReport teaser={state.summary} lang={lang} />
       ) : (
         <AnalyticsReport summary={state.summary} lang={lang} />
       )}
 
       <CampaignLinkBuilder t={t} publicUrl={publicUrl} />
+    </div>
+  );
+}
+
+/**
+ * A believable report to sit behind the blur. Made up on purpose: the real
+ * funnel and campaigns never reach a free plan's browser.
+ */
+const SAMPLE_SUMMARY: AnalyticsSummary = {
+  range: 30,
+  timeZone: "UTC",
+  totals: { views: 412, visitors: 318, serviceSelected: 141, slotSelected: 77, bookings: 38, bookingVisitors: 36 },
+  daily: Array.from({ length: 30 }, (_, index) => ({
+    day: `sample-${index}`,
+    views: 6 + ((index * 7) % 13),
+    visitors: 5 + ((index * 5) % 9),
+    bookings: index % 3 === 0 ? 2 : 1,
+  })),
+  campaigns: [
+    { source: "instagram", medium: "social", campaign: "spring", views: 188, visitors: 150, bookings: 19 },
+    { source: "whatsapp", medium: "message", campaign: "clients", views: 96, visitors: 71, bookings: 11 },
+    { source: null, medium: null, campaign: null, views: 128, visitors: 97, bookings: 8 },
+  ],
+  referrers: [{ host: "instagram.com", views: 160, bookings: 17 }],
+  services: [{ serviceId: "sample", name: "—", selections: 141, bookings: 38 }],
+  devices: [],
+};
+
+export function AnalyticsTeaserReport({ teaser, lang }: { teaser: AnalyticsTeaser; lang: Lang }) {
+  const t = analyticsCopy[lang];
+  const number = new Intl.NumberFormat(lang === "es" ? "es-MX" : "en-US");
+  const stats = [
+    { label: t.visits, value: number.format(teaser.totals.views), detail: t.visitsDetail },
+    { label: t.visitors, value: number.format(teaser.totals.visitors), detail: t.visitorsDetail },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 sm:grid-cols-2">
+        {stats.map((stat) => (
+          <div key={stat.label} className={cn(adminInsetClass, "p-5")}>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+              {stat.label}
+            </p>
+            <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
+              {stat.value}
+            </p>
+            <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          inert
+          className="pointer-events-none max-h-[520px] select-none overflow-hidden opacity-60 blur-[6px]"
+        >
+          <AnalyticsReport summary={SAMPLE_SUMMARY} lang={lang} />
+        </div>
+        <div className="absolute inset-0 flex items-start justify-center px-4 pt-16">
+          <UpgradeCard t={t} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UpgradeCard({ t }: { t: AnalyticsCopy }) {
+  const [status, setStatus] = useState<"idle" | "pending" | "unavailable" | "error">("idle");
+
+  const startCheckout = useCallback(async () => {
+    setStatus("pending");
+    try {
+      const response = await fetch("/api/provider/billing/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ returnTab: "analytics" }),
+      });
+      if (response.status === 503) {
+        setStatus("unavailable");
+        return;
+      }
+      const body = (await response.json()) as { url?: string };
+      if (!response.ok || !body.url) {
+        throw new Error(`checkout ${response.status}`);
+      }
+      window.location.assign(body.url);
+    } catch (error) {
+      console.error("billing_checkout_start_failed", error);
+      setStatus("error");
+    }
+  }, []);
+
+  return (
+    <div className={cn(adminPanelClass, "w-full max-w-md p-6 text-center")}>
+      <h4 className="text-lg font-semibold text-[var(--ink)]">{t.premiumTitle}</h4>
+      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{t.premiumBody}</p>
+      <ul className="mt-4 space-y-1.5 text-left text-sm text-[var(--ink)]">
+        {t.premiumBenefits.map((benefit) => (
+          <li key={benefit} className="flex gap-2">
+            <span aria-hidden="true" className="text-[var(--primary)]">✓</span>
+            {benefit}
+          </li>
+        ))}
+      </ul>
+      <ActionButton
+        tone="primary"
+        className="mt-5 w-full"
+        disabled={status === "pending"}
+        onClick={startCheckout}
+      >
+        {status === "pending" ? t.upgradePending : t.upgradeCta}
+      </ActionButton>
+      {status === "unavailable" ? (
+        <p className="mt-3 text-sm text-[var(--muted)]">{t.upgradeUnavailable}</p>
+      ) : null}
+      {status === "error" ? (
+        <p className="mt-3 text-sm text-[#be123c]">{t.upgradeFailed}</p>
+      ) : null}
     </div>
   );
 }
