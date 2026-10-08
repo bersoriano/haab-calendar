@@ -4,7 +4,7 @@ import {
   confirmPublicBooking,
   PublicBookingWriteError,
 } from "@/lib/supabase/bookings";
-import { parsePublicPageAttribution } from "@/lib/analytics/events";
+import { parsePublicPageAttribution, readReferrerHost } from "@/lib/analytics/events";
 import { recordPublicPageEvent } from "@/lib/analytics/record";
 import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import { sendBookingEmailImmediately } from "@/lib/email/booking-created";
@@ -122,6 +122,8 @@ export async function POST(
     );
   }
 
+  const attribution = parsePublicPageAttribution(body.attribution);
+
   try {
     const admin = createAdminClient();
     const result = await confirmPublicBooking(admin, {
@@ -143,6 +145,12 @@ export async function POST(
       detailsSchemaVersion: readPositiveInteger(body.detailsSchemaVersion),
       idempotencyKey: readOptionalString(body.idempotencyKey),
       holdId: readOptionalString(body.holdId),
+      campaign: {
+        source: attribution.utmSource,
+        medium: attribution.utmMedium,
+        campaign: attribution.utmCampaign,
+        referrerHost: readReferrerHost(attribution.referrer, new URL(request.url).hostname),
+      },
     });
 
     const { providerId, ...publicResult } = result;
@@ -156,7 +164,7 @@ export async function POST(
         event: "booking_confirmed",
         serviceId,
         bookingId: result.booking.id,
-        attribution: parsePublicPageAttribution(body.attribution),
+        attribution,
         request,
       });
     } catch (error) {

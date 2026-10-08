@@ -154,9 +154,18 @@ export type BookingRecord = {
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
+  /** The campaign link and referring site the client booked through. */
+  campaign?: BookingCampaign;
   createdAt: string;
   updatedAt: string;
   manageToken: string;
+};
+
+export type BookingCampaign = {
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  referrerHost?: string;
 };
 
 export type BookingHoldRecord = {

@@ -23,6 +23,7 @@ import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { normalizePublicTheme } from "@/lib/public-theme";
 import { getPublicVerticalSegment } from "@/lib/public-url";
 import type {
+  BookingCampaign,
   BookingHoldRecord,
   BookingRecord,
   BookingStatus,
@@ -41,7 +42,7 @@ const PROVIDER_SELECT =
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
-  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, created_at, updated_at";
+  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
   "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, extension_count, allows_shared_capacity";
 
@@ -123,6 +124,10 @@ type BookingRow = {
   details_schema_key: string | null;
   details_schema_version: number | null;
   service_snapshot: Record<string, unknown> | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  referrer_host: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -162,6 +167,8 @@ export type ConfirmPublicBookingInput = {
   detailsSchemaVersion?: number;
   idempotencyKey?: string;
   holdId?: string;
+  /** Where the visitor came from; already normalised by the caller. */
+  campaign?: BookingCampaign;
 };
 
 export type CreatePublicBookingHoldInput = {
@@ -349,9 +356,23 @@ function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
     status: row.status,
+    campaign: toBookingCampaign(row),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     manageToken,
+  };
+}
+
+/** Undefined for a booking that arrived untagged and without a referrer. */
+function toBookingCampaign(row: BookingRow): BookingCampaign | undefined {
+  if (!row.utm_source && !row.utm_medium && !row.utm_campaign && !row.referrer_host) {
+    return undefined;
+  }
+  return {
+    source: row.utm_source ?? undefined,
+    medium: row.utm_medium ?? undefined,
+    campaign: row.utm_campaign ?? undefined,
+    referrerHost: row.referrer_host ?? undefined,
   };
 }
 
@@ -1137,6 +1158,10 @@ export async function confirmPublicBooking(
       details_schema_version: detailsSchemaVersion,
       service_snapshot: serviceSnapshot,
       hold_id_snapshot: input.holdId ?? null,
+      utm_source: input.campaign?.source ?? null,
+      utm_medium: input.campaign?.medium ?? null,
+      utm_campaign: input.campaign?.campaign ?? null,
+      referrer_host: input.campaign?.referrerHost ?? null,
     })
     .select(BOOKING_SELECT)
     .single<BookingRow>();
