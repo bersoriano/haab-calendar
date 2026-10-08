@@ -56,3 +56,26 @@ describe("public page analytics migration", () => {
     expect(sql).toContain("interval '13 months'");
   });
 });
+
+describe("server-side booking events migration", () => {
+  const bookingSql = readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "supabase",
+      "migrations",
+      "20261009120000_record_booking_events_server_side.sql",
+    ),
+    "utf8",
+  );
+
+  it("counts each booking once, with a full unique index the insert can rely on", () => {
+    expect(bookingSql).toMatch(/create unique index[^;]*on public\.public_page_events\(booking_id\);/);
+  });
+
+  it("keeps the conversion when a booking is deleted", () => {
+    expect(bookingSql).toContain("references public.bookings(id) on delete set null");
+  });
+});
