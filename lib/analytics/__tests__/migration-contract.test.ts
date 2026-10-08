@@ -79,3 +79,31 @@ describe("server-side booking events migration", () => {
     expect(bookingSql).toContain("references public.bookings(id) on delete set null");
   });
 });
+
+describe("trustworthy booking analytics migration", () => {
+  const trustSql = readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "supabase",
+      "migrations",
+      "20261009150000_trustworthy_booking_analytics.sql",
+    ),
+    "utf8",
+  );
+
+  it("counts only bookings that were not cancelled, and reports the cancelled ones", () => {
+    expect(trustSql).toContain("bk.status is distinct from 'cancelled' as booking_live");
+    expect(trustSql).toContain("'cancelledBookings'");
+    expect(trustSql).not.toMatch(/filter \(where s?\.?event = 'booking_confirmed'\)/);
+  });
+
+  it("keeps the summary service-role only after replacing it", () => {
+    expect(trustSql).toMatch(
+      /grant execute on function public\.provider_analytics_summary\(uuid, integer, text\)\s+to service_role/,
+    );
+    expect(trustSql).not.toContain("security definer");
+  });
+});
