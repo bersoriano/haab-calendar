@@ -158,6 +158,7 @@ import {
 } from "@/components/provider/adminGlass";
 import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearanceForm";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
+import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -7202,6 +7203,7 @@ export function HaabBookingModule({
                     ["calendar", t.admin.tabCalendar],
                     ["services", copy.Services],
                     ["appearance", t.admin.tabAppearance],
+                    ["analytics", t.admin.tabAnalytics],
                     ["settings", t.admin.tabSettings],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (
@@ -7241,6 +7243,14 @@ export function HaabBookingModule({
             {adminTab === "calendar" ? renderAdminCalendar() : null}
             {adminTab === "services" ? renderServices() : null}
             {adminTab === "appearance" ? renderAppearance() : null}
+            {adminTab === "analytics" ? (
+              <ProviderAnalyticsSurface
+                lang={lang}
+                publicUrl={publicUrl}
+                integratedMode={integratedMode}
+                entitlements={providerEntitlements}
+              />
+            ) : null}
             {adminTab === "settings" ? (
               <ProviderSettingsSurface
                 title={profileRole?.informationTitle ?? t.admin.providerInformation}
