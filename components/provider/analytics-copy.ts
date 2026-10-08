@@ -20,6 +20,7 @@ export type AnalyticsCopy = {
   visitorsDetail: string;
   bookings: string;
   bookingsDetail: string;
+  bookingsCancelledDetail: (count: number) => string;
   conversion: string;
   conversionDetail: string;
   dailyTitle: string;
@@ -71,6 +72,8 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     visitorsDetail: "Unique visitors per day",
     bookings: "Bookings",
     bookingsDetail: "Confirmed from your page",
+    bookingsCancelledDetail: (count) =>
+      `Confirmed from your page · ${count} cancelled ${count === 1 ? "is" : "are"} not counted`,
     conversion: "Conversion",
     conversionDetail: "Visitors who booked",
     dailyTitle: "Visits and bookings per day",
@@ -122,6 +125,8 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     visitorsDetail: "Visitantes únicos por día",
     bookings: "Reservas",
     bookingsDetail: "Confirmadas desde tu página",
+    bookingsCancelledDetail: (count) =>
+      `Confirmadas desde tu página · ${count} ${count === 1 ? "cancelada no cuenta" : "canceladas no cuentan"}`,
     conversion: "Conversión",
     conversionDetail: "Visitantes que reservaron",
     dailyTitle: "Visitas y reservas por día",

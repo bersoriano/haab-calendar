@@ -130,6 +130,27 @@ describe("POST public booking analytics", () => {
     );
   });
 
+  it("stores the campaign on the booking itself", async () => {
+    mocks.recordPublicPageEvent.mockResolvedValue(true);
+    await POST(
+      request({
+        attribution: { utmSource: "Instagram", utmCampaign: "fall", referrer: "https://l.instagram.com/x" },
+      }),
+      context,
+    );
+    expect(mocks.confirmPublicBooking).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        campaign: {
+          source: "instagram",
+          medium: undefined,
+          campaign: "fall",
+          referrerHost: "l.instagram.com",
+        },
+      }),
+    );
+  });
+
   it("records untagged bookings too", async () => {
     mocks.recordPublicPageEvent.mockResolvedValue(true);
     await POST(request({ attribution: "garbage" }), context);

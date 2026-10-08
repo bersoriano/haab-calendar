@@ -153,14 +153,20 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
   const { totals } = summary;
   const conversion = conversionRate(totals.bookingVisitors, totals.visitors);
 
-  if (totals.views === 0 && totals.bookings === 0) {
+  if (totals.views === 0 && totals.bookings === 0 && !totals.cancelledBookings) {
     return <EmptyState title={t.emptyTitle} body={t.emptyBody} />;
   }
 
   const stats = [
     { label: t.visits, value: number.format(totals.views), detail: t.visitsDetail },
     { label: t.visitors, value: number.format(totals.visitors), detail: t.visitorsDetail },
-    { label: t.bookings, value: number.format(totals.bookings), detail: t.bookingsDetail },
+    {
+      label: t.bookings,
+      value: number.format(totals.bookings),
+      detail: totals.cancelledBookings
+        ? t.bookingsCancelledDetail(totals.cancelledBookings)
+        : t.bookingsDetail,
+    },
     {
       label: t.conversion,
       value: conversion === null ? t.none : `${conversion}%`,

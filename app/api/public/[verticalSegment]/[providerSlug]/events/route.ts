@@ -4,6 +4,7 @@ import { parsePublicPageEventPayload } from "@/lib/analytics/events";
 import { recordPublicPageEvent } from "@/lib/analytics/record";
 import { isLikelyBot } from "@/lib/analytics/visitor";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { getPublishedProvider, PublicBookingWriteError } from "@/lib/supabase/bookings";
 import {
   normalizeUrlSlugSegment,
@@ -16,6 +17,30 @@ export const runtime = "nodejs";
 
 /** A beacon body is a handful of short fields; anything bigger is not one. */
 const MAX_BODY_BYTES = 4096;
+
+/**
+ * Supabase keeps the session in `sb-<ref>-auth-token` cookies (chunked as
+ * `.0`, `.1` …). Checking for one first means an anonymous visitor — nearly
+ * every request — costs no call to the auth server.
+ */
+function hasSessionCookie(request: NextRequest) {
+  return request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token"));
+}
+
+/** The owner checking their own page is not a visitor. */
+async function isProviderOwner(request: NextRequest, ownerUserId: string) {
+  if (!hasSessionCookie(request)) {
+    return false;
+  }
+  try {
+    const { data } = await (await createClient()).auth.getUser();
+    return data.user?.id === ownerUserId;
+  } catch {
+    return false;
+  }
+}
 
 function noContent() {
   return new NextResponse(null, { status: 204 });
@@ -66,6 +91,9 @@ export async function POST(
   try {
     const admin = createAdminClient();
     const provider = await getPublishedProvider(admin, vertical, slug);
+    if (await isProviderOwner(request, provider.owner_user_id)) {
+      return noContent();
+    }
     await recordPublicPageEvent(admin, {
       providerId: provider.id,
       event: payload.event,

@@ -5,14 +5,24 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   getPublishedProvider: vi.fn(),
   insert: vi.fn(),
+  getUser: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({
   getSupabaseServiceKey: () => "service-key",
   createAdminClient: () => ({
-    from: (table: string) => ({ insert: (row: unknown) => mocks.insert(table, row) }),
+    from: (table: string) => {
+      const recent = {
+        eq: () => recent,
+        gte: async () => ({ count: 0, error: null }),
+      };
+      return { insert: (row: unknown) => mocks.insert(table, row), select: () => recent };
+    },
   }),
+}));
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => ({ auth: { getUser: mocks.getUser } }),
 }));
 vi.mock("@/lib/supabase/bookings", () => {
   class PublicBookingWriteError extends Error {
@@ -31,8 +41,11 @@ import { PublicBookingWriteError } from "@/lib/supabase/bookings";
 
 const BROWSER = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile/15E148";
 
-function request(body: unknown, userAgent: string | null = BROWSER) {
+function request(body: unknown, userAgent: string | null = BROWSER, cookie?: string) {
   const headers = new Headers({ "content-type": "application/json", "x-forwarded-for": "203.0.113.9" });
+  if (cookie) {
+    headers.set("cookie", cookie);
+  }
   if (userAgent) {
     headers.set("user-agent", userAgent);
   }
@@ -50,7 +63,8 @@ const params = (verticalSegment = "professionals", providerSlug = "ai-automation
 describe("POST public page events", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.getPublishedProvider.mockResolvedValue({ id: "provider-1" });
+    mocks.getPublishedProvider.mockResolvedValue({ id: "provider-1", owner_user_id: "owner-1" });
+    mocks.getUser.mockResolvedValue({ data: { user: null } });
     mocks.insert.mockResolvedValue({ error: null });
   });
 
@@ -87,6 +101,26 @@ describe("POST public page events", () => {
     const response = await POST(request({ event: "booking_confirmed" }), params());
     expect(response.status).toBe(204);
     expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("does not count the owner viewing their own page", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "owner-1" } } });
+    const response = await POST(
+      request({ event: "page_view" }, BROWSER, "sb-abc-auth-token.0=x"),
+      params(),
+    );
+    expect(response.status).toBe(204);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it("counts other signed-in people, and skips the session lookup for anonymous visitors", async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "someone-else" } } });
+    await POST(request({ event: "page_view" }, BROWSER, "sb-abc-auth-token=x"), params());
+    expect(mocks.insert).toHaveBeenCalledTimes(1);
+
+    mocks.getUser.mockClear();
+    await POST(request({ event: "page_view" }), params());
+    expect(mocks.getUser).not.toHaveBeenCalled();
   });
 
   it("skips bots quietly", async () => {
