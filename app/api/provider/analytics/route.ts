@@ -1,7 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { parseAnalyticsRange, type AnalyticsSummary } from "@/lib/analytics/summary";
-import { EntitlementRequiredError, requireEntitlement } from "@/lib/entitlements/server";
+import {
+  parseAnalyticsRange,
+  type AnalyticsSummary,
+  type AnalyticsTeaser,
+} from "@/lib/analytics/summary";
+import { hasEntitlement } from "@/lib/entitlements/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -27,7 +31,8 @@ function isValidTimeZone(timeZone: string | null): timeZone is string {
  *
  * Events are readable only by the service role, so this route is the boundary:
  * the provider is found from the session, never from the request, and the
- * `analytics` entitlement is checked before a single row is read.
+ * `analytics` entitlement decides whether the full summary or only the visit
+ * totals are returned.
  */
 export async function GET(request: NextRequest) {
   const client = await createClient();
@@ -53,7 +58,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const admin = createAdminClient();
-    await requireEntitlement(provider.id, "analytics", admin);
+    const entitled = await hasEntitlement(provider.id, "analytics", admin);
 
     const { data, error } = await admin.rpc("provider_analytics_summary", {
       p_provider_id: provider.id,
@@ -64,19 +69,25 @@ export async function GET(request: NextRequest) {
       throw error;
     }
 
-    const summary: AnalyticsSummary = {
-      range,
-      timeZone,
-      ...(data as Omit<AnalyticsSummary, "range" | "timeZone">),
-    };
-    return NextResponse.json(summary, { headers: { "cache-control": "private, no-store" } });
-  } catch (error) {
-    if (error instanceof EntitlementRequiredError) {
-      return NextResponse.json(
-        { userMessage: "Analytics is a Premium feature." },
-        { status: 403 },
-      );
+    const full = data as Omit<AnalyticsSummary, "range" | "timeZone">;
+    const headers = { "cache-control": "private, no-store" };
+
+    // Without the entitlement, only the two totals leave the server: the rest
+    // of the summary is what Premium sells, so it is never sent to be hidden
+    // by the browser.
+    if (!entitled) {
+      const teaser: AnalyticsTeaser = {
+        locked: true,
+        range,
+        timeZone,
+        totals: { views: full.totals.views, visitors: full.totals.visitors },
+      };
+      return NextResponse.json(teaser, { headers });
     }
+
+    const summary: AnalyticsSummary = { range, timeZone, ...full };
+    return NextResponse.json(summary, { headers });
+  } catch (error) {
     console.error("provider_analytics_failed", {
       providerId: provider.id,
       error: error instanceof Error ? error.message : String(error),

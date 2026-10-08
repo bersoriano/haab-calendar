@@ -55,6 +55,23 @@ export type AnalyticsSummary = {
   devices: AnalyticsDevice[];
 };
 
+/**
+ * What a plan without analytics sees: its own visit totals, so the value is
+ * real, and nothing about funnel, campaigns or services.
+ */
+export type AnalyticsTeaser = {
+  locked: true;
+  range: AnalyticsRange;
+  timeZone: string;
+  totals: Pick<AnalyticsTotals, "views" | "visitors">;
+};
+
+export type AnalyticsResponse = AnalyticsSummary | AnalyticsTeaser;
+
+export function isAnalyticsTeaser(value: AnalyticsResponse): value is AnalyticsTeaser {
+  return "locked" in value && value.locked === true;
+}
+
 export function parseAnalyticsRange(value: string | null): AnalyticsRange {
   const days = Number(value);
   return (ANALYTICS_RANGES as readonly number[]).includes(days)

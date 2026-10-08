@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   ownerRow: vi.fn(),
   ownerFilter: vi.fn(),
   rpc: vi.fn(),
-  requireEntitlement: vi.fn(),
+  hasEntitlement: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
@@ -27,12 +27,10 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ rpc: mocks.rpc }),
 }));
 vi.mock("@/lib/entitlements/server", () => ({
-  requireEntitlement: mocks.requireEntitlement,
-  EntitlementRequiredError: class EntitlementRequiredError extends Error {},
+  hasEntitlement: mocks.hasEntitlement,
 }));
 
 import { GET } from "@/app/api/provider/analytics/route";
-import { EntitlementRequiredError } from "@/lib/entitlements/server";
 
 const SUMMARY = {
   totals: { views: 3, visitors: 2, serviceSelected: 1, slotSelected: 1, bookings: 1, bookingVisitors: 1 },
@@ -55,7 +53,7 @@ describe("GET /api/provider/analytics", () => {
       data: { id: "provider-1", timezone: "America/Mexico_City" },
       error: null,
     });
-    mocks.requireEntitlement.mockResolvedValue({});
+    mocks.hasEntitlement.mockResolvedValue(true);
     mocks.rpc.mockResolvedValue({ data: SUMMARY, error: null });
   });
 
@@ -64,7 +62,7 @@ describe("GET /api/provider/analytics", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ range: 7, timeZone: "America/Mexico_City", ...SUMMARY });
     expect(mocks.ownerFilter).toHaveBeenCalledWith("owner_user_id", "owner-1");
-    expect(mocks.requireEntitlement).toHaveBeenCalledWith("provider-1", "analytics", expect.anything());
+    expect(mocks.hasEntitlement).toHaveBeenCalledWith("provider-1", "analytics", expect.anything());
     expect(mocks.rpc).toHaveBeenCalledWith("provider_analytics_summary", {
       p_provider_id: "provider-1",
       p_days: 7,
@@ -78,10 +76,20 @@ describe("GET /api/provider/analytics", () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it("refuses providers without the analytics entitlement before reading", async () => {
-    mocks.requireEntitlement.mockRejectedValue(new EntitlementRequiredError("provider-1", "analytics"));
-    expect((await GET(request())).status).toBe(403);
-    expect(mocks.rpc).not.toHaveBeenCalled();
+  it("gives free plans only their visit totals", async () => {
+    mocks.hasEntitlement.mockResolvedValue(false);
+    const response = await GET(request("?range=7"));
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({
+      locked: true,
+      range: 7,
+      timeZone: "America/Mexico_City",
+      totals: { views: 3, visitors: 2 },
+    });
+    // The premium parts of the summary never leave the server.
+    expect(JSON.stringify(body)).not.toContain("bookings");
+    expect(body).not.toHaveProperty("campaigns");
   });
 
   it("falls back to UTC and the default range for bad input", async () => {
