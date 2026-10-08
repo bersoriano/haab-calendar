@@ -201,6 +201,7 @@ import { ServicePicker } from "@/components/booking/ServicePicker";
 import { ServiceSwitchDialog } from "@/components/booking/ServiceSwitchDialog";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
+import { usePublicPageAnalytics } from "@/lib/analytics/use-public-page-analytics";
 import {
   isGuestDraftMeaningful,
   prepareGuestPreviewStore,
@@ -539,6 +540,23 @@ export function HaabBookingModule({
     provider.publicSlug || slugify(provider.businessName || provider.fullName || "haab-calendar");
   const publicUrl =
     businessSlug && vertical ? buildProviderPath(vertical, businessSlug) : "/public";
+
+  // Only a published page a visitor actually opened: not the dashboard preview,
+  // not a local standalone setup, not someone managing an existing booking.
+  usePublicPageAnalytics({
+    enabled:
+      isDedicatedPublicPage &&
+      integratedMode &&
+      hydrated &&
+      !manageBookingToken &&
+      Boolean(vertical && provider.publicSlug),
+    endpoint: vertical
+      ? `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/events`
+      : "",
+    step: bookingFlow.step,
+    serviceId: bookingFlow.serviceId,
+    successBookingId: bookingFlow.successBookingId,
+  });
 
   const refreshProviderDashboardStore = useEffectEvent(async () => {
     try {
