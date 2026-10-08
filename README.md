@@ -215,6 +215,7 @@ exactly one thing rather than breaking the app:
 | Unset | Effect |
 | --- | --- |
 | `STRIPE_*` | The webhook endpoint refuses every request; no subscription grants premium |
+| `STRIPE_PREMIUM_PRICE_ID` | The in-app "Upgrade to Premium" button reports that upgrades are not open yet. Its product must be listed in `STRIPE_PREMIUM_PRODUCT_IDS` |
 | `GOOGLE_*` | The Google integration reports itself unavailable and no route offers it |
 | `CRON_SECRET` | Both cron routes answer 401 to everything |
 | `RESEND_API_KEY` or `BOOKING_EMAIL_FROM` | Booking email deliveries retry, then dead-letter; set both before accepting live bookings |
