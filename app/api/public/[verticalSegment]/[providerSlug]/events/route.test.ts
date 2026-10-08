@@ -73,6 +73,7 @@ describe("POST public page events", () => {
       provider_id: "provider-1",
       event: "page_view",
       service_id: null,
+      booking_id: null,
       utm_source: "instagram",
       utm_campaign: "fall",
       referrer_host: "l.instagram.com",
@@ -80,6 +81,12 @@ describe("POST public page events", () => {
     });
     expect(row.visitor_hash).toMatch(/^[0-9a-f]{64}$/);
     expect(JSON.stringify(row)).not.toContain("203.0.113.9");
+  });
+
+  it("ignores booking beacons, which the booking route records", async () => {
+    const response = await POST(request({ event: "booking_confirmed" }), params());
+    expect(response.status).toBe(204);
+    expect(mocks.insert).not.toHaveBeenCalled();
   });
 
   it("skips bots quietly", async () => {

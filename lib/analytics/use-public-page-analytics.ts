@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 import type { PublicPageEvent } from "@/lib/analytics/events";
 import {
@@ -15,15 +15,14 @@ type PublicPageAnalyticsInput = {
   endpoint: string;
   step: number;
   serviceId: string;
-  successBookingId?: string;
 };
 
 /**
  * Which event, if any, a move between booking steps means.
  *
  * Forward moves only: going back from details to time selection is not a
- * second service selection. Step 4 is keyed on the booking id rather than the
- * step, so a second booking in the same visit is counted as one.
+ * second service selection. Step 4 has no event here: the booking route
+ * records confirmed bookings on the server.
  */
 export function eventForStepChange(previous: number, next: number): PublicPageEvent | null {
   if (next <= previous) {
@@ -39,7 +38,8 @@ export function eventForStepChange(previous: number, next: number): PublicPageEv
 }
 
 /**
- * Reports a visit and its progress through the booking funnel.
+ * Reports a visit and its progress through the booking funnel, and returns a
+ * getter for the visit's attribution to send along with the booking request.
  *
  * Driven by the flow's state rather than wired into each handler, so the
  * transitions in lib/booking-flow-machine.ts stay the only place that decides
@@ -50,13 +50,11 @@ export function usePublicPageAnalytics({
   endpoint,
   step,
   serviceId,
-  successBookingId,
 }: PublicPageAnalyticsInput) {
   const attributionRef = useRef<VisitAttribution | null>(null);
   // Starts at 1, not at the current step: a link straight to a service lands
   // on step 2, and that visitor did choose a service.
   const previousStepRef = useRef(1);
-  const reportedBookingRef = useRef<string | undefined>(undefined);
   const viewedRef = useRef(false);
 
   useEffect(() => {
@@ -80,17 +78,10 @@ export function usePublicPageAnalytics({
     }
   }, [enabled, endpoint, step, serviceId]);
 
-  useEffect(() => {
-    if (
-      !enabled ||
-      !attributionRef.current ||
-      !successBookingId ||
-      reportedBookingRef.current === successBookingId
-    ) {
-      return;
-    }
-
-    reportedBookingRef.current = successBookingId;
-    sendPublicPageEvent(endpoint, "booking_confirmed", attributionRef.current, serviceId);
-  }, [enabled, endpoint, successBookingId, serviceId]);
+  // The booking request carries this, and the booking route records the
+  // conversion itself. Null when tracking is off, so nothing is sent.
+  return useCallback(
+    (): VisitAttribution | null => (enabled ? attributionRef.current : null),
+    [enabled],
+  );
 }

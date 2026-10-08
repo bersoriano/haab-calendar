@@ -34,6 +34,10 @@ export type PublicPageEventPayload = CampaignParams & {
 const UTM_MAX_LENGTH = 100;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
 export function isPublicPageEvent(value: unknown): value is PublicPageEvent {
   return (
     typeof value === "string" && (PUBLIC_PAGE_EVENTS as readonly string[]).includes(value)
@@ -87,6 +91,24 @@ export function readReferrerHost(referrer: unknown, ownHost?: string): string | 
 }
 
 /**
+ * Campaign tags and referrer from an untrusted object, e.g. the `attribution`
+ * a booking request carries. Anything unusable becomes "no attribution".
+ */
+export function parsePublicPageAttribution(value: unknown): CampaignParams & { referrer?: string } {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {};
+  }
+
+  const record = value as Record<string, unknown>;
+  return {
+    referrer: typeof record.referrer === "string" ? record.referrer.slice(0, 2048) : undefined,
+    utmSource: normalizeCampaignValue(record.utmSource),
+    utmMedium: normalizeCampaignValue(record.utmMedium),
+    utmCampaign: normalizeCampaignValue(record.utmCampaign),
+  };
+}
+
+/**
  * Turns an untrusted request body into a payload, or null when the body is not
  * one. Unknown keys are ignored rather than rejected, so an older page and a
  * newer route can disagree about optional fields without losing the event.
@@ -109,9 +131,6 @@ export function parsePublicPageEventPayload(body: unknown): PublicPageEventPaylo
   return {
     event: record.event,
     serviceId,
-    referrer: typeof record.referrer === "string" ? record.referrer.slice(0, 2048) : undefined,
-    utmSource: normalizeCampaignValue(record.utmSource),
-    utmMedium: normalizeCampaignValue(record.utmMedium),
-    utmCampaign: normalizeCampaignValue(record.utmCampaign),
+    ...parsePublicPageAttribution(record),
   };
 }
