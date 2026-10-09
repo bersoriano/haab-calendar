@@ -98,6 +98,19 @@ test.describe("signed-in provider", () => {
     await context.setOffline(false);
   });
 
+  test("leaves the in-app booking flow when another section is chosen", async ({ page }) => {
+    await page.goto("/dashboard/calendar");
+    const openDay = page.locator("main button:not([disabled])").filter({ hasText: /^\d+/ }).first();
+    await expect(openDay).toBeVisible();
+    await openDay.click();
+    await expect(page.getByRole("button", { name: /Back to workspace|Volver/ })).toBeVisible();
+
+    await sidebarLink(page, "/dashboard/bookings").click();
+    await expect(page).toHaveURL(/\/dashboard\/bookings$/);
+    await expect(page.getByRole("button", { name: /Back to workspace|Volver/ })).toHaveCount(0);
+    await expect(page.locator('main input[type="search"]')).toBeVisible();
+  });
+
   test("keeps the account controls inside the sidebar", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard");

@@ -433,6 +433,16 @@ export function HaabBookingModule({
   // A host that owns routing (the /dashboard shell) controls the section;
   // otherwise the module keeps its own tab state, exactly as before.
   const currentSection: AdminTab = adminSection ?? adminTab;
+  // The in-app booking flow (opened from the calendar) belongs to the section
+  // it was opened from. When the host switches sections — its sidebar stays
+  // on screen — the flow closes, so the new section shows its own content.
+  const [flowSection, setFlowSection] = useState<AdminTab>(currentSection);
+  if (flowSection !== currentSection) {
+    setFlowSection(currentSection);
+    if (surface === "public" && surfaceMode === "adaptive") {
+      setSurface("management");
+    }
+  }
   function goToSection(next: AdminTab) {
     if (onAdminSectionChange) {
       onAdminSectionChange(next);
