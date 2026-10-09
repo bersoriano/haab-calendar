@@ -41,6 +41,10 @@ describe("Card", () => {
     expect(html).toContain("When clients can book");
     expect(html).toContain("border-t border-app-border");
   });
+
+  it("can be an anchor target", () => {
+    expect(renderToStaticMarkup(<Card id="service-editor">x</Card>)).toMatch(/^<div[^>]*id="service-editor"/);
+  });
 });
 
 describe("StatGroup", () => {

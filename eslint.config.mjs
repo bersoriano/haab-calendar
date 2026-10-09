@@ -20,6 +20,7 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/AppointmentScannerDialog.tsx",
   "components/provider/ProviderInfoForm.tsx",
   "components/provider/TimeZoneField.tsx",
+  "components/provider/ServiceEditor.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

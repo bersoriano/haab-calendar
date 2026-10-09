@@ -45,7 +45,8 @@ describe("ServiceEditor layout", () => {
   });
 
   it("keeps the editor in view beside a long list on wide screens", () => {
-    expect(render(1)).toMatch(/id="service-editor"[^>]*class="[^"]*lg:sticky/);
+    const editor = render(1).match(/<[a-z]+[^>]*id="service-editor"[^>]*>/)?.[0] ?? "";
+    expect(editor).toContain("lg:sticky");
   });
 
   it("offers a jump to the editor on narrow screens once there is a list", () => {

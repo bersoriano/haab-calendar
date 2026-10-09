@@ -1,6 +1,7 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
+import { Check, MapPin, Phone } from "@phosphor-icons/react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { BookingType, Lang, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
 import { DURATION_OPTIONS, WEEKDAY_KEYS, getWeekdayShortFormatter } from "@/lib/constants";
 import { cn, pad } from "@/lib/utils";
@@ -9,10 +10,27 @@ import {
   formatDuration,
   getBookingTypeLabel,
   getOccurrenceModeLabel,
-  bookingTypeTone,
+  bookingTypeBadgeTone,
 } from "@/lib/format";
-import { ActionButton, EmptyState, SectionTitle, ToneBadge, buttonClasses } from "@/components/ui";
-import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardFooter,
+  CardHeader,
+  ConfirmDialog,
+  EmptyState,
+  Field,
+  Input,
+  Select,
+  StackedList,
+  StackedListItem,
+  Textarea,
+  buttonStyles,
+  focusRing,
+} from "@/components/app-ui";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { VerticalHints } from "@/config/verticals";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 import {
@@ -28,6 +46,18 @@ function formatDurationOption(minutes: number, lang: Lang = "en") {
     return `${hours} hour${hours === 1 ? "" : "s"}`;
   }
   return lang === "es" ? `${minutes} min` : `${minutes} minutes`;
+}
+
+/** A pressed/unpressed choice chip (occurrence mode, weekdays). */
+function toggleChipClass(active: boolean, size: string) {
+  return cn(
+    "rounded-lg px-3 text-sm font-semibold ring-1 ring-inset transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    focusRing,
+    size,
+    active
+      ? "bg-app-accent-soft text-app-accent-on-soft ring-2 ring-app-accent"
+      : "bg-app-surface text-app-fg ring-app-border-strong hover:bg-app-subtle",
+  );
 }
 
 export function ServiceEditor({
@@ -62,6 +92,8 @@ export function ServiceEditor({
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang];
+  const shell = dashboardCopy[lang];
+  const [pendingDelete, setPendingDelete] = useState<Service | null>(null);
   const showMedicalSpecialty =
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
   const isEvents = vertical === "events";
@@ -86,18 +118,16 @@ export function ServiceEditor({
       },
     }));
   const locationPriceField = (key: "address1" | "address2" | "custom") => (
-    <label className="grid gap-1 text-xs font-medium text-[var(--muted)]">
-      {t.admin.priceAtLocation}
-      <input
+    <Field label={t.admin.priceAtLocation}>
+      <Input
         disabled={disabled}
         value={serviceDraft.locationPrices?.[key] ?? ""}
         onChange={(event) => setLocationPrice(key, event.target.value)}
         placeholder={
           serviceDraft.cost ? `${serviceDraft.cost} (base)` : t.admin.sameAsBasePrice
         }
-        className={cn("min-h-10", adminFieldClass, "disabled:opacity-45")}
       />
-    </label>
+    </Field>
   );
   const hasAddress1 = provider.address1.trim().length > 0;
   const hasAddress2 = provider.address2.trim().length > 0;
@@ -122,18 +152,18 @@ export function ServiceEditor({
       ? profileHints.phoneHintSlot2
       : profileHints.phoneHintFull;
   return (
-    <div className="grid items-start gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
+    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <Card as="section">
+        <CardHeader
           title={copy.Services}
-          body={copy.phrases.serviceEditorBody}
-          action={
+          description={copy.phrases.serviceEditorBody}
+          actions={
             services.length > 0 ? (
               // On one column the editor sits below the whole list; this jumps
               // there with a fresh draft, the way the wide layout shows it.
               <a
                 href="#service-editor"
-                className={buttonClasses("secondary", "lg:hidden")}
+                className={buttonStyles({ variant: "secondary", size: "sm", className: "lg:hidden" })}
                 onClick={(event) => {
                   event.preventDefault();
                   onReset();
@@ -153,111 +183,129 @@ export function ServiceEditor({
         />
 
         {disabled ? (
-          <div className={cn("mt-4", adminInsetClass, "px-4 py-3 text-sm font-medium text-[var(--muted)]")}>
-            {t.admin.serviceReadOnly}
+          <div className="px-4 pt-4 sm:px-6">
+            <Alert tone="neutral">{t.admin.serviceReadOnly}</Alert>
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-3">
-          {services.length === 0 ? (
-            <EmptyState
-              title={copy.phrases.noServicesTitle}
-              body={copy.phrases.noServicesBody}
-            />
-          ) : (
-            services.map((service) => (
-              <div key={service.id} className={cn(adminInsetClass, "p-5")}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-base font-semibold text-[var(--ink)]">{service.name}</h4>
-                      <ToneBadge tone={isEvents ? "secondary" : bookingTypeTone(service.bookingType)}>
-                        {isEvents
-                          ? getOccurrenceModeLabel(service.occurrenceMode, lang)
-                          : getBookingTypeLabel(service.bookingType, lang)}
-                      </ToneBadge>
-                      <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
-                    </div>
-                    {service.description ? (
-                      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                        {service.description}
-                      </p>
-                    ) : null}
-                    <div className="mt-3 flex flex-wrap gap-3 text-sm text-[var(--muted)]">
-                      {isEvents ? (
-                        <span>{t.admin.capacityLabel}: {formatCapacityLabel(service, lang)}</span>
-                      ) : service.capacity ? (
-                        <span>{t.admin.capacityLabel}: {service.capacity}</span>
-                      ) : null}
-                      {service.medicalSpecialty ? (
-                        <span>{t.admin.medicalSpecialtyLabel}: {service.medicalSpecialty}</span>
-                      ) : null}
-                      {service.cost ? <span>{t.admin.totalLabel}: {service.cost}</span> : null}
-                      {service.notes ? <span>{t.admin.notesLabel}: {service.notes}</span> : null}
-                      {service.linkedAddress1 && hasAddress1 ? (
-                        <span>{t.admin.address1Label}: {provider.address1}</span>
-                      ) : null}
-                      {service.linkedAddress2 && hasAddress2 ? (
-                        <span>{t.admin.address2Label}: {provider.address2}</span>
-                      ) : null}
-                      {service.linkedPhone1 && hasPhone1 ? (
-                        <span>{t.admin.phone1Label}: {provider.phoneNumber1}</span>
-                      ) : null}
-                      {service.linkedPhone2 && hasPhone2 ? (
-                        <span>{t.admin.phone2Label}: {provider.phoneNumber2}</span>
-                      ) : null}
-                      {service.customAddress ? (
-                        <span>{t.admin.locationSection}: {service.customAddress}</span>
-                      ) : null}
-                      {service.customPhone ? (
-                        <span>{t.admin.phoneSection}: {service.customPhone}</span>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <ActionButton tone="ghost" disabled={disabled} onClick={() => onEdit(service)}>
+        {services.length === 0 ? (
+          <EmptyState
+            variant="dashed"
+            className="m-4 sm:m-6"
+            title={copy.phrases.noServicesTitle}
+            body={copy.phrases.noServicesBody}
+          />
+        ) : (
+          <StackedList>
+            {services.map((service) => (
+              <StackedListItem
+                key={service.id}
+                className={cn(editingServiceId === service.id && "bg-app-accent-soft/40 ring-2 ring-inset ring-app-accent")}
+                trailing={
+                  <>
+                    <Button variant="secondary" size="sm" disabled={disabled} onClick={() => onEdit(service)}>
                       {t.admin.editButton}
-                    </ActionButton>
-                    <ActionButton
-                      tone="danger"
+                    </Button>
+                    <Button
+                      variant="danger-plain"
+                      size="sm"
                       disabled={disabled || services.length <= 1}
-                      onClick={() => onRemove(service.id)}
+                      onClick={() => setPendingDelete(service)}
                     >
                       {t.admin.deleteButton}
-                    </ActionButton>
-                  </div>
+                    </Button>
+                  </>
+                }
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-semibold text-app-fg">{service.name}</h3>
+                  <Badge tone={isEvents ? "neutral" : bookingTypeBadgeTone(service.bookingType)}>
+                    {isEvents
+                      ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+                      : getBookingTypeLabel(service.bookingType, lang)}
+                  </Badge>
+                  <Badge tone="info">{formatDuration(service, lang)}</Badge>
                 </div>
-              </div>
-            ))
-          )}
-          {!disabled && services.length === 1 ? (
-            <p className="text-sm text-[var(--muted)]">
-              {fillTemplate(t.admin.keepOneService, { service: copy.service })}
-            </p>
-          ) : null}
-        </div>
-      </div>
+                {service.description ? (
+                  <p className="mt-1 line-clamp-2 text-sm text-app-fg-muted">{service.description}</p>
+                ) : null}
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-sm text-app-fg-muted">
+                  {isEvents ? (
+                    <span>{t.admin.capacityLabel}: {formatCapacityLabel(service, lang)}</span>
+                  ) : service.capacity ? (
+                    <span>{t.admin.capacityLabel}: {service.capacity}</span>
+                  ) : null}
+                  {service.medicalSpecialty ? (
+                    <span>{t.admin.medicalSpecialtyLabel}: {service.medicalSpecialty}</span>
+                  ) : null}
+                  {service.cost ? <span>{t.admin.totalLabel}: {service.cost}</span> : null}
+                  {service.notes ? <span>{t.admin.notesLabel}: {service.notes}</span> : null}
+                  {service.linkedAddress1 && hasAddress1 ? (
+                    <span>{t.admin.address1Label}: {provider.address1}</span>
+                  ) : null}
+                  {service.linkedAddress2 && hasAddress2 ? (
+                    <span>{t.admin.address2Label}: {provider.address2}</span>
+                  ) : null}
+                  {service.linkedPhone1 && hasPhone1 ? (
+                    <span>{t.admin.phone1Label}: {provider.phoneNumber1}</span>
+                  ) : null}
+                  {service.linkedPhone2 && hasPhone2 ? (
+                    <span>{t.admin.phone2Label}: {provider.phoneNumber2}</span>
+                  ) : null}
+                  {service.customAddress ? (
+                    <span>{t.admin.locationSection}: {service.customAddress}</span>
+                  ) : null}
+                  {service.customPhone ? (
+                    <span>{t.admin.phoneSection}: {service.customPhone}</span>
+                  ) : null}
+                </div>
+              </StackedListItem>
+            ))}
+          </StackedList>
+        )}
+        {!disabled && services.length === 1 ? (
+          <p className="border-t border-app-border px-4 py-3 text-sm text-app-fg-muted sm:px-6">
+            {fillTemplate(t.admin.keepOneService, { service: copy.service })}
+          </p>
+        ) : null}
+      </Card>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={fillTemplate(shell.deleteServiceTitle, { name: pendingDelete?.name ?? "" })}
+        body={shell.deleteServiceBody}
+        confirmLabel={t.admin.deleteButton}
+        cancelLabel={shell.keep}
+        closeLabel={shell.closeDialog}
+        tone="danger"
+        onConfirm={() => {
+          if (pendingDelete) onRemove(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
 
       {/* Stays beside a long list on wide screens; scrolls inside itself when
           the form is taller than the window. */}
-      <div
+      <Card
+        as="section"
+        aria-labelledby="service-editor-title"
         id="service-editor"
-        className={cn(
-          adminPanelClass,
-          "scroll-mt-24 p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8.5rem)] lg:overflow-y-auto",
-        )}
+        className="scroll-mt-24 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto"
       >
-        <SectionTitle
-          eyebrow={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
+        <CardHeader
+          titleId="service-editor-title"
           title={editingServiceId ? copy.phrases.editServiceTitle : copy.phrases.newServiceTitle}
+          description={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
         />
-        <div className="mt-6 grid gap-4">
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {fillTemplate(t.admin.serviceNameLabel, {
+        <div className="grid gap-5 px-4 py-5 sm:px-6">
+          <Field
+            label={fillTemplate(t.admin.serviceNameLabel, {
               service: copy.service,
               Service: copy.Service,
             })}
-            <input
+          >
+            <Input
               id="service-editor-name"
               disabled={disabled}
               value={serviceDraft.name}
@@ -265,11 +313,10 @@ export function ServiceEditor({
                 onDraftChange((current) => ({ ...current, name: event.target.value }))
               }
               placeholder={hints?.serviceName ?? t.admin.serviceNamePlaceholder}
-              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
-          </label>
+          </Field>
           {isEvents ? (
-            <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+            <div className="grid gap-2 text-sm font-medium text-app-fg">
               {t.admin.occurrenceLabel}
               <div className="grid grid-cols-2 gap-2">
                 {(["single", "weekly"] as const).map((mode) => {
@@ -285,19 +332,14 @@ export function ServiceEditor({
                       onClick={() =>
                         onDraftChange((current) => ({ ...current, occurrenceMode: mode }))
                       }
-                      className={cn(
-                        "min-h-12 rounded-2xl px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
-                        active
-                          ? "bg-[var(--accent-soft)] text-[var(--accent-strong)] ring-2 ring-[var(--accent)]"
-                          : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
-                      )}
+                      className={toggleChipClass(active, "h-11")}
                     >
                       {label}
                     </button>
                   );
                 })}
               </div>
-              <p className="text-xs leading-5 text-[var(--muted)]">
+              <p className="text-sm font-normal text-app-fg-muted">
                 {isSingleOccurrence
                   ? t.admin.singleOccurrenceHint
                   : isWeeklyOccurrence
@@ -307,9 +349,8 @@ export function ServiceEditor({
             </div>
           ) : null}
           {!isEventsFixedWindow ? (
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {t.admin.bookingTypeLabel}
-            <select
+          <Field label={t.admin.bookingTypeLabel}>
+            <Select
               disabled={disabled}
               value={serviceDraft.bookingType}
               onChange={(event) =>
@@ -320,18 +361,16 @@ export function ServiceEditor({
                     event.target.value === "appointment" ? current.medicalSpecialty : "",
                 }))
               }
-              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             >
               <option value="appointment">{getBookingTypeLabel("appointment", lang)}</option>
               <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
-            </select>
-          </label>
+            </Select>
+          </Field>
           ) : null}
           {isEventsSingle ? (
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                {copy.phrases.eventDateLabel}
-                <input
+              <Field label={copy.phrases.eventDateLabel}>
+                <Input
                   disabled={disabled}
                   value={serviceDraft.occurrenceDate}
                   onChange={(event) =>
@@ -346,38 +385,33 @@ export function ServiceEditor({
                      it, so a Spanish page on a US-configured machine still
                      shows mm/dd/yyyy. Fixing that needs a custom picker. */
                   lang={lang}
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                {t.admin.startLabel}
-                <input
+              </Field>
+              <Field label={t.admin.startLabel}>
+                <Input
                   disabled={disabled}
                   value={serviceDraft.startTime}
                   onChange={(event) =>
                     onDraftChange((current) => ({ ...current, startTime: event.target.value }))
                   }
                   type="time"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                {t.admin.endLabel}
-                <input
+              </Field>
+              <Field label={t.admin.endLabel}>
+                <Input
                   disabled={disabled}
                   value={serviceDraft.endTime}
                   onChange={(event) =>
                     onDraftChange((current) => ({ ...current, endTime: event.target.value }))
                   }
                   type="time"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
-              </label>
+              </Field>
             </div>
           ) : null}
           {isEventsWeekly ? (
             <div className="grid gap-3">
-              <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
+              <div className="grid gap-2 text-sm font-medium text-app-fg">
                 {t.admin.repeatsOn}
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAY_KEYS.map((day) => {
@@ -399,12 +433,7 @@ export function ServiceEditor({
                               : [...current.weekdays, day],
                           }))
                         }
-                        className={cn(
-                          "min-h-10 rounded-xl px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45",
-                          active
-                            ? "bg-[var(--accent-soft)] text-[var(--accent-strong)] ring-2 ring-[var(--accent)]"
-                            : "bg-white text-[var(--ink)] ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[var(--accent)]/40",
-                        )}
+                        className={toggleChipClass(active, "h-11 sm:h-9")}
                       >
                         {dayLabel}
                       </button>
@@ -413,37 +442,32 @@ export function ServiceEditor({
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  {t.admin.startLabel}
-                  <input
+                <Field label={t.admin.startLabel}>
+                  <Input
                     disabled={disabled}
                     value={serviceDraft.startTime}
                     onChange={(event) =>
                       onDraftChange((current) => ({ ...current, startTime: event.target.value }))
                     }
                     type="time"
-                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                   />
-                </label>
-                <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-                  {t.admin.endLabel}
-                  <input
+                </Field>
+                <Field label={t.admin.endLabel}>
+                  <Input
                     disabled={disabled}
                     value={serviceDraft.endTime}
                     onChange={(event) =>
                       onDraftChange((current) => ({ ...current, endTime: event.target.value }))
                     }
                     type="time"
-                    className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                   />
-                </label>
+                </Field>
               </div>
             </div>
           ) : null}
           {!isEventsFixedWindow && serviceDraft.bookingType === "appointment" ? (
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.durationLabel}
-              <select
+            <Field label={t.admin.durationLabel}>
+              <Select
                 disabled={disabled}
                 value={serviceDraft.durationMinutes}
                 onChange={(event) =>
@@ -452,20 +476,18 @@ export function ServiceEditor({
                     durationMinutes: Number(event.target.value),
                   }))
                 }
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               >
                 {DURATION_OPTIONS.map((duration) => (
                   <option key={duration} value={duration}>
                     {formatDurationOption(duration, lang)}
                   </option>
                 ))}
-              </select>
-            </label>
+              </Select>
+            </Field>
           ) : null}
           {showMedicalSpecialty ? (
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.medicalSpecialtyLabel}
-              <input
+            <Field label={t.admin.medicalSpecialtyLabel}>
+              <Input
                 disabled={disabled}
                 value={serviceDraft.medicalSpecialty ?? ""}
                 onChange={(event) =>
@@ -475,13 +497,11 @@ export function ServiceEditor({
                   }))
                 }
                 placeholder={hints?.medicalSpecialty ?? t.admin.medicalSpecialtyPlaceholder}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
-            </label>
+            </Field>
           ) : null}
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {t.admin.descriptionLabel}
-            <textarea
+          <Field label={t.admin.descriptionLabel}>
+            <Textarea
               disabled={disabled}
               value={serviceDraft.description}
               onChange={(event) =>
@@ -489,27 +509,23 @@ export function ServiceEditor({
               }
               placeholder={hints?.description ?? copy.phrases.serviceDescPlaceholder}
               rows={4}
-              className={cn(adminFieldClass, "disabled:opacity-45")}
             />
-          </label>
+          </Field>
           {!isEvents && !isRestaurant ? (
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.capacityLabel}
-              <input
+            <Field label={t.admin.capacityLabel}>
+              <Input
                 disabled={disabled}
                 value={serviceDraft.capacity}
                 onChange={(event) =>
                   onDraftChange((current) => ({ ...current, capacity: event.target.value }))
                 }
                 placeholder={hints?.capacity ?? t.admin.capacityPlaceholder}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
-            </label>
+            </Field>
           ) : null}
           {isEvents || isRestaurant ? (
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {isRestaurant ? t.admin.tablesPerSeatingLabel : t.admin.maxSpotsLabel}
-              <input
+            <Field label={isRestaurant ? t.admin.tablesPerSeatingLabel : t.admin.maxSpotsLabel}>
+              <Input
                 disabled={disabled}
                 value={serviceDraft.maxSpots}
                 onChange={(event) =>
@@ -520,14 +536,12 @@ export function ServiceEditor({
                 }
                 inputMode="numeric"
                 placeholder={isRestaurant ? "12" : "50"}
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
-            </label>
+            </Field>
           ) : null}
           {isRestaurant ? (
-            <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-              {t.admin.maxPartySizeLabel}
-              <input
+            <Field label={t.admin.maxPartySizeLabel}>
+              <Input
                 disabled={disabled}
                 value={serviceDraft.maxPartySize}
                 onChange={(event) =>
@@ -538,46 +552,34 @@ export function ServiceEditor({
                 }
                 inputMode="numeric"
                 placeholder="8"
-                className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
               />
-            </label>
+            </Field>
           ) : null}
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {t.admin.totalLabel}
-            <input
+          <Field label={t.admin.totalLabel}>
+            <Input
               disabled={disabled}
               value={serviceDraft.cost}
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, cost: event.target.value }))
               }
               placeholder={hints?.cost ?? "$80 / session"}
-              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
-          </label>
-          <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-            {t.admin.notesLabel}
-            <input
+          </Field>
+          <Field label={t.admin.notesLabel}>
+            <Input
               disabled={disabled}
               value={serviceDraft.notes}
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, notes: event.target.value }))
               }
               placeholder={t.admin.notesPlaceholder}
-              className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
             />
-          </label>
-          <section className="grid gap-3">
-            <header className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-                  <path
-                    d="M12 22s-7-7.5-7-12a7 7 0 0 1 14 0c0 4.5-7 12-7 12z M12 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <span className="text-sm font-semibold text-[var(--ink)]">{t.admin.locationSection}</span>
-            </header>
+          </Field>
+          <section className="grid gap-3 border-t border-app-border pt-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-app-fg">
+              <MapPin aria-hidden="true" size={18} className="text-app-accent" />
+              {t.admin.locationSection}
+            </h3>
             {hasAddress1 || hasAddress2 ? (
               <div className="grid gap-2">
                 {hasAddress1 ? (
@@ -610,12 +612,12 @@ export function ServiceEditor({
                 ) : null}
               </div>
             ) : null}
-            <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
-              <label className="grid gap-2">
-                <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {hasAddress1 || hasAddress2 ? t.admin.addAnotherAddress : t.admin.addAnAddress}
-                </span>
-                <input
+            <div className="grid gap-3 rounded-lg border-2 border-dashed border-app-border-strong p-4">
+              <Field
+                label={hasAddress1 || hasAddress2 ? t.admin.addAnotherAddress : t.admin.addAnAddress}
+                description={serviceDraft.customAddress.trim() ? addressHint : undefined}
+              >
+                <Input
                   disabled={disabled}
                   value={serviceDraft.customAddress}
                   onChange={(event) =>
@@ -623,29 +625,16 @@ export function ServiceEditor({
                   }
                   placeholder={t.providerForm.address1Placeholder}
                   autoComplete="street-address"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
-              </label>
-              {serviceDraft.customAddress.trim() ? (
-                <>
-                  <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{addressHint}</p>
-                  <div className="mt-2">{locationPriceField("custom")}</div>
-                </>
-              ) : null}
+              </Field>
+              {serviceDraft.customAddress.trim() ? locationPriceField("custom") : null}
             </div>
           </section>
-          <section className="grid gap-3">
-            <header className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent-strong)]">
-                <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden>
-                  <path
-                    d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.5 11.5 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A18 18 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.5 11.5 0 0 0 .57 3.6 1 1 0 0 1-.25 1z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </span>
-              <span className="text-sm font-semibold text-[var(--ink)]">{t.admin.phoneSection}</span>
-            </header>
+          <section className="grid gap-3 border-t border-app-border pt-5">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-app-fg">
+              <Phone aria-hidden="true" size={18} className="text-app-accent" />
+              {t.admin.phoneSection}
+            </h3>
             {hasPhone1 || hasPhone2 ? (
               <div className="grid gap-2">
                 {hasPhone1 ? (
@@ -672,12 +661,12 @@ export function ServiceEditor({
                 ) : null}
               </div>
             ) : null}
-            <div className="rounded-2xl border border-dashed border-[rgba(193,198,214,0.55)] bg-[rgba(248,249,250,0.5)] p-4">
-              <label className="grid gap-2">
-                <span className="text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {hasPhone1 || hasPhone2 ? t.admin.addAnotherPhone : t.admin.addAPhone}
-                </span>
-                <input
+            <div className="rounded-lg border-2 border-dashed border-app-border-strong p-4">
+              <Field
+                label={hasPhone1 || hasPhone2 ? t.admin.addAnotherPhone : t.admin.addAPhone}
+                description={serviceDraft.customPhone.trim() ? phoneHint : undefined}
+              >
+                <Input
                   disabled={disabled}
                   value={serviceDraft.customPhone}
                   onChange={(event) =>
@@ -687,24 +676,20 @@ export function ServiceEditor({
                   type="tel"
                   inputMode="tel"
                   autoComplete="tel"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 />
-              </label>
-              {serviceDraft.customPhone.trim() ? (
-                <p className="mt-2 text-xs leading-5 text-[var(--muted)]">{phoneHint}</p>
-              ) : null}
+              </Field>
             </div>
           </section>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3">
-          <ActionButton tone="primary" disabled={disabled} onClick={onUpsert}>
-            {editingServiceId ? copy.phrases.saveServiceButton : copy.phrases.addServiceButton}
-          </ActionButton>
-          <ActionButton tone="ghost" onClick={onReset}>
+        <CardFooter>
+          <Button variant="secondary" onClick={onReset}>
             {t.admin.clearButton}
-          </ActionButton>
-        </div>
-      </div>
+          </Button>
+          <Button disabled={disabled} onClick={onUpsert}>
+            {editingServiceId ? copy.phrases.saveServiceButton : copy.phrases.addServiceButton}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
@@ -730,39 +715,25 @@ function LinkToggleCard({
       disabled={disabled}
       onClick={() => onToggle(!checked)}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[rgba(248,249,250,0.94)] disabled:cursor-not-allowed disabled:opacity-60",
+        "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left ring-1 ring-inset transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        focusRing,
         checked
-          ? "bg-[var(--accent-soft)] ring-2 ring-[var(--accent)] shadow-[0_10px_28px_rgba(26,115,232,0.14)]"
-          : "bg-white ring-1 ring-[rgba(193,198,214,0.45)] hover:ring-[rgba(26,115,232,0.45)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]",
+          ? "bg-app-accent-soft ring-2 ring-app-accent"
+          : "bg-app-surface ring-app-border-strong hover:bg-app-subtle",
       )}
     >
       <span
-        aria-hidden
+        aria-hidden="true"
         className={cn(
-          "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition",
-          checked
-            ? "border-[var(--accent)] bg-[var(--accent)] text-white"
-            : "border-[var(--line)] bg-white text-transparent group-hover:border-[var(--accent)]/60",
+          "grid size-5 shrink-0 place-items-center rounded-md ring-1 ring-inset",
+          checked ? "bg-app-accent text-app-on-accent ring-app-accent" : "bg-app-surface ring-app-border-strong",
         )}
       >
-        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5">
-          <path
-            d="M5 12l4 4L19 6"
-            stroke="currentColor"
-            strokeWidth="2.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </svg>
+        {checked ? <Check size={14} weight="bold" /> : null}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-          {eyebrow}
-        </span>
-        <span className="mt-0.5 block truncate text-sm font-medium text-[var(--ink)]">
-          {value}
-        </span>
+        <span className="block text-xs font-medium text-app-fg-muted">{eyebrow}</span>
+        <span className="mt-0.5 block truncate text-sm font-medium text-app-fg">{value}</span>
       </span>
     </button>
   );
