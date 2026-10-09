@@ -15,7 +15,8 @@ export type E2ERole =
   | "freeGranted"
   | "billingInactive"
   | "businessTypeSwitch"
-  | "businessTypeBlocked";
+  | "businessTypeBlocked"
+  | "bookingActions";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -115,6 +116,18 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     providerId: "00000000-0000-4000-8000-0000000e2ea7",
     businessName: "Busy Clinic E2E",
     slug: "busy-clinic-e2e",
+    legacyPlanTier: "free",
+    upcomingBooking: true,
+  },
+  {
+    // Its booking is rescheduled and cancelled by the dashboard toast spec;
+    // nothing else may depend on it.
+    role: "bookingActions",
+    email: "booking-actions@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e08",
+    providerId: "00000000-0000-4000-8000-0000000e2ea8",
+    businessName: "Booking Actions E2E",
+    slug: "booking-actions-e2e",
     legacyPlanTier: "free",
     upcomingBooking: true,
   },

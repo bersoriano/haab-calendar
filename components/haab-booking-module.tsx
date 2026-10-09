@@ -199,6 +199,9 @@ import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
 import { AdminCalendar } from "@/components/provider/AdminCalendar";
+import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
+import { RescheduleBookingDialog } from "@/components/provider/RescheduleBookingDialog";
+import { ToastOnChange } from "@/components/provider/ToastOnChange";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
 import {
@@ -551,6 +554,8 @@ export function HaabBookingModule({
     null,
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
+  // Dashboard-only confirmations (cancel, reschedule), toasted once per id.
+  const [bookingNotice, setBookingNotice] = useState<{ id: number; message: string } | null>(null);
   const [isCalendarQrModalOpen, setIsCalendarQrModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedManageLink, setCopiedManageLink] = useState(false);
@@ -3325,6 +3330,9 @@ export function HaabBookingModule({
     }
 
     setRescheduleState(null);
+    if (!isDedicatedPublicPage) {
+      setBookingNotice((current) => ({ id: (current?.id ?? 0) + 1, message: dashboardCopy[lang].rescheduledToast }));
+    }
   }
 
   async function confirmCancellation() {
@@ -3391,6 +3399,9 @@ export function HaabBookingModule({
     commitBookingMutation(validationStore, bookingToCommit);
     setCancellationId(null);
     setCancellationError(null);
+    if (!isDedicatedPublicPage) {
+      setBookingNotice((current) => ({ id: (current?.id ?? 0) + 1, message: dashboardCopy[lang].cancelledToast }));
+    }
   }
 
   async function copyPublicLink() {
@@ -6614,6 +6625,32 @@ export function HaabBookingModule({
       return null;
     }
 
+    if (!isDedicatedPublicPage) {
+      return (
+        <CancelBookingDialog
+          open
+          lang={lang}
+          copy={copy}
+          serviceName={
+            services.find((service) => service.id === booking.serviceId)?.name ?? booking.serviceName
+          }
+          clientName={booking.clientName}
+          whenLabel={`${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(
+            booking.startTime,
+            booking.endTime,
+            lang,
+          )}`}
+          pending={isMutatingBooking}
+          error={cancellationError}
+          onConfirm={() => void confirmCancellation()}
+          onKeep={() => {
+            setCancellationId(null);
+            setCancellationError(null);
+          }}
+        />
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4">
         <div
@@ -6702,6 +6739,78 @@ export function HaabBookingModule({
             activeBookingHolds,
           )
         : [];
+
+    if (!isDedicatedPublicPage) {
+      const weekdayFormatter = getWeekdayShortFormatter(lang);
+      const currentMonth = new Date().getMonth();
+
+      return (
+        <RescheduleBookingDialog
+          open
+          lang={lang}
+          copy={copy}
+          serviceName={service.name}
+          clientName={booking.clientName}
+          serviceDescription={service.description}
+          appointment={service.bookingType === "appointment"}
+          windowLabel={rescheduleWindowLabel}
+          weekdayLabels={WEEKDAY_KEYS.map((day) =>
+            weekdayFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`)),
+          )}
+          weeks={weeks.map((week) =>
+            week.map((date) => {
+              const dateKey = getDateKey(date);
+              return {
+                dateKey,
+                dayOfMonth: date.getDate(),
+                inMonth: date.getMonth() === currentMonth,
+                available: isDateAvailable(
+                  dateKey,
+                  service,
+                  availability,
+                  bookings,
+                  booking.id,
+                  activeBookingHolds,
+                ),
+                selected: rescheduleState.dateKey === dateKey,
+              };
+            }),
+          )}
+          selectedDateLabel={formatCompactDate(rescheduleState.dateKey, lang)}
+          slots={slots.map((slot) => ({
+            value: slot,
+            label: formatTimeLabel(slot, lang),
+            selected: rescheduleState.time === slot,
+          }))}
+          pending={isMutatingBooking}
+          error={rescheduleState.error}
+          canSave={
+            !isMutatingBooking &&
+            Boolean(rescheduleState.dateKey) &&
+            (service.bookingType !== "appointment" || Boolean(rescheduleState.time))
+          }
+          onToday={() =>
+            setRescheduleState((current) =>
+              current
+                ? { ...current, dateKey: todayKey(), time: "", monthAnchor: new Date(), error: undefined }
+                : current,
+            )
+          }
+          onSelectDay={(dateKey) =>
+            setRescheduleState((current) =>
+              current
+                ? { ...current, dateKey, time: "", monthAnchor: parseDateKey(dateKey), error: undefined }
+                : current,
+            )
+          }
+          onSelectSlot={(time) =>
+            setRescheduleState((current) => (current ? { ...current, time, error: undefined } : current))
+          }
+          onSave={() => void confirmReschedule()}
+          onClose={() => setRescheduleState(null)}
+        />
+      );
+    }
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8">
@@ -7079,6 +7188,7 @@ export function HaabBookingModule({
       />
       {renderCancellationModal()}
       {renderRescheduleModal()}
+      <ToastOnChange notice={bookingNotice} />
     </>
   );
 

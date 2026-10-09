@@ -14,6 +14,9 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/BookingsList.tsx",
   "components/provider/AdminCalendar.tsx",
   "components/provider/ProviderAnalyticsSurface.tsx",
+  "components/provider/CancelBookingDialog.tsx",
+  "components/provider/RescheduleBookingDialog.tsx",
+  "components/provider/ToastOnChange.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

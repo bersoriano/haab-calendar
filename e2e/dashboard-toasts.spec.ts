@@ -68,3 +68,32 @@ test.describe("dashboard toasts", () => {
   });
 });
 
+test.describe("booking actions", () => {
+  test.use({ storageState: authStatePath("bookingActions") });
+
+  test("reschedule and cancel confirm with a toast once the dialog has closed", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto("/dashboard/bookings");
+
+    await page.getByRole("button", { name: "Reschedule", exact: true }).first().click();
+    let dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    // The last open day in the window — well clear of "today" in any time
+    // zone — then its first free slot.
+    await dialog.locator("button[data-date]:not([disabled])[aria-pressed=\"false\"]").last().click();
+    await dialog.getByRole("button", { name: /^\d{1,2}:\d{2} (AM|PM)$/ }).first().click();
+    await dialog.getByRole("button", { name: "Save new time" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("status").getByText("New time saved")).toBeVisible();
+
+    await page.getByRole("button", { name: "Cancel", exact: true }).first().click();
+    dialog = page.getByRole("dialog");
+    await expect(dialog.getByRole("button", { name: /^Keep / })).toBeVisible();
+    await dialog.getByRole("button", { name: "Confirm cancellation" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("status").getByText("Cancellation saved")).toBeVisible();
+    // A cancelled booking offers no more actions.
+    await expect(page.getByRole("button", { name: "Cancel", exact: true })).toHaveCount(0);
+  });
+});
+
