@@ -10,7 +10,7 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-const { Button, ButtonLink, IconButton, Badge, buttonStyles } = await import(
+const { Button, ButtonLink, IconButton, Badge, buttonStyles, inputStyles, segmentStyles } = await import(
   "@/components/app-ui"
 );
 
@@ -38,6 +38,15 @@ describe("Button", () => {
     expect(buttonStyles({ variant: "danger-plain" })).toContain("text-app-danger-fg");
     expect(buttonStyles({ variant: "soft" })).toContain("bg-app-accent-soft");
     expect(buttonStyles({ variant: "plain" })).toContain("hover:bg-app-subtle");
+  });
+
+  it("sets its own type over the global form-control font reset", () => {
+    // globals.css has an unlayered `button, input… { font: inherit }` that
+    // outranks layered utilities; only important utilities get past it.
+    expect(buttonStyles()).toContain("text-sm!");
+    expect(buttonStyles()).toContain("font-semibold!");
+    expect(segmentStyles(true)).toContain("text-sm!");
+    expect(inputStyles()).toContain("sm:text-sm!");
   });
 
   it("keeps 44px targets on phones", () => {

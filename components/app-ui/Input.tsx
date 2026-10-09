@@ -42,7 +42,7 @@ export function Input({
       ) : null}
       <input
         {...control}
-        className="block h-full min-w-0 grow bg-transparent px-3 text-base text-app-fg placeholder:text-app-placeholder focus:outline-none disabled:cursor-not-allowed disabled:text-app-fg-muted sm:text-sm"
+        className="block h-full min-w-0 grow bg-transparent px-3 text-base! text-app-fg placeholder:text-app-placeholder focus:outline-none disabled:cursor-not-allowed disabled:text-app-fg-muted sm:text-sm!"
       />
       {trailingAddon ? (
         <span className="flex shrink-0 items-center pr-1.5 text-sm text-app-fg-muted">{trailingAddon}</span>

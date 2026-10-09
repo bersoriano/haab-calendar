@@ -1,6 +1,13 @@
 import type { StatusTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+/**
+ * globals.css resets `button, input, select, textarea` to `font: inherit`
+ * outside any cascade layer, which outranks every layered utility. Form
+ * controls in the kit therefore set their type with important utilities.
+ */
+export const controlTextSm = "text-sm! font-semibold!";
+
 /** The one keyboard focus treatment for every interactive element. */
 export const focusRing =
   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent";
@@ -30,7 +37,8 @@ export function buttonStyles({
   className,
 }: { variant?: ButtonVariant; size?: ButtonSize; iconOnly?: boolean; className?: string } = {}) {
   return cn(
-    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+    controlTextSm,
     focusRing,
     BUTTON_VARIANTS[variant],
     iconOnly ? BUTTON_SIZES[size].icon : BUTTON_SIZES[size].text,
@@ -40,7 +48,7 @@ export function buttonStyles({
 
 export function inputStyles({ invalid = false, className }: { invalid?: boolean; className?: string } = {}) {
   return cn(
-    "block w-full rounded-lg bg-app-surface px-3 text-base text-app-fg outline-1 -outline-offset-1 placeholder:text-app-placeholder focus:outline-2 focus:-outline-offset-2 disabled:cursor-not-allowed disabled:bg-app-subtle disabled:text-app-fg-muted sm:text-sm",
+    "block w-full rounded-lg bg-app-surface px-3 text-base! text-app-fg outline-1 -outline-offset-1 placeholder:text-app-placeholder focus:outline-2 focus:-outline-offset-2 disabled:cursor-not-allowed disabled:bg-app-subtle disabled:text-app-fg-muted sm:text-sm!",
     invalid
       ? "outline-app-danger-fg focus:outline-app-danger-fg"
       : "outline-app-border-strong focus:outline-app-accent",
@@ -74,7 +82,8 @@ export function cardStyles(className?: string) {
 /** One option of a segmented control or language toggle. */
 export function segmentStyles(selected: boolean) {
   return cn(
-    "inline-flex h-11 items-center justify-center gap-2 rounded-md px-3 text-sm font-semibold transition-colors sm:h-8",
+    "inline-flex h-11 items-center justify-center gap-2 rounded-md px-3 transition-colors sm:h-8",
+    controlTextSm,
     focusRing,
     selected
       ? "bg-app-surface text-app-fg shadow-xs ring-1 ring-app-border"
