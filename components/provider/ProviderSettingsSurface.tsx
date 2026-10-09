@@ -20,16 +20,15 @@ export type ProviderSettingsSurfaceProps = {
   publicUrl: string;
 
   integratedMode: boolean;
+  /** The store can be written; gates the custom-URL editor. */
   canPersist: boolean;
-  isSaving: boolean;
-  saveError?: string | null;
-  saveMessage?: string | null;
+  /** A save is in flight; fields stay read-only until it lands. */
+  disabled: boolean;
 
   /** Resolved server-side. Presentation only — never the authorization. */
   entitlements?: ProviderEntitlements;
 
   onProviderChange: <K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) => void;
-  onSave: () => void | Promise<void>;
   onSavePublicSlug?: (slug: string) => Promise<void>;
   onResetStandaloneSetup?: () => void;
 };
@@ -38,9 +37,9 @@ export type ProviderSettingsSurfaceProps = {
  * The Settings section: who the business is and where its booking page
  * lives. Availability and integrations have their own sections.
  *
- * Presentational. Every edit and every save goes back out through a callback,
- * so the module keeps owning persistence and this component stays testable
- * without a store, a client, or a network.
+ * Presentational. Every edit goes back out through a callback and the
+ * dashboard's save bar persists it, so the module keeps owning persistence and
+ * this component stays testable without a store, a client, or a network.
  */
 export function ProviderSettingsSurface({
   title,
@@ -50,12 +49,9 @@ export function ProviderSettingsSurface({
   publicUrl,
   integratedMode,
   canPersist,
-  isSaving,
-  saveError,
-  saveMessage,
+  disabled,
   entitlements,
   onProviderChange,
-  onSave,
   onSavePublicSlug,
   onResetStandaloneSetup,
 }: ProviderSettingsSurfaceProps) {
@@ -64,31 +60,12 @@ export function ProviderSettingsSurface({
   return (
     <div className="max-w-3xl">
       <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
-          title={title}
-          action={
-            integratedMode && canPersist ? (
-              <ActionButton tone="primary" disabled={isSaving} onClick={onSave}>
-                {isSaving ? t.common.saving : t.admin.saveChanges}
-              </ActionButton>
-            ) : undefined
-          }
-        />
-        {saveError ? (
-          <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-            {saveError}
-          </div>
-        ) : null}
-        {saveMessage ? (
-          <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
-            {saveMessage}
-          </div>
-        ) : null}
+        <SectionTitle title={title} />
         <div className="mt-6">
           <ProviderInfoForm
             provider={provider}
             onChange={onProviderChange}
-            disabled={isSaving}
+            disabled={disabled}
             lang={lang}
           />
         </div>

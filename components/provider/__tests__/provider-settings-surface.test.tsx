@@ -7,7 +7,6 @@ import { resolveEntitlements } from "@/lib/entitlements/resolve";
 import type { ProviderInfo } from "@/lib/types";
 
 const en = bookingTranslations.en.admin;
-const es = bookingTranslations.es.admin;
 
 const provider: ProviderInfo = {
   fullName: "Mariana Torres",
@@ -37,9 +36,8 @@ function render(
       publicUrl="https://haab.app/doctors/acis-sports"
       integratedMode
       canPersist
-      isSaving={false}
+      disabled={false}
       onProviderChange={() => undefined}
-      onSave={() => undefined}
       {...props}
     />,
   );
@@ -88,33 +86,8 @@ describe("ProviderSettingsSurface", () => {
     expect(html).toContain('value="acis-sports"');
   });
 
-  it("offers the save action when the store can be written", () => {
-    const html = render();
-
-    expect(html).toContain(en.saveChanges);
-  });
-
-  it("withholds the save action when persistence is unavailable", () => {
-    expect(render({ canPersist: false })).not.toContain(en.saveChanges);
-    expect(render({ integratedMode: false })).not.toContain(en.saveChanges);
-  });
-
-  it("shows the busy label while saving", () => {
-    const html = render({ isSaving: true });
-
-    expect(html).toContain(bookingTranslations.en.common.saving);
-  });
-
-  it("renders a save failure", () => {
-    const html = render({ saveError: "Could not save your settings." });
-
-    expect(html).toContain("Could not save your settings.");
-  });
-
-  it("renders a save confirmation", () => {
-    const html = render({ saveMessage: "Saved." });
-
-    expect(html).toContain("Saved.");
+  it("leaves saving to the dashboard's save bar", () => {
+    expect(render()).not.toContain(en.saveChanges);
   });
 
   it("offers the standalone reset only outside integrated mode", () => {
@@ -145,6 +118,5 @@ describe("ProviderSettingsSurface", () => {
 
     expect(html).toContain(bookingTranslations.es.providerForm.businessName);
     expect(html).not.toContain(bookingTranslations.en.providerForm.businessName);
-    expect(html).toContain(es.saveChanges);
   });
 });

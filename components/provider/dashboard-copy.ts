@@ -31,6 +31,8 @@ export type DashboardShellCopy = {
   terms: string;
   privacy: string;
   rights: string;
+  unsavedChanges: string;
+  unsavedChangesHint: string;
   google: Record<GoogleOutcome, string>;
 };
 
@@ -67,6 +69,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     terms: "Terms",
     privacy: "Privacy",
     rights: "Haab Calendar",
+    unsavedChanges: "Unsaved changes",
+    unsavedChangesHint: "Your edits stay here while you move between sections.",
     google: {
       connected: "Google Calendar is connected.",
       declined: "Google Calendar wasn't connected because access was declined.",
@@ -113,6 +117,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     terms: "Términos",
     privacy: "Privacidad",
     rights: "Haab Calendar",
+    unsavedChanges: "Cambios sin guardar",
+    unsavedChangesHint: "Sus cambios se conservan mientras pasa de una sección a otra.",
     google: {
       connected: "Google Calendar está conectado.",
       declined: "Google Calendar no se conectó porque se rechazó el acceso.",

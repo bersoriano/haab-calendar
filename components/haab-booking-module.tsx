@@ -163,6 +163,8 @@ import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsS
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { SaveBar } from "@/components/provider/SaveBar";
+import { isStoreDirty } from "@/lib/store-dirty";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
@@ -443,6 +445,26 @@ export function HaabBookingModule({
   const [adminSaveError, setAdminSaveError] = useState<string | null>(null);
   const [adminSaveMessage, setAdminSaveMessage] = useState<string | null>(null);
   const [isSavingAdmin, setIsSavingAdmin] = useState(false);
+  // The store as the server last confirmed it. Edits held for "Save changes"
+  // are whatever differs from it; the save bar appears while anything does.
+  const [savedStore, setSavedStore] = useState<ModuleStore>(() => activeStore);
+  const hasUnsavedChanges =
+    integratedMode && persistAdminChanges && isStoreDirty(savedStore, activeStore);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    // Leaving the page (reload, close, sign out) would drop held edits.
+    function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedChanges]);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraft>(() =>
     createBlankServiceDraft(),
   );
@@ -1862,6 +1884,7 @@ export function HaabBookingModule({
 
       const persistedStore = normalizeStore(payload.store);
       actions.updateStandaloneStore(() => persistedStore);
+      setSavedStore(persistedStore);
       onSetupPersisted?.(persistedStore);
       setAdminSaveMessage(t.common.saved);
       window.setTimeout(() => setAdminSaveMessage(null), 1600);
@@ -1889,6 +1912,12 @@ export function HaabBookingModule({
     }
     const savedSlug = payload.slug;
     actions.updateStandaloneStore((current) => ({
+      ...current,
+      provider: { ...current.provider, publicSlug: savedSlug },
+    }));
+    // Saved through its own endpoint: the server has it, so it is not an
+    // unsaved change.
+    setSavedStore((current) => ({
       ...current,
       provider: { ...current.provider, publicSlug: savedSlug },
     }));
@@ -4087,31 +4116,7 @@ export function HaabBookingModule({
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle
-            title={t.admin.appearanceTitle}
-            body={t.admin.appearanceBody}
-            action={
-              integratedMode && persistAdminChanges ? (
-                <ActionButton
-                  tone="primary"
-                  disabled={isSavingAdmin}
-                  onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
-                >
-                  {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
-                </ActionButton>
-              ) : undefined
-            }
-          />
-          {adminSaveError ? (
-            <div className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
-              {adminSaveError}
-            </div>
-          ) : null}
-          {adminSaveMessage ? (
-            <div className="mt-4 rounded-2xl border border-[var(--success-line)] bg-[var(--success-soft)] px-4 py-3 text-sm font-medium text-[var(--success-strong)]">
-              {adminSaveMessage}
-            </div>
-          ) : null}
+          <SectionTitle title={t.admin.appearanceTitle} body={t.admin.appearanceBody} />
           <div className="mt-6">
             <LogoImageUploader
               value={provider.logoImageUrl}
@@ -4151,34 +4156,6 @@ export function HaabBookingModule({
     );
   }
 
-  /**
-   * Save controls for sections whose edits are held until "Save changes".
-   * Mirrors the button Settings and Appearance already carry.
-   */
-  function renderSectionSaveRow() {
-    if (!integratedMode || !persistAdminChanges) {
-      return null;
-    }
-
-    return (
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-        {adminSaveError ? (
-          <p className="text-sm font-medium text-[var(--danger-strong)]">{adminSaveError}</p>
-        ) : null}
-        {adminSaveMessage ? (
-          <p className="text-sm font-medium text-[var(--success-strong)]">{adminSaveMessage}</p>
-        ) : null}
-        <ActionButton
-          tone="primary"
-          disabled={isSavingAdmin}
-          onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
-        >
-          {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
-        </ActionButton>
-      </div>
-    );
-  }
-
   function renderManagementSections() {
     switch (currentSection) {
       case "dashboard":
@@ -4193,19 +4170,16 @@ export function HaabBookingModule({
         return renderAppearance();
       case "availability":
         return (
-          <div className="space-y-4">
-            {renderSectionSaveRow()}
-            <AvailabilitySettingsSection
-              vertical={vertical}
-              availability={availability}
-              onChange={updateAvailabilityDay}
-              onManageEvents={() => goToSection("services")}
-              maxBookingsPerDay={provider.maxBookingsPerDay}
-              onMaxBookingsPerDayChange={(value) => updateProvider("maxBookingsPerDay", value)}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
+          <AvailabilitySettingsSection
+            vertical={vertical}
+            availability={availability}
+            onChange={updateAvailabilityDay}
+            onManageEvents={() => goToSection("services")}
+            maxBookingsPerDay={provider.maxBookingsPerDay}
+            onMaxBookingsPerDayChange={(value) => updateProvider("maxBookingsPerDay", value)}
+            disabled={isSavingAdmin}
+            lang={lang}
+          />
         );
       case "analytics":
         return (
@@ -4238,14 +4212,9 @@ export function HaabBookingModule({
             publicUrl={publicUrl}
             integratedMode={integratedMode}
             canPersist={persistAdminChanges}
-            isSaving={isSavingAdmin}
-            saveError={adminSaveError}
-            saveMessage={adminSaveMessage}
+            disabled={isSavingAdmin}
             entitlements={providerEntitlements}
             onProviderChange={updateProvider}
-            onSave={async () => {
-              await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
-            }}
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
           />
@@ -7270,6 +7239,18 @@ export function HaabBookingModule({
     );
   }
 
+  const saveBar =
+    surface === "management" && surfaceMode === "adaptive" ? (
+      <SaveBar
+        visible={hasUnsavedChanges}
+        saving={isSavingAdmin}
+        error={adminSaveError}
+        message={adminSaveMessage}
+        onSave={() => void persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
+        lang={lang}
+      />
+    ) : null;
+
   const modals = (
     <>
       {renderCalendarQrModal()}
@@ -7289,7 +7270,10 @@ export function HaabBookingModule({
     return (
       <>
         {surface === "management" && surfaceMode === "adaptive" ? (
-          renderManagementSections()
+          <>
+            {renderManagementSections()}
+            {saveBar}
+          </>
         ) : (
           <div className="space-y-4">
             {surfaceMode === "adaptive" ? (
@@ -7425,7 +7409,10 @@ export function HaabBookingModule({
         ) : null}
 
         {surface === "management" && surfaceMode === "adaptive" ? (
-          <div className="p-5 sm:p-8">{renderManagementSections()}</div>
+          <div className="p-5 sm:p-8">
+            {renderManagementSections()}
+            {saveBar}
+          </div>
         ) : (
           renderPublicFlow()
         )}
