@@ -1,11 +1,8 @@
-import { Alert, Button } from "@/components/app-ui";
-import { SectionTitle } from "@/components/ui";
-import { adminPanelClass } from "@/components/provider/adminGlass";
+import { Alert, Button, Field, Switch } from "@/components/app-ui";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { getBookingRetentionPolicy, type BookingRetentionPolicy } from "@/lib/booking-retention";
 import { hasResolvedEntitlement, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 export function BookingRetentionNotice({ lang, policy, onOpenSettings }: {
   lang: Lang;
@@ -46,27 +43,22 @@ export function BookingRetentionSettings({
   const entitled = Boolean(entitlements && hasResolvedEntitlement(entitlements, "booking_history_retention"));
   const policy = getBookingRetentionPolicy(savedEnabled, entitlements);
   return (
-    <section className={cn(adminPanelClass, "p-5 sm:p-6")}>
-      <SectionTitle title={copy.retentionTitle} />
-      <div className="mt-4"><BookingRetentionNotice lang={lang} policy={policy} /></div>
-      <label className="mt-4 flex min-h-12 items-start gap-3 rounded-2xl bg-[var(--surface-lowest)] p-4">
-        <input
-          type="checkbox"
+    <div className="grid gap-4">
+      <BookingRetentionNotice lang={lang} policy={policy} />
+      <Field label={copy.retentionOption} description={copy.retentionDefaultOff} inline>
+        <Switch
           name="keepBookingHistoryOneYear"
           checked={enabled}
           // A downgraded owner may always turn an old preference off.
           disabled={disabled || (!entitled && !enabled)}
           onChange={(event) => onChange(event.target.checked)}
           aria-describedby="booking-retention-help"
-          className="mt-1 h-5 w-5 shrink-0 accent-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
         />
-        <span className="min-w-0">
-          <span className="block font-semibold text-[var(--ink)]">{copy.retentionOption}</span>
-          <span className="mt-1 block text-sm text-[var(--muted)]">{copy.retentionDefaultOff}</span>
-        </span>
-      </label>
-      <p id="booking-retention-help" className="mt-3 text-sm leading-relaxed text-[var(--muted)]">{copy.retentionDowngrade}</p>
-      {enabled !== savedEnabled ? <p role="status" className="mt-3 text-sm font-semibold text-[var(--primary)]">{copy.retentionPending}</p> : null}
-    </section>
+      </Field>
+      <p id="booking-retention-help" className="text-sm text-app-fg-muted">{copy.retentionDowngrade}</p>
+      {enabled !== savedEnabled ? (
+        <p role="status" className="text-sm font-semibold text-app-accent">{copy.retentionPending}</p>
+      ) : null}
+    </div>
   );
 }

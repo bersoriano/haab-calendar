@@ -31,6 +31,8 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/LanguageSettingsSection.tsx",
   "components/provider/ProviderIntegrationsSection.tsx",
   "components/provider/GoogleCalendarCapabilities.tsx",
+  "components/provider/ProviderSettingsSurface.tsx",
+  "components/provider/BookingRetentionSettings.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
