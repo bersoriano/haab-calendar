@@ -16,3 +16,4 @@ export { Fieldset, FormSection } from "@/components/app-ui/Fieldset";
 export { SegmentedControl, nextSegmentIndex } from "@/components/app-ui/SegmentedControl";
 export { RadioCards } from "@/components/app-ui/RadioCards";
 export { LanguageToggle } from "@/components/app-ui/LanguageToggle";
+export { Dialog, DialogActions, ConfirmDialog, isBackdropClick } from "@/components/app-ui/Dialog";
