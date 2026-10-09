@@ -1,0 +1,48 @@
+name: Booking retention
+
+on:
+  schedule:
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: booking-retention
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Delete expired booking history
+    runs-on: ubuntu-latest
+    environment: Production
+    if: github.repository == 'bersoriano/haab-calendar'
+    timeout-minutes: 10
+    steps:
+      - name: Drain bounded cleanup batches
+        env:
+          BASE_URL: ${{ secrets.WORKERS_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_URL}" ] || [ -z "${CRON_SECRET}" ]; then
+            echo "::error::WORKERS_BASE_URL and CRON_SECRET must both be set."
+            exit 1
+          fi
+          for pass in $(seq 1 20); do
+            status=$(curl -sS -o /tmp/retention.json -w '%{http_code}' \
+              --max-time 60 -H "Authorization: Bearer ${CRON_SECRET}" \
+              "${BASE_URL}/api/cron/booking-retention")
+            if [ "${status}" != "200" ]; then
+              echo "::error::Booking retention answered ${status} on pass ${pass}."
+              exit 1
+            fi
+            jq -e '(.deletedBookings | type == "number") and (.hasMore | type == "boolean")' /tmp/retention.json > /dev/null
+            deleted=$(jq -r '.deletedBookings' /tmp/retention.json)
+            more=$(jq -r '.hasMore' /tmp/retention.json)
+            echo "pass ${pass}: deleted ${deleted} expired bookings"
+            if [ "${more}" = "false" ]; then exit 0; fi
+          done
+          echo "::error::Cleanup reached its 10,000-booking run limit. Run this workflow again to drain the remaining history."
+          exit 1
