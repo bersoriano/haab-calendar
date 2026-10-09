@@ -52,8 +52,8 @@ export function SegmentedControl<T extends string>({
 
         return (
           <button
-            {...appControl}
             key={option.value}
+            {...appControl}
             ref={(element) => {
               refs.current[index] = element;
             }}

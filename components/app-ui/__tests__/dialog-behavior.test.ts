@@ -50,6 +50,7 @@ describe("reconcileNativeClose", () => {
   function fakeDialog() {
     return {
       open: false,
+      isConnected: true,
       shown: 0,
       showModal() {
         this.open = true;
@@ -79,6 +80,30 @@ describe("reconcileNativeClose", () => {
     const dialog = fakeDialog();
     reconcileNativeClose({ dialog, isOpen: () => true, onClose: () => undefined, defer: (run) => run() });
     expect(dialog.shown).toBe(1);
+  });
+
+  it("ignores the close event of a close the component made itself", () => {
+    // Closing on unmount or StrictMode's simulated cleanup fires a native
+    // close event later; it must not read as the browser closing the dialog.
+    const dialog = fakeDialog();
+    let closes = 0;
+    reconcileNativeClose({
+      dialog,
+      isOpen: () => true,
+      selfClosed: () => true,
+      onClose: () => {
+        closes += 1;
+      },
+      defer: (run) => run(),
+    });
+    expect(closes).toBe(0);
+    expect(dialog.shown).toBe(0);
+  });
+
+  it("never re-shows a dialog that has left the document", () => {
+    const dialog = { ...fakeDialog(), isConnected: false };
+    reconcileNativeClose({ dialog, isOpen: () => true, onClose: () => undefined, defer: (run) => run() });
+    expect(dialog.shown).toBe(0);
   });
 
   it("does nothing for a close the owner asked for", () => {
