@@ -108,6 +108,7 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
     if (serviceError) throw serviceError;
 
     const { error } = await admin.from("bookings").insert({
+      ...(seed.bookingId ? { id: seed.bookingId } : {}),
       provider_id: seed.providerId,
       service_id: service.id,
       service_name: "Consultation",

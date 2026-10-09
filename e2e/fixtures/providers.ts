@@ -42,6 +42,8 @@ export type E2EProviderSeed = {
   bookingDate?: string;
   /** A known manage-link token for that booking (stored hashed, as in production). */
   manageToken?: string;
+  /** A fixed booking id: the public reference shown on the manage page derives from it. */
+  bookingId?: string;
 };
 
 export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
@@ -149,6 +151,7 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     upcomingBooking: true,
     bookingDate: "2027-01-15",
     manageToken: "e2e-public-manage-token",
+    bookingId: "00000000-0000-4000-8000-0000000eb009",
   },
 ];
 
