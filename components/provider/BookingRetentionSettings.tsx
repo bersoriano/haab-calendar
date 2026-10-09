@@ -1,3 +1,4 @@
+import { Alert, Button } from "@/components/app-ui";
 import { SectionTitle } from "@/components/ui";
 import { adminPanelClass } from "@/components/provider/adminGlass";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
@@ -14,18 +15,20 @@ export function BookingRetentionNotice({ lang, policy, onOpenSettings }: {
   const copy = dashboardCopy[lang];
   const text = policy === "year" ? copy.retentionYear : policy === "month" ? copy.retentionMonth : copy.retentionUnknown;
   return (
-    <aside className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--muted)]">
-      <p aria-live="polite" className="font-semibold text-[var(--ink)]">{text}</p>
-      <p className="mt-1 leading-relaxed">{copy.retentionDateHint}</p>
-      {onOpenSettings ? (
-        <>
-          {policy === "month" ? <p className="mt-1 leading-relaxed">{copy.retentionDefaultOff}</p> : null}
-          <button type="button" onClick={onOpenSettings} className="mt-2 min-h-11 rounded-xl px-2 font-semibold text-[var(--primary)] transition hover:bg-[var(--accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]">
+    <Alert
+      tone="info"
+      title={<span aria-live="polite">{text}</span>}
+      actions={
+        onOpenSettings ? (
+          <Button variant="plain" size="sm" onClick={onOpenSettings}>
             {copy.retentionManage}
-          </button>
-        </>
-      ) : null}
-    </aside>
+          </Button>
+        ) : undefined
+      }
+    >
+      <p>{copy.retentionDateHint}</p>
+      {onOpenSettings && policy === "month" ? <p className="mt-1">{copy.retentionDefaultOff}</p> : null}
+    </Alert>
   );
 }
 
