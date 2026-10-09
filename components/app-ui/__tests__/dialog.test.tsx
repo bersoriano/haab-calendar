@@ -74,6 +74,25 @@ describe("ConfirmDialog", () => {
     expect(html).toContain("bg-app-danger");
   });
 
+  it("describes itself with its body and closes in the caller's language", () => {
+    const html = renderToStaticMarkup(
+      <ConfirmDialog
+        open
+        title="¿Cancelar la cita?"
+        body="Se avisará al cliente."
+        confirmLabel="Cancelar cita"
+        cancelLabel="Mantener cita"
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+      />,
+    );
+    const describedBy = html.match(/aria-describedby="([^"]+)"/)?.[1];
+    expect(describedBy).toBeTruthy();
+    expect(html).toMatch(new RegExp(`id="${describedBy}"[^>]*>Se avisará al cliente\\.`));
+    expect(html).toContain('aria-label="Mantener cita"');
+    expect(html).not.toContain('aria-label="Close"');
+  });
+
   it("shows a failure inside the dialog", () => {
     const html = renderToStaticMarkup(
       <ConfirmDialog

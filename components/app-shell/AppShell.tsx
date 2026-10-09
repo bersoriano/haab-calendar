@@ -131,7 +131,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label={copy.menu ?? copy.openMenu}
-            className="relative mr-16 flex h-full w-full max-w-[288px] animate-app-drawer-in"
+            className="relative flex h-full w-[calc(100%-4rem)] max-w-[288px] animate-app-drawer-in"
           >
             <div className="absolute left-full top-0 flex w-16 justify-center pt-3">
               <button

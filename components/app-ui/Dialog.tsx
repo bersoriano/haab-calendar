@@ -1,10 +1,11 @@
 "use client";
 
 import { X } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
 import { Alert } from "@/components/app-ui/Alert";
 import { Button, IconButton } from "@/components/app-ui/Button";
+import { pageScrollLock } from "@/components/app-ui/scroll-lock";
 import { cn } from "@/lib/utils";
 
 /** A click on the dialog element outside its panel box hit the backdrop. */
@@ -13,6 +14,39 @@ export function isBackdropClick(
   point: { x: number; y: number },
 ) {
   return point.x < rect.left || point.x > rect.right || point.y < rect.top || point.y > rect.bottom;
+}
+
+/**
+ * Close only when the press started and ended on the backdrop: a text
+ * selection dragged out of the panel ends on the backdrop too, and must not
+ * throw away what the person was typing.
+ */
+export function shouldCloseFromBackdrop(startedOnBackdrop: boolean, endedOnBackdrop: boolean) {
+  return startedOnBackdrop && endedOnBackdrop;
+}
+
+/**
+ * The browser can close a modal dialog on its own (a repeated Esc that it no
+ * longer lets us cancel, Android's back gesture). Tell the owner; if the owner
+ * keeps it open — a confirm that is still pending — show it again, so the
+ * element never disagrees with the `open` prop.
+ */
+export function reconcileNativeClose({
+  dialog,
+  isOpen,
+  onClose,
+  defer,
+}: {
+  dialog: { open: boolean; showModal: () => void };
+  isOpen: () => boolean;
+  onClose: () => void;
+  defer: (run: () => void) => void;
+}) {
+  if (!isOpen()) return;
+  onClose();
+  defer(() => {
+    if (isOpen() && !dialog.open) dialog.showModal();
+  });
 }
 
 const SIZES = { sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-3xl" } as const;
@@ -45,28 +79,42 @@ export function Dialog({
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
+  // Read by native event handlers, which can run after a render that changed them.
+  const openRef = useRef(open);
+  const onCloseRef = useRef(onClose);
+  const pressStartedOnBackdrop = useRef(false);
+
+  useEffect(() => {
+    openRef.current = open;
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog || !open) return;
 
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const previousOverflow = document.documentElement.style.overflow;
 
     if (!dialog.open) dialog.showModal();
-    document.documentElement.style.overflow = "hidden";
+    const releaseScroll = pageScrollLock.acquire();
 
     return () => {
       if (dialog.open) dialog.close();
-      document.documentElement.style.overflow = previousOverflow;
+      releaseScroll();
       opener?.focus();
     };
   }, [open]);
 
-  function onClick(event: MouseEvent<HTMLDialogElement>) {
-    if (event.target !== event.currentTarget) return;
+  function onBackdrop(event: MouseEvent<HTMLDialogElement> | PointerEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) return false;
     const rect = event.currentTarget.getBoundingClientRect();
-    if (isBackdropClick(rect, { x: event.clientX, y: event.clientY })) onClose();
+    return isBackdropClick(rect, { x: event.clientX, y: event.clientY });
+  }
+
+  function onClick(event: MouseEvent<HTMLDialogElement>) {
+    const startedOnBackdrop = pressStartedOnBackdrop.current;
+    pressStartedOnBackdrop.current = false;
+    if (shouldCloseFromBackdrop(startedOnBackdrop, onBackdrop(event))) onClose();
   }
 
   return (
@@ -78,7 +126,18 @@ export function Dialog({
         event.preventDefault();
         onClose();
       }}
+      onPointerDown={(event) => {
+        pressStartedOnBackdrop.current = onBackdrop(event);
+      }}
       onClick={onClick}
+      onClose={(event) =>
+        reconcileNativeClose({
+          dialog: event.currentTarget,
+          isOpen: () => openRef.current,
+          onClose: () => onCloseRef.current(),
+          defer: (run) => window.setTimeout(run, 0),
+        })
+      }
       className={cn(
         "m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden rounded-t-2xl bg-app-surface p-0 text-app-fg shadow-xl ring-1 ring-app-border backdrop:bg-app-overlay open:animate-app-dialog-in sm:m-auto sm:rounded-xl",
         SIZES[size],
@@ -92,9 +151,9 @@ export function Dialog({
                 {title}
               </h2>
               {description ? (
-                <p id={descriptionId} className="mt-1 text-sm text-app-fg-muted">
+                <div id={descriptionId} className="mt-1 text-sm text-app-fg-muted">
                   {description}
-                </p>
+                </div>
               ) : null}
             </div>
             <IconButton
@@ -155,8 +214,9 @@ export function ConfirmDialog({
         if (!pending) onCancel();
       }}
       title={title}
+      description={body}
       size="sm"
-      closeLabel={closeLabel}
+      closeLabel={closeLabel ?? cancelLabel}
       footer={
         <DialogActions>
           <Button variant="secondary" disabled={pending} onClick={onCancel}>
@@ -168,8 +228,7 @@ export function ConfirmDialog({
         </DialogActions>
       }
     >
-      <div className="grid gap-4">
-        {body ? <div className="text-sm text-app-fg-secondary">{body}</div> : null}
+      <div className="grid gap-4 empty:hidden">
         {children}
         {error ? (
           <Alert tone="danger" role="alert">

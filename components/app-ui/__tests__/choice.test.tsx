@@ -28,6 +28,13 @@ describe("SegmentedControl", () => {
     expect(html.match(/tabindex="-1"/g)).toHaveLength(1);
   });
 
+  it("keeps unselected options at AA contrast on the track", () => {
+    // fg-muted on the subtle track is 4.39:1; fg-secondary is 9.37:1.
+    const idle = html.match(/<button[^>]*aria-checked="false"[^>]*>/)?.[0] ?? "";
+    expect(idle).toContain("text-app-fg-secondary");
+    expect(idle).not.toContain("text-app-fg-muted");
+  });
+
   it("shows counts", () => {
     expect(html).toContain(">9<");
   });

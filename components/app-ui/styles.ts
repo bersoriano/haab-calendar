@@ -87,6 +87,6 @@ export function segmentStyles(selected: boolean) {
     focusRing,
     selected
       ? "bg-app-surface text-app-fg shadow-xs ring-1 ring-app-border"
-      : "text-app-fg-muted hover:text-app-fg",
+      : "text-app-fg-secondary hover:text-app-fg",
   );
 }

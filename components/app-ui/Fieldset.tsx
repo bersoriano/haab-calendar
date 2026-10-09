@@ -14,11 +14,12 @@ export function Fieldset({
   children: ReactNode;
 }) {
   return (
-    <fieldset className={cn("grid gap-4", className)}>
-      {/* legend must be the fieldset's first child */}
+    // A rendered legend sits in the fieldset's border area, not in its
+    // layout, so spacing hangs off the elements after it, not a parent gap.
+    <fieldset className={className}>
       <legend className="text-sm font-semibold text-app-fg">{legend}</legend>
-      {description ? <p className="-mt-3 text-sm text-app-fg-muted">{description}</p> : null}
-      {children}
+      {description ? <p className="mt-1 text-sm text-app-fg-muted">{description}</p> : null}
+      <div className="mt-4 grid gap-4">{children}</div>
     </fieldset>
   );
 }

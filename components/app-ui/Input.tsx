@@ -120,7 +120,7 @@ export function Switch({ className, ...props }: Omit<InputHTMLAttributes<HTMLInp
         {...control}
         type="checkbox"
         role="switch"
-        className="absolute inset-0 size-full cursor-pointer appearance-none focus:outline-none disabled:cursor-not-allowed"
+        className="absolute inset-0 size-full cursor-pointer appearance-none focus:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
       />
     </span>
   );

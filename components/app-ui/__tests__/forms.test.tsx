@@ -90,6 +90,11 @@ describe("Switch and Checkbox", () => {
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*role="switch"|<input[^>]*role="switch"[^>]*type="checkbox"/);
   });
 
+  it("stays visible in forced-colors mode", () => {
+    const html = renderToStaticMarkup(<Switch aria-label="Keep history" />);
+    expect(html).toContain("forced-colors:appearance-auto");
+  });
+
   it("puts the label beside an inline control", () => {
     const html = renderToStaticMarkup(
       <Field label="Monday" inline>
@@ -109,6 +114,18 @@ describe("Fieldset and FormSection", () => {
       </Fieldset>,
     );
     expect(html).toMatch(/<fieldset[^>]*><legend[^>]*>Breaks<\/legend>/);
+  });
+
+  it("spaces the description and fields below the legend instead of overlapping it", () => {
+    // A rendered legend is not a grid item, so gap and negative margins on
+    // the fieldset do not position things relative to it.
+    const html = renderToStaticMarkup(
+      <Fieldset legend="Breaks" description="Times you are away">
+        <p>fields</p>
+      </Fieldset>,
+    );
+    expect(html).not.toContain("-mt-");
+    expect(html).toMatch(/<p class="mt-1[^"]*">Times you are away<\/p><div class="mt-4 grid gap-4"><p>fields<\/p><\/div>/);
   });
 
   it("lays out a settings section with its heading", () => {
