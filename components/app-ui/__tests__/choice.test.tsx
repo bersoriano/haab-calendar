@@ -44,6 +44,26 @@ describe("SegmentedControl", () => {
   });
 });
 
+describe("SegmentedControl without a matching value", () => {
+  it("keeps the first option reachable by Tab", () => {
+    const html = renderToStaticMarkup(
+      <SegmentedControl
+        ariaLabel="Period"
+        value={"year" as string}
+        onChange={() => undefined}
+        options={[
+          { value: "week", label: "Week" },
+          { value: "month", label: "Month" },
+        ]}
+      />,
+    );
+    expect(html.match(/tabindex="0"/g)).toHaveLength(1);
+    expect(html).toMatch(/tabindex="0"[^>]*>Week|>Week<\/button>/);
+    expect(html.indexOf('tabindex="0"')).toBeLessThan(html.indexOf("Month"));
+    expect(html).not.toContain('aria-checked="true"');
+  });
+});
+
 describe("nextSegmentIndex", () => {
   it("moves with arrows and wraps", () => {
     expect(nextSegmentIndex(0, "ArrowRight", 3)).toBe(1);

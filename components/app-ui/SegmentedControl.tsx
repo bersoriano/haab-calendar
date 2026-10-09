@@ -28,6 +28,10 @@ export function SegmentedControl<T extends string>({
   className?: string;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  // The Tab stop: the selected option, or the first one when nothing matches,
+  // so the group never drops out of the tab order.
+  const selectedIndex = options.findIndex((option) => option.value === value);
+  const tabStop = selectedIndex === -1 ? 0 : selectedIndex;
 
   function onKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const next = nextSegmentIndex(index, event.key, options.length);
@@ -56,7 +60,7 @@ export function SegmentedControl<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
-            tabIndex={selected ? 0 : -1}
+            tabIndex={index === tabStop ? 0 : -1}
             onClick={() => onChange(option.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={segmentStyles(selected)}
