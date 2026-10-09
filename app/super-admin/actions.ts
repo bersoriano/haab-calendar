@@ -44,5 +44,5 @@ export async function stopDemoEdit() {
   cookieStore.delete(DEMO_EDIT_COOKIE);
 
   revalidatePath("/", "layout");
-  redirect("/super-admin");
+  redirect("/super-admin/demo-pages");
 }
