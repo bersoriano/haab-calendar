@@ -2,7 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ refresh: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/super-admin/accounts",
 }));
 
 import { UserPublicationTable } from "@/components/super-admin/UserPublicationTable";
@@ -60,5 +61,42 @@ describe("UserPublicationTable", () => {
     );
 
     expect(html).toContain("No registered users");
+  });
+
+  it("offers search and publishing filters", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).toContain('type="search"');
+    expect(html).toContain('aria-label="Search accounts"');
+    for (const label of ["All", "Publishing on", "Publishing off"]) {
+      expect(html).toContain(`>${label}<`);
+    }
+    expect(html).toContain("2 of 2 accounts");
+  });
+
+  it("starts from the filters in the link", () => {
+    const html = renderToStaticMarkup(
+      <UserPublicationTable initialUsers={users} initialStatus="disabled" />,
+    );
+
+    expect(html).toContain("new-user@example.com");
+    expect(html).not.toContain("bsorianodev@gmail.com");
+    expect(html).toContain("1 of 2 accounts");
+    expect(html).toMatch(/aria-pressed="true"[^>]*>Publishing off<|>Publishing off</);
+  });
+
+  it("says when a search matches nobody", () => {
+    const html = renderToStaticMarkup(
+      <UserPublicationTable initialUsers={users} initialQuery="zzz-nobody" />,
+    );
+
+    expect(html).toContain("No accounts match");
+    expect(html).not.toContain("No registered users");
+  });
+
+  it("fits beside the sidebar instead of scrolling sideways", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).not.toContain("min-w-[1120px]");
   });
 });

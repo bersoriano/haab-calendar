@@ -180,8 +180,8 @@ export function ProviderIntegrationsSection({
   const statusTones: Record<IntegrationAvailability, string> = {
     available: "bg-[var(--success-soft)] text-[var(--success-strong)]",
     premium_required: "bg-[var(--warning-soft)] text-[var(--warning-strong)]",
-    unavailable: "bg-slate-100 text-slate-700",
-    publish_required: "bg-slate-100 text-slate-700",
+    unavailable: "bg-[var(--surface-highest)] text-[var(--ink)]",
+    publish_required: "bg-[var(--surface-highest)] text-[var(--ink)]",
   };
 
   return (
@@ -217,14 +217,14 @@ export function ProviderIntegrationsSection({
                       "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
                       connection?.connected
                         ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
-                        : "bg-slate-100 text-slate-700",
+                        : "bg-[var(--surface-highest)] text-[var(--ink)]",
                     )}
                   >
                     {connection?.connected ? t.googleConnected : t.integrationNotConnected}
                   </span>
                 ) : null}
                 {demoEdit ? (
-                  <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                  <span className="inline-flex rounded-full bg-[var(--surface-highest)] px-2 py-1 text-[11px] font-semibold text-[var(--ink)]">
                     {t.integrationReadOnly}
                   </span>
                 ) : null}

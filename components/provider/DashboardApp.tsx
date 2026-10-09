@@ -17,6 +17,7 @@ import {
 } from "@/components/app-shell/SidebarNav";
 import {
   SUPER_ADMIN_ACCENT_CLASS,
+  SUPER_ADMIN_ACCENT_HOVER_CLASS,
   SUPER_ADMIN_ACCENT_TEXT_CLASS,
 } from "@/components/app-shell/super-admin-accent";
 import type { ShellIconName, ShellNavGroup } from "@/components/app-shell/types";
@@ -248,7 +249,7 @@ export function DashboardApp({
         {isSuperAdmin ? (
           <Link
             href="/super-admin"
-            className={cn(shellNavItemClass, SUPER_ADMIN_ACCENT_TEXT_CLASS, "hover:bg-violet-50")}
+            className={cn(shellNavItemClass, SUPER_ADMIN_ACCENT_TEXT_CLASS, SUPER_ADMIN_ACCENT_HOVER_CLASS)}
           >
             <ShellIcon name="superAdmin" />
             <span className="min-w-0 flex-1 truncate">{shell.superAdmin}</span>

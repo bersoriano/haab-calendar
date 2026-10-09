@@ -10,7 +10,10 @@ import { AppShell } from "@/components/app-shell/AppShell";
 import { ShellFooter } from "@/components/app-shell/ShellFooter";
 import { ShellIcon } from "@/components/app-shell/ShellIcon";
 import { SidebarNav, shellNavItemClass, shellNavItemStateClass } from "@/components/app-shell/SidebarNav";
-import { SUPER_ADMIN_ACCENT_CLASS } from "@/components/app-shell/super-admin-accent";
+import {
+  SUPER_ADMIN_ACCENT_CLASS,
+  SUPER_ADMIN_ACCENT_TEXT_CLASS,
+} from "@/components/app-shell/super-admin-accent";
 import type { ShellNavGroup } from "@/components/app-shell/types";
 import { cn } from "@/lib/utils";
 
@@ -109,7 +112,12 @@ export function SuperAdminShell({
           <span className="block text-base font-bold tracking-[-0.02em] text-[var(--ink)]">
             Haab Calendar
           </span>
-          <span className="block text-xs font-semibold uppercase tracking-[0.12em] text-violet-700">
+          <span
+            className={cn(
+              "block text-xs font-semibold uppercase tracking-[0.12em]",
+              SUPER_ADMIN_ACCENT_TEXT_CLASS,
+            )}
+          >
             Super admin
           </span>
         </span>
