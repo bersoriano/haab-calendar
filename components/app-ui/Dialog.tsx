@@ -80,6 +80,7 @@ export function Dialog({
   size = "md",
   footer,
   closeLabel,
+  alert = false,
   children,
 }: {
   open: boolean;
@@ -88,6 +89,8 @@ export function Dialog({
   description?: ReactNode;
   size?: keyof typeof SIZES;
   footer?: ReactNode;
+  /** An alert dialog: a decision that interrupts the task (e.g. replace a page). */
+  alert?: boolean;
   /** The kit has no language of its own: callers word the close button. */
   closeLabel: string;
   children?: ReactNode;
@@ -141,6 +144,7 @@ export function Dialog({
   return (
     <dialog
       ref={ref}
+      role={alert ? "alertdialog" : undefined}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
       onCancel={(event) => {
@@ -218,11 +222,13 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   closeLabel,
+  alert,
   children,
 }: {
   open: boolean;
   title: ReactNode;
   body?: ReactNode;
+  alert?: boolean;
   confirmLabel: string;
   cancelLabel: string;
   tone?: "danger" | "primary";
@@ -241,6 +247,7 @@ export function ConfirmDialog({
       }}
       title={title}
       description={body}
+      alert={alert}
       size="sm"
       closeLabel={closeLabel ?? cancelLabel}
       footer={

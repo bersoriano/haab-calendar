@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowRight, Warning, X } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState } from "react";
+import { ArrowRight } from "@phosphor-icons/react";
+import { useState, type ReactNode } from "react";
 
+import { Alert, Button, Checkbox, Dialog, DialogActions, Field, StackedList, StackedListItem } from "@/components/app-ui";
 import { fillTemplate } from "@/components/booking/i18n/translations";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { countLabel, dashboardCopy } from "@/components/provider/dashboard-copy";
-import { ActionButton } from "@/components/ui/ActionButton";
 import { formatDateLabel, formatTimeRange } from "@/lib/format";
 import { buildProviderPath } from "@/lib/public-url";
 import { VERTICAL_IDS, type BookingRecord, type Lang, type VerticalId } from "@/lib/types";
@@ -43,36 +43,13 @@ export function ChangeBusinessTypeDialog({
 }) {
   const copy = dashboardCopy[lang].businessType;
   const verticals = landingTranslations[lang].home.verticals;
-  const titleId = useId();
-  const panelRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<VerticalId | undefined>(initialVertical);
   const [acknowledged, setAcknowledged] = useState(false);
   const blocked = blocking.bookings.length > 0 || blocking.activeHolds > 0;
 
-  const onCancelRef = useRef(onCancel);
-
-  useEffect(() => {
-    onCancelRef.current = onCancel;
-  }, [onCancel]);
-
-  // Once, on open: a parent re-render must not pull focus back to the panel.
-  useEffect(() => {
-    panelRef.current?.focus();
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        onCancelRef.current();
-      }
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   let title: string;
-  let body: React.ReactNode;
-  let footer: React.ReactNode;
+  let body: ReactNode;
+  let footer: ReactNode;
 
   if (blocked) {
     title = copy.blockedTitle;
@@ -80,48 +57,41 @@ export function ChangeBusinessTypeDialog({
       <div className="grid gap-4">
         {blocking.bookings.length > 0 ? (
           <>
-            <p className="text-sm leading-6 text-[var(--ink)]">
+            <p className="text-sm text-app-fg">
               {fillTemplate(copy.blockedBookings, {
                 bookings: countLabel(copy.bookingsCount, blocking.bookings.length),
               })}
             </p>
-            <ul className="grid gap-2">
+            <StackedList className="rounded-lg ring-1 ring-app-border">
               {blocking.bookings.slice(0, BLOCKING_PREVIEW).map((booking) => (
-                <li
-                  key={booking.id}
-                  className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm"
-                >
-                  <p className="font-semibold text-[var(--ink)]">{booking.clientName}</p>
-                  <p className="mt-0.5 text-[var(--muted)]">
+                <StackedListItem key={booking.id} className="px-4 py-3 sm:px-4">
+                  <p className="text-sm font-semibold text-app-fg">{booking.clientName}</p>
+                  <p className="mt-0.5 text-sm text-app-fg-muted">
                     {booking.serviceName} · {formatDateLabel(booking.dateKey, lang)} ·{" "}
                     {formatTimeRange(booking.startTime, booking.endTime, lang)}
                   </p>
-                </li>
+                </StackedListItem>
               ))}
-            </ul>
+            </StackedList>
           </>
         ) : (
-          <p className="text-sm leading-6 text-[var(--ink)]">{copy.blockedHolds}</p>
+          <p className="text-sm text-app-fg">{copy.blockedHolds}</p>
         )}
       </div>
     );
     footer = (
       <>
-        <ActionButton tone="ghost" onClick={onCancel}>
+        <Button variant="secondary" onClick={onCancel}>
           {copy.cancel}
-        </ActionButton>
-        {blocking.bookings.length > 0 ? (
-          <ActionButton tone="primary" onClick={onGoToBookings}>
-            {copy.goToBookings}
-          </ActionButton>
-        ) : null}
+        </Button>
+        {blocking.bookings.length > 0 ? <Button onClick={onGoToBookings}>{copy.goToBookings}</Button> : null}
       </>
     );
   } else if (!selected) {
     title = copy.pickTitle;
     body = (
       <div className="grid gap-4">
-        <p className="text-sm leading-6 text-[var(--muted)]">{copy.pickBody}</p>
+        <p className="text-sm text-app-fg-muted">{copy.pickBody}</p>
         <ul className="grid gap-2 sm:grid-cols-2">
           {VERTICAL_IDS.filter((id) => id !== currentVertical).map((id) => (
             <li key={id}>
@@ -131,15 +101,13 @@ export function ChangeBusinessTypeDialog({
                   setSelected(id);
                   setAcknowledged(false);
                 }}
-                className="flex h-full min-h-11 w-full items-start justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] p-4 text-left transition hover:border-[var(--primary)] hover:bg-[var(--accent-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                className="flex h-full min-h-11 w-full items-start justify-between gap-3 rounded-lg bg-app-surface p-4 text-left ring-1 ring-inset ring-app-border transition-colors hover:bg-app-accent-soft hover:ring-app-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent"
               >
                 <span className="min-w-0">
-                  <span className="block font-semibold text-[var(--ink)]">{verticals[id].label}</span>
-                  <span className="mt-0.5 block text-sm text-[var(--muted)]">
-                    {verticals[id].tagline}
-                  </span>
+                  <span className="block font-semibold text-app-fg">{verticals[id].label}</span>
+                  <span className="mt-0.5 block text-sm text-app-fg-muted">{verticals[id].tagline}</span>
                 </span>
-                <ArrowRight aria-hidden="true" size={18} className="mt-1 shrink-0 text-[var(--muted)]" />
+                <ArrowRight aria-hidden="true" size={18} className="mt-1 shrink-0 text-app-fg-muted" />
               </button>
             </li>
           ))}
@@ -147,30 +115,24 @@ export function ChangeBusinessTypeDialog({
       </div>
     );
     footer = (
-      <ActionButton tone="ghost" onClick={onCancel}>
+      <Button variant="secondary" onClick={onCancel}>
         {copy.cancel}
-      </ActionButton>
+      </Button>
     );
   } else {
     const typeLabel = verticals[selected].label;
     title = fillTemplate(copy.warningTitle, { type: typeLabel });
     body = (
-      <div className="grid gap-4 text-sm leading-6">
-        <section className="rounded-2xl border border-[var(--warning-line)] bg-[var(--warning-soft)] p-4 text-[var(--warning-strong)]">
-          <h3 className="flex items-center gap-2 font-semibold">
-            <Warning aria-hidden="true" size={18} />
-            {copy.replacedTitle}
-          </h3>
-          <p className="mt-1">
-            {fillTemplate(copy.replacedBody, {
-              services: countLabel(copy.servicesCount, summary.services),
-              type: typeLabel,
-            })}
-          </p>
-        </section>
-        <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-[var(--ink)]">
+      <div className="grid gap-4 text-sm">
+        <Alert tone="warning" title={copy.replacedTitle}>
+          {fillTemplate(copy.replacedBody, {
+            services: countLabel(copy.servicesCount, summary.services),
+            type: typeLabel,
+          })}
+        </Alert>
+        <section className="rounded-lg bg-app-subtle p-4 text-app-fg">
           <h3 className="font-semibold">{copy.staysTitle}</h3>
-          <ul className="mt-1 list-disc pl-5 text-[var(--muted)]">
+          <ul className="mt-1 list-disc pl-5 text-app-fg-muted">
             {copy.stays.map((item) => (
               <li key={item}>{item}</li>
             ))}
@@ -182,62 +144,33 @@ export function ChangeBusinessTypeDialog({
             })}
           </p>
         </section>
-        <p className="text-[var(--muted)]">{copy.notCarried}</p>
-        <label className="flex min-h-11 items-start gap-3 rounded-2xl border border-[var(--line)] p-4 font-medium text-[var(--ink)]">
-          <input
-            type="checkbox"
-            checked={acknowledged}
-            onChange={(event) => setAcknowledged(event.target.checked)}
-            className="mt-1 h-4 w-4 shrink-0 accent-[var(--primary)]"
-          />
-          {copy.acknowledge}
-        </label>
+        <p className="text-app-fg-muted">{copy.notCarried}</p>
+        <Field label={copy.acknowledge} inline className="rounded-lg p-4 ring-1 ring-app-border">
+          <Checkbox checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />
+        </Field>
       </div>
     );
     footer = (
       <>
-        <ActionButton tone="ghost" onClick={() => setSelected(undefined)}>
+        <Button variant="secondary" onClick={() => setSelected(undefined)}>
           {copy.back}
-        </ActionButton>
-        <ActionButton
-          tone="primary"
-          disabled={!acknowledged}
-          onClick={() => onContinue(selected)}
-        >
+        </Button>
+        <Button disabled={!acknowledged} onClick={() => onContinue(selected)}>
           {copy.continue}
-        </ActionButton>
+        </Button>
       </>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-[rgba(15,23,32,0.55)] px-4 py-8 backdrop-blur-sm">
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className="w-full max-w-xl rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_30px_90px_rgba(15,23,42,0.28)] focus:outline-none"
-      >
-        <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-6 py-5">
-          <h2 id={titleId} className="text-xl font-semibold tracking-[-0.02em] text-[var(--ink)]">
-            {title}
-          </h2>
-          <button
-            type="button"
-            aria-label={copy.cancel}
-            onClick={onCancel}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-[var(--muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-          >
-            <X aria-hidden="true" size={18} />
-          </button>
-        </div>
-        <div className="px-6 py-5">{body}</div>
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-[var(--line)] px-6 py-4">
-          {footer}
-        </div>
-      </div>
-    </div>
+    <Dialog
+      open
+      onClose={onCancel}
+      title={title}
+      closeLabel={copy.cancel}
+      footer={<DialogActions>{footer}</DialogActions>}
+    >
+      {body}
+    </Dialog>
   );
 }

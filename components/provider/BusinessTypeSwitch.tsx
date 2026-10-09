@@ -1,13 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 
 import { fillTemplate } from "@/components/booking/i18n/translations";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { countLabel, dashboardCopy } from "@/components/provider/dashboard-copy";
-import { ActionButton } from "@/components/ui/ActionButton";
-import { Alert } from "@/components/ui/Alert";
+import { Alert, Button, Card, CardBody, CardFooter, CardHeader, ConfirmDialog } from "@/components/app-ui";
 import { getVerticalPreset } from "@/config/verticals";
 import {
   businessTypeDraftKey,
@@ -84,7 +83,6 @@ export function BusinessTypeSwitch({
   const copy = dashboardCopy[lang].businessType;
   const verticals = landingTranslations[lang].home.verticals;
   const key = businessTypeDraftKey(liveStore.provider.publicSlug || "page");
-  const confirmTitleId = useId();
 
   // Runs in the browser only (the dashboard mounts its content client-side),
   // and before the wizard mounts, so the wizard hydrates from the draft.
@@ -153,35 +151,31 @@ export function BusinessTypeSwitch({
 
   if (phase === "missing") {
     return (
-      <section className="rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 text-center">
-        <p className="text-lg font-semibold text-[var(--ink)]">{copy.pickTitle}</p>
-        <ActionButton tone="primary" className="mt-4" onClick={onCancel}>
-          {copy.back}
-        </ActionButton>
-      </section>
+      <Card className="text-center">
+        <CardBody className="grid justify-items-center gap-4 py-10">
+          <p className="text-base font-semibold text-app-fg">{copy.pickTitle}</p>
+          <Button onClick={onCancel}>{copy.back}</Button>
+        </CardBody>
+      </Card>
     );
   }
 
   if (phase === "ask") {
     return (
-      <section className="mx-auto max-w-xl rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6">
-        <h2 className="text-xl font-semibold text-[var(--ink)]">
-          {fillTemplate(copy.replaceDraftTitle, {
+      <Card as="section" className="mx-auto max-w-xl">
+        <CardHeader
+          title={fillTemplate(copy.replaceDraftTitle, {
             from: draftVertical ? verticals[draftVertical].label : "",
           })}
-        </h2>
-        <p className="mt-2 text-sm text-[var(--muted)]">
-          {fillTemplate(copy.replaceDraftBody, { to: to ? verticals[to].label : "" })}
-        </p>
-        <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <ActionButton tone="secondary" onClick={() => setPhase("ready")}>
+          description={fillTemplate(copy.replaceDraftBody, { to: to ? verticals[to].label : "" })}
+        />
+        <CardFooter>
+          <Button variant="secondary" onClick={() => setPhase("ready")}>
             {copy.keepDraft}
-          </ActionButton>
-          <ActionButton tone="primary" onClick={startOver}>
-            {copy.startNew}
-          </ActionButton>
-        </div>
-      </section>
+          </Button>
+          <Button onClick={startOver}>{copy.startNew}</Button>
+        </CardFooter>
+      </Card>
     );
   }
 
@@ -190,9 +184,9 @@ export function BusinessTypeSwitch({
       <Alert
         tone="warning"
         actions={
-          <ActionButton tone="ghost" onClick={cancelChange}>
+          <Button variant="secondary" size="sm" onClick={cancelChange}>
             {copy.cancelChange}
-          </ActionButton>
+          </Button>
         }
       >
         {draftBannerText(lang, draftVertical)}
@@ -212,40 +206,24 @@ export function BusinessTypeSwitch({
         }
       />
 
-      {pending ? (
-        <div className="fixed inset-0 z-[80] grid place-items-center bg-[rgba(15,23,32,0.55)] px-4 backdrop-blur-sm">
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby={confirmTitleId}
-            className="w-full max-w-md rounded-[28px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 shadow-[0_30px_90px_rgba(15,23,42,0.28)]"
-          >
-            <h2 id={confirmTitleId} className="text-xl font-semibold text-[var(--ink)]">
-              {copy.confirmTitle}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              {fillTemplate(copy.confirmBody, {
-                services: countLabel(copy.servicesCount, liveStore.services.length),
-              })}
-            </p>
-            <div className="mt-5 flex flex-wrap justify-end gap-2">
-              <ActionButton
-                tone="ghost"
-                disabled={publishing}
-                onClick={() => {
-                  pending.resolve(null);
-                  setPending(null);
-                }}
-              >
-                {copy.cancel}
-              </ActionButton>
-              <ActionButton tone="primary" disabled={publishing} onClick={() => void replaceAndPublish()}>
-                {copy.publishLabel}
-              </ActionButton>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ConfirmDialog
+        open={pending !== null}
+        alert
+        title={copy.confirmTitle}
+        body={fillTemplate(copy.confirmBody, {
+          services: countLabel(copy.servicesCount, liveStore.services.length),
+        })}
+        confirmLabel={copy.publishLabel}
+        cancelLabel={copy.cancel}
+        closeLabel={copy.cancel}
+        tone="primary"
+        pending={publishing}
+        onConfirm={() => void replaceAndPublish()}
+        onCancel={() => {
+          pending?.resolve(null);
+          setPending(null);
+        }}
+      />
     </div>
   );
 }

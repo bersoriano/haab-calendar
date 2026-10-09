@@ -54,6 +54,9 @@ const MIGRATED = [
   "components/provider/GoogleCalendarCapabilities.tsx",
   "components/provider/ProviderSettingsSurface.tsx",
   "components/provider/BookingRetentionSettings.tsx",
+  "components/provider/ChangeBusinessTypeDialog.tsx",
+  "components/provider/BusinessTypeSwitch.tsx",
+  "components/provider/VerticalPicker.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
