@@ -160,6 +160,7 @@ import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsS
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { ToastProvider } from "@/components/app-ui";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
@@ -7346,10 +7347,12 @@ export function HaabBookingModule({
         ) : null}
 
         {surface === "management" && surfaceMode === "adaptive" ? (
-          <div className="p-5 sm:p-8">
-            {renderManagementSections()}
-            {saveBar}
-          </div>
+          <ToastProvider dismissLabel={dashboardCopy[lang].dismiss}>
+            <div className="p-5 sm:p-8">
+              {renderManagementSections()}
+              {saveBar}
+            </div>
+          </ToastProvider>
         ) : (
           renderPublicFlow()
         )}
