@@ -22,6 +22,12 @@ export type DemoPage = {
 export const DEMO_OWNER_EMAIL_PREFIX = "public-examples+";
 export const DEMO_OWNER_EMAIL_DOMAIN = "haab-calendar.invalid";
 
+/** Set when the super admin is editing one of the public example pages. */
+export type DemoEditBanner = {
+  label: string;
+  publicPath: string;
+};
+
 /** Names the demo being edited; grants nothing on its own. */
 export const DEMO_EDIT_COOKIE = "haab_demo_edit";
 

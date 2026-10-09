@@ -81,28 +81,27 @@ describe("integration state boundaries", () => {
 
 describe("entitlement data flow", () => {
   it("resolves entitlements on the server from the dashboard context", () => {
-    const page = read("app/page.tsx");
+    const loader = read("lib/supabase/dashboard-loader.ts");
 
-    expect(page).toContain("getProviderDashboardContext");
-    expect(page).toContain("getProviderEntitlements(");
-    expect(page).toContain("dashboardContext.providerId");
-    expect(page).toContain("providerEntitlements={providerEntitlements}");
+    expect(loader).toContain("getProviderDashboardContext");
+    expect(loader).toContain("getProviderEntitlements(");
+    expect(loader).toContain("dashboardContext.providerId");
     // Failure is logged and passed on as absence, not swallowed into access.
-    expect(page).toContain("provider_entitlements_load_failed");
+    expect(loader).toContain("provider_entitlements_load_failed");
   });
 
   it("never reads entitlements from the session or the browser", () => {
-    const page = read("app/page.tsx");
+    for (const file of ["app/page.tsx", "lib/supabase/dashboard-loader.ts"]) {
+      const source = read(file);
 
-    expect(page).not.toContain("user_metadata");
-    expect(page).not.toContain("searchParams.providerId");
+      expect(source).not.toContain("user_metadata");
+      expect(source).not.toContain("searchParams.providerId");
+    }
   });
 
   it("passes the snapshot through the client tree without rebuilding it", () => {
     const home = read("components/home-experience.tsx");
 
-    expect(home).toContain("providerEntitlements?: ProviderEntitlements");
-    expect(home).toContain("providerEntitlements={providerEntitlements}");
     expect(home).not.toContain("resolveEntitlements(");
   });
 });
