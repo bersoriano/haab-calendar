@@ -161,6 +161,7 @@ import { AvailabilitySettingsSection } from "@/components/provider/AvailabilityS
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ToastProvider } from "@/components/app-ui";
+import { moduleMountsOwnToasts } from "@/lib/module-toasts";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
@@ -7231,7 +7232,7 @@ export function HaabBookingModule({
     );
   }
 
-  return (
+  const moduleOutput = (
     <>
       <section className={publicShellClass}>
         {isDedicatedPublicPage && surface === "public" ? (
@@ -7347,12 +7348,10 @@ export function HaabBookingModule({
         ) : null}
 
         {surface === "management" && surfaceMode === "adaptive" ? (
-          <ToastProvider dismissLabel={dashboardCopy[lang].dismiss}>
-            <div className="p-5 sm:p-8">
-              {renderManagementSections()}
-              {saveBar}
-            </div>
-          </ToastProvider>
+          <div className="p-5 sm:p-8">
+            {renderManagementSections()}
+            {saveBar}
+          </div>
         ) : (
           renderPublicFlow()
         )}
@@ -7360,5 +7359,13 @@ export function HaabBookingModule({
 
       {modals}
     </>
+  );
+
+  // Embedded hosts have no dashboard shell to give the module a toast region;
+  // wrap everything it renders, header and dialogs included.
+  return moduleMountsOwnToasts({ chrome, surfaceMode }) ? (
+    <ToastProvider dismissLabel={dashboardCopy[lang].dismiss}>{moduleOutput}</ToastProvider>
+  ) : (
+    moduleOutput
   );
 }
