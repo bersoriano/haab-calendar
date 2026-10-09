@@ -146,6 +146,18 @@ describe("Switch and Checkbox", () => {
     expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*role="switch"|<input[^>]*role="switch"[^>]*type="checkbox"/);
   });
 
+  it("gives the switch a 44px-tall hit area around its 24px track", () => {
+    const html = renderToStaticMarkup(<Switch aria-label="Keep history" />);
+    // w-11 (44px) track width; the input reaches 10px above and below it.
+    expect(html).toMatch(/<input[^>]*class="[^"]*-inset-y-2\.5/);
+  });
+
+  it("gives the checkbox a 44px hit area without moving it", () => {
+    const html = renderToStaticMarkup(<Checkbox aria-label="Monday" />);
+    // 16px box + 14px padding each side; the negative margin keeps layout.
+    expect(html).toMatch(/^<label class="[^"]*-m-3\.5[^"]*p-3\.5[^"]*"><input/);
+  });
+
   it("stays visible in forced-colors mode", () => {
     const html = renderToStaticMarkup(<Switch aria-label="Keep history" />);
     expect(html).toContain("forced-colors:appearance-auto");

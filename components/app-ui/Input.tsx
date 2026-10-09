@@ -88,20 +88,27 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
   );
 }
 
+/**
+ * A native checkbox. The wrapping label pads it to a 44px hit area and the
+ * negative margin gives the space back, so layout sees a 16px box. Use it in
+ * a Field (or with aria-label), not inside another label.
+ */
 export function Checkbox({ className, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, "type">) {
   const control = useFieldControl(props);
 
   return (
-    <input
-      {...control}
-      {...appControl}
-      type="checkbox"
-      className={cn(
-        "size-4 rounded border-app-border-strong accent-app-accent disabled:cursor-not-allowed disabled:opacity-50",
-        focusRing,
-        className,
-      )}
-    />
+    <label className="-m-3.5 inline-flex cursor-pointer p-3.5 has-disabled:cursor-not-allowed">
+      <input
+        {...control}
+        {...appControl}
+        type="checkbox"
+        className={cn(
+          "size-4 rounded border-app-border-strong accent-app-accent disabled:cursor-not-allowed disabled:opacity-50",
+          focusRing,
+          className,
+        )}
+      />
+    </label>
   );
 }
 
@@ -125,7 +132,7 @@ export function Switch({ className, ...props }: Omit<InputHTMLAttributes<HTMLInp
         {...appControl}
         type="checkbox"
         role="switch"
-        className="absolute inset-0 size-full cursor-pointer appearance-none focus:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
+        className="absolute inset-x-0 -inset-y-2.5 cursor-pointer appearance-none focus:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"
       />
     </span>
   );
