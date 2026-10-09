@@ -112,7 +112,7 @@ export function SuperAdminShell({
   );
 
   return (
-    <ToastProvider>
+    <ToastProvider dismissLabel="Dismiss notification">
       <AppShell
         sidebar={sidebar}
         title={page.title}

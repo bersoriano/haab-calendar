@@ -64,7 +64,7 @@ export function Dialog({
   description,
   size = "md",
   footer,
-  closeLabel = "Close",
+  closeLabel,
   children,
 }: {
   open: boolean;
@@ -73,7 +73,8 @@ export function Dialog({
   description?: ReactNode;
   size?: keyof typeof SIZES;
   footer?: ReactNode;
-  closeLabel?: string;
+  /** The kit has no language of its own: callers word the close button. */
+  closeLabel: string;
   children?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);

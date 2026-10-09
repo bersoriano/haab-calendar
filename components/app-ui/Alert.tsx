@@ -14,6 +14,14 @@ import { cn } from "@/lib/utils";
 
 export type AlertTone = "neutral" | "success" | "warning" | "danger" | "info" | "admin";
 
+/**
+ * A dismissable alert words its own close button (the kit has no language)
+ * and is client-only: a server component cannot pass a function.
+ */
+type AlertDismiss =
+  | { onDismiss?: undefined; dismissLabel?: undefined }
+  | { onDismiss: () => void; dismissLabel: string };
+
 const ICONS = {
   neutral: Info,
   info: Info,
@@ -31,7 +39,7 @@ export function Alert({
   actions,
   role,
   onDismiss,
-  dismissLabel = "Dismiss",
+  dismissLabel,
   className,
 }: {
   tone: AlertTone;
@@ -39,11 +47,8 @@ export function Alert({
   children?: ReactNode;
   actions?: ReactNode;
   role?: "status" | "alert";
-  /** Client callers only: a server component cannot pass a function. */
-  onDismiss?: () => void;
-  dismissLabel?: string;
   className?: string;
-}) {
+} & AlertDismiss) {
   const Icon = ICONS[tone];
   const surface =
     tone === "neutral" ? "bg-app-surface text-app-fg ring-app-border" : toneSurface[tone];
@@ -60,7 +65,7 @@ export function Alert({
       </div>
       {onDismiss ? (
         <IconButton
-          label={dismissLabel}
+          label={dismissLabel ?? ""}
           icon={<X aria-hidden="true" size={16} />}
           size="sm"
           onClick={onDismiss}

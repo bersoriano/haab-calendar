@@ -17,7 +17,7 @@ describe("isBackdropClick", () => {
 describe("Dialog", () => {
   it("names itself from its title and description", () => {
     const html = renderToStaticMarkup(
-      <Dialog open onClose={() => undefined} title="Reschedule" description="Pick a new time">
+      <Dialog open onClose={() => undefined} title="Reschedule" description="Pick a new time" closeLabel="Close">
         <p>slots</p>
       </Dialog>,
     );
@@ -32,7 +32,7 @@ describe("Dialog", () => {
 
   it("never renders the open attribute itself (showModal owns it)", () => {
     const html = renderToStaticMarkup(
-      <Dialog open onClose={() => undefined} title="T">
+      <Dialog open onClose={() => undefined} title="T" closeLabel="Close">
         x
       </Dialog>,
     );
@@ -41,7 +41,7 @@ describe("Dialog", () => {
 
   it("renders no content while closed", () => {
     const html = renderToStaticMarkup(
-      <Dialog open={false} onClose={() => undefined} title="Hidden title">
+      <Dialog open={false} onClose={() => undefined} title="Hidden title" closeLabel="Close">
         secret
       </Dialog>,
     );

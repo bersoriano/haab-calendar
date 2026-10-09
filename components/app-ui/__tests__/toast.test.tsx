@@ -56,7 +56,7 @@ describe("toastReducer", () => {
 describe("ToastProvider", () => {
   it("renders one polite live region", () => {
     const html = renderToStaticMarkup(
-      <ToastProvider>
+      <ToastProvider dismissLabel="Dismiss">
         <p>page</p>
       </ToastProvider>,
     );
@@ -66,8 +66,8 @@ describe("ToastProvider", () => {
 
   it("does not add a second region when nested", () => {
     const html = renderToStaticMarkup(
-      <ToastProvider>
-        <ToastProvider>
+      <ToastProvider dismissLabel="Dismiss">
+        <ToastProvider dismissLabel="Dismiss">
           <p>module</p>
         </ToastProvider>
       </ToastProvider>,

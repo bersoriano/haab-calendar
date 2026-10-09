@@ -38,10 +38,11 @@ export function useToast(): ToastApi {
  * and the module can both mount one.
  */
 export function ToastProvider({
-  dismissLabel = "Dismiss notification",
+  dismissLabel,
   children,
 }: {
-  dismissLabel?: string;
+  /** The kit has no language of its own: callers word the close button. */
+  dismissLabel: string;
   children: ReactNode;
 }) {
   const parent = useContext(ToastContext);
