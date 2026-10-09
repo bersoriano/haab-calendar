@@ -56,4 +56,23 @@ describe("ServiceEditor layout", () => {
     expect(html).toMatch(/href="#service-editor"[^>]*class="[^"]*lg:hidden/);
     expect(html).toContain(copy.phrases.newServiceTitle);
   });
+
+  it("shows why a save or delete did not go through", () => {
+    const html = renderToStaticMarkup(
+      <ServiceEditor
+        services={[]}
+        serviceDraft={createBlankServiceDraft()}
+        onDraftChange={() => undefined}
+        editingServiceId={null}
+        onUpsert={() => undefined}
+        onReset={() => undefined}
+        onEdit={() => undefined}
+        onRemove={() => undefined}
+        provider={normalizeProvider({})}
+        error="Add a name and a description."
+      />,
+    );
+    expect(html).toMatch(/role="alert"[\s\S]*Add a name and a description\./);
+  });
 });
+

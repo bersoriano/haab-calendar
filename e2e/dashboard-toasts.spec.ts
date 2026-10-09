@@ -69,7 +69,7 @@ test.describe("dashboard toasts", () => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/dashboard/settings");
     // Not saved: the switch lives in this tab's store only.
-    await page.getByRole("button", { name: "Cambiar a español" }).click();
+    await page.getByRole("radio", { name: "Español" }).click();
 
     await page.locator("header").getByRole("button", { name: "Copiar enlace" }).click();
     const toast = page.getByRole("status").filter({ hasText: "Enlace de reservas copiado" });

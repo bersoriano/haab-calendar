@@ -3911,7 +3911,8 @@ export function HaabBookingModule({
     );
   }
 
-  function renderServices() {
+  /** The wizard shows setup errors itself; the dashboard shows them here. */
+  function renderServices({ showError = false }: { showError?: boolean } = {}) {
     return (
       <ServiceEditor
         services={services}
@@ -3928,6 +3929,7 @@ export function HaabBookingModule({
         provider={provider}
         vertical={vertical}
         lang={lang}
+        error={showError ? setupError : null}
       />
     );
   }
@@ -3957,7 +3959,7 @@ export function HaabBookingModule({
       case "calendar":
         return renderAdminCalendar();
       case "services":
-        return renderServices();
+        return renderServices({ showError: true });
       case "appearance":
         return renderAppearance();
       case "availability":

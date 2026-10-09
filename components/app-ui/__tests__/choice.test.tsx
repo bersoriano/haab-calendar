@@ -110,6 +110,11 @@ describe("LanguageToggle", () => {
     expect(html).not.toContain('role="radio"');
   });
 
+  it("names each option by its language for screen readers", () => {
+    const html = renderToStaticMarkup(<LanguageToggle lang="en" onChange={() => undefined} />);
+    expect(html).toContain('<span aria-hidden="true">ES</span><span class="sr-only">Español</span>');
+  });
+
   it("renders a segmented control when it changes state", () => {
     const html = renderToStaticMarkup(<LanguageToggle lang="en" onChange={() => undefined} />);
     expect(html).toContain('role="radiogroup"');

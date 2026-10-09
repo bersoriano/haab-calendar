@@ -75,6 +75,7 @@ export function ServiceEditor({
   provider,
   vertical,
   lang = "en",
+  error,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -90,6 +91,8 @@ export function ServiceEditor({
   provider: ProviderInfo;
   vertical?: VerticalId;
   lang?: Lang;
+  /** Why the last save or delete was refused, for hosts that show no other error. */
+  error?: string | null;
 }) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
@@ -153,6 +156,11 @@ export function ServiceEditor({
       : profileHints.phoneHintFull;
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      {error ? (
+        <Alert tone="danger" role="alert" className="lg:col-span-2">
+          {error}
+        </Alert>
+      ) : null}
       <Card as="section">
         <CardHeader
           title={copy.Services}

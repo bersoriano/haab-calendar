@@ -23,7 +23,15 @@ export function LanguageToggle({
   hrefFor?: (lang: Lang) => string;
   className?: string;
 }) {
-  const label = bookingTranslations[lang].language.chooseLanguage;
+  const t = bookingTranslations[lang].language;
+  const label = t.chooseLanguage;
+  // Short codes on screen, the language's own name for screen readers.
+  const optionLabel = (option: Lang) => (
+    <>
+      <span aria-hidden="true">{option.toUpperCase()}</span>
+      <span className="sr-only">{option === "en" ? t.english : t.spanish}</span>
+    </>
+  );
 
   if (hrefFor) {
     return (
@@ -37,7 +45,7 @@ export function LanguageToggle({
             aria-current={option === lang ? "true" : undefined}
             className={segmentStyles(option === lang)}
           >
-            {option.toUpperCase()}
+            {optionLabel(option)}
           </a>
         ))}
       </div>
@@ -49,7 +57,7 @@ export function LanguageToggle({
       ariaLabel={label}
       value={lang}
       onChange={(next) => onChange?.(next)}
-      options={LANGUAGES.map((option) => ({ value: option, label: option.toUpperCase() }))}
+      options={LANGUAGES.map((option) => ({ value: option, label: optionLabel(option) }))}
       className={className}
     />
   );
