@@ -58,6 +58,7 @@ import {
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
 import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { buildProviderPath, getPublicVerticalSegment, getServiceSlug } from "@/lib/public-url";
 import {
   toMinutes,
@@ -147,7 +148,6 @@ import {
   shouldCollapsePublicProgressIndicator,
 } from "@/lib/public-booking-step-scroll";
 import {
-  adminBarClass,
   adminChoiceQuietClass,
   adminFieldClass,
   adminInsetClass,
@@ -3776,77 +3776,87 @@ export function HaabBookingModule({
 
   function renderAdminCalendar() {
     const weeks = createMonthMatrix(calendarMonthAnchor);
+    const today = todayKey();
+    const navButtonClass =
+      "inline-flex h-11 min-w-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]";
 
     return (
-      <div className={cn(adminPanelClass, "space-y-6 p-6")}>
-        <SectionTitle
-          title={t.admin.monthlyCalendar}
-          body={copy.phrases.addBookingHint}
-          action={
-            services.length > 0 ? (
-              <select
-                value={activeCalendarService?.id ?? ""}
-                onChange={(event) => setCalendarServicePreference(event.target.value)}
-                className={cn("min-h-11 text-sm", adminFieldClass)}
-              >
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {t.admin.newBookingPrefix}: {service.name}
-                  </option>
-                ))}
-              </select>
-            ) : null
-          }
-        />
-
-        <div className={cn("flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3", adminBarClass)}>
+      <section className={cn(adminPanelClass, "p-3 sm:p-6")}>
+        <div className="flex flex-col gap-3 px-1 sm:px-0 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2">
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+            <button
+              type="button"
+              aria-label={t.publicFlow.previous}
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
             >
-              {t.publicFlow.previous}
-            </ActionButton>
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+              <CaretLeft aria-hidden="true" size={18} />
+            </button>
+            <button
+              type="button"
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor(new Date())}
             >
               {t.publicFlow.today}
-            </ActionButton>
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+            </button>
+            <button
+              type="button"
+              aria-label={t.publicFlow.next}
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
             >
-              {t.publicFlow.next}
-            </ActionButton>
+              <CaretRight aria-hidden="true" size={18} />
+            </button>
+            <h2
+              aria-live="polite"
+              className="ml-1 whitespace-nowrap text-base font-semibold capitalize tracking-[-0.02em] text-[var(--ink)] sm:ml-2 sm:text-xl"
+            >
+              {formatMonthLabel(calendarMonthAnchor, lang)}
+            </h2>
           </div>
-          <p className="text-base font-semibold text-[var(--ink)]">
-            {formatMonthLabel(calendarMonthAnchor, lang)}
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-            <span className="inline-flex items-center gap-2">
+          {services.length > 0 ? (
+            <select
+              value={activeCalendarService?.id ?? ""}
+              onChange={(event) => setCalendarServicePreference(event.target.value)}
+              aria-label={t.admin.newBookingPrefix}
+              className={cn("min-h-11 text-sm lg:max-w-xs", adminFieldClass)}
+            >
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {t.admin.newBookingPrefix}: {service.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1 text-xs text-[var(--muted)] sm:px-0">
+          <p>{copy.phrases.addBookingHint}</p>
+          <div className="flex flex-wrap gap-3 font-medium">
+            <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
               {getBookingTypeLabel("appointment", lang)}
             </span>
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--full-day)]" />
               {getBookingTypeLabel("full-day", lang)}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/40" />
+              {t.publicFlow.open}
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+        <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
           {WEEKDAY_KEYS.map((day) => (
             <p key={day}>{getWeekdayShortFormatter(lang).format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
 
-        <div className="grid gap-2">
+        <div className="mt-2 grid gap-1 sm:gap-2">
           {weeks.map((week) => (
-            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
+            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-1 sm:gap-2">
               {week.map((date) => {
                 const dateKey = getDateKey(date);
                 const dayBookings = getBookingsForDate(bookings, dateKey);
@@ -3861,6 +3871,8 @@ export function HaabBookingModule({
                     activeBookingHolds,
                   );
                 const inMonth = date.getMonth() === calendarMonthAnchor.getMonth();
+                const isToday = dateKey === today;
+                const hiddenOnPhone = Math.max(0, dayBookings.length - 3);
 
                 return (
                   <button
@@ -3877,41 +3889,59 @@ export function HaabBookingModule({
                         : undefined
                     }
                     className={cn(
-                      "min-h-[124px] rounded-[26px] p-3 text-left transition",
-                      inMonth
-                        ? adminChoiceQuietClass
-                        : cn(adminChoiceQuietClass, "text-[var(--muted)] opacity-75"),
-                      canTest && "hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]",
-                      !canTest && "cursor-default",
+                      "flex min-h-[64px] min-w-0 flex-col rounded-xl p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] sm:min-h-[116px] sm:rounded-[22px] sm:p-3",
+                      canTest
+                        ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/25 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]"
+                        : cn(adminChoiceQuietClass, "cursor-default"),
+                      !inMonth && "opacity-55",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-sm font-semibold text-[var(--ink)]">
+                    <div className="flex items-start justify-between gap-1">
+                      <span
+                        className={cn(
+                          "grid h-6 min-w-6 place-items-center rounded-full text-xs font-semibold sm:h-7 sm:min-w-7 sm:text-sm",
+                          isToday
+                            ? "bg-[var(--primary)] px-1.5 text-white"
+                            : "text-[var(--ink)]",
+                        )}
+                      >
                         {date.getDate()}
                       </span>
                       {canTest ? (
-                        <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
+                        <span className="hidden sm:inline-flex">
+                          <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
+                        </span>
                       ) : null}
                     </div>
-                    <div className="mt-3 space-y-2">
-                      {dayBookings.map((booking) => (
+                    {/* Chips on wider screens; dots on phones, with the text
+                        kept for screen readers. */}
+                    <div className="mt-1.5 flex flex-wrap gap-1 sm:mt-3 sm:grid sm:gap-2">
+                      {dayBookings.map((booking, index) => (
                         <div
                           key={booking.id}
                           className={cn(
-                            "rounded-2xl px-3 py-2 text-xs font-medium",
+                            "h-1.5 w-1.5 rounded-full sm:h-auto sm:w-auto sm:rounded-2xl sm:px-3 sm:py-2 sm:text-xs sm:font-medium",
+                            index >= 3 && "hidden sm:block",
                             booking.bookingType === "full-day"
-                              ? "bg-[var(--full-day)] text-[var(--background)]"
-                              : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                              ? "bg-[var(--full-day)] sm:text-[var(--background)]"
+                              : "bg-[var(--accent)] sm:bg-[var(--panel-glass-92)] sm:text-[var(--accent)]",
                           )}
                         >
-                          <p className="font-semibold">
+                          <span className="sr-only sm:not-sr-only sm:block sm:font-semibold">
                             {booking.bookingType === "full-day"
                               ? getBookingTypeLabel("full-day", lang)
                               : formatTimeLabel(booking.startTime, lang)}
-                          </p>
-                          <p className="mt-1 truncate">{booking.serviceName}</p>
+                          </span>
+                          <span className="sr-only sm:not-sr-only sm:mt-1 sm:block sm:truncate">
+                            {booking.serviceName}
+                          </span>
                         </div>
                       ))}
+                      {hiddenOnPhone > 0 ? (
+                        <span aria-hidden="true" className="text-[10px] font-semibold leading-none text-[var(--muted)] sm:hidden">
+                          +{hiddenOnPhone}
+                        </span>
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -3919,7 +3949,7 @@ export function HaabBookingModule({
             </div>
           ))}
         </div>
-      </div>
+      </section>
     );
   }
 
