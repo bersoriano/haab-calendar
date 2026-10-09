@@ -44,6 +44,17 @@ export type AnalyticsService = {
 
 export type AnalyticsDevice = { device: "mobile" | "tablet" | "desktop"; views: number };
 
+export type AnalyticsPreviousTotals = Pick<
+  AnalyticsTotals,
+  "views" | "visitors" | "bookings" | "bookingVisitors"
+>;
+
+/** Bookings made in the window from any channel, and what became of them. */
+export type AnalyticsBookingHealth = { created: number; cancelled: number; rescheduled: number };
+
+/** ISO weekday (1 = Monday … 7 = Sunday) and hour of the appointment. */
+export type AnalyticsPopularTime = { weekday: number; hour: number; bookings: number };
+
 export type AnalyticsSummary = {
   range: AnalyticsRange;
   timeZone: string;
@@ -53,6 +64,10 @@ export type AnalyticsSummary = {
   referrers: AnalyticsReferrer[];
   services: AnalyticsService[];
   devices: AnalyticsDevice[];
+  /** The equal-length window just before this one. Optional: older servers. */
+  previousTotals?: AnalyticsPreviousTotals;
+  bookingHealth?: AnalyticsBookingHealth;
+  popularTimes?: AnalyticsPopularTime[];
 };
 
 /**
@@ -85,6 +100,28 @@ export function conversionRate(part: number, whole: number): number | null {
     return null;
   }
   return Math.round((part / whole) * 1000) / 10;
+}
+
+/**
+ * Whole-percent change from the previous window, or null when there is no
+ * baseline to compare with (a new page, or nothing last period).
+ */
+export function changePercent(current: number, previous: number | undefined): number | null {
+  if (!previous) {
+    return null;
+  }
+  return Math.round(((current - previous) / previous) * 100);
+}
+
+/**
+ * The hours the heatmap shows: the span the bookings actually use, widened to
+ * a familiar working day so a quiet week still reads as a calendar.
+ */
+export function popularTimeHours(times: readonly AnalyticsPopularTime[]): number[] {
+  const hours = times.map((time) => time.hour);
+  const first = Math.min(9, ...hours);
+  const last = Math.max(18, ...hours);
+  return Array.from({ length: last - first + 1 }, (_, index) => first + index);
 }
 
 /**

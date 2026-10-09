@@ -6,7 +6,13 @@ import {
   readCampaignParams,
   readReferrerHost,
 } from "@/lib/analytics/events";
-import { buildCampaignUrl, conversionRate, parseAnalyticsRange } from "@/lib/analytics/summary";
+import {
+  buildCampaignUrl,
+  changePercent,
+  conversionRate,
+  parseAnalyticsRange,
+  popularTimeHours,
+} from "@/lib/analytics/summary";
 import { eventForStepChange } from "@/lib/analytics/use-public-page-analytics";
 
 const SERVICE_ID = "2f1c6a0e-9b7d-4c1e-8a55-0d6f3b2a9c11";
@@ -87,6 +93,25 @@ describe("summary helpers", () => {
   it("returns null conversion when nothing was seen", () => {
     expect(conversionRate(1, 0)).toBeNull();
     expect(conversionRate(1, 3)).toBe(33.3);
+  });
+});
+
+describe("period comparison and heatmap helpers", () => {
+  it("compares with the previous window only when there is a baseline", () => {
+    expect(changePercent(12, 10)).toBe(20);
+    expect(changePercent(5, 10)).toBe(-50);
+    expect(changePercent(5, 0)).toBeNull();
+    expect(changePercent(5, undefined)).toBeNull();
+  });
+
+  it("shows a working day, widened to fit early and late bookings", () => {
+    expect(popularTimeHours([])).toEqual([9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    const wide = popularTimeHours([
+      { weekday: 1, hour: 7, bookings: 1 },
+      { weekday: 5, hour: 20, bookings: 2 },
+    ]);
+    expect(wide[0]).toBe(7);
+    expect(wide.at(-1)).toBe(20);
   });
 });
 
