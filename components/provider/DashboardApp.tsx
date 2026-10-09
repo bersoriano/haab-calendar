@@ -401,6 +401,7 @@ export function DashboardApp({
           persistAdminChanges
           viewerLanguage={lang}
           providerEntitlements={providerEntitlements}
+          publishingEnabled={publicationStatus?.publishingEnabled}
           checkoutResult={hasNavigated ? undefined : checkoutResult}
           adminSection={section}
           onAdminSectionChange={navigate}

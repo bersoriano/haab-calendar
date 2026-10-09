@@ -164,6 +164,8 @@ import { AvailabilitySettingsSection } from "@/components/provider/AvailabilityS
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { SaveBar } from "@/components/provider/SaveBar";
+import { DashboardOverview } from "@/components/provider/DashboardOverview";
+import { getNextSteps } from "@/lib/dashboard-overview";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -285,6 +287,11 @@ type HaabBookingModuleProps = {
   chrome?: "module" | "shell";
   /** Setup's "Go to dashboard" — lets the host navigate to its dashboard route. */
   onOpenDashboard?: () => void;
+  /**
+   * Server-controlled publication state. Undefined means unknown (embedded
+   * hosts, standalone drafts); only an explicit false reads as "off".
+   */
+  publishingEnabled?: boolean;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -406,6 +413,7 @@ export function HaabBookingModule({
   onAdminSectionChange,
   chrome = "module",
   onOpenDashboard,
+  publishingEnabled,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -3713,106 +3721,32 @@ export function HaabBookingModule({
 
   function renderDashboard() {
     return (
-      <div className="space-y-6">
-        <div className="grid gap-4 xl:grid-cols-4">
-          {[
-            {
-              label: t.admin.upcoming7Days,
-              value: String(upcomingBookings.length),
-              detail: copy.phrases.bookingsSoonDetail,
-            },
-            {
-              label: copy.Services,
-              value: String(services.length),
-              detail: copy.phrases.servicesStatDetail,
-            },
-            {
-              label: t.admin.confirmed,
-              value: String(bookings.filter((booking) => booking.status === "confirmed").length),
-              detail: copy.phrases.activeBookingsDetail,
-            },
-            {
-              label: copy.phrases.totalBookingsLabel,
-              value: String(bookings.length),
-              detail: t.admin.allTimeEveryStatus,
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className={cn(adminInsetClass, "p-5")}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                {stat.label}
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-                {stat.value}
-              </p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={copy.phrases.upcomingTitle} />
-          <div className="mt-6 space-y-3">
-              {upcomingBookings.length === 0 ? (
-                <EmptyState
-                  title={copy.phrases.upcomingEmptyTitle}
-                  body={copy.phrases.upcomingEmptyBody}
-                />
-              ) : (
-                upcomingBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className={cn(adminInsetClass, "p-4")}
-                  >
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-semibold text-[var(--ink)]">
-                            {booking.clientName}
-                          </p>
-                          <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                            {getBookingTypeLabel(booking.bookingType, lang)}
-                          </ToneBadge>
-                          <ToneBadge tone={statusTone(booking.status)}>
-                            {getBookingStatusLabel(booking.status, lang)}
-                          </ToneBadge>
-                          <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
-                        </div>
-                        <p className="mt-2 text-sm font-medium text-[var(--ink)]">
-                          {booking.serviceName}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {formatDateLabel(booking.dateKey, lang)} ·{" "}
-                          {formatTimeRange(booking.startTime, booking.endTime, lang)}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {booking.capacitySnapshot
-                            ? `${t.publicFlow.capacity}: ${booking.capacitySnapshot}`
-                            : t.admin.capacityNotSet}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {booking.cost ? `${t.publicFlow.total}: ${booking.cost}` : t.admin.totalNotSet}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {isServiceSingleOccurrence(booking.serviceId) ? null : (
-                          <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
-                            {t.publicFlow.reschedule}
-                          </ActionButton>
-                        )}
-                        <ActionButton tone="danger" onClick={() => openCancellation(booking.id)}>
-                          {t.common.cancel}
-                        </ActionButton>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-        </div>
-      </div>
+      <DashboardOverview
+        lang={lang}
+        copy={copy}
+        stats={{
+          upcoming: upcomingBookings.length,
+          services: services.length,
+          confirmed: bookings.filter((booking) => booking.status === "confirmed").length,
+          total: bookings.length,
+        }}
+        upcomingBookings={upcomingBookings}
+        canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
+        onReschedule={openReschedule}
+        onCancel={openCancellation}
+        onSeeAllBookings={() => goToSection("bookings")}
+        publicUrl={publicUrl}
+        copiedLink={copiedLink}
+        onCopyLink={() => void copyPublicLink()}
+        publishingEnabled={publishingEnabled}
+        nextSteps={getNextSteps({
+          serviceCount: services.length,
+          vertical,
+          availability,
+          publishingEnabled,
+        })}
+        onGoToSection={goToSection}
+      />
     );
   }
 

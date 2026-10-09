@@ -1,4 +1,5 @@
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import type { NextStepId } from "@/lib/dashboard-overview";
 import type { GoogleOutcome } from "@/lib/dashboard-routes";
 import type { AdminTab, Lang } from "@/lib/types";
 import type { VerticalCopy } from "@/lib/vertical-copy";
@@ -33,6 +34,10 @@ export type DashboardShellCopy = {
   rights: string;
   unsavedChanges: string;
   unsavedChangesHint: string;
+  seeAll: string;
+  bookingPageTitle: string;
+  nextStepsTitle: string;
+  nextSteps: Record<NextStepId, { title: string; body: string; cta?: string }>;
   google: Record<GoogleOutcome, string>;
 };
 
@@ -71,6 +76,25 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     rights: "Haab Calendar",
     unsavedChanges: "Unsaved changes",
     unsavedChangesHint: "Your edits stay here while you move between sections.",
+    seeAll: "See all",
+    bookingPageTitle: "Your booking page",
+    nextStepsTitle: "Finish setting up",
+    nextSteps: {
+      "add-service": {
+        title: "Add what clients can book",
+        body: "Your page needs at least one service before anyone can book.",
+        cta: "Add a service",
+      },
+      "set-availability": {
+        title: "Open your calendar",
+        body: "No day of the week is open, so there are no times to book.",
+        cta: "Set availability",
+      },
+      "publishing-off": {
+        title: "Your page isn't taking bookings",
+        body: "Publishing is turned off for this account. The message above explains why.",
+      },
+    },
     google: {
       connected: "Google Calendar is connected.",
       declined: "Google Calendar wasn't connected because access was declined.",
@@ -119,6 +143,25 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     rights: "Haab Calendar",
     unsavedChanges: "Cambios sin guardar",
     unsavedChangesHint: "Sus cambios se conservan mientras pasa de una sección a otra.",
+    seeAll: "Ver todo",
+    bookingPageTitle: "Su página de reservas",
+    nextStepsTitle: "Termine de configurar",
+    nextSteps: {
+      "add-service": {
+        title: "Agregue lo que pueden reservar",
+        body: "Su página necesita al menos un servicio para recibir reservas.",
+        cta: "Agregar servicio",
+      },
+      "set-availability": {
+        title: "Abra su calendario",
+        body: "Ningún día de la semana está abierto, así que no hay horarios para reservar.",
+        cta: "Definir disponibilidad",
+      },
+      "publishing-off": {
+        title: "Su página no está recibiendo reservas",
+        body: "La publicación está desactivada para esta cuenta. El mensaje de arriba explica por qué.",
+      },
+    },
     google: {
       connected: "Google Calendar está conectado.",
       declined: "Google Calendar no se conectó porque se rechazó el acceso.",

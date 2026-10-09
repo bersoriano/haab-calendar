@@ -157,6 +157,11 @@ describe("DashboardApp", () => {
     expect(render().html).toContain('href="/events/ferias"');
   });
 
+  it("tells the module whether the page can take bookings", () => {
+    expect(render({ publishingEnabled: false }).moduleProps.publishingEnabled).toBe(false);
+    expect(render().moduleProps.publishingEnabled).toBeUndefined();
+  });
+
   it("shows the publication message and the demo page being edited", () => {
     const paused = render({ publishingEnabled: false });
     expect(paused.html).toContain("Publishing paused.");

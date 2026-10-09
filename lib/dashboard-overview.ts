@@ -4,8 +4,11 @@ export type NextStepId = "add-service" | "set-availability" | "publishing-off";
 
 export type NextStep = {
   id: NextStepId;
-  /** The dashboard section that resolves it. */
-  section: AdminTab;
+  /**
+   * The dashboard section that resolves it. Absent when the owner cannot fix
+   * it themselves — publishing is switched on by Haab, not from Settings.
+   */
+  section?: AdminTab;
 };
 
 /**
@@ -33,7 +36,7 @@ export function getNextSteps(input: {
   }
 
   if (input.publishingEnabled === false) {
-    steps.push({ id: "publishing-off", section: "settings" });
+    steps.push({ id: "publishing-off" });
   }
 
   return steps;
