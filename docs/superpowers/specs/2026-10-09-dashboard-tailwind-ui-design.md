@@ -74,6 +74,9 @@ Added to `app/globals.css` as a `@theme` block. Values are literal so a child pr
 | `accent-hover` | `#1a73e8` | primary hover (4.6:1 with white) |
 | `accent-soft` | `#e8f0fe` | active nav, accent badges, open calendar days |
 | `accent-on-soft` | `#0b57d0` | text on `accent-soft` (5.9:1) |
+| `accent-soft-hover` / `accent-ring` | `#d3e3fd` / `rgb(0 91 191 / 0.2)` | soft button hover / accent badge ring |
+| `on-accent` | `#ffffff` | text on solid accent and danger buttons |
+| `overlay` | `rgb(3 7 18 / 0.4)` | dialog and drawer backdrop |
 | `success-soft` / `success-fg` / `success-ring` | `#f0fdf4` / `#15803d` / `rgb(22 163 74 / 0.2)` | success badges and alerts |
 | `warning-soft` / `warning-fg` / `warning-ring` | `#fffbeb` / `#92400e` / `rgb(217 119 6 / 0.2)` | warning |
 | `danger-soft` / `danger-fg` / `danger-ring` | `#fef2f2` / `#b91c1c` / `rgb(220 38 38 / 0.1)` | danger badges and alerts |
@@ -100,7 +103,7 @@ Utilities read as `bg-app-surface`, `text-app-fg-muted`, `ring-app-border`, `out
 `components/app-ui/`, one file per component, barrel `index.ts`. Class recipes are pure functions in `components/app-ui/styles.ts` (`buttonStyles({ variant, size })`, `inputStyles({ invalid })`, `badgeStyles(tone)`, `cardStyles()`) so links, labels and module markup can reuse a look without a wrapper. Everything renders on the server; nothing uses portals.
 
 **Actions**
-- `Button` — `variant: "primary" | "secondary" | "soft" | "plain" | "danger"`, `size: "sm" | "md"`, `leadingIcon?`, `loading?` (spinner, `aria-busy="true"`, disabled while pending), passes through native button props.
+- `Button` — `variant: "primary" | "secondary" | "soft" | "plain" | "danger" | "danger-plain"` (`danger-plain` = plain button with danger text, for row-level Cancel/Delete), `size: "sm" | "md"`, `leadingIcon?`, `loading?` (spinner, `aria-busy="true"`, disabled while pending), passes through native button props.
 - `ButtonLink` — the same looks for `<a>` or `next/link` (`href`, `external?` adds `target="_blank" rel="noopener noreferrer"` and a ↗ icon).
 - `IconButton` — `label` required, rendered as `aria-label` and `title`; same variants.
 
@@ -135,7 +138,7 @@ Utilities read as `bg-app-surface`, `text-app-fg-muted`, `ring-app-border`, `out
   - `aria-labelledby` / `aria-describedby` point at the title and description.
   - Children render only while `open` (so stale content never flashes, and server markup still contains them when open).
   - Locks page scroll while open and returns focus to the previously focused element on close.
-  - Bottom sheet below `sm` (full width, rounded top), centered card from `sm`. Backdrop `backdrop:bg-gray-950/40`.
+  - Bottom sheet below `sm` (full width, rounded top), centered card from `sm`. Backdrop `backdrop:bg-app-overlay`.
 - `DialogActions` — footer row: secondary on the left of primary; stacked full-width below `sm`.
 - `ConfirmDialog` — `open`, `title`, `body`, `confirmLabel`, `cancelLabel`, `tone: "danger" | "primary"`, `pending`, `error?`, `onConfirm`, `onCancel`, `children?` (for extra inputs such as a typed confirmation). `pending` disables both actions and shows `loading` on confirm; `error` renders as a danger `Alert` inside the dialog.
 - `ToastProvider`, `useToast()` — `notify({ tone: "success" | "neutral", message })`.
@@ -156,7 +159,7 @@ Utilities read as `bg-app-surface`, `text-app-fg-muted`, `ring-app-border`, `out
   - Workspace block: provider logo `Avatar`, business name, `Badge` "Live" (success) or "Publishing off" (danger).
   - Nav items: `rounded-lg px-2 h-9 text-sm font-semibold`, icon 20px. Active: `bg-app-subtle text-app-accent` with accent icon and `aria-current="page"`. Idle: `text-app-fg-secondary hover:bg-app-subtle hover:text-app-fg`. Group labels `text-xs font-semibold text-app-fg-muted`. Item badges use `Badge`.
   - Bottom: Settings; "Super admin" (super admins only, `admin` tone); account row (`Avatar`, email, sign-out `IconButton`).
-- **Mobile drawer** — panel slides in from the left (200ms); close `IconButton` sits outside the panel at top-right on the backdrop (`bg-gray-950/40`).
+- **Mobile drawer** — panel slides in from the left (200ms); close `IconButton` sits outside the panel at top-right on the backdrop (`bg-app-overlay`).
 - **Top bar** — sticky, 64px, `bg-app-surface border-b border-app-border`. Menu button (below `lg`), page `h1` (`text-lg` below `sm`, `text-xl` from `sm`) with the one-line description from `lg`. Actions: Copy link and View page as `secondary` buttons (icon-only below `sm`); Copy link also calls `notify` ("Link copied"). The primary color is left to the main action in each section.
 - **Banners** — `Alert` (`admin` tone for demo editing, `success`/`danger` for publication, mapped tone for the Google outcome, business-type switch notices).
 - **Content** — `max-w-7xl px-4 sm:px-6 lg:px-8 py-8` on `bg-app-canvas`.
@@ -297,7 +300,7 @@ TDD for pure helpers and kit components; tests first. No new test dependencies.
   - `Field` wires `id`, `aria-describedby` (description and error) and `aria-invalid` into `Input`, `Select`, `Textarea`, `Checkbox`, `Switch`.
   - `Dialog`: `aria-labelledby`/`aria-describedby` match the title/description ids; closed renders no children.
   - `ConfirmDialog`: `pending` disables both actions; `error` renders a danger alert.
-  - `SegmentedControl` and `RadioCards`: `role="radiogroup"`, `aria-checked` on the selected option.
+  - `SegmentedControl`: `role="radiogroup"`, `role="radio"` buttons with `aria-checked` and roving `tabindex`. `RadioCards`: `role="radiogroup"` of native radios, `checked` on the selected one.
   - `Switch`: `role="switch"`. Toast region: `role="status"`, `aria-live="polite"`.
   - `LanguageToggle`: anchors with `hrefFor`, buttons without.
   - `Badge` and `Alert` tones map to the right token classes.
@@ -306,7 +309,7 @@ TDD for pure helpers and kit components; tests first. No new test dependencies.
 - **Existing tests:** dashboard and admin tests that assert style classes switch to semantic assertions (roles, labels, text). Presence assertions move with the feature to the component that now renders it; none is deleted without a replacement. Public tests (`components/booking/__tests__`, `components/ui/__tests__`) must pass unchanged.
 - **Lint gate:** `no-restricted-imports` bans `@/components/provider/adminGlass` and `@/components/ui/{ActionButton,ActionLink,buttonClasses,ToneBadge,EmptyState,SectionTitle,Alert}` in each migrated directory; directories are added PR by PR, ending with `components/provider/**`, `components/app-shell/**`, `components/super-admin/**`, `components/auth/**`, `app/dashboard/**`, `app/super-admin/**`, `app/login/**`, `app/reset-password/**`.
 - **E2E** (Playwright, local Supabase on 553xx, `http://localhost:3100`): update existing specs where markup changed (native `<dialog>` keeps `role="dialog"`; save-bar region name kept). New specs: service delete confirmation; booking cancel confirmation from Bookings; "Changes saved" and "Link copied" toasts; super-admin Features dialog grant/clear; sign-in end to end; mobile drawer open/close on the restyled shell.
-- **Public-flow guard:** before PR 1, capture Playwright screenshot baselines from `main` of public booking steps 1–4 and the manage page at 390 and 1280; every PR compares locally (`toHaveScreenshot`), not CI-gated because font rendering differs between machines. Each PR description lists `git diff --stat main` for `components/booking`, `components/landing`, `components/ui` and `app/[verticalSegment]`, `app/public`.
+- **Public-flow guard:** PR 1 changes no public file (verified by the `git diff --stat` check below). Before PR 2 — the first PR that edits the module's shared modals — capture Playwright screenshot baselines from `main` of public booking steps 1–4 and the manage page at 390 and 1280; every PR compares locally (`toHaveScreenshot`), not CI-gated because font rendering differs between machines. Each PR description lists `git diff --stat main` for `components/booking`, `components/landing`, `components/ui` and `app/[verticalSegment]`, `app/public`.
 - **Manual:** visual QA at 390 / 768 / 1280 / 1440 for every in-scope page with screenshots in the PR; keyboard pass; Lighthouse accessibility audit on Overview, Bookings, Services, Settings, super-admin Accounts and Login.
 - **Gate:** `npm run ci` (typecheck, lint, coverage, build) green on every PR.
 
@@ -314,8 +317,8 @@ TDD for pure helpers and kit components; tests first. No new test dependencies.
 
 Five PRs, each on its own branch off `main`, merged in order, atomic Conventional Commits. This spec and the implementation plan are committed on the first branch.
 
-1. **`feat/app-ui-foundation`** — tokens; `components/app-ui` kit and tests; `LanguageToggle`; toasts; `bookingStatusBadgeTone`/`bookingTypeBadgeTone`; shell restyle (sidebar, drawer, top bar, banners, footer, save bar, skeleton); lint rule for `components/app-shell/**`; public screenshot baselines.
-2. **`feat/dashboard-operate-ui`** — Overview, Bookings, Calendar (`AdminCalendar` extraction), Analytics, `CancelBookingDialog`, `RescheduleBookingDialog`, scanner moved to `components/provider/`.
+1. **`feat/app-ui-foundation`** — tokens; `components/app-ui` kit and tests; `LanguageToggle`; toasts; `bookingStatusBadgeTone`/`bookingTypeBadgeTone`; shell restyle (sidebar, drawer, top bar, banners, footer, save bar, skeleton); lint rule for `components/app-shell/**` and the shell files it restyles.
+2. **`feat/dashboard-operate-ui`** — public screenshot baselines (fixed browser clock), Overview, Bookings, Calendar (`AdminCalendar` extraction), Analytics, `CancelBookingDialog`, `RescheduleBookingDialog`, scanner moved to `components/provider/`.
 3. **`feat/dashboard-setup-ui`** — Services (delete confirmation), Availability, Appearance (`AppearanceSection` extraction), Integrations (disconnect confirmation), Settings, business-type flow and dialog.
 4. **`feat/super-admin-ui`** — the four super-admin pages, Features dialog, delete confirmation, `super-admin-accent.ts` removed.
 5. **`feat/setup-auth-ui`** — welcome, wizard frame, `SetupHeader`, guest builder, `chrome="module"` header, auth pages; `adminGlass.ts` and the old `components/ui/Alert` deleted; lint rule covers the full scope.
