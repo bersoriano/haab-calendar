@@ -81,7 +81,6 @@ import {
 import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import {
   formatDateLabel,
-  formatDateOfBirth,
   formatCompactDate,
   formatWeekdayDate,
   formatPassDate,
@@ -94,8 +93,6 @@ import {
   formatCapacityLabel,
   getBookingTypeLabel,
   getOccurrenceModeLabel,
-  getBookingStatusLabel,
-  statusTone,
   bookingTypeTone,
   formatCountdown,
 } from "@/lib/format";
@@ -165,6 +162,7 @@ import { ProviderIntegrationsSection } from "@/components/provider/ProviderInteg
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
+import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
@@ -209,7 +207,6 @@ import { ServicePicker } from "@/components/booking/ServicePicker";
 import { ServiceSwitchDialog } from "@/components/booking/ServiceSwitchDialog";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
-import { BookingCampaignBadge } from "@/components/booking/BookingCampaignBadge";
 import { usePublicPageAnalytics } from "@/lib/analytics/use-public-page-analytics";
 import {
   isGuestDraftMeaningful,
@@ -3752,123 +3749,28 @@ export function HaabBookingModule({
 
   function renderBookingsList() {
     return (
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
-          title={copy.phrases.allBookingsTitle}
-          action={
-            integratedMode ? (
-              <ActionButton tone="primary" onClick={() => setIsAppointmentScannerOpen(true)}>
-                {t.admin.scanAppointment}
-              </ActionButton>
-            ) : null
-          }
-        />
-        <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
-          <input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={copy.phrases.searchPlaceholder}
-            className={cn("min-h-12", adminFieldClass)}
-          />
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as "all" | BookingStatus)}
-            className={cn("min-h-12", adminFieldClass)}
-          >
-            <option value="all">{t.admin.allStatuses}</option>
-            <option value="confirmed">{t.admin.confirmed}</option>
-            <option value="rescheduled">{t.admin.rescheduled}</option>
-            <option value="cancelled">{t.admin.cancelled}</option>
-          </select>
-          <select
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value as "all" | BookingType)}
-            className={cn("min-h-12", adminFieldClass)}
-          >
-            <option value="all">{t.admin.allTypes}</option>
-            <option value="appointment">{t.admin.appointments}</option>
-            <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
-          </select>
-        </div>
-        <div className="mt-4 space-y-3">
-          {filteredBookings.length === 0 ? (
-            <EmptyState
-              title={copy.phrases.noBookingsMatchTitle}
-              body={t.admin.tryBroaderSearch}
-            />
-          ) : (
-            filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className={cn(
-                  adminInsetClass,
-                  "p-5",
-                  booking.status === "cancelled" && "opacity-60",
-                )}
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-base font-semibold text-[var(--ink)]">
-                        {booking.clientName}
-                      </h4>
-                      <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                        {getBookingTypeLabel(booking.bookingType, lang)}
-                      </ToneBadge>
-                      <ToneBadge tone={statusTone(booking.status)}>
-                        {getBookingStatusLabel(booking.status, lang)}
-                      </ToneBadge>
-                      <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
-                    </div>
-                    <p className="mt-2 text-sm font-medium text-[var(--ink)]">
-                      {booking.serviceName}
-                      {typeof booking.partySize === "number"
-                        ? ` · ${booking.partySize} ${t.admin.guestsSuffix}`
-                        : ""}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {formatDateLabel(booking.dateKey, lang)} ·{" "}
-                      {formatTimeRange(booking.startTime, booking.endTime, lang)}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
-                      <span>
-                        {booking.clientEmail} · {booking.clientPhone}
-                      </span>
-                      {booking.dateOfBirth ? (
-                        <span>
-                          {t.publicFlow.dateOfBirth}: {formatDateOfBirth(booking.dateOfBirth, lang)}
-                        </span>
-                      ) : null}
-                      {booking.capacitySnapshot ? (
-                        <span>{t.publicFlow.capacity}: {booking.capacitySnapshot}</span>
-                      ) : null}
-                      {booking.cost ? <span>{t.publicFlow.total}: {booking.cost}</span> : null}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    {isServiceSingleOccurrence(booking.serviceId) ? null : (
-                      <ActionButton
-                        tone="ghost"
-                        disabled={booking.status === "cancelled"}
-                        onClick={() => openReschedule(booking.id)}
-                      >
-                        {t.publicFlow.reschedule}
-                      </ActionButton>
-                    )}
-                    <ActionButton
-                      tone="danger"
-                      disabled={booking.status === "cancelled"}
-                      onClick={() => openCancellation(booking.id)}
-                    >
-                      {t.common.cancel}
-                    </ActionButton>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <BookingsList
+        lang={lang}
+        copy={copy}
+        bookings={filteredBookings}
+        totalCount={bookings.length}
+        todayKey={todayKey()}
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        status={statusFilter}
+        onStatusChange={setStatusFilter}
+        type={typeFilter}
+        onTypeChange={setTypeFilter}
+        onClearFilters={() => {
+          setSearchTerm("");
+          setStatusFilter("all");
+          setTypeFilter("all");
+        }}
+        canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
+        onReschedule={openReschedule}
+        onCancel={openCancellation}
+        onScan={integratedMode ? () => setIsAppointmentScannerOpen(true) : undefined}
+      />
     );
   }
 

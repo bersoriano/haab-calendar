@@ -35,6 +35,15 @@ export type DashboardShellCopy = {
   unsavedChanges: string;
   unsavedChangesHint: string;
   seeAll: string;
+  statusFilterLabel: string;
+  typeFilterLabel: string;
+  today: string;
+  tomorrow: string;
+  clearFilters: string;
+  /** "{shown}" and "{total}" are filled in. */
+  resultsCount: string;
+  noBookingsYetTitle: string;
+  noBookingsYetBody: string;
   bookingPageTitle: string;
   nextStepsTitle: string;
   nextSteps: Record<NextStepId, { title: string; body: string; cta?: string }>;
@@ -77,6 +86,14 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     unsavedChanges: "Unsaved changes",
     unsavedChangesHint: "Your edits stay here while you move between sections.",
     seeAll: "See all",
+    statusFilterLabel: "Filter by status",
+    typeFilterLabel: "Filter by type",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    clearFilters: "Clear filters",
+    resultsCount: "{shown} of {total}",
+    noBookingsYetTitle: "Nothing booked yet",
+    noBookingsYetBody: "When clients book from your page, it shows up here.",
     bookingPageTitle: "Your booking page",
     nextStepsTitle: "Finish setting up",
     nextSteps: {
@@ -144,6 +161,14 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     unsavedChanges: "Cambios sin guardar",
     unsavedChangesHint: "Sus cambios se conservan mientras pasa de una sección a otra.",
     seeAll: "Ver todo",
+    statusFilterLabel: "Filtrar por estado",
+    typeFilterLabel: "Filtrar por tipo",
+    today: "Hoy",
+    tomorrow: "Mañana",
+    clearFilters: "Quitar filtros",
+    resultsCount: "{shown} de {total}",
+    noBookingsYetTitle: "Todavía no hay nada reservado",
+    noBookingsYetBody: "Cuando sus clientes reserven desde su página, aparecerá aquí.",
     bookingPageTitle: "Su página de reservas",
     nextStepsTitle: "Termine de configurar",
     nextSteps: {
