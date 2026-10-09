@@ -21,6 +21,7 @@ const META_TITLES: Record<AdminTab, string> = {
   appearance: "Appearance",
   integrations: "Integrations",
   settings: "Settings",
+  "business-type": "Change business type",
 };
 
 type DashboardPageProps = {

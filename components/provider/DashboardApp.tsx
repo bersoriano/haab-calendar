@@ -51,6 +51,7 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   appearance: "appearance",
   integrations: "integrations",
   settings: "settings",
+  "business-type": "settings",
 };
 
 const topActionClass =

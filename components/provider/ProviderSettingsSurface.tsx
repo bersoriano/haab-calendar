@@ -35,6 +35,11 @@ export type ProviderSettingsSurfaceProps = {
   onResetStandaloneSetup?: () => void;
   /** Present where the owner can change their own workspace language here. */
   onDashboardLanguageChange?: (language: Lang) => void;
+  /**
+   * The page's current business type and a way to start changing it. Absent
+   * where a switch is not available (embedded hosts, demo editing).
+   */
+  businessType?: { label: string; tagline: string; onChange: () => void };
 };
 
 /**
@@ -59,6 +64,7 @@ export function ProviderSettingsSurface({
   onSavePublicSlug,
   onResetStandaloneSetup,
   onDashboardLanguageChange,
+  businessType,
 }: ProviderSettingsSurfaceProps) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
@@ -100,6 +106,24 @@ export function ProviderSettingsSurface({
           <SectionTitle title={shell.workspaceLanguageTitle} />
           <div className="mt-4">
             <DashboardLanguageField lang={lang} onChange={onDashboardLanguageChange} />
+          </div>
+        </section>
+      ) : null}
+
+      {businessType ? (
+        <section className={cn(adminPanelClass, "p-5 sm:p-6")}>
+          <SectionTitle
+            title={shell.businessType.cardTitle}
+            body={shell.businessType.cardBody}
+          />
+          <div className="mt-4 flex flex-col gap-4 rounded-2xl bg-[var(--surface-soft)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-semibold text-[var(--ink)]">{businessType.label}</p>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">{businessType.tagline}</p>
+            </div>
+            <ActionButton tone="secondary" onClick={businessType.onChange}>
+              {shell.businessType.change}
+            </ActionButton>
           </div>
         </section>
       ) : null}

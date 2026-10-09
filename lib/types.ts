@@ -17,7 +17,8 @@ export type AdminTab =
   | "appearance"
   | "analytics"
   | "integrations"
-  | "settings";
+  | "settings"
+  | "business-type";
 export type WeekdayKey =
   | "sunday"
   | "monday"

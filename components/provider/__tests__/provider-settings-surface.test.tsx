@@ -114,6 +114,20 @@ describe("ProviderSettingsSurface", () => {
     expect(html.match(/<section/g)?.length).toBeGreaterThanOrEqual(3);
   });
 
+  it("offers a business type change only when the caller can run one", () => {
+    expect(render()).not.toContain("Change business type");
+
+    const html = render({
+      businessType: {
+        label: "Professional services",
+        tagline: "For advisors, accountants, and consultants",
+        onChange: () => undefined,
+      },
+    });
+    expect(html).toContain("Professional services");
+    expect(html).toContain("Change business type");
+  });
+
   it("keeps appearance fields out of settings", () => {
     const html = render();
 

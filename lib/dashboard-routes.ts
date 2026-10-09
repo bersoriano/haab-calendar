@@ -7,7 +7,8 @@ import type { AdminTab } from "@/lib/types";
  */
 export const DASHBOARD_BASE_PATH = "/dashboard";
 
-export type DashboardNavGroup = "operate" | "setup" | "account";
+/** "hidden": routable, but reached from inside a section, not the sidebar. */
+export type DashboardNavGroup = "operate" | "setup" | "account" | "hidden";
 
 export type DashboardSectionDef = {
   id: AdminTab;
@@ -26,6 +27,7 @@ export const DASHBOARD_SECTIONS: readonly DashboardSectionDef[] = [
   { id: "appearance", segment: "appearance", group: "setup" },
   { id: "integrations", segment: "integrations", group: "setup" },
   { id: "settings", segment: "settings", group: "account" },
+  { id: "business-type", segment: "business-type", group: "hidden" },
 ];
 
 export function isAdminTab(value: unknown): value is AdminTab {

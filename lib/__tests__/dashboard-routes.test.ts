@@ -46,6 +46,16 @@ describe("dashboard sections", () => {
     expect(sectionFromPathname("/")).toBeNull();
   });
 
+  it("routes the business-type switch without listing it in the navigation", () => {
+    expect(pathForSection("business-type", { to: "healthcare" })).toBe(
+      "/dashboard/business-type?to=healthcare",
+    );
+    expect(sectionFromPathname("/dashboard/business-type")).toBe("business-type");
+    expect(DASHBOARD_SECTIONS.find((section) => section.id === "business-type")?.group).toBe(
+      "hidden",
+    );
+  });
+
   it("recognises admin tabs", () => {
     expect(isAdminTab("integrations")).toBe(true);
     expect(isAdminTab("billing")).toBe(false);
