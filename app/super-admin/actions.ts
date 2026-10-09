@@ -9,8 +9,8 @@ import { requireSuperAdmin } from "@/lib/supabase/publication";
 import { buildDemoEditCookie } from "@/lib/supabase/demo-edit";
 
 /**
- * Starts a demo-editing session: the dashboard at `/` then loads and saves the
- * chosen example page instead of the caller's own booking page.
+ * Starts a demo-editing session: the dashboard at `/dashboard` then loads and
+ * saves the chosen example page instead of the caller's own booking page.
  */
 export async function startDemoEdit(formData: FormData) {
   const page = findDemoPage(String(formData.get("demoKey") || ""));
@@ -36,7 +36,7 @@ export async function startDemoEdit(formData: FormData) {
   cookieStore.set(cookie.name, cookie.value, cookie.options);
 
   revalidatePath("/", "layout");
-  redirect("/");
+  redirect("/dashboard");
 }
 
 export async function stopDemoEdit() {
@@ -44,5 +44,5 @@ export async function stopDemoEdit() {
   cookieStore.delete(DEMO_EDIT_COOKIE);
 
   revalidatePath("/", "layout");
-  redirect("/super-admin");
+  redirect("/super-admin/demo-pages");
 }

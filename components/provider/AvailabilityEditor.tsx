@@ -144,7 +144,7 @@ export function AvailabilityEditor({
                         type="button"
                         disabled={dayDisabled}
                         onClick={() => removeBlockedWindow(day, index)}
-                        className="inline-flex min-h-12 items-center justify-center self-end rounded-xl bg-transparent px-3 text-sm font-semibold text-[#be123c] transition-colors hover:bg-[#fff1f2] disabled:cursor-not-allowed disabled:opacity-45"
+                        className="inline-flex min-h-12 items-center justify-center self-end rounded-xl bg-transparent px-3 text-sm font-semibold text-[var(--danger-strong)] transition-colors hover:bg-[var(--danger-soft)] disabled:cursor-not-allowed disabled:opacity-45"
                       >
                         {t.admin.removeBlock}
                       </button>

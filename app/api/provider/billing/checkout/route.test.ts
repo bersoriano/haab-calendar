@@ -67,8 +67,8 @@ describe("POST /api/provider/billing/checkout", () => {
         client_reference_id: "provider-1",
         customer_email: "owner@example.com",
         subscription_data: { metadata: { haab_provider_id: "provider-1" } },
-        success_url: "https://haabcalendar.com/?tab=analytics&checkout=success",
-        cancel_url: "https://haabcalendar.com/?tab=analytics&checkout=cancelled",
+        success_url: "https://haabcalendar.com/dashboard/analytics?checkout=success",
+        cancel_url: "https://haabcalendar.com/dashboard/analytics?checkout=cancelled",
       }),
     );
   });
@@ -84,7 +84,7 @@ describe("POST /api/provider/billing/checkout", () => {
   it("ignores a return tab it does not know", async () => {
     await POST(request({ returnTab: "https://evil.example" }));
     expect(mocks.createSession.mock.calls[0][0].success_url).toBe(
-      "https://haabcalendar.com/?tab=analytics&checkout=success",
+      "https://haabcalendar.com/dashboard/analytics?checkout=success",
     );
   });
 

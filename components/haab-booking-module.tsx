@@ -58,6 +58,7 @@ import {
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
 import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { buildProviderPath, getPublicVerticalSegment, getServiceSlug } from "@/lib/public-url";
 import {
   toMinutes,
@@ -81,7 +82,6 @@ import {
 import { collectsDateOfBirth, parseDateOfBirth } from "@/lib/date-of-birth";
 import {
   formatDateLabel,
-  formatDateOfBirth,
   formatCompactDate,
   formatWeekdayDate,
   formatPassDate,
@@ -94,8 +94,6 @@ import {
   formatCapacityLabel,
   getBookingTypeLabel,
   getOccurrenceModeLabel,
-  getBookingStatusLabel,
-  statusTone,
   bookingTypeTone,
   formatCountdown,
 } from "@/lib/format";
@@ -150,7 +148,6 @@ import {
   shouldCollapsePublicProgressIndicator,
 } from "@/lib/public-booking-step-scroll";
 import {
-  adminBarClass,
   adminChoiceQuietClass,
   adminFieldClass,
   adminInsetClass,
@@ -160,10 +157,18 @@ import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearance
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
+import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
+import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { SaveBar } from "@/components/provider/SaveBar";
+import { DashboardOverview } from "@/components/provider/DashboardOverview";
+import { BookingsList } from "@/components/provider/BookingsList";
+import { getNextSteps } from "@/lib/dashboard-overview";
+import { isStoreDirty } from "@/lib/store-dirty";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
-import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
+import { ClientLanguageField } from "@/components/provider/LanguageSettingsSection";
 import { ThemeSettingsSection } from "@/components/provider/ThemeSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
@@ -202,7 +207,6 @@ import { ServicePicker } from "@/components/booking/ServicePicker";
 import { ServiceSwitchDialog } from "@/components/booking/ServiceSwitchDialog";
 import { ServiceCard } from "@/components/booking/ServiceCard";
 import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
-import { BookingCampaignBadge } from "@/components/booking/BookingCampaignBadge";
 import { usePublicPageAnalytics } from "@/lib/analytics/use-public-page-analytics";
 import {
   isGuestDraftMeaningful,
@@ -265,6 +269,26 @@ type HaabBookingModuleProps = {
   initialAdminTab?: AdminTab;
   /** How a Stripe Checkout the provider just left ended. */
   checkoutResult?: "success" | "cancelled";
+  /**
+   * Controlled dashboard section. A host that owns routing (the /dashboard
+   * shell) sets it from the URL; without it the module keeps its own tabs.
+   */
+  adminSection?: AdminTab;
+  /** Asks the host to show another section, e.g. "Manage events" → Services. */
+  onAdminSectionChange?: (section: AdminTab) => void;
+  /**
+   * "shell": the host renders the header, navigation and account controls, so
+   * the module renders only the section content. "module" (default) keeps the
+   * module's own header and tabs for hosts that embed it without a shell.
+   */
+  chrome?: "module" | "shell";
+  /** Setup's "Go to dashboard" — lets the host navigate to its dashboard route. */
+  onOpenDashboard?: () => void;
+  /**
+   * Server-controlled publication state. Undefined means unknown (embedded
+   * hosts, standalone drafts); only an explicit false reads as "off".
+   */
+  publishingEnabled?: boolean;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -382,6 +406,11 @@ export function HaabBookingModule({
   providerEntitlements,
   initialAdminTab,
   checkoutResult,
+  adminSection,
+  onAdminSectionChange,
+  chrome = "module",
+  onOpenDashboard,
+  publishingEnabled,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -401,6 +430,27 @@ export function HaabBookingModule({
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
   const [adminTab, setAdminTab] = useState<AdminTab>(initialAdminTab ?? "dashboard");
+  // A host that owns routing (the /dashboard shell) controls the section;
+  // otherwise the module keeps its own tab state, exactly as before.
+  const currentSection: AdminTab = adminSection ?? adminTab;
+  // The in-app booking flow (opened from the calendar) belongs to the section
+  // it was opened from. When the host switches sections — its sidebar stays
+  // on screen — the flow closes, so the new section shows its own content.
+  const [flowSection, setFlowSection] = useState<AdminTab>(currentSection);
+  if (flowSection !== currentSection) {
+    setFlowSection(currentSection);
+    if (surface === "public" && surfaceMode === "adaptive") {
+      setSurface("management");
+    }
+  }
+  function goToSection(next: AdminTab) {
+    if (onAdminSectionChange) {
+      onAdminSectionChange(next);
+      return;
+    }
+
+    setAdminTab(next);
+  }
   const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
@@ -410,6 +460,26 @@ export function HaabBookingModule({
   const [adminSaveError, setAdminSaveError] = useState<string | null>(null);
   const [adminSaveMessage, setAdminSaveMessage] = useState<string | null>(null);
   const [isSavingAdmin, setIsSavingAdmin] = useState(false);
+  // The store as the server last confirmed it. Edits held for "Save changes"
+  // are whatever differs from it; the save bar appears while anything does.
+  const [savedStore, setSavedStore] = useState<ModuleStore>(() => activeStore);
+  const hasUnsavedChanges =
+    integratedMode && persistAdminChanges && isStoreDirty(savedStore, activeStore);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return;
+    }
+
+    // Leaving the page (reload, close, sign out) would drop held edits.
+    function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedChanges]);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraft>(() =>
     createBlankServiceDraft(),
   );
@@ -1829,6 +1899,7 @@ export function HaabBookingModule({
 
       const persistedStore = normalizeStore(payload.store);
       actions.updateStandaloneStore(() => persistedStore);
+      setSavedStore(persistedStore);
       onSetupPersisted?.(persistedStore);
       setAdminSaveMessage(t.common.saved);
       window.setTimeout(() => setAdminSaveMessage(null), 1600);
@@ -1856,6 +1927,12 @@ export function HaabBookingModule({
     }
     const savedSlug = payload.slug;
     actions.updateStandaloneStore((current) => ({
+      ...current,
+      provider: { ...current.provider, publicSlug: savedSlug },
+    }));
+    // Saved through its own endpoint: the server has it, so it is not an
+    // unsaved change.
+    setSavedStore((current) => ({
       ...current,
       provider: { ...current.provider, publicSlug: savedSlug },
     }));
@@ -3594,7 +3671,9 @@ export function HaabBookingModule({
                   <>
                     <ActionButton
                       tone="primary"
-                      onClick={() => leaveSetupToSurface("management")}
+                      onClick={() =>
+                        onOpenDashboard ? onOpenDashboard() : leaveSetupToSurface("management")
+                      }
                     >
                       {t.setup.goToDashboard}
                     </ActionButton>
@@ -3649,304 +3728,145 @@ export function HaabBookingModule({
 
   function renderDashboard() {
     return (
-      <div className="space-y-6">
-        <div className="grid gap-4 xl:grid-cols-4">
-          {[
-            {
-              label: t.admin.upcoming7Days,
-              value: String(upcomingBookings.length),
-              detail: copy.phrases.bookingsSoonDetail,
-            },
-            {
-              label: copy.Services,
-              value: String(services.length),
-              detail: copy.phrases.servicesStatDetail,
-            },
-            {
-              label: t.admin.confirmed,
-              value: String(bookings.filter((booking) => booking.status === "confirmed").length),
-              detail: copy.phrases.activeBookingsDetail,
-            },
-            {
-              label: copy.phrases.totalBookingsLabel,
-              value: String(bookings.length),
-              detail: t.admin.allTimeEveryStatus,
-            },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              className={cn(adminInsetClass, "p-5")}
-            >
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                {stat.label}
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-                {stat.value}
-              </p>
-              <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={copy.phrases.upcomingTitle} />
-          <div className="mt-6 space-y-3">
-              {upcomingBookings.length === 0 ? (
-                <EmptyState
-                  title={copy.phrases.upcomingEmptyTitle}
-                  body={copy.phrases.upcomingEmptyBody}
-                />
-              ) : (
-                upcomingBookings.map((booking) => (
-                  <div
-                    key={booking.id}
-                    className={cn(adminInsetClass, "p-4")}
-                  >
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="text-base font-semibold text-[var(--ink)]">
-                            {booking.clientName}
-                          </p>
-                          <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                            {getBookingTypeLabel(booking.bookingType, lang)}
-                          </ToneBadge>
-                          <ToneBadge tone={statusTone(booking.status)}>
-                            {getBookingStatusLabel(booking.status, lang)}
-                          </ToneBadge>
-                          <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
-                        </div>
-                        <p className="mt-2 text-sm font-medium text-[var(--ink)]">
-                          {booking.serviceName}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {formatDateLabel(booking.dateKey, lang)} ·{" "}
-                          {formatTimeRange(booking.startTime, booking.endTime, lang)}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {booking.capacitySnapshot
-                            ? `${t.publicFlow.capacity}: ${booking.capacitySnapshot}`
-                            : t.admin.capacityNotSet}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--muted)]">
-                          {booking.cost ? `${t.publicFlow.total}: ${booking.cost}` : t.admin.totalNotSet}
-                        </p>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {isServiceSingleOccurrence(booking.serviceId) ? null : (
-                          <ActionButton tone="ghost" onClick={() => openReschedule(booking.id)}>
-                            {t.publicFlow.reschedule}
-                          </ActionButton>
-                        )}
-                        <ActionButton tone="danger" onClick={() => openCancellation(booking.id)}>
-                          {t.common.cancel}
-                        </ActionButton>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-        </div>
-      </div>
+      <DashboardOverview
+        lang={lang}
+        copy={copy}
+        stats={{
+          upcoming: upcomingBookings.length,
+          services: services.length,
+          confirmed: bookings.filter((booking) => booking.status === "confirmed").length,
+          total: bookings.length,
+        }}
+        upcomingBookings={upcomingBookings}
+        canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
+        onReschedule={openReschedule}
+        onCancel={openCancellation}
+        onSeeAllBookings={() => goToSection("bookings")}
+        publicUrl={publicUrl}
+        copiedLink={copiedLink}
+        onCopyLink={() => void copyPublicLink()}
+        publishingEnabled={publishingEnabled}
+        nextSteps={getNextSteps({
+          serviceCount: services.length,
+          vertical,
+          availability,
+          publishingEnabled,
+        })}
+        onGoToSection={goToSection}
+      />
     );
   }
 
   function renderBookingsList() {
     return (
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
-          title={copy.phrases.allBookingsTitle}
-          action={
-            integratedMode ? (
-              <ActionButton tone="primary" onClick={() => setIsAppointmentScannerOpen(true)}>
-                {t.admin.scanAppointment}
-              </ActionButton>
-            ) : null
-          }
-        />
-        <div className="mt-6 grid gap-3 lg:grid-cols-[1fr_180px_180px]">
-          <input
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            placeholder={copy.phrases.searchPlaceholder}
-            className={cn("min-h-12", adminFieldClass)}
-          />
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as "all" | BookingStatus)}
-            className={cn("min-h-12", adminFieldClass)}
-          >
-            <option value="all">{t.admin.allStatuses}</option>
-            <option value="confirmed">{t.admin.confirmed}</option>
-            <option value="rescheduled">{t.admin.rescheduled}</option>
-            <option value="cancelled">{t.admin.cancelled}</option>
-          </select>
-          <select
-            value={typeFilter}
-            onChange={(event) => setTypeFilter(event.target.value as "all" | BookingType)}
-            className={cn("min-h-12", adminFieldClass)}
-          >
-            <option value="all">{t.admin.allTypes}</option>
-            <option value="appointment">{t.admin.appointments}</option>
-            <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
-          </select>
-        </div>
-        <div className="mt-4 space-y-3">
-          {filteredBookings.length === 0 ? (
-            <EmptyState
-              title={copy.phrases.noBookingsMatchTitle}
-              body={t.admin.tryBroaderSearch}
-            />
-          ) : (
-            filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className={cn(
-                  adminInsetClass,
-                  "p-5",
-                  booking.status === "cancelled" && "opacity-60",
-                )}
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h4 className="text-base font-semibold text-[var(--ink)]">
-                        {booking.clientName}
-                      </h4>
-                      <ToneBadge tone={bookingTypeTone(booking.bookingType)}>
-                        {getBookingTypeLabel(booking.bookingType, lang)}
-                      </ToneBadge>
-                      <ToneBadge tone={statusTone(booking.status)}>
-                        {getBookingStatusLabel(booking.status, lang)}
-                      </ToneBadge>
-                      <BookingCampaignBadge campaign={booking.campaign} lang={lang} />
-                    </div>
-                    <p className="mt-2 text-sm font-medium text-[var(--ink)]">
-                      {booking.serviceName}
-                      {typeof booking.partySize === "number"
-                        ? ` · ${booking.partySize} ${t.admin.guestsSuffix}`
-                        : ""}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
-                      {formatDateLabel(booking.dateKey, lang)} ·{" "}
-                      {formatTimeRange(booking.startTime, booking.endTime, lang)}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[var(--muted)]">
-                      <span>
-                        {booking.clientEmail} · {booking.clientPhone}
-                      </span>
-                      {booking.dateOfBirth ? (
-                        <span>
-                          {t.publicFlow.dateOfBirth}: {formatDateOfBirth(booking.dateOfBirth, lang)}
-                        </span>
-                      ) : null}
-                      {booking.capacitySnapshot ? (
-                        <span>{t.publicFlow.capacity}: {booking.capacitySnapshot}</span>
-                      ) : null}
-                      {booking.cost ? <span>{t.publicFlow.total}: {booking.cost}</span> : null}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 flex-wrap gap-2">
-                    {isServiceSingleOccurrence(booking.serviceId) ? null : (
-                      <ActionButton
-                        tone="ghost"
-                        disabled={booking.status === "cancelled"}
-                        onClick={() => openReschedule(booking.id)}
-                      >
-                        {t.publicFlow.reschedule}
-                      </ActionButton>
-                    )}
-                    <ActionButton
-                      tone="danger"
-                      disabled={booking.status === "cancelled"}
-                      onClick={() => openCancellation(booking.id)}
-                    >
-                      {t.common.cancel}
-                    </ActionButton>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <BookingsList
+        lang={lang}
+        copy={copy}
+        bookings={filteredBookings}
+        totalCount={bookings.length}
+        todayKey={todayKey()}
+        search={searchTerm}
+        onSearchChange={setSearchTerm}
+        status={statusFilter}
+        onStatusChange={setStatusFilter}
+        type={typeFilter}
+        onTypeChange={setTypeFilter}
+        onClearFilters={() => {
+          setSearchTerm("");
+          setStatusFilter("all");
+          setTypeFilter("all");
+        }}
+        canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
+        onReschedule={openReschedule}
+        onCancel={openCancellation}
+        onScan={integratedMode ? () => setIsAppointmentScannerOpen(true) : undefined}
+      />
     );
   }
 
   function renderAdminCalendar() {
     const weeks = createMonthMatrix(calendarMonthAnchor);
+    const today = todayKey();
+    const navButtonClass =
+      "inline-flex h-11 min-w-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]";
 
     return (
-      <div className={cn(adminPanelClass, "space-y-6 p-6")}>
-        <SectionTitle
-          title={t.admin.monthlyCalendar}
-          body={copy.phrases.addBookingHint}
-          action={
-            services.length > 0 ? (
-              <select
-                value={activeCalendarService?.id ?? ""}
-                onChange={(event) => setCalendarServicePreference(event.target.value)}
-                className={cn("min-h-11 text-sm", adminFieldClass)}
-              >
-                {services.map((service) => (
-                  <option key={service.id} value={service.id}>
-                    {t.admin.newBookingPrefix}: {service.name}
-                  </option>
-                ))}
-              </select>
-            ) : null
-          }
-        />
-
-        <div className={cn("flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3", adminBarClass)}>
+      <section className={cn(adminPanelClass, "p-3 sm:p-6")}>
+        <div className="flex flex-col gap-3 px-1 sm:px-0 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-2">
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+            <button
+              type="button"
+              aria-label={t.publicFlow.previous}
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
             >
-              {t.publicFlow.previous}
-            </ActionButton>
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+              <CaretLeft aria-hidden="true" size={18} />
+            </button>
+            <button
+              type="button"
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor(new Date())}
             >
               {t.publicFlow.today}
-            </ActionButton>
-            <ActionButton
-              tone="ghost"
-              className={calendarNavPillClass}
+            </button>
+            <button
+              type="button"
+              aria-label={t.publicFlow.next}
+              className={navButtonClass}
               onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
             >
-              {t.publicFlow.next}
-            </ActionButton>
+              <CaretRight aria-hidden="true" size={18} />
+            </button>
+            <h2
+              aria-live="polite"
+              className="ml-1 whitespace-nowrap text-base font-semibold capitalize tracking-[-0.02em] text-[var(--ink)] sm:ml-2 sm:text-xl"
+            >
+              {formatMonthLabel(calendarMonthAnchor, lang)}
+            </h2>
           </div>
-          <p className="text-base font-semibold text-[var(--ink)]">
-            {formatMonthLabel(calendarMonthAnchor, lang)}
-          </p>
-          <div className="flex flex-wrap gap-2 text-xs font-medium text-[var(--muted)]">
-            <span className="inline-flex items-center gap-2">
+          {services.length > 0 ? (
+            <select
+              value={activeCalendarService?.id ?? ""}
+              onChange={(event) => setCalendarServicePreference(event.target.value)}
+              aria-label={t.admin.newBookingPrefix}
+              className={cn("min-h-11 text-sm lg:max-w-xs", adminFieldClass)}
+            >
+              {services.map((service) => (
+                <option key={service.id} value={service.id}>
+                  {t.admin.newBookingPrefix}: {service.name}
+                </option>
+              ))}
+            </select>
+          ) : null}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1 text-xs text-[var(--muted)] sm:px-0">
+          <p>{copy.phrases.addBookingHint}</p>
+          <div className="flex flex-wrap gap-3 font-medium">
+            <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
               {getBookingTypeLabel("appointment", lang)}
             </span>
-            <span className="inline-flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[var(--full-day)]" />
               {getBookingTypeLabel("full-day", lang)}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/40" />
+              {t.publicFlow.open}
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
+        <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
           {WEEKDAY_KEYS.map((day) => (
             <p key={day}>{getWeekdayShortFormatter(lang).format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
           ))}
         </div>
 
-        <div className="grid gap-2">
+        <div className="mt-2 grid gap-1 sm:gap-2">
           {weeks.map((week) => (
-            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-2">
+            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-1 sm:gap-2">
               {week.map((date) => {
                 const dateKey = getDateKey(date);
                 const dayBookings = getBookingsForDate(bookings, dateKey);
@@ -3961,6 +3881,8 @@ export function HaabBookingModule({
                     activeBookingHolds,
                   );
                 const inMonth = date.getMonth() === calendarMonthAnchor.getMonth();
+                const isToday = dateKey === today;
+                const hiddenOnPhone = Math.max(0, dayBookings.length - 3);
 
                 return (
                   <button
@@ -3977,41 +3899,59 @@ export function HaabBookingModule({
                         : undefined
                     }
                     className={cn(
-                      "min-h-[124px] rounded-[26px] p-3 text-left transition",
-                      inMonth
-                        ? adminChoiceQuietClass
-                        : cn(adminChoiceQuietClass, "text-[var(--muted)] opacity-75"),
-                      canTest && "hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]",
-                      !canTest && "cursor-default",
+                      "flex min-h-[64px] min-w-0 flex-col rounded-xl p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] sm:min-h-[116px] sm:rounded-[22px] sm:p-3",
+                      canTest
+                        ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/25 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]"
+                        : cn(adminChoiceQuietClass, "cursor-default"),
+                      !inMonth && "opacity-55",
                     )}
                   >
-                    <div className="flex items-start justify-between gap-2">
-                      <span className="text-sm font-semibold text-[var(--ink)]">
+                    <div className="flex items-start justify-between gap-1">
+                      <span
+                        className={cn(
+                          "grid h-6 min-w-6 place-items-center rounded-full text-xs font-semibold sm:h-7 sm:min-w-7 sm:text-sm",
+                          isToday
+                            ? "bg-[var(--primary)] px-1.5 text-white"
+                            : "text-[var(--ink)]",
+                        )}
+                      >
                         {date.getDate()}
                       </span>
                       {canTest ? (
-                        <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
+                        <span className="hidden sm:inline-flex">
+                          <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
+                        </span>
                       ) : null}
                     </div>
-                    <div className="mt-3 space-y-2">
-                      {dayBookings.map((booking) => (
+                    {/* Chips on wider screens; dots on phones, with the text
+                        kept for screen readers. */}
+                    <div className="mt-1.5 flex flex-wrap gap-1 sm:mt-3 sm:grid sm:gap-2">
+                      {dayBookings.map((booking, index) => (
                         <div
                           key={booking.id}
                           className={cn(
-                            "rounded-2xl px-3 py-2 text-xs font-medium",
+                            "h-1.5 w-1.5 rounded-full sm:h-auto sm:w-auto sm:rounded-2xl sm:px-3 sm:py-2 sm:text-xs sm:font-medium",
+                            index >= 3 && "hidden sm:block",
                             booking.bookingType === "full-day"
-                              ? "bg-[var(--full-day)] text-[var(--background)]"
-                              : "bg-[var(--accent-soft)] text-[var(--accent)]",
+                              ? "bg-[var(--full-day)] sm:text-[var(--background)]"
+                              : "bg-[var(--accent)] sm:bg-[var(--panel-glass-92)] sm:text-[var(--accent)]",
                           )}
                         >
-                          <p className="font-semibold">
+                          <span className="sr-only sm:not-sr-only sm:block sm:font-semibold">
                             {booking.bookingType === "full-day"
                               ? getBookingTypeLabel("full-day", lang)
                               : formatTimeLabel(booking.startTime, lang)}
-                          </p>
-                          <p className="mt-1 truncate">{booking.serviceName}</p>
+                          </span>
+                          <span className="sr-only sm:not-sr-only sm:mt-1 sm:block sm:truncate">
+                            {booking.serviceName}
+                          </span>
                         </div>
                       ))}
+                      {hiddenOnPhone > 0 ? (
+                        <span aria-hidden="true" className="text-[10px] font-semibold leading-none text-[var(--muted)] sm:hidden">
+                          +{hiddenOnPhone}
+                        </span>
+                      ) : null}
                     </div>
                   </button>
                 );
@@ -4019,7 +3959,7 @@ export function HaabBookingModule({
             </div>
           ))}
         </div>
-      </div>
+      </section>
     );
   }
 
@@ -4052,31 +3992,11 @@ export function HaabBookingModule({
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
+          {/* In the shell the page header already says what this section is for. */}
           <SectionTitle
             title={t.admin.appearanceTitle}
-            body={t.admin.appearanceBody}
-            action={
-              integratedMode && persistAdminChanges ? (
-                <ActionButton
-                  tone="primary"
-                  disabled={isSavingAdmin}
-                  onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
-                >
-                  {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
-                </ActionButton>
-              ) : undefined
-            }
+            body={chrome === "module" ? t.admin.appearanceBody : undefined}
           />
-          {adminSaveError ? (
-            <div className="mt-4 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
-              {adminSaveError}
-            </div>
-          ) : null}
-          {adminSaveMessage ? (
-            <div className="mt-4 rounded-2xl border border-[var(--success-line)] bg-[var(--success-soft)] px-4 py-3 text-sm font-medium text-[var(--success-strong)]">
-              {adminSaveMessage}
-            </div>
-          ) : null}
           <div className="mt-6">
             <LogoImageUploader
               value={provider.logoImageUrl}
@@ -4102,18 +4022,84 @@ export function HaabBookingModule({
             onThemeChange={(next) => updateProvider("publicTheme", next)}
             disabled={isSavingAdmin}
           />
-          <LanguageSettingsSection
-            lang={lang}
-            clientLanguage={provider.language ?? "en"}
-            onClientLanguageChange={(next) => updateProvider("language", next)}
-            onDashboardLanguageChange={(next) =>
-              updateProvider("dashboardLanguage", next)
-            }
-            disabled={isSavingAdmin}
-          />
+          <div className="mt-6">
+            <ClientLanguageField
+              lang={lang}
+              clientLanguage={provider.language ?? "en"}
+              onChange={(next) => updateProvider("language", next)}
+              disabled={isSavingAdmin}
+            />
+          </div>
         </div>
       </div>
     );
+  }
+
+  function renderManagementSections() {
+    switch (currentSection) {
+      case "dashboard":
+        return renderDashboard();
+      case "bookings":
+        return renderBookingsList();
+      case "calendar":
+        return renderAdminCalendar();
+      case "services":
+        return renderServices();
+      case "appearance":
+        return renderAppearance();
+      case "availability":
+        return (
+          <AvailabilitySettingsSection
+            vertical={vertical}
+            availability={availability}
+            onChange={updateAvailabilityDay}
+            onManageEvents={() => goToSection("services")}
+            maxBookingsPerDay={provider.maxBookingsPerDay}
+            onMaxBookingsPerDayChange={(value) => updateProvider("maxBookingsPerDay", value)}
+            disabled={isSavingAdmin}
+            lang={lang}
+          />
+        );
+      case "analytics":
+        return (
+          <ProviderAnalyticsSurface
+            checkoutResult={checkoutResult}
+            lang={lang}
+            publicUrl={publicUrl}
+            integratedMode={integratedMode}
+            entitlements={providerEntitlements}
+          />
+        );
+      case "integrations":
+        return (
+          <ProviderIntegrationsSection
+            entitlements={providerEntitlements}
+            integratedMode={integratedMode}
+            lang={lang}
+            className={cn(adminPanelClass, "p-6")}
+          />
+        );
+      case "settings":
+        return (
+          <ProviderSettingsSurface
+            title={profileRole?.informationTitle ?? t.admin.providerInformation}
+            publicUrlLabel={fillTemplate(t.admin.publicBookingLinkFor, {
+              booking: copy.booking,
+            })}
+            provider={provider}
+            lang={lang}
+            publicUrl={publicUrl}
+            integratedMode={integratedMode}
+            canPersist={persistAdminChanges}
+            disabled={isSavingAdmin}
+            entitlements={providerEntitlements}
+            onProviderChange={updateProvider}
+            onSavePublicSlug={persistPublicSlug}
+            onResetStandaloneSetup={resetStandaloneSetup}
+            onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
+          />
+        );
+    }
   }
 
   function renderPublicCalendar() {
@@ -7133,6 +7119,60 @@ export function HaabBookingModule({
     );
   }
 
+  const saveBar =
+    surface === "management" && surfaceMode === "adaptive" ? (
+      <SaveBar
+        visible={hasUnsavedChanges}
+        saving={isSavingAdmin}
+        error={adminSaveError}
+        message={adminSaveMessage}
+        onSave={() => void persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
+        lang={lang}
+      />
+    ) : null;
+
+  const modals = (
+    <>
+      {renderCalendarQrModal()}
+      <AppointmentScannerDialog
+        open={integratedMode && isAppointmentScannerOpen}
+        onClose={() => setIsAppointmentScannerOpen(false)}
+        lang={lang}
+      />
+      {renderCancellationModal()}
+      {renderRescheduleModal()}
+    </>
+  );
+
+  // The host's shell already renders the header, navigation and account
+  // controls; the module contributes the section content only.
+  if (chrome === "shell" && !isDedicatedPublicPage) {
+    return (
+      <>
+        {surface === "management" && surfaceMode === "adaptive" ? (
+          <>
+            {renderManagementSections()}
+            {saveBar}
+          </>
+        ) : (
+          <div className="space-y-4">
+            {surfaceMode === "adaptive" ? (
+              <button
+                type="button"
+                onClick={() => setSurface("management")}
+                className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+              >
+                {t.admin.backToWorkspace}
+              </button>
+            ) : null}
+            <section className={publicShellClass}>{renderPublicFlow()}</section>
+          </div>
+        )}
+        {modals}
+      </>
+    );
+  }
+
   return (
     <>
       <section className={publicShellClass}>
@@ -7158,7 +7198,7 @@ export function HaabBookingModule({
             className="mx-4 mt-4 sm:mx-8 sm:mt-8 xl:mx-10"
           />
         ) : null}
-        {!isDedicatedPublicPage ? (
+        {!isDedicatedPublicPage && chrome === "module" ? (
           <div className="border-b border-[var(--line)] p-5 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -7212,18 +7252,20 @@ export function HaabBookingModule({
                     ["bookings", copy.Bookings],
                     ["calendar", t.admin.tabCalendar],
                     ["services", copy.Services],
+                    ["availability", dashboardCopy[lang].titles.availability],
                     ["appearance", t.admin.tabAppearance],
                     ["analytics", t.admin.tabAnalytics],
+                    ["integrations", dashboardCopy[lang].titles.integrations],
                     ["settings", t.admin.tabSettings],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (
                   <button
                     key={value}
                     type="button"
-                    onClick={() => setAdminTab(value)}
+                    onClick={() => goToSection(value)}
                     className={cn(
                       "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                      adminTab === value
+                      currentSection === value
                         ? "bg-[var(--ink)] text-[var(--background)]"
                         : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]",
                     )}
@@ -7248,61 +7290,15 @@ export function HaabBookingModule({
 
         {surface === "management" && surfaceMode === "adaptive" ? (
           <div className="p-5 sm:p-8">
-            {adminTab === "dashboard" ? renderDashboard() : null}
-            {adminTab === "bookings" ? renderBookingsList() : null}
-            {adminTab === "calendar" ? renderAdminCalendar() : null}
-            {adminTab === "services" ? renderServices() : null}
-            {adminTab === "appearance" ? renderAppearance() : null}
-            {adminTab === "analytics" ? (
-              <ProviderAnalyticsSurface
-                checkoutResult={checkoutResult}
-                lang={lang}
-                publicUrl={publicUrl}
-                integratedMode={integratedMode}
-                entitlements={providerEntitlements}
-              />
-            ) : null}
-            {adminTab === "settings" ? (
-              <ProviderSettingsSurface
-                title={profileRole?.informationTitle ?? t.admin.providerInformation}
-                publicUrlLabel={fillTemplate(t.admin.publicBookingLinkFor, {
-                  booking: copy.booking,
-                })}
-                provider={provider}
-                availability={availability}
-                vertical={vertical}
-                lang={lang}
-                publicUrl={publicUrl}
-                integratedMode={integratedMode}
-                canPersist={persistAdminChanges}
-                isSaving={isSavingAdmin}
-                saveError={adminSaveError}
-                saveMessage={adminSaveMessage}
-                entitlements={providerEntitlements}
-                onProviderChange={updateProvider}
-                onAvailabilityChange={updateAvailabilityDay}
-                onSave={async () => {
-                  await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
-                }}
-                onSavePublicSlug={persistPublicSlug}
-                onManageEvents={() => setAdminTab("services")}
-                onResetStandaloneSetup={resetStandaloneSetup}
-              />
-            ) : null}
+            {renderManagementSections()}
+            {saveBar}
           </div>
         ) : (
           renderPublicFlow()
         )}
       </section>
 
-      {renderCalendarQrModal()}
-      <AppointmentScannerDialog
-        open={integratedMode && isAppointmentScannerOpen}
-        onClose={() => setIsAppointmentScannerOpen(false)}
-        lang={lang}
-      />
-      {renderCancellationModal()}
-      {renderRescheduleModal()}
+      {modals}
     </>
   );
 }

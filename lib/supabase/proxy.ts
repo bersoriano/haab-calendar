@@ -4,6 +4,7 @@ import { applyLanguageCookie } from "@/lib/language/proxy-language";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const protectedRoutePrefixes = [
+  "/dashboard",
   "/super-admin",
   "/api/blob",
   "/api/provider",

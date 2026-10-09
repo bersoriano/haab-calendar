@@ -74,10 +74,13 @@ export function ProviderIntegrationsSection({
   integratedMode,
   demoEdit = false,
   lang = "en",
+  className = "mt-6 border-t border-[var(--line)] pt-6",
 }: {
   entitlements?: ProviderEntitlements;
   integratedMode: boolean;
   demoEdit?: boolean;
+  /** Outer spacing: a divider under other settings, or a panel as its own page. */
+  className?: string;
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang].admin;
@@ -175,14 +178,14 @@ export function ProviderIntegrationsSection({
   };
 
   const statusTones: Record<IntegrationAvailability, string> = {
-    available: "bg-emerald-100 text-emerald-800",
-    premium_required: "bg-amber-100 text-amber-900",
-    unavailable: "bg-slate-100 text-slate-700",
-    publish_required: "bg-slate-100 text-slate-700",
+    available: "bg-[var(--success-soft)] text-[var(--success-strong)]",
+    premium_required: "bg-[var(--warning-soft)] text-[var(--warning-strong)]",
+    unavailable: "bg-[var(--surface-highest)] text-[var(--ink)]",
+    publish_required: "bg-[var(--surface-highest)] text-[var(--ink)]",
   };
 
   return (
-    <section className="mt-6 border-t border-[var(--line)] pt-6">
+    <section className={className}>
       <SectionTitle title={t.integrationsTitle} body={t.integrationsBody} />
       <ul className="mt-4 grid gap-3">
         {INTEGRATIONS.map((integration) => {
@@ -213,15 +216,15 @@ export function ProviderIntegrationsSection({
                     className={cn(
                       "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
                       connection?.connected
-                        ? "bg-emerald-100 text-emerald-800"
-                        : "bg-slate-100 text-slate-700",
+                        ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
+                        : "bg-[var(--surface-highest)] text-[var(--ink)]",
                     )}
                   >
                     {connection?.connected ? t.googleConnected : t.integrationNotConnected}
                   </span>
                 ) : null}
                 {demoEdit ? (
-                  <span className="inline-flex rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-700">
+                  <span className="inline-flex rounded-full bg-[var(--surface-highest)] px-2 py-1 text-[11px] font-semibold text-[var(--ink)]">
                     {t.integrationReadOnly}
                   </span>
                 ) : null}
@@ -232,7 +235,7 @@ export function ProviderIntegrationsSection({
               {availability === "available" && !demoEdit ? (
                 <div className="mt-3 grid gap-3">
                   {failed ? (
-                    <p className="text-xs font-medium text-rose-700" role="alert">
+                    <p className="text-xs font-medium text-[var(--danger-strong)]" role="alert">
                       {t.googleConnectionFailed}
                     </p>
                   ) : null}
@@ -290,7 +293,7 @@ export function ProviderIntegrationsSection({
                         type="button"
                         disabled={busy}
                         onClick={disconnect}
-                        className="inline-flex min-h-11 w-fit items-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-700 disabled:cursor-wait disabled:opacity-60"
+                        className="inline-flex min-h-11 w-fit items-center rounded-2xl border border-[var(--danger-line)] bg-white px-4 text-sm font-semibold text-[var(--danger-strong)] disabled:cursor-wait disabled:opacity-60"
                       >
                         {t.googleDisconnect}
                       </button>
@@ -298,7 +301,7 @@ export function ProviderIntegrationsSection({
                   ) : null}
 
                   {connection?.status === "needs_reauth" ? (
-                    <p className="text-xs font-medium text-amber-800">
+                    <p className="text-xs font-medium text-[var(--warning-strong)]">
                       {t.googleNeedsReauth}
                     </p>
                   ) : null}

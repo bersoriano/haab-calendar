@@ -27,6 +27,12 @@ describe("Supabase proxy route classification", () => {
     expect(isProtectedRoute(pathname)).toBe(false);
   });
 
+  it("protects the dashboard and every section under it", () => {
+    expect(isProtectedRoute("/dashboard")).toBe(true);
+    expect(isProtectedRoute("/dashboard/bookings")).toBe(true);
+    expect(isProtectedRoute("/dashboards")).toBe(false);
+  });
+
   it("does not protect unrelated paths that merely share a prefix", () => {
     expect(isProtectedRoute("/super-administrator")).toBe(false);
     expect(isProtectedRoute("/api/provider-example")).toBe(false);

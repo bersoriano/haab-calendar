@@ -13,8 +13,10 @@ export type AdminTab =
   | "bookings"
   | "calendar"
   | "services"
+  | "availability"
   | "appearance"
   | "analytics"
+  | "integrations"
   | "settings";
 export type WeekdayKey =
   | "sunday"

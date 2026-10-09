@@ -153,7 +153,7 @@ export function GoogleCalendarCapabilities({
   return (
     <div className="mt-4 grid gap-5 border-t border-[var(--line)] pt-4">
       {failed ? (
-        <p className="text-xs font-medium text-rose-700" role="alert">
+        <p className="text-xs font-medium text-[var(--danger-strong)]" role="alert">
           {failed}
         </p>
       ) : null}
@@ -207,7 +207,7 @@ export function GoogleCalendarCapabilities({
                           />
                           <span>{calendar.summary}</span>
                           {source?.lastErrorCode ? (
-                            <span className="text-xs font-medium text-amber-800">
+                            <span className="text-xs font-medium text-[var(--warning-strong)]">
                               {t.googleBusySourceFailed}
                             </span>
                           ) : null}
@@ -221,7 +221,7 @@ export function GoogleCalendarCapabilities({
               <p
                 className={cn(
                   "text-xs",
-                  atLimit ? "font-medium text-amber-800" : "text-[var(--muted)]",
+                  atLimit ? "font-medium text-[var(--warning-strong)]" : "text-[var(--muted)]",
                 )}
               >
                 {t.googleBusyLimit}
@@ -293,7 +293,7 @@ export function GoogleCalendarCapabilities({
                   </span>
                   <span>{conflictLabel(conflict.conflictType, t)}</span>
                   {conflict.status === "repairing" ? (
-                    <span className="text-amber-800">{t.googleConflictRepairing}</span>
+                    <span className="text-[var(--warning-strong)]">{t.googleConflictRepairing}</span>
                   ) : null}
                 </li>
               ))}

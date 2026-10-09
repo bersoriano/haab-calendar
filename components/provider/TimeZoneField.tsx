@@ -111,7 +111,7 @@ export function TimeZoneField({
       {showPrompt ? (
         <div
           role="status"
-          className="mt-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+          className="mt-1 rounded-2xl border border-[var(--warning-line)] bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--warning-strong)]"
         >
           <p className="font-medium">
             {t.timeZonePromptTitle.replace(
@@ -128,14 +128,14 @@ export function TimeZoneField({
                 onChange(detected);
                 setDismissedPrompt(true);
               }}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-amber-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:opacity-45"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--warning-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-45"
             >
               {t.timeZonePromptAccept}
             </button>
             <button
               type="button"
               onClick={() => setDismissedPrompt(true)}
-              className="text-sm font-semibold text-amber-900 hover:underline"
+              className="text-sm font-semibold text-[var(--warning-strong)] hover:underline"
             >
               {t.timeZonePromptDismiss}
             </button>

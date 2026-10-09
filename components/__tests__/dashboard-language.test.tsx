@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { createEmptyStore } from "@/lib/store";
 import type { Lang, ModuleStore } from "@/lib/types";
@@ -26,7 +25,6 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/app/login/actions", () => ({ logout: () => undefined }));
-vi.mock("@/app/super-admin/actions", () => ({ stopDemoEdit: () => undefined }));
 
 vi.mock("@/components/haab-booking-module", () => ({
   HaabBookingModule: (props: Record<string, unknown>) => {
@@ -67,13 +65,10 @@ function renderDashboard(options: {
       loggedIn
       configured={configured}
       email="owner@example.com"
-      // Both props force the "app" view — the composed dashboard screen. A
-      // configured owner only lands there directly while editing, so that
-      // case uses the demo-edit entry point.
+      // Forces the "app" view — the setup screen a signed-in owner without a
+      // finished page lands on. Configured owners are served by /dashboard and
+      // covered in components/provider/__tests__/dashboard-app.test.tsx.
       initialVertical="events"
-      demoEdit={
-        configured ? { label: "Ferias del Sur", publicPath: "/events/ferias" } : undefined
-      }
       featuredDemos={[]}
       initialLanguage={options.initialLanguage}
       viewerLanguage={options.viewerLanguage}
@@ -88,7 +83,7 @@ function renderDashboard(options: {
 function chromeLanguage(html: string): Lang | "mixed" | "none" {
   const seen = (["en", "es"] as const).filter(
     (lang) =>
-      html.includes(bookingTranslations[lang].admin.heroTitle) &&
+      html.includes(landingTranslations[lang].home.chooseAnotherWorkflow) &&
       html.includes(landingTranslations[lang].home.selectedWorkflow),
   );
 
@@ -113,18 +108,6 @@ describe("composed dashboard language", () => {
 
     expect(chromeLanguage(html)).toBe("en");
     expect(moduleProps.viewerLanguage).toBe("en");
-  });
-
-  it("follows the owner's pinned workspace language in both halves", () => {
-    const { html, moduleProps } = renderDashboard({
-      initialLanguage: "en",
-      viewerLanguage: "en",
-      dashboardLanguage: "es",
-      configured: true,
-    });
-
-    expect(chromeLanguage(html)).toBe("es");
-    expect(moduleProps.viewerLanguage).toBe("es");
   });
 
   it("gives the client-facing setting no channel to the owner's own language", () => {

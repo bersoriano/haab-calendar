@@ -23,7 +23,16 @@ export function PendingDeletionCleanups({
   const [pendingJobId, setPendingJobId] = useState<string>();
   const [error, setError] = useState<string>();
 
-  if (jobs.length === 0) return null;
+  if (jobs.length === 0) {
+    return (
+      <section className="rounded-3xl border border-[var(--line)] bg-[var(--surface-lowest)] p-8 text-center">
+        <h2 className="text-lg font-semibold text-[var(--ink)]">No cleanups waiting</h2>
+        <p className="mt-2 text-sm text-[var(--muted)]">
+          Every deleted account&apos;s branding files have been removed.
+        </p>
+      </section>
+    );
+  }
 
   async function retry(jobId: string) {
     setPendingJobId(jobId);
@@ -56,15 +65,15 @@ export function PendingDeletionCleanups({
   }
 
   return (
-    <section className="mb-8 overflow-hidden rounded-3xl border border-amber-200 bg-amber-50">
-      <div className="border-b border-amber-200 px-6 py-5">
-        <p className="text-xs font-bold uppercase tracking-[0.1em] text-amber-800">
+    <section className="overflow-hidden rounded-3xl border border-[var(--warning-line)] bg-[var(--warning-soft)]">
+      <div className="border-b border-[var(--warning-line)] px-6 py-5">
+        <p className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--warning-strong)]">
           Asset cleanup pending
         </p>
-        <h2 className="mt-1 text-xl font-semibold text-amber-950">
+        <h2 className="mt-1 text-xl font-semibold text-[var(--warning-strong)]">
           Deleted accounts with branding files still queued
         </h2>
-        <p className="mt-2 text-sm text-amber-900">
+        <p className="mt-2 text-sm text-[var(--warning-strong)]">
           Account data is already deleted. Retry removes remaining Haab-hosted
           branding files.
         </p>
@@ -78,16 +87,16 @@ export function PendingDeletionCleanups({
               className="flex flex-col gap-4 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="font-mono text-sm font-semibold text-amber-950">
+                <p className="font-mono text-sm font-semibold text-[var(--warning-strong)]">
                   Cleanup {job.id.slice(0, 8)}
                 </p>
-                <p className="mt-1 text-xs text-amber-800">
+                <p className="mt-1 text-xs text-[var(--warning-strong)]">
                   {job.attemptCount} failed{" "}
                   {job.attemptCount === 1 ? "attempt" : "attempts"}
                   {" · "}queued {formatUtcDate(job.createdAt)} UTC
                 </p>
                 {job.lastAttemptFailed ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-900">
+                  <p className="mt-1 text-xs font-semibold text-[var(--warning-strong)]">
                     Last cleanup attempt failed.
                   </p>
                 ) : null}
@@ -96,7 +105,7 @@ export function PendingDeletionCleanups({
                 type="button"
                 disabled={pending}
                 onClick={() => retry(job.id)}
-                className="min-h-10 rounded-full bg-amber-900 px-4 text-sm font-semibold text-white transition hover:bg-amber-950 disabled:cursor-wait disabled:opacity-60"
+                className="min-h-10 rounded-full bg-[var(--warning-strong)] px-4 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
               >
                 {pending ? "Retrying…" : "Retry cleanup"}
               </button>
@@ -107,7 +116,7 @@ export function PendingDeletionCleanups({
       {error ? (
         <p
           role="alert"
-          className="border-t border-amber-200 px-6 py-4 text-sm font-semibold text-rose-700"
+          className="border-t border-[var(--warning-line)] px-6 py-4 text-sm font-semibold text-[var(--danger-strong)]"
         >
           {error}
         </p>

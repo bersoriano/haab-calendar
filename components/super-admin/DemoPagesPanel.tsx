@@ -1,29 +1,29 @@
 import Link from "next/link";
 
 import { startDemoEdit } from "@/app/super-admin/actions";
+import {
+  SUPER_ADMIN_ACCENT_CLASS,
+  SUPER_ADMIN_ACCENT_TEXT_CLASS,
+} from "@/components/app-shell/super-admin-accent";
+import { cn } from "@/lib/utils";
 import type { DemoPageSummary } from "@/lib/supabase/demo-edit";
 
 export function DemoPagesPanel({ demoPages }: { demoPages: DemoPageSummary[] }) {
   return (
-    <section aria-label="Demo pages" className="my-8">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xl font-semibold tracking-tight text-[var(--ink)]">
-          Demo pages
-        </h2>
-        <p className="max-w-2xl text-sm leading-6 text-[var(--muted)]">
-          The public example pages linked from the landing page. Editing one
-          opens the normal dashboard against that page; every save writes to it
-          until you exit demo editing.
-        </p>
-      </div>
+    <section aria-label="Demo pages">
+      {/* The page header names the section; this says what editing does. */}
+      <p className="max-w-2xl text-sm leading-6 text-[var(--muted)]">
+        Editing a demo opens the normal dashboard against that page; every save
+        writes to it until you exit demo editing.
+      </p>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {demoPages.map((demo) => (
           <article
             key={demo.key}
-            className="flex flex-col rounded-3xl border border-[var(--line)] bg-white p-5"
+            className="flex flex-col rounded-3xl border border-[var(--line)] bg-[var(--surface-lowest)] p-5"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-violet-700">
+            <p className={cn("text-xs font-semibold uppercase tracking-[0.08em]", SUPER_ADMIN_ACCENT_TEXT_CLASS)}>
               {demo.vertical}
             </p>
             <h3 className="mt-2 text-lg font-semibold text-[var(--ink)]">
@@ -44,7 +44,10 @@ export function DemoPagesPanel({ demoPages }: { demoPages: DemoPageSummary[] }) 
                 <button
                   type="submit"
                   disabled={demo.status !== "ready"}
-                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800 disabled:cursor-not-allowed disabled:opacity-40"
+                  className={cn(
+                    "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
+                    SUPER_ADMIN_ACCENT_CLASS,
+                  )}
                 >
                   Edit demo
                 </button>

@@ -4,11 +4,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
-import { AdminHero } from "@/components/provider/AdminHero";
-import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
+import { SetupHeader } from "@/components/provider/SetupHeader";
 import { logout } from "@/app/login/actions";
-import { stopDemoEdit } from "@/app/super-admin/actions";
-import type { AdminTab, Lang, ModuleStore, VerticalId } from "@/lib/types";
+import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 import {
   LandingActionsProvider,
   LandingPage,
@@ -24,7 +22,6 @@ import {
   type Lang as LandingLang,
 } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
-import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
 import { normalizeStore } from "@/lib/store";
@@ -36,12 +33,6 @@ import {
 } from "@/lib/guest-builder";
 
 type View = "home" | "app";
-
-/** Set when the super admin is editing one of the public example pages. */
-export type DemoEditBanner = {
-  label: string;
-  publicPath: string;
-};
 
 /** Page name captured on the landing page, before any account exists. */
 const MAX_PAGE_NAME_LENGTH = 60;
@@ -68,24 +59,10 @@ type HomeExperienceProps = {
   viewerLanguage: Lang;
   /** Supabase-backed provider data for configured users. */
   dashboardStore?: ModuleStore;
-  /**
-   * Server-resolved feature access, kept apart from the store: the store is
-   * editable configuration that round-trips through the provider API, and this
-   * is a read-only answer about what the account may use. Absent for guests,
-   * for standalone mode, and whenever the resolve failed — the UI treats the
-   * absence as "cannot tell", never as access.
-   */
-  providerEntitlements?: ProviderEntitlements;
   /** Server-controlled ability to expose public URLs and booking actions. */
   publicationStatus?: PublicationStatus;
-  /** Dashboard tab to open first, e.g. after returning from Checkout. */
-  initialAdminTab?: AdminTab;
-  /** How a Stripe Checkout the provider just left ended. */
-  checkoutResult?: "success" | "cancelled";
   /** Whether the signed-in account can open the super-admin area. */
   isSuperAdmin?: boolean;
-  /** Active demo-editing session; the dashboard edits that example page. */
-  demoEdit?: DemoEditBanner;
   /** Continue a guest draft after signup, confirmation, or sign-in. */
   resumeGuestPublish?: boolean;
 };
@@ -118,12 +95,8 @@ function HomeExperienceInner({
   initialPageName,
   viewerLanguage,
   dashboardStore,
-  providerEntitlements,
   publicationStatus,
-  initialAdminTab,
-  checkoutResult,
   isSuperAdmin,
-  demoEdit,
   featuredDemos,
   resumeGuestPublish = false,
 }: HomeExperienceProps) {
@@ -140,7 +113,6 @@ function HomeExperienceInner({
   const [dashboardLanguage, setDashboardLanguage] = useState<Lang>(
     () => dashboardStore?.provider.dashboardLanguage ?? viewerLanguage,
   );
-  const dashboardT = landingTranslations[dashboardLanguage];
   const [persistedDashboardStore, setPersistedDashboardStore] = useState<
     ModuleStore | undefined
   >();
@@ -189,10 +161,7 @@ function HomeExperienceInner({
     loggedIn &&
     !effectiveConfigured &&
     (Boolean(initialVertical) || resumeGuestPublish);
-  // A demo-editing session lands straight in the editor for that example page.
-  const [view, setView] = useState<View>(
-    startInApp || demoEdit ? "app" : "home",
-  );
+  const [view, setView] = useState<View>(startInApp ? "app" : "home");
   const [selectedVertical, setSelectedVertical] = useState<
     VerticalId | undefined
   >(startInApp ? initialVertical : undefined);
@@ -275,7 +244,6 @@ function HomeExperienceInner({
 
     return (
       <div className="flex min-h-full flex-col">
-        <DemoEditBar demoEdit={demoEdit} />
         <AccountStatusBar
           isSuperAdmin={isSuperAdmin}
           publicationStatus={publicationStatus}
@@ -283,39 +251,17 @@ function HomeExperienceInner({
         {!loggedIn ? (
           <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
         ) : null}
-        <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
-          <AdminHero lang={dashboardLanguage} />
-        </div>
-        <header
-          className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${
-            activeWorkflowVertical ? "" : "border-b border-[var(--line)]"
-          }`}
-        >
-          <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
-            {activeWorkflowVertical ? (
-              <SelectedWorkflowHeader
-                lang={dashboardLanguage}
-                vertical={activeWorkflowVertical}
-                onChooseAnother={backToHome}
-                onSignOut={loggedIn ? logout : undefined}
-                userEmail={email}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={backToHome}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
-              >
-                {dashboardT.home.backToHome}
-              </button>
-            )}
-          </div>
-        </header>
+        <SetupHeader
+          lang={dashboardLanguage}
+          vertical={activeWorkflowVertical}
+          userEmail={email}
+          onChooseAnother={backToHome}
+          onBackToHome={backToHome}
+          onSignOut={loggedIn ? logout : undefined}
+        />
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
           <HaabBookingModule
             injectedConfig={effectiveConfigured ? effectiveDashboardStore : undefined}
-            userEmail={email}
-            onSignOut={loggedIn ? logout : undefined}
             persistSetup={loggedIn && !effectiveConfigured}
             persistAdminChanges={loggedIn && effectiveConfigured}
             isGuestDraft={!loggedIn}
@@ -326,16 +272,12 @@ function HomeExperienceInner({
                 setGuestDraftStore(store);
               }
             }}
-            onSetupPersisted={(store) => {
-              setPersistedDashboardStore(store);
-              router.replace("/");
-              router.refresh();
-            }}
+            // Publishing keeps the Done step on screen; "Go to dashboard" is
+            // what takes the owner to /dashboard, freshly loaded.
+            onSetupPersisted={(store) => setPersistedDashboardStore(store)}
+            onOpenDashboard={() => router.push("/dashboard")}
             initialLanguage={effectiveConfigured ? undefined : lang}
             viewerLanguage={dashboardLanguage}
-            providerEntitlements={providerEntitlements}
-            initialAdminTab={effectiveConfigured ? initialAdminTab : undefined}
-            checkoutResult={effectiveConfigured ? checkoutResult : undefined}
             initialVerticalId={
               effectiveConfigured || !seedLandingSelection ? undefined : selectedVertical
             }
@@ -352,7 +294,6 @@ function HomeExperienceInner({
 
   return (
     <>
-      <DemoEditBar demoEdit={demoEdit} />
       <AccountStatusBar
         isSuperAdmin={isSuperAdmin}
         publicationStatus={publicationStatus}
@@ -367,7 +308,7 @@ function HomeExperienceInner({
           // Returning here after signing in shows the dashboard panel for a
           // configured provider, or the workflow picker for a new one.
           loginHref: loginHref("/", lang),
-          onOpenDashboard: () => openApp(),
+          onOpenDashboard: () => router.push("/dashboard"),
         }}
       >
         <LandingPage
@@ -375,7 +316,7 @@ function HomeExperienceInner({
           showUseCases={!effectiveConfigured}
           afterHero={
             effectiveConfigured ? (
-              <DashboardSection onOpen={() => openApp()} email={email} />
+              <DashboardSection onOpen={() => router.push("/dashboard")} email={email} />
             ) : (
               <UseCasesSection onSelectVertical={onSelectVertical} />
             )
@@ -411,44 +352,6 @@ function GuestDraftBar({
         >
           {t.home.guestDraftPublish}
         </button>
-      </div>
-    </aside>
-  );
-}
-
-// Demo editing changes what every save in this session writes to, so the
-// target stays on screen with a one-click way out.
-function DemoEditBar({ demoEdit }: { demoEdit?: DemoEditBanner }) {
-  if (!demoEdit) {
-    return null;
-  }
-
-  return (
-    <aside className="border-b border-violet-200 bg-violet-50 px-4 py-3 sm:px-6">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm font-medium text-violet-900">
-          <span className="font-semibold">Editing demo page:</span>{" "}
-          {demoEdit.label}
-          <span className="ml-2 text-violet-700">{demoEdit.publicPath}</span>
-        </p>
-        <div className="flex shrink-0 items-center gap-3">
-          <Link
-            href={demoEdit.publicPath}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm font-semibold text-violet-800 hover:underline"
-          >
-            View live
-          </Link>
-          <form action={stopDemoEdit}>
-            <button
-              type="submit"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800"
-            >
-              Exit demo editing
-            </button>
-          </form>
-        </div>
       </div>
     </aside>
   );

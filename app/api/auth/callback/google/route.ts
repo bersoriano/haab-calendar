@@ -46,7 +46,8 @@ export async function GET(request: NextRequest) {
     appOrigin = request.nextUrl.origin;
   }
 
-  const settingsUrl = new URL("/?google=", appOrigin);
+  // The Integrations section reads the outcome and tells the owner what happened.
+  const settingsUrl = new URL("/dashboard/integrations", appOrigin);
 
   const finish = (outcome: string) => {
     settingsUrl.search = `?google=${outcome}`;

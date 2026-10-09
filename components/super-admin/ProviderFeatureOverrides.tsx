@@ -163,7 +163,7 @@ export function ProviderFeatureOverrides({
             <span className="text-sm font-semibold text-[var(--ink)]">
               Premium access
             </span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-600">
+            <span className="rounded-full bg-[var(--surface-highest)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
               {snapshot.planTier} plan
             </span>
           </span>
@@ -174,8 +174,8 @@ export function ProviderFeatureOverrides({
                   key={featureKey}
                   className={`h-1.5 w-5 rounded-full ${
                     snapshot.features[featureKey].enabled
-                      ? "bg-emerald-500"
-                      : "bg-slate-200"
+                      ? "bg-[var(--success-strong)]"
+                      : "bg-[var(--line)]"
                   }`}
                 />
               ))}
@@ -225,7 +225,7 @@ export function ProviderFeatureOverrides({
                       <span
                         aria-hidden="true"
                         className={`size-2 shrink-0 rounded-full ${
-                          feature.enabled ? "bg-emerald-500" : "bg-slate-300"
+                          feature.enabled ? "bg-[var(--success-strong)]" : "bg-[var(--line)]"
                         }`}
                       />
                       <span className="text-sm font-medium leading-5 text-[var(--ink)]">
@@ -234,19 +234,19 @@ export function ProviderFeatureOverrides({
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${
                           feature.enabled
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-slate-100 text-slate-600"
+                            ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
+                            : "bg-[var(--surface-highest)] text-[var(--muted)]"
                         }`}
                       >
                         {feature.enabled ? "On" : "Off"}
                       </span>
                       {overridden ? (
-                        <span className="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-amber-800">
+                        <span className="inline-flex rounded-full bg-[var(--warning-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--warning-strong)]">
                           Override
                         </span>
                       ) : null}
                       {blockedBy.length > 0 ? (
-                        <span className="inline-flex rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-rose-800">
+                        <span className="inline-flex rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--danger-strong)]">
                           Blocked
                         </span>
                       ) : null}
@@ -257,7 +257,7 @@ export function ProviderFeatureOverrides({
                       </p>
                     ) : null}
                     {blockedBy.length > 0 ? (
-                      <p className="mt-1 pl-3.5 text-xs font-medium text-rose-700">
+                      <p className="mt-1 pl-3.5 text-xs font-medium text-[var(--danger-strong)]">
                         Granted, but off: needs {listFeatures(blockedBy)}.
                       </p>
                     ) : null}
@@ -302,7 +302,7 @@ export function ProviderFeatureOverrides({
                       />
                     </label>
                     {missing.length > 0 ? (
-                      <p className="text-xs font-medium text-amber-800">
+                      <p className="text-xs font-medium text-[var(--warning-strong)]">
                         Turn on {listFeatures(missing)} first. Granting this
                         alone leaves it off.
                       </p>
@@ -321,7 +321,7 @@ export function ProviderFeatureOverrides({
                             : undefined
                         }
                         onClick={() => submit(featureKey, "grant")}
-                        className="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full bg-[var(--success-strong)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Grant
                       </button>
@@ -329,7 +329,7 @@ export function ProviderFeatureOverrides({
                         type="button"
                         disabled={busy}
                         onClick={() => submit(featureKey, "revoke")}
-                        className="rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-wait disabled:opacity-60"
+                        className="rounded-full border border-[var(--danger-line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--danger-strong)] transition hover:bg-[var(--danger-soft)] disabled:cursor-wait disabled:opacity-60"
                       >
                         Withhold
                       </button>
@@ -361,7 +361,7 @@ export function ProviderFeatureOverrides({
         {feedback ? (
           <p
             className={`text-xs font-medium ${
-              feedback.tone === "success" ? "text-emerald-700" : "text-rose-700"
+              feedback.tone === "success" ? "text-[var(--success-strong)]" : "text-[var(--danger-strong)]"
             }`}
             role={feedback.tone === "error" ? "alert" : "status"}
           >

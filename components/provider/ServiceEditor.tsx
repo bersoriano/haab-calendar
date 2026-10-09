@@ -11,7 +11,7 @@ import {
   getOccurrenceModeLabel,
   bookingTypeTone,
 } from "@/lib/format";
-import { ActionButton, EmptyState, SectionTitle, ToneBadge } from "@/components/ui";
+import { ActionButton, EmptyState, SectionTitle, ToneBadge, buttonClasses } from "@/components/ui";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import type { VerticalHints } from "@/config/verticals";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
@@ -127,6 +127,29 @@ export function ServiceEditor({
         <SectionTitle
           title={copy.Services}
           body={copy.phrases.serviceEditorBody}
+          action={
+            services.length > 0 ? (
+              // On one column the editor sits below the whole list; this jumps
+              // there with a fresh draft, the way the wide layout shows it.
+              <a
+                href="#service-editor"
+                className={buttonClasses("secondary", "lg:hidden")}
+                onClick={(event) => {
+                  event.preventDefault();
+                  onReset();
+                  document
+                    .getElementById("service-editor")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  window.setTimeout(
+                    () => document.getElementById("service-editor-name")?.focus({ preventScroll: true }),
+                    0,
+                  );
+                }}
+              >
+                {copy.phrases.newServiceTitle}
+              </a>
+            ) : undefined
+          }
         />
 
         {disabled ? (
@@ -215,7 +238,15 @@ export function ServiceEditor({
         </div>
       </div>
 
-      <div className={cn(adminPanelClass, "p-6")}>
+      {/* Stays beside a long list on wide screens; scrolls inside itself when
+          the form is taller than the window. */}
+      <div
+        id="service-editor"
+        className={cn(
+          adminPanelClass,
+          "scroll-mt-24 p-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8.5rem)] lg:overflow-y-auto",
+        )}
+      >
         <SectionTitle
           eyebrow={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
           title={editingServiceId ? copy.phrases.editServiceTitle : copy.phrases.newServiceTitle}
@@ -227,6 +258,7 @@ export function ServiceEditor({
               Service: copy.Service,
             })}
             <input
+              id="service-editor-name"
               disabled={disabled}
               value={serviceDraft.name}
               onChange={(event) =>

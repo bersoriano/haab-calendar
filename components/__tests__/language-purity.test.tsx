@@ -5,7 +5,7 @@ import {
   bookingTranslations,
   fillTemplate,
 } from "@/components/booking/i18n/translations";
-import { AdminHero } from "@/components/provider/AdminHero";
+import { SetupHeader } from "@/components/provider/SetupHeader";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -32,8 +32,8 @@ const ENGLISH_MARKERS = [
   "Blocked times", // admin.blockedTimes — AvailabilityEditor, every day row
   "Hold expired", // public.holdExpired — BookingHoldCountdownBar, expired state
   "Hold ending soon", // public.holdEndingSoon — BookingHoldCountdownBar, urgent state
-  "booking operations", // admin.heroTitle — AdminHero
-  "workspace", // admin.heroTitle — AdminHero
+  "Choose another workflow", // home.chooseAnotherWorkflow — SetupHeader
+  "Selected workflow", // home.selectedWorkflow — SetupHeader
   "Monday", // admin.weekdays.monday — AvailabilityEditor
   "Add block", // admin.addBlock — AvailabilityEditor, every day row
   "The hold ran out", // public.holdExpiredTitle — BookingHoldCountdownBar, expired state
@@ -53,7 +53,8 @@ const SPANISH_MARKERS = [
   "Horarios bloqueados", // admin.blockedTimes — AvailabilityEditor, every day row
   "Lunes", // admin.weekdays.monday — AvailabilityEditor
   "Hasta", // admin.blockedTo — AvailabilityEditor, only on a day with a blocked window
-  "sus reservas", // admin.heroTitle — AdminHero
+  "Elegir otro flujo", // home.chooseAnotherWorkflow — SetupHeader
+  "Flujo de trabajo seleccionado", // home.selectedWorkflow — SetupHeader
   "Idioma que ven sus clientes", // admin.clientLanguageLabel — LanguageSettingsSection
   "Idioma de su espacio", // admin.dashboardLanguageLabel — LanguageSettingsSection
   "Precio en esta ubicación", // admin.priceAtLocation — ServiceEditor, linked-address row
@@ -74,7 +75,14 @@ function renderScreens(lang: "en" | "es") {
   availability.monday.blockedWindows = [{ startTime: "12:00", endTime: "13:00" }];
 
   return [
-    renderToStaticMarkup(<AdminHero lang={lang} />),
+    renderToStaticMarkup(
+      <SetupHeader
+        lang={lang}
+        vertical="healthcare"
+        onChooseAnother={() => undefined}
+        onBackToHome={() => undefined}
+      />,
+    ),
     renderToStaticMarkup(
       <AvailabilityEditor availability={availability} onChange={() => undefined} lang={lang} />,
     ),

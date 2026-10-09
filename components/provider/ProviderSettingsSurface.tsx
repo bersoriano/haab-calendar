@@ -3,19 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { adminFieldClass, adminPanelClass } from "@/components/provider/adminGlass";
-import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
-import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
+import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSection";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ActionButton, SectionTitle } from "@/components/ui";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { canUseCustomProviderSlug } from "@/lib/public-url";
-import type {
-  Lang,
-  ProviderInfo,
-  VerticalId,
-  WeeklyAvailability,
-  WeekdayKey,
-} from "@/lib/types";
+import type { Lang, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type ProviderSettingsSurfaceProps = {
@@ -24,98 +18,70 @@ export type ProviderSettingsSurfaceProps = {
   /** Same reason: "Public booking link for" reads differently per vertical. */
   publicUrlLabel: string;
   provider: ProviderInfo;
-  availability: WeeklyAvailability;
-  vertical?: VerticalId;
   lang: Lang;
   publicUrl: string;
 
   integratedMode: boolean;
+  /** The store can be written; gates the custom-URL editor. */
   canPersist: boolean;
-  isSaving: boolean;
-  saveError?: string | null;
-  saveMessage?: string | null;
+  /** A save is in flight; fields stay read-only until it lands. */
+  disabled: boolean;
 
   /** Resolved server-side. Presentation only — never the authorization. */
   entitlements?: ProviderEntitlements;
-  demoEdit?: boolean;
 
   onProviderChange: <K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) => void;
-  onAvailabilityChange: (
-    day: WeekdayKey,
-    patch: Partial<WeeklyAvailability[WeekdayKey]>,
-  ) => void;
-  onSave: () => void | Promise<void>;
   onSavePublicSlug?: (slug: string) => Promise<void>;
-  onManageEvents: () => void;
   onResetStandaloneSetup?: () => void;
+  /** Present where the owner can change their own workspace language here. */
+  onDashboardLanguageChange?: (language: Lang) => void;
 };
 
 /**
- * The Settings tab: who the business is, when it is open, and what Haab can
- * connect to.
+ * The Settings section: who the business is and where its booking page
+ * lives. Availability and integrations have their own sections.
  *
- * Presentational. Every edit and every save goes back out through a callback,
- * so the module keeps owning persistence and this component stays testable
- * without a store, a client, or a network.
+ * Presentational. Every edit goes back out through a callback and the
+ * dashboard's save bar persists it, so the module keeps owning persistence and
+ * this component stays testable without a store, a client, or a network.
  */
 export function ProviderSettingsSurface({
   title,
   publicUrlLabel,
   provider,
-  availability,
-  vertical,
   lang,
   publicUrl,
   integratedMode,
   canPersist,
-  isSaving,
-  saveError,
-  saveMessage,
+  disabled,
   entitlements,
-  demoEdit = false,
   onProviderChange,
-  onAvailabilityChange,
-  onSave,
   onSavePublicSlug,
-  onManageEvents,
   onResetStandaloneSetup,
+  onDashboardLanguageChange,
 }: ProviderSettingsSurfaceProps) {
   const t = bookingTranslations[lang];
+  const shell = dashboardCopy[lang];
 
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
-          title={title}
-          action={
-            integratedMode && canPersist ? (
-              <ActionButton tone="primary" disabled={isSaving} onClick={onSave}>
-                {isSaving ? t.common.saving : t.admin.saveChanges}
-              </ActionButton>
-            ) : undefined
-          }
-        />
-        {saveError ? (
-          <div className="mt-4 rounded-2xl border border-[#fecdd3] bg-[#fff1f2] px-4 py-3 text-sm font-medium text-[#be123c]">
-            {saveError}
-          </div>
-        ) : null}
-        {saveMessage ? (
-          <div className="mt-4 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d]">
-            {saveMessage}
-          </div>
-        ) : null}
+    <div className="grid max-w-3xl gap-6">
+      <section className={cn(adminPanelClass, "p-5 sm:p-6")}>
+        <SectionTitle title={title} />
         <div className="mt-6">
           <ProviderInfoForm
             provider={provider}
             onChange={onProviderChange}
-            disabled={isSaving}
+            disabled={disabled}
             lang={lang}
           />
         </div>
-        <p className="mt-4 text-sm text-[var(--muted)]">
-          {publicUrlLabel}{" "}
-          <span className="break-all font-medium text-[var(--ink)]">{publicUrl}</span>
+      </section>
+
+      <section className={cn(adminPanelClass, "p-5 sm:p-6")}>
+        <SectionTitle title={shell.bookingLinkTitle} />
+        <p className="mt-3 text-sm text-[var(--muted)]">{publicUrlLabel}</p>
+        <p className="mt-2 break-all rounded-2xl bg-[var(--surface-soft)] px-3 py-2 font-mono text-sm text-[var(--ink)]">
+          {publicUrl}
         </p>
         {integratedMode && canPersist && entitlements &&
         canUseCustomProviderSlug(entitlements) && onSavePublicSlug ? (
@@ -127,34 +93,27 @@ export function ProviderSettingsSurface({
             onSave={onSavePublicSlug}
           />
         ) : null}
-        {!integratedMode && onResetStandaloneSetup ? (
-          <div className="mt-6">
+      </section>
+
+      {onDashboardLanguageChange ? (
+        <section className={cn(adminPanelClass, "p-5 sm:p-6")}>
+          <SectionTitle title={shell.workspaceLanguageTitle} />
+          <div className="mt-4">
+            <DashboardLanguageField lang={lang} onChange={onDashboardLanguageChange} />
+          </div>
+        </section>
+      ) : null}
+
+      {!integratedMode && onResetStandaloneSetup ? (
+        <section className="rounded-[28px] border border-[var(--danger-line)] bg-[var(--danger-soft)]/60 p-5 sm:p-6">
+          <SectionTitle title={shell.dangerZoneTitle} body={shell.dangerZoneBody} />
+          <div className="mt-4">
             <ActionButton tone="danger" onClick={onResetStandaloneSetup}>
               {t.admin.resetStandaloneSetup}
             </ActionButton>
           </div>
-        ) : null}
-        {/* Integrations sit under the settings content rather than in their own
-            tab: they are part of configuring the workspace, not a surface of
-            their own. Their state is not saved with the profile. */}
-        <ProviderIntegrationsSection
-          entitlements={entitlements}
-          integratedMode={integratedMode}
-          demoEdit={demoEdit}
-          lang={lang}
-        />
-      </div>
-
-      <AvailabilitySettingsSection
-        vertical={vertical}
-        availability={availability}
-        onChange={onAvailabilityChange}
-        onManageEvents={onManageEvents}
-        maxBookingsPerDay={provider.maxBookingsPerDay}
-        onMaxBookingsPerDayChange={(value) => onProviderChange("maxBookingsPerDay", value)}
-        disabled={isSaving}
-        lang={lang}
-      />
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -209,7 +168,11 @@ function PublicSlugEditor({
           {saving ? t.common.saving : t.admin.savePublicSlug}
         </ActionButton>
       </div>
-      {error ? <p role="alert" className="text-sm text-red-700">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm font-medium text-[var(--danger-strong)]">
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

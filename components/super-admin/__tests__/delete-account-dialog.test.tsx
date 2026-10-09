@@ -116,9 +116,9 @@ describe("PendingDeletionCleanups", () => {
     expect(html).not.toContain("blob.vercel-storage.com");
   });
 
-  it("renders nothing when no cleanup is pending", () => {
+  it("explains an empty queue on its own page", () => {
     expect(
       renderToStaticMarkup(<PendingDeletionCleanups initialJobs={[]} />),
-    ).toBe("");
+    ).toContain("No cleanups waiting");
   });
 });
