@@ -20,8 +20,11 @@ export { Dialog, DialogActions, ConfirmDialog, isBackdropClick } from "@/compone
 export {
   MAX_TOASTS,
   TOAST_DURATION_MS,
+  focusAfterDismiss,
   initialToastState,
+  pauseTransition,
   toastReducer,
+  type PauseSources,
   type ToastAction,
   type ToastItem,
   type ToastState,

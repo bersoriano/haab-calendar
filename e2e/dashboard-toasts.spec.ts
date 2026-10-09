@@ -12,7 +12,8 @@ test.describe("dashboard toasts", () => {
   test("copying the booking link confirms with a toast", async ({ page, context }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
     await page.goto("/dashboard");
-    await page.getByRole("button", { name: /Copy link|Copiar enlace/ }).click();
+    // The top bar's copy button; Overview has a second one in its booking card.
+    await page.locator("header").getByRole("button", { name: /Copy link|Copiar enlace/ }).click();
     await expect(
       page.getByRole("status").filter({ hasText: /Booking link copied|Enlace de reservas copiado/ }),
     ).toBeVisible();
@@ -33,5 +34,25 @@ test.describe("dashboard toasts", () => {
       await page.mouse.move(0, 0);
       await expect(saved).toHaveCount(0, { timeout: 8_000 });
     }
+  });
+
+  test("a toast with keyboard focus waits, and dismissing it returns focus", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/dashboard");
+    const copy = page.locator("header").getByRole("button", { name: /Copy link|Copiar enlace/ });
+    await copy.click();
+
+    const toast = page.getByRole("status").filter({ hasText: /Booking link copied|Enlace de reservas copiado/ });
+    const dismiss = toast.getByRole("button", { name: /Dismiss notification|Cerrar aviso/ });
+    await dismiss.focus();
+    await page.mouse.move(0, 0);
+
+    // Past the 4s timeout: focus inside keeps it open even with the mouse away.
+    await page.waitForTimeout(5_000);
+    await expect(dismiss).toBeVisible();
+
+    await page.keyboard.press("Enter");
+    await expect(dismiss).toHaveCount(0);
+    await expect(copy).toBeFocused();
   });
 });
