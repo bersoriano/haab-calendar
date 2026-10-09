@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   AnalyticsReport,
   AnalyticsTeaserReport,
+  PopularTimesPanel,
   ProviderAnalyticsSurface,
 } from "@/components/provider/ProviderAnalyticsSurface";
 import type { AnalyticsSummary } from "@/lib/analytics/summary";
@@ -118,5 +119,54 @@ describe("AnalyticsTeaserReport", () => {
     expect(html).toContain(">41<");
     expect(html).toContain("Upgrade to Premium");
     expect(html).toContain('aria-hidden="true"');
+  });
+});
+
+describe("booking insights", () => {
+  const withInsights: AnalyticsSummary = {
+    ...SUMMARY,
+    previousTotals: { views: 32, visitors: 30, bookings: 8, bookingVisitors: 3 },
+    bookingHealth: { created: 20, cancelled: 3, rescheduled: 4 },
+    popularTimes: [
+      { weekday: 2, hour: 10, bookings: 4 },
+      { weekday: 5, hour: 17, bookings: 1 },
+    ],
+  };
+
+  it("compares each tile with the previous window", () => {
+    const html = renderToStaticMarkup(<AnalyticsReport summary={withInsights} lang="en" />);
+    // 40 views vs 32 → +25%; 6 bookings vs 8 → -25%; 20% vs 10% → +10 pts.
+    expect(html).toContain("+25% vs previous 7 days");
+    expect(html).toContain("-25% vs previous 7 days");
+    expect(html).toContain("+10 pts vs previous 7 days");
+  });
+
+  it("shows cancellation and reschedule rates", () => {
+    const html = renderToStaticMarkup(<AnalyticsReport summary={withInsights} lang="en" />);
+    expect(html).toContain("Booking health");
+    expect(html).toContain("15%");
+    expect(html).toContain("3 of 20");
+    expect(html).toContain("4 of 20");
+  });
+
+  it("leaves comparisons out when the server sent none", () => {
+    const html = renderToStaticMarkup(<AnalyticsReport summary={SUMMARY} lang="en" />);
+    expect(html).not.toContain("vs previous");
+    expect(html).not.toContain("Booking health");
+  });
+
+  it("labels every heatmap cell", () => {
+    const html = renderToStaticMarkup(
+      <PopularTimesPanel times={withInsights.popularTimes ?? []} lang="en" />,
+    );
+    expect(html).toContain("Tue 10 AM: 4 bookings");
+    expect(html).toContain("Fri 5 PM: 1 booking");
+    expect(html).toContain("Mon 9 AM: 0 bookings");
+  });
+
+  it("explains an empty heatmap in Spanish", () => {
+    expect(renderToStaticMarkup(<PopularTimesPanel times={[]} lang="es" />)).toContain(
+      "Aún no hay citas con horario",
+    );
   });
 });

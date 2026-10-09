@@ -128,3 +128,36 @@ describe("network rate-limit migration", () => {
     expect(networkSql).not.toMatch(/\b(ip|ip_address)\s+(text|inet)/);
   });
 });
+
+describe("booking insights migration", () => {
+  const insightsSql = readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "supabase",
+      "migrations",
+      "20261010150000_add_booking_insights_to_summary.sql",
+    ),
+    "utf8",
+  );
+
+  it("adds previous totals, booking health and popular times", () => {
+    for (const key of ["'previousTotals'", "'bookingHealth'", "'popularTimes'"]) {
+      expect(insightsSql).toContain(key);
+    }
+  });
+
+  it("keeps cancelled bookings out of popular times and conversions", () => {
+    expect(insightsSql).toContain("where c.status <> 'cancelled' and c.start_time is not null");
+    expect(insightsSql).toContain("bk.status is distinct from 'cancelled' as booking_live");
+  });
+
+  it("keeps the summary service-role only", () => {
+    expect(insightsSql).toMatch(
+      /grant execute on function public\.provider_analytics_summary\(uuid, integer, text\)\s+to service_role/,
+    );
+    expect(insightsSql).not.toContain("security definer");
+  });
+});

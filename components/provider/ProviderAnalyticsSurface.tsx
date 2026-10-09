@@ -9,8 +9,12 @@ import {
   ANALYTICS_RANGES,
   DEFAULT_ANALYTICS_RANGE,
   buildCampaignUrl,
+  changePercent,
   conversionRate,
+  popularTimeHours,
   isAnalyticsTeaser,
+  type AnalyticsBookingHealth,
+  type AnalyticsPopularTime,
   type AnalyticsRange,
   type AnalyticsResponse,
   type AnalyticsSummary,
@@ -322,20 +326,51 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
     return <EmptyState title={t.emptyTitle} body={t.emptyBody} />;
   }
 
+  const previous = summary.previousTotals;
+  const previousConversion = previous
+    ? conversionRate(previous.bookingVisitors, previous.visitors)
+    : null;
+  const percentDelta = (current: number, before: number | undefined) => {
+    const change = changePercent(current, before);
+    return change === null ? null : { value: change, label: t.vsPrevious(change, summary.range) };
+  };
+
   const stats = [
-    { label: t.visits, value: number.format(totals.views), detail: t.visitsDetail },
-    { label: t.visitors, value: number.format(totals.visitors), detail: t.visitorsDetail },
+    {
+      label: t.visits,
+      value: number.format(totals.views),
+      detail: t.visitsDetail,
+      delta: percentDelta(totals.views, previous?.views),
+    },
+    {
+      label: t.visitors,
+      value: number.format(totals.visitors),
+      detail: t.visitorsDetail,
+      delta: percentDelta(totals.visitors, previous?.visitors),
+    },
     {
       label: t.bookings,
       value: number.format(totals.bookings),
       detail: totals.cancelledBookings
         ? t.bookingsCancelledDetail(totals.cancelledBookings)
         : t.bookingsDetail,
+      delta: percentDelta(totals.bookings, previous?.bookings),
     },
     {
       label: t.conversion,
       value: conversion === null ? t.none : `${conversion}%`,
       detail: t.conversionDetail,
+      // Percentage points, not percent of a percent: 10% to 12% is "+2 pts".
+      delta:
+        conversion === null || previousConversion === null
+          ? null
+          : {
+              value: Math.round((conversion - previousConversion) * 10) / 10,
+              label: t.vsPreviousPoints(
+                Math.round((conversion - previousConversion) * 10) / 10,
+                summary.range,
+              ),
+            },
     },
   ];
 
@@ -354,9 +389,32 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
               {stat.value}
             </p>
             <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
+            {stat.delta ? (
+              <p
+                className={cn(
+                  "mt-1 text-xs font-semibold",
+                  stat.delta.value > 0 && "text-[#15803d]",
+                  stat.delta.value < 0 && "text-[#be123c]",
+                  stat.delta.value === 0 && "text-[var(--muted)]",
+                )}
+              >
+                {stat.delta.label}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>
+
+      {summary.bookingHealth || summary.popularTimes ? (
+        <div className="grid items-start gap-5 xl:grid-cols-[0.8fr_1.2fr]">
+          {summary.bookingHealth ? (
+            <BookingHealthPanel health={summary.bookingHealth} lang={lang} />
+          ) : null}
+          {summary.popularTimes ? (
+            <PopularTimesPanel times={summary.popularTimes} lang={lang} />
+          ) : null}
+        </div>
+      ) : null}
 
       <div className={cn(adminPanelClass, "p-6")}>
         <SectionTitle title={t.dailyTitle} />
@@ -508,6 +566,129 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
 const subscribeToNothing = () => () => undefined;
 const readOrigin = () => window.location.origin;
 const readNoOrigin = () => "";
+
+function BookingHealthPanel({
+  health,
+  lang,
+}: {
+  health: AnalyticsBookingHealth;
+  lang: Lang;
+}) {
+  const t = analyticsCopy[lang];
+  const rows = [
+    { label: t.healthCancellation, count: health.cancelled },
+    { label: t.healthReschedule, count: health.rescheduled },
+  ];
+
+  return (
+    <div className={cn(adminPanelClass, "p-6")}>
+      <SectionTitle title={t.healthTitle} body={t.healthBody} />
+      <p className="mt-5 text-sm text-[var(--muted)]">
+        {t.healthCreated}:{" "}
+        <span className="font-semibold text-[var(--ink)]">{health.created}</span>
+      </p>
+      <dl className="mt-4 space-y-3">
+        {rows.map((row) => {
+          const rate = conversionRate(row.count, health.created);
+          return (
+            <div key={row.label}>
+              <div className="flex justify-between text-sm">
+                <dt className="font-medium text-[var(--ink)]">{row.label}</dt>
+                <dd className="text-[var(--muted)]">
+                  {rate === null ? t.none : `${rate}%`} · {t.healthOf(row.count, health.created)}
+                </dd>
+              </div>
+              <div className="mt-1.5 h-2.5 rounded-full bg-[var(--panel-mute-88)]">
+                <div
+                  className="h-full rounded-full bg-[var(--primary)]"
+                  style={{ width: `${Math.min(rate ?? 0, 100)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </dl>
+    </div>
+  );
+}
+
+function formatHour(hour: number, lang: Lang) {
+  return new Intl.DateTimeFormat(lang === "es" ? "es-MX" : "en-US", {
+    hour: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(2026, 0, 5, hour)));
+}
+
+export function PopularTimesPanel({
+  times,
+  lang,
+}: {
+  times: readonly AnalyticsPopularTime[];
+  lang: Lang;
+}) {
+  const t = analyticsCopy[lang];
+
+  if (times.length === 0) {
+    return (
+      <div className={cn(adminPanelClass, "p-6")}>
+        <SectionTitle title={t.timesTitle} body={t.timesBody} />
+        <p className="mt-5 text-sm text-[var(--muted)]">{t.timesEmpty}</p>
+      </div>
+    );
+  }
+
+  const hours = popularTimeHours(times);
+  const counts = new Map(times.map((time) => [`${time.weekday}:${time.hour}`, time.bookings]));
+  const max = Math.max(...times.map((time) => time.bookings));
+
+  return (
+    <div className={cn(adminPanelClass, "p-6")}>
+      <SectionTitle title={t.timesTitle} body={t.timesBody} />
+      <div className="mt-5 overflow-x-auto">
+        <table className="w-full border-separate border-spacing-[3px] text-xs">
+          <thead>
+            <tr>
+              <th className="w-10" />
+              {hours.map((hour) => (
+                <th key={hour} scope="col" className="font-medium text-[var(--muted)]">
+                  {hour % 3 === 0 ? formatHour(hour, lang) : ""}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {t.weekdaysShort.map((weekday, index) => (
+              <tr key={weekday}>
+                <th scope="row" className="pr-2 text-left font-medium text-[var(--muted)]">
+                  {weekday}
+                </th>
+                {hours.map((hour) => {
+                  const count = counts.get(`${index + 1}:${hour}`) ?? 0;
+                  const label = t.timesCell(weekday, formatHour(hour, lang), count);
+                  return (
+                    <td
+                      key={hour}
+                      title={label}
+                      aria-label={label}
+                      className="h-6 min-w-5 rounded-[4px] bg-[var(--panel-mute-88)]"
+                    >
+                      {count > 0 ? (
+                        <div
+                          className="h-full w-full rounded-[4px] bg-[var(--primary)]"
+                          style={{ opacity: 0.2 + 0.8 * (count / max) }}
+                        />
+                      ) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 function CampaignLinkBuilder({ t, publicUrl }: { t: AnalyticsCopy; publicUrl: string }) {
   const [source, setSource] = useState("");

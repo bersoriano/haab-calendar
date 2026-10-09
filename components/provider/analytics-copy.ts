@@ -32,6 +32,19 @@ export type AnalyticsCopy = {
   bookingsCancelledDetail: (count: number) => string;
   conversion: string;
   conversionDetail: string;
+  vsPrevious: (change: number, days: number) => string;
+  vsPreviousPoints: (points: number, days: number) => string;
+  healthTitle: string;
+  healthBody: string;
+  healthCreated: string;
+  healthCancellation: string;
+  healthReschedule: string;
+  healthOf: (count: number, total: number) => string;
+  timesTitle: string;
+  timesBody: string;
+  timesEmpty: string;
+  weekdaysShort: [string, string, string, string, string, string, string];
+  timesCell: (weekday: string, hour: string, count: number) => string;
   dailyTitle: string;
   dailyLegendVisits: string;
   dailyLegendBookings: string;
@@ -98,6 +111,21 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
       `Confirmed from your page · ${count} cancelled ${count === 1 ? "is" : "are"} not counted`,
     conversion: "Conversion",
     conversionDetail: "Visitors who booked",
+    vsPrevious: (change, days) => `${change > 0 ? "+" : ""}${change}% vs previous ${days} days`,
+    vsPreviousPoints: (points, days) =>
+      `${points > 0 ? "+" : ""}${points} pts vs previous ${days} days`,
+    healthTitle: "Booking health",
+    healthBody: "Every booking made in this period, from your page or your dashboard.",
+    healthCreated: "Bookings made",
+    healthCancellation: "Cancellation rate",
+    healthReschedule: "Reschedule rate",
+    healthOf: (count, total) => `${count} of ${total}`,
+    timesTitle: "Popular booking times",
+    timesBody: "When the appointments booked in this period take place. Cancelled ones are left out.",
+    timesEmpty: "No timed appointments booked in this period yet.",
+    weekdaysShort: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+    timesCell: (weekday, hour, count) =>
+      `${weekday} ${hour}: ${count} ${count === 1 ? "booking" : "bookings"}`,
     dailyTitle: "Visits and bookings per day",
     dailyLegendVisits: "Visits",
     dailyLegendBookings: "Bookings",
@@ -164,6 +192,22 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
       `Confirmadas desde tu página · ${count} ${count === 1 ? "cancelada no cuenta" : "canceladas no cuentan"}`,
     conversion: "Conversión",
     conversionDetail: "Visitantes que reservaron",
+    vsPrevious: (change, days) =>
+      `${change > 0 ? "+" : ""}${change}% vs. los ${days} días anteriores`,
+    vsPreviousPoints: (points, days) =>
+      `${points > 0 ? "+" : ""}${points} pts vs. los ${days} días anteriores`,
+    healthTitle: "Salud de las reservas",
+    healthBody: "Todas las reservas hechas en este periodo, desde tu página o tu panel.",
+    healthCreated: "Reservas hechas",
+    healthCancellation: "Tasa de cancelación",
+    healthReschedule: "Tasa de reprogramación",
+    healthOf: (count, total) => `${count} de ${total}`,
+    timesTitle: "Horarios más reservados",
+    timesBody: "Cuándo ocurren las citas reservadas en este periodo. Las canceladas no cuentan.",
+    timesEmpty: "Aún no hay citas con horario reservadas en este periodo.",
+    weekdaysShort: ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"],
+    timesCell: (weekday, hour, count) =>
+      `${weekday} ${hour}: ${count} ${count === 1 ? "reserva" : "reservas"}`,
     dailyTitle: "Visitas y reservas por día",
     dailyLegendVisits: "Visitas",
     dailyLegendBookings: "Reservas",
