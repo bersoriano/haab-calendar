@@ -17,7 +17,47 @@ import type {
 export type AvailabilityClock = {
   now?: Date;
   timeZone?: string;
+  /**
+   * Most bookings the provider takes on one date, across all services.
+   * Undefined or not a positive integer means no limit. Rides with the clock
+   * because it is the one options object every availability caller — the
+   * public page, the dashboard and the booking routes — already passes.
+   */
+  dailyBookingLimit?: number;
 };
+
+/** A usable limit, or null when the provider has none. */
+export function normalizeDailyBookingLimit(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : null;
+}
+
+/**
+ * Whether a date has taken all the bookings the provider allows.
+ *
+ * Live holds count: a visitor filling in their details already has a place,
+ * and letting a sixth visitor start would only fail them at confirmation. The
+ * caller's own booking (reschedule) and own hold are left out, so they never
+ * block themselves.
+ */
+export function isDailyBookingLimitReached(
+  dateKey: string,
+  bookings: BookingRecord[],
+  bookingHolds: BookingHoldRecord[],
+  limit: number | null | undefined,
+  ignoredBookingId?: string,
+  ignoredHoldId?: string,
+) {
+  const max = normalizeDailyBookingLimit(limit);
+  if (max === null) {
+    return false;
+  }
+
+  return (
+    getBookingsForDate(bookings, dateKey, ignoredBookingId).length +
+      getBookingHoldsForDate(bookingHolds, dateKey, ignoredHoldId).length >=
+    max
+  );
+}
 
 function resolveAvailabilityClock(clock?: AvailabilityClock) {
   const now = clock?.now ?? new Date();
@@ -223,6 +263,19 @@ export function getAvailableSlots(
     now: clockOptions?.now ?? new Date(),
   };
   const clock = resolveAvailabilityClock(effectiveClockOptions);
+
+  if (
+    isDailyBookingLimitReached(
+      dateKey,
+      bookings,
+      bookingHolds,
+      clockOptions?.dailyBookingLimit,
+      ignoredBookingId,
+      ignoredHoldId,
+    )
+  ) {
+    return [];
+  }
 
   // Single-occurrence events ignore weekly availability: the only bookable slot
   // is the fixed window on the event's own date, while spots remain.
@@ -441,6 +494,46 @@ export function getDayAvailability(
   ignoredHoldId?: string,
   clockOptions?: AvailabilityClock,
 ): DayAvailability {
+  const day = getDayAvailabilityIgnoringLimit(
+    dateKey,
+    service,
+    availability,
+    bookings,
+    ignoredBookingId,
+    bookingHolds,
+    ignoredHoldId,
+    clockOptions,
+  );
+
+  // A day at its booking limit reads as full, not closed: it was open, and it
+  // filled up, which is what a visitor should be told.
+  if (
+    day.capacity > 0 &&
+    isDailyBookingLimitReached(
+      dateKey,
+      bookings,
+      bookingHolds,
+      clockOptions?.dailyBookingLimit,
+      ignoredBookingId,
+      ignoredHoldId,
+    )
+  ) {
+    return { capacity: day.capacity, free: 0, ratio: 0, level: "full" };
+  }
+
+  return day;
+}
+
+function getDayAvailabilityIgnoringLimit(
+  dateKey: string,
+  service: Service,
+  availability: WeeklyAvailability,
+  bookings: BookingRecord[],
+  ignoredBookingId?: string,
+  bookingHolds: BookingHoldRecord[] = [],
+  ignoredHoldId?: string,
+  clockOptions?: AvailabilityClock,
+): DayAvailability {
   const effectiveClockOptions = {
     ...clockOptions,
     now: clockOptions?.now ?? new Date(),
@@ -585,6 +678,19 @@ export function isDateAvailable(
   const clock = resolveAvailabilityClock(effectiveClockOptions);
 
   if (isPastAvailabilityDate(dateKey, clock)) {
+    return false;
+  }
+
+  if (
+    isDailyBookingLimitReached(
+      dateKey,
+      bookings,
+      bookingHolds,
+      clockOptions?.dailyBookingLimit,
+      ignoredBookingId,
+      ignoredHoldId,
+    )
+  ) {
     return false;
   }
 
