@@ -1,14 +1,18 @@
+"use client";
+
+import { useEffect } from "react";
+
+import { Alert, Button, useToast } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
-import { ActionButton } from "@/components/ui/ActionButton";
-import { Alert } from "@/components/ui/Alert";
 import type { Lang } from "@/lib/types";
 
 /**
  * One save control for every section whose edits wait for "Save changes".
  * Sticks to the bottom of the content while there is something to save, so
  * an edit made in Appearance is still one click from saved after the owner
- * has moved on to Bookings.
+ * has moved on to Bookings. A finished save is confirmed with a toast; a
+ * failed one stays here, next to the button that retries it.
  */
 export function SaveBar({
   visible,
@@ -22,14 +26,23 @@ export function SaveBar({
   visible: boolean;
   saving: boolean;
   error?: string | null;
+  /**
+   * Set once per successful save (the module clears it in between). Its
+   * presence triggers the "Changes saved" toast; the wording is the bar's own.
+   */
   message?: string | null;
   onSave: () => void;
   lang: Lang;
 }) {
   const shell = dashboardCopy[lang];
   const t = bookingTranslations[lang];
+  const { notify } = useToast();
 
-  if (!visible && !error && !message) {
+  useEffect(() => {
+    if (message) notify({ message: shell.changesSaved });
+  }, [message, notify, shell.changesSaved]);
+
+  if (!visible && !error) {
     return null;
   }
 
@@ -44,23 +57,19 @@ export function SaveBar({
         <div
           role="region"
           aria-label={shell.unsavedChanges}
-          className="pointer-events-auto flex flex-col gap-3 rounded-[22px] border border-[var(--line)] bg-[var(--surface-lowest)]/95 px-4 py-3 shadow-[0_18px_48px_rgba(15,23,42,0.16)] backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5"
+          className="pointer-events-auto flex flex-col gap-3 rounded-xl bg-app-surface px-4 py-3 shadow-lg ring-1 ring-app-border sm:flex-row sm:items-center sm:justify-between sm:px-5"
         >
           <div className="min-w-0">
-            <p className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
-              <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-[var(--warning-strong)]" />
+            <p className="flex items-center gap-2 text-sm font-semibold text-app-fg">
+              <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-app-warning-fg" />
               {shell.unsavedChanges}
             </p>
-            <p className="mt-0.5 text-xs text-[var(--muted)]">{shell.unsavedChangesHint}</p>
+            <p className="mt-0.5 text-sm text-app-fg-muted">{shell.unsavedChangesHint}</p>
           </div>
-          <ActionButton tone="primary" disabled={saving} onClick={onSave}>
+          <Button loading={saving} onClick={onSave}>
             {saving ? t.common.saving : t.admin.saveChanges}
-          </ActionButton>
+          </Button>
         </div>
-      ) : message ? (
-        <Alert tone="success" role="status" className="pointer-events-auto">
-          {message}
-        </Alert>
       ) : null}
     </div>
   );

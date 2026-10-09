@@ -106,6 +106,89 @@
   --font-mono: var(--font-plex-mono);
 }
 
+/* Signed-in app (dashboard, super admin, setup wizard, auth). Its own
+   namespace: public themes re-point --ink/--surface/--primary and must never
+   reach the app. Literal values on purpose — a child project re-brands, and a
+   future dark mode switches, by redefining these variables (planned as a
+   [data-app-theme="dark"] block), with no markup changes. */
+@theme {
+  --color-app-canvas: #f9fafb;
+  --color-app-surface: #ffffff;
+  --color-app-subtle: #f3f4f6;
+  --color-app-border: #e5e7eb;
+  --color-app-border-strong: #d1d5db;
+  --color-app-fg: #111827;
+  --color-app-fg-secondary: #374151;
+  --color-app-fg-muted: #6b7280;
+  --color-app-placeholder: #9ca3af;
+  --color-app-accent: #005bbf;
+  --color-app-accent-hover: #1a73e8;
+  --color-app-accent-soft: #e8f0fe;
+  --color-app-accent-soft-hover: #d3e3fd;
+  --color-app-accent-on-soft: #0b57d0;
+  --color-app-accent-ring: rgb(0 91 191 / 0.2);
+  --color-app-on-accent: #ffffff;
+  --color-app-success-soft: #f0fdf4;
+  --color-app-success-fg: #15803d;
+  --color-app-success-ring: rgb(22 163 74 / 0.2);
+  --color-app-warning-soft: #fffbeb;
+  --color-app-warning-fg: #92400e;
+  --color-app-warning-ring: rgb(217 119 6 / 0.2);
+  --color-app-danger-soft: #fef2f2;
+  --color-app-danger-fg: #b91c1c;
+  --color-app-danger-ring: rgb(220 38 38 / 0.1);
+  --color-app-danger: #dc2626;
+  --color-app-danger-hover: #b91c1c;
+  --color-app-info-soft: #eff6ff;
+  --color-app-info-fg: #1d4ed8;
+  --color-app-info-ring: rgb(37 99 235 / 0.2);
+  --color-app-admin-soft: #f5f3ff;
+  --color-app-admin-fg: #6d28d9;
+  --color-app-admin-ring: rgb(124 58 237 / 0.2);
+  --color-app-neutral-soft: #f9fafb;
+  --color-app-neutral-fg: #4b5563;
+  --color-app-neutral-ring: rgb(107 114 128 / 0.1);
+  --color-app-full-day: #1f658f;
+  --color-app-chart-1: #005bbf;
+  --color-app-chart-2: #0f766e;
+  --color-app-overlay: rgb(3 7 18 / 0.4);
+
+  --animate-app-drawer-in: app-drawer-in 200ms ease-out;
+  --animate-app-dialog-in: app-dialog-in 150ms ease-out;
+  --animate-app-toast-in: app-toast-in 200ms ease-out;
+
+  @keyframes app-drawer-in {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes app-dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes app-toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -138,6 +221,13 @@ input,
 select,
 textarea {
   font: inherit;
+}
+
+/* The rule above is unlayered, so it outranks every layered font utility.
+   The signed-in app's kit (components/app-ui) marks its controls and hands
+   their type back to the utilities; public controls keep the reset. */
+[data-app-control] {
+  font: revert-layer;
 }
 
 code {

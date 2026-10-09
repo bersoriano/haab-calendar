@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowSquareOut, Check, Copy, SignOut } from "@phosphor-icons/react";
+import { ArrowSquareOut, Check, Copy, ShieldStar } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,17 +9,12 @@ import { logout } from "@/app/login/actions";
 import { stopDemoEdit } from "@/app/super-admin/actions";
 import { AppShell } from "@/components/app-shell/AppShell";
 import { ShellFooter } from "@/components/app-shell/ShellFooter";
-import { ShellIcon } from "@/components/app-shell/ShellIcon";
+import { ShellAccount, ShellBrand, ShellWorkspace } from "@/components/app-shell/ShellSidebarParts";
 import {
-  ShellLink,
   SidebarNav,
+  shellNavItemAdminClass,
   shellNavItemClass,
 } from "@/components/app-shell/SidebarNav";
-import {
-  SUPER_ADMIN_ACCENT_CLASS,
-  SUPER_ADMIN_ACCENT_HOVER_CLASS,
-  SUPER_ADMIN_ACCENT_TEXT_CLASS,
-} from "@/components/app-shell/super-admin-accent";
 import type { ShellIconName, ShellNavGroup } from "@/components/app-shell/types";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { BusinessTypeSwitch, type DraftStorage } from "@/components/provider/BusinessTypeSwitch";
@@ -27,7 +22,7 @@ import { ChangeBusinessTypeDialog } from "@/components/provider/ChangeBusinessTy
 import { dashboardCopy, sectionTitle } from "@/components/provider/dashboard-copy";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { fillTemplate } from "@/components/booking/i18n/translations";
-import { Alert } from "@/components/ui/Alert";
+import { Alert, Button, ButtonLink, Skeleton, ToastProvider, useToast } from "@/components/app-ui";
 import { ClientOnly } from "@/components/ui/ClientOnly";
 import {
   DASHBOARD_SECTIONS,
@@ -63,9 +58,6 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   settings: "settings",
   "business-type": "settings",
 };
-
-const topActionClass =
-  "inline-flex h-11 items-center justify-center gap-2 rounded-2xl border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] sm:px-4";
 
 function googleOutcomeTone(outcome: GoogleOutcome) {
   if (outcome === "connected") return "success" as const;
@@ -150,7 +142,6 @@ export function DashboardApp({
   // One-shot notices from the URL (Checkout, Google) belong to the page the
   // provider landed on, not to every section they visit afterwards.
   const [hasNavigated, setHasNavigated] = useState(false);
-  const [copied, setCopied] = useState(false);
   const lastSectionRef = useRef(section);
 
   const lang: Lang = snapshot.provider.dashboardLanguage ?? viewerLanguage;
@@ -192,20 +183,6 @@ export function DashboardApp({
     document.documentElement.lang = lang;
   }, [lang]);
 
-  async function copyPublicLink() {
-    if (!publicPath) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}${publicPath}`);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   function navItems(group: DashboardNavGroup) {
     return DASHBOARD_SECTIONS.filter((entry) => entry.group === group).map((entry) => ({
       id: entry.id,
@@ -222,56 +199,18 @@ export function DashboardApp({
   ];
 
   const sidebar = (
-    <div className="flex min-h-full flex-1 flex-col gap-6 px-4 pb-5 pt-5">
-      <ShellLink
-        href={pathForSection("dashboard")}
-        onNavigate={() => navigate("dashboard")}
-        className="flex min-h-11 items-center gap-2.5 rounded-2xl px-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-      >
-        <span
-          aria-hidden="true"
-          className="relative grid h-9 w-9 place-items-center rounded-xl bg-[var(--primary)] text-base font-extrabold text-white shadow-[0_10px_24px_rgba(0,91,191,0.24)]"
-        >
-          H
-          <span className="absolute -right-[3px] -top-[3px] h-[10px] w-[10px] rounded-full border-2 border-[var(--surface-lowest)] bg-[var(--teal)]" />
-        </span>
-        <span className="text-base font-bold tracking-[-0.02em] text-[var(--ink)]">
-          Haab Calendar
-        </span>
-      </ShellLink>
+    <div className="flex min-h-full flex-1 flex-col gap-6 px-4 pb-5 pt-4">
+      <ShellBrand href={pathForSection("dashboard")} onNavigate={() => navigate("dashboard")} />
 
-      <div className="flex items-center gap-3 rounded-2xl bg-[var(--surface-soft)] p-3">
-        {snapshot.provider.logoImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- owner-uploaded logo on an arbitrary host
-          <img
-            src={snapshot.provider.logoImageUrl}
-            alt=""
-            className="h-10 w-10 shrink-0 rounded-xl bg-white object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[linear-gradient(135deg,var(--primary),var(--teal))] text-sm font-bold text-white"
-          >
-            {businessName.slice(0, 1).toUpperCase()}
-          </span>
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-[var(--ink)]" title={businessName}>
-            {businessName}
-          </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-xs text-[var(--muted)]">
-            <span
-              aria-hidden="true"
-              className={cn(
-                "h-2 w-2 shrink-0 rounded-full",
-                publishingOff ? "bg-[var(--danger-strong)]" : "bg-[var(--teal)]",
-              )}
-            />
-            {publishingOff ? shell.publishingOff : shell.pageLive}
-          </p>
-        </div>
-      </div>
+      <ShellWorkspace
+        name={businessName}
+        logoUrl={snapshot.provider.logoImageUrl || undefined}
+        status={
+          publishingOff
+            ? { tone: "danger", label: shell.publishingOff }
+            : { tone: "success", label: shell.pageLive }
+        }
+      />
 
       <SidebarNav
         groups={navGroups}
@@ -280,75 +219,37 @@ export function DashboardApp({
         onNavigate={(item) => navigate(item.id as AdminTab)}
       />
 
-      {/* A flex column, not a grid: grid items default to their content's
-          width, and a long email would push sign-out out of the sidebar. */}
-      <div className="mt-auto flex flex-col gap-3 border-t border-[var(--line)]/60 pt-4">
+      <div className="mt-auto flex flex-col gap-3 border-t border-app-border pt-4">
         {isSuperAdmin ? (
-          <Link
-            href="/super-admin"
-            className={cn(shellNavItemClass, SUPER_ADMIN_ACCENT_TEXT_CLASS, SUPER_ADMIN_ACCENT_HOVER_CLASS)}
-          >
-            <ShellIcon name="superAdmin" />
+          <Link href="/super-admin" className={cn(shellNavItemClass, shellNavItemAdminClass)}>
+            <ShieldStar aria-hidden="true" size={20} className="shrink-0" />
             <span className="min-w-0 flex-1 truncate">{shell.superAdmin}</span>
           </Link>
         ) : null}
-        <div className="flex min-w-0 items-center gap-3 px-2">
-          <span
-            aria-hidden="true"
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-highest)] text-sm font-semibold text-[var(--ink)]"
-          >
-            {(email ?? businessName).slice(0, 1).toUpperCase()}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-medium text-[var(--muted)]">{shell.signedInAs}</p>
-            <p className="truncate text-sm font-medium text-[var(--ink)]" title={email}>
-              {email}
-            </p>
-          </div>
-          <form action={logout}>
-            <button
-              type="submit"
-              aria-label={shell.signOut}
-              title={shell.signOut}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-            >
-              <SignOut aria-hidden="true" size={18} />
-            </button>
-          </form>
-        </div>
+        <ShellAccount
+          email={email}
+          signedInAsLabel={shell.signedInAs}
+          signOutLabel={shell.signOut}
+          signOutAction={logout}
+        />
       </div>
     </div>
   );
 
   const topBarActions = publicPath ? (
     <>
-      <button
-        type="button"
-        onClick={copyPublicLink}
-        className={cn(
-          topActionClass,
-          "border-[var(--line)] bg-[var(--surface-lowest)] text-[var(--ink)] hover:bg-[var(--surface-soft)]",
-        )}
-      >
-        {copied ? (
-          <Check aria-hidden="true" size={18} />
-        ) : (
-          <Copy aria-hidden="true" size={18} />
-        )}
-        <span className="sr-only sm:not-sr-only">{copied ? shell.linkCopied : shell.copyLink}</span>
-      </button>
-      <a
+      <CopyLinkButton publicPath={publicPath} lang={lang} />
+      <ButtonLink
         href={publicPath}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={cn(
-          topActionClass,
-          "border-transparent bg-[var(--ink)] text-white hover:opacity-90",
-        )}
+        external
+        newTabLabel={shell.opensInNewTab}
+        externalIconClassName="max-sm:hidden"
+        variant="secondary"
+        className="max-sm:w-11 max-sm:px-0"
+        leadingIcon={<ArrowSquareOut aria-hidden="true" size={16} className="sm:hidden" />}
       >
-        <ArrowSquareOut aria-hidden="true" size={18} />
         <span className="sr-only sm:not-sr-only">{shell.viewPage}</span>
-      </a>
+      </ButtonLink>
     </>
   ) : undefined;
 
@@ -371,28 +272,23 @@ export function DashboardApp({
         ) : null}
         {demoEdit ? (
           <Alert
-            tone="accent"
+            tone="admin"
             title={shell.editingDemo}
             actions={
               <>
-                <a
+                <ButtonLink
                   href={demoEdit.publicPath}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex min-h-11 items-center px-2 font-semibold underline-offset-4 hover:underline"
+                  external
+                  newTabLabel={shell.opensInNewTab}
+                  variant="plain"
+                  size="sm"
                 >
                   {shell.viewLive}
-                </a>
+                </ButtonLink>
                 <form action={stopDemoEdit}>
-                  <button
-                    type="submit"
-                    className={cn(
-                      "inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold transition",
-                      SUPER_ADMIN_ACCENT_CLASS,
-                    )}
-                  >
+                  <Button type="submit" variant="secondary" size="sm">
                     {shell.exitDemo}
-                  </button>
+                  </Button>
                 </form>
               </>
             }
@@ -416,117 +312,147 @@ export function DashboardApp({
       </>
     ) : undefined;
 
+  // Inside the component, not around it: the close-button label follows a
+  // dashboard-language switch made mid-session.
   return (
-    <AppShell
-      sidebar={sidebar}
-      title={title}
-      description={shell.descriptions[section]}
-      topBarActions={topBarActions}
-      banners={banners}
-      navigationKey={section}
-      copy={{
-        skipToContent: shell.skipToContent,
-        openMenu: shell.openMenu,
-        closeMenu: shell.closeMenu,
-        menu: shell.navLabel,
-      }}
-      footer={
-        <ShellFooter
-          note={`© ${new Date().getFullYear()} ${shell.rights}`}
-          links={[
-            { href: "/terms", label: shell.terms },
-            { href: "/privacy", label: shell.privacy },
-            ...(publicPath ? [{ href: publicPath, label: shell.viewPage, external: true }] : []),
-          ]}
-        />
-      }
-    >
-      {/* The module renders "today", this month and the viewer's time zones;
-          a server in another zone would paint markup the browser disagrees
-          with. The shell around it is server-rendered; the content mounts in
-          the browser, as the dashboard always has. */}
-      {/* Stays mounted while the business-type switch runs, so unsaved edits
-          to the live page survive a trip there and back. */}
-      <div hidden={section === "business-type"}>
-        <ClientOnly fallback={<SectionPlaceholder />}>
-          <HaabBookingModule
-            injectedConfig={store}
-            userEmail={email}
-            persistAdminChanges
-            viewerLanguage={lang}
-            providerEntitlements={providerEntitlements}
-            publishingEnabled={publicationStatus?.publishingEnabled}
-            checkoutResult={hasNavigated ? undefined : checkoutResult}
-            adminSection={section}
-            onAdminSectionChange={navigate}
-            chrome="shell"
-            onStoreChange={setSnapshot}
-            onSetupPersisted={setSnapshot}
-            onChangeBusinessType={
-              demoEdit
-                ? undefined
-                : () =>
-                    setBusinessTypeCheck(
-                      findBlockingBookings(
-                        snapshot.bookings,
-                        snapshot.bookingHolds,
-                        todayKey(),
-                        Date.now(),
-                      ),
-                    )
-            }
+    <ToastProvider dismissLabel={shell.dismiss}>
+      <AppShell
+        sidebar={sidebar}
+        title={title}
+        description={shell.descriptions[section]}
+        topBarActions={topBarActions}
+        banners={banners}
+        navigationKey={section}
+        copy={{
+          skipToContent: shell.skipToContent,
+          openMenu: shell.openMenu,
+          closeMenu: shell.closeMenu,
+          menu: shell.navLabel,
+        }}
+        footer={
+          <ShellFooter
+            note={`© ${new Date().getFullYear()} ${shell.rights}`}
+            newTabLabel={shell.opensInNewTab}
+            links={[
+              { href: "/terms", label: shell.terms },
+              { href: "/privacy", label: shell.privacy },
+              ...(publicPath ? [{ href: publicPath, label: shell.viewPage, external: true }] : []),
+            ]}
           />
-        </ClientOnly>
-      </div>
-
-      {section === "business-type" ? (
-        demoEdit ? (
-          <Alert tone="neutral">{shell.businessType.demoUnavailable}</Alert>
-        ) : (
+        }
+      >
+        {/* The module renders "today", this month and the viewer's time zones;
+            a server in another zone would paint markup the browser disagrees
+            with. The shell around it is server-rendered; the content mounts in
+            the browser, as the dashboard always has. */}
+        {/* Stays mounted while the business-type switch runs, so unsaved edits
+            to the live page survive a trip there and back. */}
+        <div hidden={section === "business-type"}>
           <ClientOnly fallback={<SectionPlaceholder />}>
-            <BusinessTypeSwitch
-              lang={lang}
-              liveStore={snapshot}
-              to={parseVerticalId(searchParams.get("to"))}
-              storage={browserStorage()}
-              onCancel={() => navigate("settings")}
+            <HaabBookingModule
+              injectedConfig={store}
+              userEmail={email}
+              persistAdminChanges
+              viewerLanguage={lang}
+              providerEntitlements={providerEntitlements}
+              publishingEnabled={publicationStatus?.publishingEnabled}
+              checkoutResult={hasNavigated ? undefined : checkoutResult}
+              adminSection={section}
+              onAdminSectionChange={navigate}
+              chrome="shell"
+              onStoreChange={setSnapshot}
+              onSetupPersisted={setSnapshot}
+              onChangeBusinessType={
+                demoEdit
+                  ? undefined
+                  : () =>
+                      setBusinessTypeCheck(
+                        findBlockingBookings(
+                          snapshot.bookings,
+                          snapshot.bookingHolds,
+                          todayKey(),
+                          Date.now(),
+                        ),
+                      )
+              }
             />
           </ClientOnly>
-        )
-      ) : null}
+        </div>
 
-      {businessTypeCheck && snapshot.vertical ? (
-        <ChangeBusinessTypeDialog
-          lang={lang}
-          currentVertical={snapshot.vertical}
-          slug={slug}
-          summary={summarizeReplacement(snapshot)}
-          blocking={businessTypeCheck}
-          onCancel={() => setBusinessTypeCheck(null)}
-          onGoToBookings={() => {
-            setBusinessTypeCheck(null);
-            navigate("bookings");
-          }}
-          onContinue={(vertical) => {
-            setBusinessTypeCheck(null);
-            navigate("business-type", { to: vertical });
-          }}
-        />
-      ) : null}
-    </AppShell>
+        {section === "business-type" ? (
+          demoEdit ? (
+            <Alert tone="neutral">{shell.businessType.demoUnavailable}</Alert>
+          ) : (
+            <ClientOnly fallback={<SectionPlaceholder />}>
+              <BusinessTypeSwitch
+                lang={lang}
+                liveStore={snapshot}
+                to={parseVerticalId(searchParams.get("to"))}
+                storage={browserStorage()}
+                onCancel={() => navigate("settings")}
+              />
+            </ClientOnly>
+          )
+        ) : null}
+
+        {businessTypeCheck && snapshot.vertical ? (
+          <ChangeBusinessTypeDialog
+            lang={lang}
+            currentVertical={snapshot.vertical}
+            slug={slug}
+            summary={summarizeReplacement(snapshot)}
+            blocking={businessTypeCheck}
+            onCancel={() => setBusinessTypeCheck(null)}
+            onGoToBookings={() => {
+              setBusinessTypeCheck(null);
+              navigate("bookings");
+            }}
+            onContinue={(vertical) => {
+              setBusinessTypeCheck(null);
+              navigate("business-type", { to: vertical });
+            }}
+          />
+        ) : null}
+      </AppShell>
+    </ToastProvider>
+  );
+}
+
+/** Copies the public link; a child of the toast provider so it can confirm. */
+function CopyLinkButton({ publicPath, lang }: { publicPath: string; lang: Lang }) {
+  const shell = dashboardCopy[lang];
+  const { notify } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${publicPath}`);
+      setCopied(true);
+      notify({ message: shell.linkCopiedToast });
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="secondary"
+      onClick={copy}
+      leadingIcon={copied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
+      className="max-sm:w-11 max-sm:px-0"
+    >
+      <span className="sr-only sm:not-sr-only">{copied ? shell.linkCopied : shell.copyLink}</span>
+    </Button>
   );
 }
 
 /** Holds the section's space while the module mounts, without layout jump. */
 function SectionPlaceholder() {
   return (
-    <div aria-hidden="true" className="grid animate-pulse gap-4">
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {[0, 1, 2, 3].map((index) => (
-          <div key={index} className="h-28 rounded-[24px] bg-[var(--surface-highest)]/70" />
-        ))}
-      </div>
-      <div className="h-64 rounded-[28px] bg-[var(--surface-highest)]/70" />
+    <div aria-hidden="true" className="grid gap-6">
+      <Skeleton className="h-32 rounded-xl" />
+      <Skeleton className="h-72 rounded-xl" />
     </div>
   );
 }

@@ -151,6 +151,21 @@ test.describe("signed-in provider", () => {
     await expect(page).toHaveURL(/\/dashboard\/calendar$/);
     await expect(drawer).toBeHidden();
   });
+
+  test("keeps the drawer's close button on screen at the narrowest width", async ({ page }) => {
+    // 320 CSS px is the WCAG reflow width (a 1280px window at 400% zoom).
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: /Open menu|Abrir menú/ }).click();
+
+    const drawer = page.getByRole("dialog");
+    // Measure once the slide-in animation has finished.
+    await expect.poll(async () => (await drawer.boundingBox())?.x).toBe(0);
+    const close = drawer.getByRole("button", { name: /Close menu|Cerrar menú/ });
+    const box = await close.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.x + box!.width).toBeLessThanOrEqual(320);
+  });
 });
 
 test.describe("signed-out visitor", () => {

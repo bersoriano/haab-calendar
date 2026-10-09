@@ -44,12 +44,17 @@ describe("SaveBar", () => {
     expect(html).toContain('role="alert"');
   });
 
-  it("confirms a save once the changes are gone", () => {
+  it("leaves the save confirmation to a toast instead of inline markup", () => {
     const html = renderToStaticMarkup(
       <SaveBar visible={false} saving={false} message="Saved" onSave={noop} lang="en" />,
     );
 
-    expect(html).toContain("Saved");
-    expect(html).toContain('role="status"');
+    expect(html).toBe("");
+  });
+
+  it("marks the save button busy while saving", () => {
+    const html = renderToStaticMarkup(<SaveBar visible saving onSave={noop} lang="en" />);
+
+    expect(html).toContain('aria-busy="true"');
   });
 });

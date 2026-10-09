@@ -154,6 +154,26 @@ export function bookingTypeTone(type: BookingType) {
   return type === "appointment" ? "primary" : "secondary";
 }
 
+/** The app-ui badge palette; components/app-ui reads this type. */
+export type StatusTone =
+  | "neutral"
+  | "accent"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "admin";
+
+export function bookingStatusBadgeTone(status: BookingStatus): StatusTone {
+  if (status === "cancelled") return "danger";
+  if (status === "rescheduled") return "warning";
+  return "success";
+}
+
+export function bookingTypeBadgeTone(type: BookingType): StatusTone {
+  return type === "appointment" ? "accent" : "neutral";
+}
+
 const STATUS_LABELS: Record<Lang, Record<BookingStatus, string>> = {
   en: { confirmed: "Confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled" },
   es: { confirmed: "Confirmado", rescheduled: "Reagendado", cancelled: "Cancelado" },

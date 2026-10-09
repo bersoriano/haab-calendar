@@ -9,6 +9,8 @@ import {
   formatDateLabel,
   getBookingStatusLabel,
   getOccurrenceModeLabel,
+  bookingStatusBadgeTone,
+  bookingTypeBadgeTone,
 } from "@/lib/format";
 import { getLongDateFormatter } from "@/lib/constants";
 import type { Service } from "@/lib/types";
@@ -312,5 +314,18 @@ describe("locale-matched formatting", () => {
   it("translates event capacity", () => {
     expect(formatCapacityLabel(localeMatchedService, "en")).toBe("Up to 400 spots");
     expect(formatCapacityLabel(localeMatchedService, "es")).toBe("Hasta 400 lugares");
+  });
+});
+
+describe("badge tones", () => {
+  it("colors booking statuses by meaning", () => {
+    expect(bookingStatusBadgeTone("confirmed")).toBe("success");
+    expect(bookingStatusBadgeTone("rescheduled")).toBe("warning");
+    expect(bookingStatusBadgeTone("cancelled")).toBe("danger");
+  });
+
+  it("tells appointments from full days", () => {
+    expect(bookingTypeBadgeTone("appointment")).toBe("accent");
+    expect(bookingTypeBadgeTone("full-day")).toBe("neutral");
   });
 });

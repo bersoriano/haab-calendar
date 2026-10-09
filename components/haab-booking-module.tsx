@@ -160,6 +160,8 @@ import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsS
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { ToastProvider } from "@/components/app-ui";
+import { moduleMountsOwnToasts } from "@/lib/module-toasts";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
@@ -7230,7 +7232,7 @@ export function HaabBookingModule({
     );
   }
 
-  return (
+  const moduleOutput = (
     <>
       <section className={publicShellClass}>
         {isDedicatedPublicPage && surface === "public" ? (
@@ -7357,5 +7359,13 @@ export function HaabBookingModule({
 
       {modals}
     </>
+  );
+
+  // Embedded hosts have no dashboard shell to give the module a toast region;
+  // wrap everything it renders, header and dialogs included.
+  return moduleMountsOwnToasts({ chrome, surfaceMode }) ? (
+    <ToastProvider dismissLabel={dashboardCopy[lang].dismiss}>{moduleOutput}</ToastProvider>
+  ) : (
+    moduleOutput
   );
 }

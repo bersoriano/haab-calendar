@@ -18,7 +18,8 @@ const SPACES: Target = { id: "spaces", label: "Spaces", segment: "spaces" };
 const HEALTHCARE: Target = { id: "healthcare", label: "Healthcare", segment: "doctors" };
 
 async function livePublicPath(page: Page) {
-  const href = await page.getByRole("link", { name: /^View page$/ }).first().getAttribute("href");
+  // The name ends with a screen-reader note that the link opens a new tab.
+  const href = await page.getByRole("link", { name: /^View page\b/ }).first().getAttribute("href");
   expect(href).toBeTruthy();
   return href as string;
 }
