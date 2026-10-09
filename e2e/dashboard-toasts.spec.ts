@@ -55,4 +55,16 @@ test.describe("dashboard toasts", () => {
     await expect(dismiss).toHaveCount(0);
     await expect(copy).toBeFocused();
   });
+
+  test("toasts follow a dashboard-language switch made mid-session", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/dashboard/settings");
+    // Not saved: the switch lives in this tab's store only.
+    await page.getByRole("button", { name: "Cambiar a español" }).click();
+
+    await page.locator("header").getByRole("button", { name: "Copiar enlace" }).click();
+    const toast = page.getByRole("status").filter({ hasText: "Enlace de reservas copiado" });
+    await expect(toast.getByRole("button", { name: "Cerrar aviso" })).toBeVisible();
+  });
 });
+

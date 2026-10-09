@@ -115,17 +115,7 @@ function browserStorage(): DraftStorage {
  * syncs `usePathname` — so switching sections never waits on the server and
  * keeps working offline, with unsaved edits intact in the one module instance.
  */
-export function DashboardApp(props: DashboardAppProps) {
-  const lang: Lang = props.store.provider.dashboardLanguage ?? props.viewerLanguage;
-
-  return (
-    <ToastProvider dismissLabel={dashboardCopy[lang].dismiss}>
-      <DashboardAppContent {...props} />
-    </ToastProvider>
-  );
-}
-
-function DashboardAppContent({
+export function DashboardApp({
   initialSection,
   store,
   email,
@@ -139,7 +129,6 @@ function DashboardAppContent({
   switchedTo,
   profileUnsaved = false,
 }: DashboardAppProps) {
-  const { notify } = useToast();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   // Taken when the dialog opens: what blocks a switch at that moment.
@@ -153,7 +142,6 @@ function DashboardAppContent({
   // One-shot notices from the URL (Checkout, Google) belong to the page the
   // provider landed on, not to every section they visit afterwards.
   const [hasNavigated, setHasNavigated] = useState(false);
-  const [copied, setCopied] = useState(false);
   const lastSectionRef = useRef(section);
 
   const lang: Lang = snapshot.provider.dashboardLanguage ?? viewerLanguage;
@@ -194,21 +182,6 @@ function DashboardAppContent({
     // The root layout cannot see a pinned workspace language.
     document.documentElement.lang = lang;
   }, [lang]);
-
-  async function copyPublicLink() {
-    if (!publicPath) {
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}${publicPath}`);
-      setCopied(true);
-      notify({ message: shell.linkCopiedToast });
-      window.setTimeout(() => setCopied(false), 1600);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   function navItems(group: DashboardNavGroup) {
     return DASHBOARD_SECTIONS.filter((entry) => entry.group === group).map((entry) => ({
@@ -265,14 +238,7 @@ function DashboardAppContent({
 
   const topBarActions = publicPath ? (
     <>
-      <Button
-        variant="secondary"
-        onClick={copyPublicLink}
-        leadingIcon={copied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
-        className="max-sm:w-11 max-sm:px-0"
-      >
-        <span className="sr-only sm:not-sr-only">{copied ? shell.linkCopied : shell.copyLink}</span>
-      </Button>
+      <CopyLinkButton publicPath={publicPath} lang={lang} />
       <ButtonLink
         href={publicPath}
         external
@@ -346,105 +312,138 @@ function DashboardAppContent({
       </>
     ) : undefined;
 
+  // Inside the component, not around it: the close-button label follows a
+  // dashboard-language switch made mid-session.
   return (
-    <AppShell
-      sidebar={sidebar}
-      title={title}
-      description={shell.descriptions[section]}
-      topBarActions={topBarActions}
-      banners={banners}
-      navigationKey={section}
-      copy={{
-        skipToContent: shell.skipToContent,
-        openMenu: shell.openMenu,
-        closeMenu: shell.closeMenu,
-        menu: shell.navLabel,
-      }}
-      footer={
-        <ShellFooter
-          note={`© ${new Date().getFullYear()} ${shell.rights}`}
-          newTabLabel={shell.opensInNewTab}
-          links={[
-            { href: "/terms", label: shell.terms },
-            { href: "/privacy", label: shell.privacy },
-            ...(publicPath ? [{ href: publicPath, label: shell.viewPage, external: true }] : []),
-          ]}
-        />
-      }
-    >
-      {/* The module renders "today", this month and the viewer's time zones;
-          a server in another zone would paint markup the browser disagrees
-          with. The shell around it is server-rendered; the content mounts in
-          the browser, as the dashboard always has. */}
-      {/* Stays mounted while the business-type switch runs, so unsaved edits
-          to the live page survive a trip there and back. */}
-      <div hidden={section === "business-type"}>
-        <ClientOnly fallback={<SectionPlaceholder />}>
-          <HaabBookingModule
-            injectedConfig={store}
-            userEmail={email}
-            persistAdminChanges
-            viewerLanguage={lang}
-            providerEntitlements={providerEntitlements}
-            publishingEnabled={publicationStatus?.publishingEnabled}
-            checkoutResult={hasNavigated ? undefined : checkoutResult}
-            adminSection={section}
-            onAdminSectionChange={navigate}
-            chrome="shell"
-            onStoreChange={setSnapshot}
-            onSetupPersisted={setSnapshot}
-            onChangeBusinessType={
-              demoEdit
-                ? undefined
-                : () =>
-                    setBusinessTypeCheck(
-                      findBlockingBookings(
-                        snapshot.bookings,
-                        snapshot.bookingHolds,
-                        todayKey(),
-                        Date.now(),
-                      ),
-                    )
-            }
+    <ToastProvider dismissLabel={shell.dismiss}>
+      <AppShell
+        sidebar={sidebar}
+        title={title}
+        description={shell.descriptions[section]}
+        topBarActions={topBarActions}
+        banners={banners}
+        navigationKey={section}
+        copy={{
+          skipToContent: shell.skipToContent,
+          openMenu: shell.openMenu,
+          closeMenu: shell.closeMenu,
+          menu: shell.navLabel,
+        }}
+        footer={
+          <ShellFooter
+            note={`© ${new Date().getFullYear()} ${shell.rights}`}
+            newTabLabel={shell.opensInNewTab}
+            links={[
+              { href: "/terms", label: shell.terms },
+              { href: "/privacy", label: shell.privacy },
+              ...(publicPath ? [{ href: publicPath, label: shell.viewPage, external: true }] : []),
+            ]}
           />
-        </ClientOnly>
-      </div>
-
-      {section === "business-type" ? (
-        demoEdit ? (
-          <Alert tone="neutral">{shell.businessType.demoUnavailable}</Alert>
-        ) : (
+        }
+      >
+        {/* The module renders "today", this month and the viewer's time zones;
+            a server in another zone would paint markup the browser disagrees
+            with. The shell around it is server-rendered; the content mounts in
+            the browser, as the dashboard always has. */}
+        {/* Stays mounted while the business-type switch runs, so unsaved edits
+            to the live page survive a trip there and back. */}
+        <div hidden={section === "business-type"}>
           <ClientOnly fallback={<SectionPlaceholder />}>
-            <BusinessTypeSwitch
-              lang={lang}
-              liveStore={snapshot}
-              to={parseVerticalId(searchParams.get("to"))}
-              storage={browserStorage()}
-              onCancel={() => navigate("settings")}
+            <HaabBookingModule
+              injectedConfig={store}
+              userEmail={email}
+              persistAdminChanges
+              viewerLanguage={lang}
+              providerEntitlements={providerEntitlements}
+              publishingEnabled={publicationStatus?.publishingEnabled}
+              checkoutResult={hasNavigated ? undefined : checkoutResult}
+              adminSection={section}
+              onAdminSectionChange={navigate}
+              chrome="shell"
+              onStoreChange={setSnapshot}
+              onSetupPersisted={setSnapshot}
+              onChangeBusinessType={
+                demoEdit
+                  ? undefined
+                  : () =>
+                      setBusinessTypeCheck(
+                        findBlockingBookings(
+                          snapshot.bookings,
+                          snapshot.bookingHolds,
+                          todayKey(),
+                          Date.now(),
+                        ),
+                      )
+              }
             />
           </ClientOnly>
-        )
-      ) : null}
+        </div>
 
-      {businessTypeCheck && snapshot.vertical ? (
-        <ChangeBusinessTypeDialog
-          lang={lang}
-          currentVertical={snapshot.vertical}
-          slug={slug}
-          summary={summarizeReplacement(snapshot)}
-          blocking={businessTypeCheck}
-          onCancel={() => setBusinessTypeCheck(null)}
-          onGoToBookings={() => {
-            setBusinessTypeCheck(null);
-            navigate("bookings");
-          }}
-          onContinue={(vertical) => {
-            setBusinessTypeCheck(null);
-            navigate("business-type", { to: vertical });
-          }}
-        />
-      ) : null}
-    </AppShell>
+        {section === "business-type" ? (
+          demoEdit ? (
+            <Alert tone="neutral">{shell.businessType.demoUnavailable}</Alert>
+          ) : (
+            <ClientOnly fallback={<SectionPlaceholder />}>
+              <BusinessTypeSwitch
+                lang={lang}
+                liveStore={snapshot}
+                to={parseVerticalId(searchParams.get("to"))}
+                storage={browserStorage()}
+                onCancel={() => navigate("settings")}
+              />
+            </ClientOnly>
+          )
+        ) : null}
+
+        {businessTypeCheck && snapshot.vertical ? (
+          <ChangeBusinessTypeDialog
+            lang={lang}
+            currentVertical={snapshot.vertical}
+            slug={slug}
+            summary={summarizeReplacement(snapshot)}
+            blocking={businessTypeCheck}
+            onCancel={() => setBusinessTypeCheck(null)}
+            onGoToBookings={() => {
+              setBusinessTypeCheck(null);
+              navigate("bookings");
+            }}
+            onContinue={(vertical) => {
+              setBusinessTypeCheck(null);
+              navigate("business-type", { to: vertical });
+            }}
+          />
+        ) : null}
+      </AppShell>
+    </ToastProvider>
+  );
+}
+
+/** Copies the public link; a child of the toast provider so it can confirm. */
+function CopyLinkButton({ publicPath, lang }: { publicPath: string; lang: Lang }) {
+  const shell = dashboardCopy[lang];
+  const { notify } = useToast();
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}${publicPath}`);
+      setCopied(true);
+      notify({ message: shell.linkCopiedToast });
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="secondary"
+      onClick={copy}
+      leadingIcon={copied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
+      className="max-sm:w-11 max-sm:px-0"
+    >
+      <span className="sr-only sm:not-sr-only">{copied ? shell.linkCopied : shell.copyLink}</span>
+    </Button>
   );
 }
 
