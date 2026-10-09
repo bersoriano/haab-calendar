@@ -3989,7 +3989,6 @@ export function HaabBookingModule({
             entitlements={providerEntitlements}
             integratedMode={integratedMode}
             lang={lang}
-            className={cn(adminPanelClass, "p-6")}
           />
         );
       case "business-type":

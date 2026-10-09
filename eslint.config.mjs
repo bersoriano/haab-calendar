@@ -29,6 +29,8 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/ProviderAppearanceForm.tsx",
   "components/provider/ThemeSettingsSection.tsx",
   "components/provider/LanguageSettingsSection.tsx",
+  "components/provider/ProviderIntegrationsSection.tsx",
+  "components/provider/GoogleCalendarCapabilities.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
