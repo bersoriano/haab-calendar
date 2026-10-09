@@ -1,10 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { resolveEntitlements } from "@/lib/entitlements/resolve";
-import type { ProviderInfo, WeeklyAvailability } from "@/lib/types";
+import type { ProviderInfo } from "@/lib/types";
 
 const en = bookingTranslations.en.admin;
 const es = bookingTranslations.es.admin;
@@ -25,19 +25,6 @@ const provider: ProviderInfo = {
   publicSlug: "acis-sports",
 };
 
-const openDay = { enabled: true, startTime: "09:00", endTime: "17:00" };
-const closedDay = { enabled: false, startTime: "09:00", endTime: "17:00" };
-
-const availability: WeeklyAvailability = {
-  sunday: closedDay,
-  monday: openDay,
-  tuesday: openDay,
-  wednesday: openDay,
-  thursday: openDay,
-  friday: openDay,
-  saturday: closedDay,
-};
-
 function render(
   props: Partial<Parameters<typeof ProviderSettingsSurface>[0]> = {},
 ) {
@@ -46,16 +33,13 @@ function render(
       title="Provider information"
       publicUrlLabel="Public booking link:"
       provider={provider}
-      availability={availability}
       lang="en"
       publicUrl="https://haab.app/doctors/acis-sports"
       integratedMode
       canPersist
       isSaving={false}
       onProviderChange={() => undefined}
-      onAvailabilityChange={() => undefined}
       onSave={() => undefined}
-      onManageEvents={() => undefined}
       {...props}
     />,
   );
@@ -70,10 +54,18 @@ describe("ProviderSettingsSurface", () => {
     expect(html).toContain(provider.businessName);
   });
 
-  it("renders the availability editor", () => {
-    const html = render();
+  it("leaves availability and integrations to their own sections", () => {
+    const html = render({
+      entitlements: resolveEntitlements({
+        providerId: "00000000-0000-4000-8000-000000000001",
+        planTier: "premium",
+        overrides: [],
+      }),
+    });
 
-    expect(html).toContain(en.weekdays.monday);
+    expect(html).not.toContain(en.weekdays.monday);
+    expect(html).not.toContain(en.weeklyAvailability);
+    expect(html).not.toContain(en.integrationsTitle);
   });
 
   it("renders the public booking URL", () => {
@@ -135,31 +127,6 @@ describe("ProviderSettingsSurface", () => {
     expect(render()).not.toContain(en.resetStandaloneSetup);
   });
 
-  it("routes event scheduling to the caller's manage-events handler", () => {
-    const onManageEvents = vi.fn();
-    const html = render({ vertical: "events", onManageEvents });
-
-    // The events vertical replaces the weekly editor with a pointer to Services.
-    expect(html).toContain(en.eventSchedulingTitle);
-    expect(onManageEvents).not.toHaveBeenCalled();
-  });
-
-  it("renders the integrations section after the settings content", () => {
-    const html = render({
-      entitlements: resolveEntitlements({
-        providerId: "00000000-0000-4000-8000-000000000001",
-        planTier: "premium",
-        overrides: [],
-      }),
-    });
-
-    expect(html).toContain(en.integrationsTitle);
-    expect(html).toContain(en.googleCalendarName);
-    expect(html.indexOf(en.integrationsTitle)).toBeGreaterThan(
-      html.indexOf(provider.businessName),
-    );
-  });
-
   it("keeps appearance fields out of settings", () => {
     const html = render();
 
@@ -176,8 +143,8 @@ describe("ProviderSettingsSurface", () => {
       publicUrlLabel: "Enlace público de reservas:",
     });
 
-    expect(html).toContain(es.weekdays.monday);
-    expect(html).toContain(es.integrationsTitle);
-    expect(html).not.toContain(en.integrationsBody);
+    expect(html).toContain(bookingTranslations.es.providerForm.businessName);
+    expect(html).not.toContain(bookingTranslations.en.providerForm.businessName);
+    expect(html).toContain(es.saveChanges);
   });
 });

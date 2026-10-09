@@ -160,6 +160,9 @@ import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearance
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
+import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
+import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
@@ -265,6 +268,21 @@ type HaabBookingModuleProps = {
   initialAdminTab?: AdminTab;
   /** How a Stripe Checkout the provider just left ended. */
   checkoutResult?: "success" | "cancelled";
+  /**
+   * Controlled dashboard section. A host that owns routing (the /dashboard
+   * shell) sets it from the URL; without it the module keeps its own tabs.
+   */
+  adminSection?: AdminTab;
+  /** Asks the host to show another section, e.g. "Manage events" → Services. */
+  onAdminSectionChange?: (section: AdminTab) => void;
+  /**
+   * "shell": the host renders the header, navigation and account controls, so
+   * the module renders only the section content. "module" (default) keeps the
+   * module's own header and tabs for hosts that embed it without a shell.
+   */
+  chrome?: "module" | "shell";
+  /** Setup's "Go to dashboard" — lets the host navigate to its dashboard route. */
+  onOpenDashboard?: () => void;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -382,6 +400,10 @@ export function HaabBookingModule({
   providerEntitlements,
   initialAdminTab,
   checkoutResult,
+  adminSection,
+  onAdminSectionChange,
+  chrome = "module",
+  onOpenDashboard,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -401,6 +423,17 @@ export function HaabBookingModule({
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
   const [adminTab, setAdminTab] = useState<AdminTab>(initialAdminTab ?? "dashboard");
+  // A host that owns routing (the /dashboard shell) controls the section;
+  // otherwise the module keeps its own tab state, exactly as before.
+  const currentSection: AdminTab = adminSection ?? adminTab;
+  function goToSection(next: AdminTab) {
+    if (onAdminSectionChange) {
+      onAdminSectionChange(next);
+      return;
+    }
+
+    setAdminTab(next);
+  }
   const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
@@ -3594,7 +3627,9 @@ export function HaabBookingModule({
                   <>
                     <ActionButton
                       tone="primary"
-                      onClick={() => leaveSetupToSurface("management")}
+                      onClick={() =>
+                        onOpenDashboard ? onOpenDashboard() : leaveSetupToSurface("management")
+                      }
                     >
                       {t.setup.goToDashboard}
                     </ActionButton>
@@ -4114,6 +4149,108 @@ export function HaabBookingModule({
         </div>
       </div>
     );
+  }
+
+  /**
+   * Save controls for sections whose edits are held until "Save changes".
+   * Mirrors the button Settings and Appearance already carry.
+   */
+  function renderSectionSaveRow() {
+    if (!integratedMode || !persistAdminChanges) {
+      return null;
+    }
+
+    return (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        {adminSaveError ? (
+          <p className="text-sm font-medium text-[var(--danger-strong)]">{adminSaveError}</p>
+        ) : null}
+        {adminSaveMessage ? (
+          <p className="text-sm font-medium text-[var(--success-strong)]">{adminSaveMessage}</p>
+        ) : null}
+        <ActionButton
+          tone="primary"
+          disabled={isSavingAdmin}
+          onClick={() => persistAdminStore(activeStore, t.admin.couldNotSaveSettings)}
+        >
+          {isSavingAdmin ? t.common.saving : t.admin.saveChanges}
+        </ActionButton>
+      </div>
+    );
+  }
+
+  function renderManagementSections() {
+    switch (currentSection) {
+      case "dashboard":
+        return renderDashboard();
+      case "bookings":
+        return renderBookingsList();
+      case "calendar":
+        return renderAdminCalendar();
+      case "services":
+        return renderServices();
+      case "appearance":
+        return renderAppearance();
+      case "availability":
+        return (
+          <div className="space-y-4">
+            {renderSectionSaveRow()}
+            <AvailabilitySettingsSection
+              vertical={vertical}
+              availability={availability}
+              onChange={updateAvailabilityDay}
+              onManageEvents={() => goToSection("services")}
+              maxBookingsPerDay={provider.maxBookingsPerDay}
+              onMaxBookingsPerDayChange={(value) => updateProvider("maxBookingsPerDay", value)}
+              disabled={isSavingAdmin}
+              lang={lang}
+            />
+          </div>
+        );
+      case "analytics":
+        return (
+          <ProviderAnalyticsSurface
+            checkoutResult={checkoutResult}
+            lang={lang}
+            publicUrl={publicUrl}
+            integratedMode={integratedMode}
+            entitlements={providerEntitlements}
+          />
+        );
+      case "integrations":
+        return (
+          <ProviderIntegrationsSection
+            entitlements={providerEntitlements}
+            integratedMode={integratedMode}
+            lang={lang}
+            className={cn(adminPanelClass, "p-6")}
+          />
+        );
+      case "settings":
+        return (
+          <ProviderSettingsSurface
+            title={profileRole?.informationTitle ?? t.admin.providerInformation}
+            publicUrlLabel={fillTemplate(t.admin.publicBookingLinkFor, {
+              booking: copy.booking,
+            })}
+            provider={provider}
+            lang={lang}
+            publicUrl={publicUrl}
+            integratedMode={integratedMode}
+            canPersist={persistAdminChanges}
+            isSaving={isSavingAdmin}
+            saveError={adminSaveError}
+            saveMessage={adminSaveMessage}
+            entitlements={providerEntitlements}
+            onProviderChange={updateProvider}
+            onSave={async () => {
+              await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
+            }}
+            onSavePublicSlug={persistPublicSlug}
+            onResetStandaloneSetup={resetStandaloneSetup}
+          />
+        );
+    }
   }
 
   function renderPublicCalendar() {
@@ -7133,6 +7270,45 @@ export function HaabBookingModule({
     );
   }
 
+  const modals = (
+    <>
+      {renderCalendarQrModal()}
+      <AppointmentScannerDialog
+        open={integratedMode && isAppointmentScannerOpen}
+        onClose={() => setIsAppointmentScannerOpen(false)}
+        lang={lang}
+      />
+      {renderCancellationModal()}
+      {renderRescheduleModal()}
+    </>
+  );
+
+  // The host's shell already renders the header, navigation and account
+  // controls; the module contributes the section content only.
+  if (chrome === "shell" && !isDedicatedPublicPage) {
+    return (
+      <>
+        {surface === "management" && surfaceMode === "adaptive" ? (
+          renderManagementSections()
+        ) : (
+          <div className="space-y-4">
+            {surfaceMode === "adaptive" ? (
+              <button
+                type="button"
+                onClick={() => setSurface("management")}
+                className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
+              >
+                {t.admin.backToWorkspace}
+              </button>
+            ) : null}
+            <section className={publicShellClass}>{renderPublicFlow()}</section>
+          </div>
+        )}
+        {modals}
+      </>
+    );
+  }
+
   return (
     <>
       <section className={publicShellClass}>
@@ -7158,7 +7334,7 @@ export function HaabBookingModule({
             className="mx-4 mt-4 sm:mx-8 sm:mt-8 xl:mx-10"
           />
         ) : null}
-        {!isDedicatedPublicPage ? (
+        {!isDedicatedPublicPage && chrome === "module" ? (
           <div className="border-b border-[var(--line)] p-5 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
@@ -7212,18 +7388,20 @@ export function HaabBookingModule({
                     ["bookings", copy.Bookings],
                     ["calendar", t.admin.tabCalendar],
                     ["services", copy.Services],
+                    ["availability", dashboardCopy[lang].titles.availability],
                     ["appearance", t.admin.tabAppearance],
                     ["analytics", t.admin.tabAnalytics],
+                    ["integrations", dashboardCopy[lang].titles.integrations],
                     ["settings", t.admin.tabSettings],
                   ] as Array<[AdminTab, string]>
                 ).map(([value, label]) => (
                   <button
                     key={value}
                     type="button"
-                    onClick={() => setAdminTab(value)}
+                    onClick={() => goToSection(value)}
                     className={cn(
                       "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                      adminTab === value
+                      currentSection === value
                         ? "bg-[var(--ink)] text-[var(--background)]"
                         : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]",
                     )}
@@ -7247,62 +7425,13 @@ export function HaabBookingModule({
         ) : null}
 
         {surface === "management" && surfaceMode === "adaptive" ? (
-          <div className="p-5 sm:p-8">
-            {adminTab === "dashboard" ? renderDashboard() : null}
-            {adminTab === "bookings" ? renderBookingsList() : null}
-            {adminTab === "calendar" ? renderAdminCalendar() : null}
-            {adminTab === "services" ? renderServices() : null}
-            {adminTab === "appearance" ? renderAppearance() : null}
-            {adminTab === "analytics" ? (
-              <ProviderAnalyticsSurface
-                checkoutResult={checkoutResult}
-                lang={lang}
-                publicUrl={publicUrl}
-                integratedMode={integratedMode}
-                entitlements={providerEntitlements}
-              />
-            ) : null}
-            {adminTab === "settings" ? (
-              <ProviderSettingsSurface
-                title={profileRole?.informationTitle ?? t.admin.providerInformation}
-                publicUrlLabel={fillTemplate(t.admin.publicBookingLinkFor, {
-                  booking: copy.booking,
-                })}
-                provider={provider}
-                availability={availability}
-                vertical={vertical}
-                lang={lang}
-                publicUrl={publicUrl}
-                integratedMode={integratedMode}
-                canPersist={persistAdminChanges}
-                isSaving={isSavingAdmin}
-                saveError={adminSaveError}
-                saveMessage={adminSaveMessage}
-                entitlements={providerEntitlements}
-                onProviderChange={updateProvider}
-                onAvailabilityChange={updateAvailabilityDay}
-                onSave={async () => {
-                  await persistAdminStore(activeStore, t.admin.couldNotSaveSettings);
-                }}
-                onSavePublicSlug={persistPublicSlug}
-                onManageEvents={() => setAdminTab("services")}
-                onResetStandaloneSetup={resetStandaloneSetup}
-              />
-            ) : null}
-          </div>
+          <div className="p-5 sm:p-8">{renderManagementSections()}</div>
         ) : (
           renderPublicFlow()
         )}
       </section>
 
-      {renderCalendarQrModal()}
-      <AppointmentScannerDialog
-        open={integratedMode && isAppointmentScannerOpen}
-        onClose={() => setIsAppointmentScannerOpen(false)}
-        lang={lang}
-      />
-      {renderCancellationModal()}
-      {renderRescheduleModal()}
+      {modals}
     </>
   );
 }

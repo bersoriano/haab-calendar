@@ -105,3 +105,23 @@ describe("entitlement data flow", () => {
     expect(home).not.toContain("resolveEntitlements(");
   });
 });
+
+describe("dashboard sections own availability and integrations", () => {
+  const moduleSource = read("components/haab-booking-module.tsx");
+
+  it("renders both as their own sections", () => {
+    const sections = moduleSource.slice(
+      moduleSource.indexOf("function renderManagementSections("),
+      moduleSource.indexOf("function renderPublicCalendar("),
+    );
+
+    expect(sections).toContain('case "availability":');
+    expect(sections).toContain('case "integrations":');
+    expect(sections).toContain("<AvailabilitySettingsSection");
+    expect(sections).toContain("<ProviderIntegrationsSection");
+  });
+
+  it("keeps the old header and tabs for hosts without the shell", () => {
+    expect(moduleSource).toContain('chrome === "module"');
+  });
+});

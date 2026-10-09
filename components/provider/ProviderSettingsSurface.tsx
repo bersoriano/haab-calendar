@@ -3,19 +3,11 @@
 import { useState, type FormEvent } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { adminFieldClass, adminPanelClass } from "@/components/provider/adminGlass";
-import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
-import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { ActionButton, SectionTitle } from "@/components/ui";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { canUseCustomProviderSlug } from "@/lib/public-url";
-import type {
-  Lang,
-  ProviderInfo,
-  VerticalId,
-  WeeklyAvailability,
-  WeekdayKey,
-} from "@/lib/types";
+import type { Lang, ProviderInfo } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export type ProviderSettingsSurfaceProps = {
@@ -24,8 +16,6 @@ export type ProviderSettingsSurfaceProps = {
   /** Same reason: "Public booking link for" reads differently per vertical. */
   publicUrlLabel: string;
   provider: ProviderInfo;
-  availability: WeeklyAvailability;
-  vertical?: VerticalId;
   lang: Lang;
   publicUrl: string;
 
@@ -37,22 +27,16 @@ export type ProviderSettingsSurfaceProps = {
 
   /** Resolved server-side. Presentation only — never the authorization. */
   entitlements?: ProviderEntitlements;
-  demoEdit?: boolean;
 
   onProviderChange: <K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) => void;
-  onAvailabilityChange: (
-    day: WeekdayKey,
-    patch: Partial<WeeklyAvailability[WeekdayKey]>,
-  ) => void;
   onSave: () => void | Promise<void>;
   onSavePublicSlug?: (slug: string) => Promise<void>;
-  onManageEvents: () => void;
   onResetStandaloneSetup?: () => void;
 };
 
 /**
- * The Settings tab: who the business is, when it is open, and what Haab can
- * connect to.
+ * The Settings section: who the business is and where its booking page
+ * lives. Availability and integrations have their own sections.
  *
  * Presentational. Every edit and every save goes back out through a callback,
  * so the module keeps owning persistence and this component stays testable
@@ -62,8 +46,6 @@ export function ProviderSettingsSurface({
   title,
   publicUrlLabel,
   provider,
-  availability,
-  vertical,
   lang,
   publicUrl,
   integratedMode,
@@ -72,18 +54,15 @@ export function ProviderSettingsSurface({
   saveError,
   saveMessage,
   entitlements,
-  demoEdit = false,
   onProviderChange,
-  onAvailabilityChange,
   onSave,
   onSavePublicSlug,
-  onManageEvents,
   onResetStandaloneSetup,
 }: ProviderSettingsSurfaceProps) {
   const t = bookingTranslations[lang];
 
   return (
-    <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+    <div className="max-w-3xl">
       <div className={cn(adminPanelClass, "p-6")}>
         <SectionTitle
           title={title}
@@ -134,27 +113,7 @@ export function ProviderSettingsSurface({
             </ActionButton>
           </div>
         ) : null}
-        {/* Integrations sit under the settings content rather than in their own
-            tab: they are part of configuring the workspace, not a surface of
-            their own. Their state is not saved with the profile. */}
-        <ProviderIntegrationsSection
-          entitlements={entitlements}
-          integratedMode={integratedMode}
-          demoEdit={demoEdit}
-          lang={lang}
-        />
       </div>
-
-      <AvailabilitySettingsSection
-        vertical={vertical}
-        availability={availability}
-        onChange={onAvailabilityChange}
-        onManageEvents={onManageEvents}
-        maxBookingsPerDay={provider.maxBookingsPerDay}
-        onMaxBookingsPerDayChange={(value) => onProviderChange("maxBookingsPerDay", value)}
-        disabled={isSaving}
-        lang={lang}
-      />
     </div>
   );
 }

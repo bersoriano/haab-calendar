@@ -74,10 +74,13 @@ export function ProviderIntegrationsSection({
   integratedMode,
   demoEdit = false,
   lang = "en",
+  className = "mt-6 border-t border-[var(--line)] pt-6",
 }: {
   entitlements?: ProviderEntitlements;
   integratedMode: boolean;
   demoEdit?: boolean;
+  /** Outer spacing: a divider under other settings, or a panel as its own page. */
+  className?: string;
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang].admin;
@@ -182,7 +185,7 @@ export function ProviderIntegrationsSection({
   };
 
   return (
-    <section className="mt-6 border-t border-[var(--line)] pt-6">
+    <section className={className}>
       <SectionTitle title={t.integrationsTitle} body={t.integrationsBody} />
       <ul className="mt-4 grid gap-3">
         {INTEGRATIONS.map((integration) => {
