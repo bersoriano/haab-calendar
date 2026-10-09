@@ -87,6 +87,8 @@ export type BusinessTypeCopy = {
   confirmTitle: string;
   confirmBody: string;
   success: string;
+  profileUnsaved: string;
+  demoUnavailable: string;
 };
 
 export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
@@ -202,6 +204,9 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       confirmBody:
         "This replaces your {count} services, weekly hours and daily limit on your live page with this setup.",
       success: "Your page is now a {type} page. Your old link redirects here.",
+      profileUnsaved:
+        "Some profile changes from your draft were not saved. Review them in Settings.",
+      demoUnavailable: "Demo pages keep their business type.",
     },
     google: {
       connected: "Google Calendar is connected.",
@@ -329,6 +334,9 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       confirmBody:
         "Esto reemplaza sus {count} servicios, su horario semanal y su límite diario en su página publicada por esta configuración.",
       success: "Su página ahora es de {type}. Su enlace anterior redirige aquí.",
+      profileUnsaved:
+        "Algunos cambios de perfil de su borrador no se guardaron. Revíselos en Ajustes.",
+      demoUnavailable: "Las páginas de ejemplo conservan su tipo de negocio.",
     },
     google: {
       connected: "Google Calendar está conectado.",

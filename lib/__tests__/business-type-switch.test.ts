@@ -4,6 +4,8 @@ import { getVerticalPreset } from "@/config/verticals";
 import {
   businessTypeDraftKey,
   findBlockingBookings,
+  parseVerticalId,
+  resolveDraftAction,
   seedBusinessTypeDraft,
   summarizeReplacement,
 } from "@/lib/business-type-switch";
@@ -136,5 +138,34 @@ describe("summarizeReplacement", () => {
 describe("businessTypeDraftKey", () => {
   it("scopes the draft to one provider", () => {
     expect(businessTypeDraftKey("acme")).toBe("haab-business-type-draft:acme");
+  });
+});
+
+describe("resolveDraftAction", () => {
+  const draftFor = (vertical: ModuleStore["vertical"]) => ({ ...createEmptyStore(), vertical });
+
+  it("seeds a new draft when there is none", () => {
+    expect(resolveDraftAction(null, "healthcare")).toBe("seed");
+  });
+
+  it("resumes a draft for the same type, or when no type is asked for", () => {
+    expect(resolveDraftAction(draftFor("healthcare"), "healthcare")).toBe("resume");
+    expect(resolveDraftAction(draftFor("healthcare"), undefined)).toBe("resume");
+  });
+
+  it("asks before replacing a draft for another type", () => {
+    expect(resolveDraftAction(draftFor("spaces"), "healthcare")).toBe("ask");
+  });
+
+  it("has nothing to set up without a draft or a type", () => {
+    expect(resolveDraftAction(null, undefined)).toBe("missing");
+  });
+});
+
+describe("parseVerticalId", () => {
+  it("accepts only known business types", () => {
+    expect(parseVerticalId("restaurant")).toBe("restaurant");
+    expect(parseVerticalId("bakery")).toBeUndefined();
+    expect(parseVerticalId(null)).toBeUndefined();
   });
 });

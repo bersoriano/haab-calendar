@@ -2,7 +2,7 @@
 
 import { ArrowSquareOut, Check, Copy, SignOut } from "@phosphor-icons/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { logout } from "@/app/login/actions";
@@ -22,7 +22,11 @@ import {
 } from "@/components/app-shell/super-admin-accent";
 import type { ShellIconName, ShellNavGroup } from "@/components/app-shell/types";
 import { HaabBookingModule } from "@/components/haab-booking-module";
+import { BusinessTypeSwitch, type DraftStorage } from "@/components/provider/BusinessTypeSwitch";
+import { ChangeBusinessTypeDialog } from "@/components/provider/ChangeBusinessTypeDialog";
 import { dashboardCopy, sectionTitle } from "@/components/provider/dashboard-copy";
+import { translations as landingTranslations } from "@/components/landing/translations";
+import { fillTemplate } from "@/components/booking/i18n/translations";
 import { Alert } from "@/components/ui/Alert";
 import { ClientOnly } from "@/components/ui/ClientOnly";
 import {
@@ -33,11 +37,17 @@ import {
   type DashboardNavGroup,
   type GoogleOutcome,
 } from "@/lib/dashboard-routes";
+import {
+  findBlockingBookings,
+  parseVerticalId,
+  summarizeReplacement,
+} from "@/lib/business-type-switch";
+import { todayKey } from "@/lib/date";
 import type { DemoEditBanner } from "@/lib/demo-pages";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { buildProviderPath } from "@/lib/public-url";
 import type { PublicationStatus } from "@/lib/supabase/publication";
-import type { AdminTab, Lang, ModuleStore } from "@/lib/types";
+import type { AdminTab, Lang, ModuleStore, VerticalId } from "@/lib/types";
 import { cn, slugify } from "@/lib/utils";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
@@ -84,7 +94,26 @@ export type DashboardAppProps = {
   checkoutResult?: CheckoutResult;
   /** What the Google Calendar OAuth callback reported. */
   googleOutcome?: GoogleOutcome;
+  /** Set right after a business-type switch, for the confirmation banner. */
+  switchedTo?: VerticalId;
+  /** The switch happened but the draft's profile changes did not save. */
+  profileUnsaved?: boolean;
 };
+
+/** Survives the module's test mocks and any browser that blocks storage. */
+const noStorage: DraftStorage = {
+  getItem: () => null,
+  setItem: () => undefined,
+  removeItem: () => undefined,
+};
+
+function browserStorage(): DraftStorage {
+  try {
+    return typeof window === "undefined" ? noStorage : window.localStorage;
+  } catch {
+    return noStorage;
+  }
+}
 
 /**
  * The signed-in provider dashboard: the app shell around the booking module.
@@ -105,8 +134,15 @@ export function DashboardApp({
   viewerLanguage,
   checkoutResult,
   googleOutcome,
+  switchedTo,
+  profileUnsaved = false,
 }: DashboardAppProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  // Taken when the dialog opens: what blocks a switch at that moment.
+  const [businessTypeCheck, setBusinessTypeCheck] = useState<ReturnType<
+    typeof findBlockingBookings
+  > | null>(null);
   const section = sectionFromPathname(pathname) ?? initialSection;
   // The module reports every edit and every save; the shell reads the latest
   // snapshot for the business name, logo, public link and workspace language.
@@ -129,9 +165,9 @@ export function DashboardApp({
   const publicPath = snapshot.vertical ? buildProviderPath(snapshot.vertical, slug) : undefined;
   const publishingOff = publicationStatus?.publishingEnabled === false;
 
-  function navigate(next: AdminTab) {
-    if (next !== section) {
-      window.history.pushState(null, "", pathForSection(next));
+  function navigate(next: AdminTab, query?: Record<string, string | undefined>) {
+    if (next !== section || query) {
+      window.history.pushState(null, "", pathForSection(next, query));
     }
     setHasNavigated(true);
   }
@@ -317,9 +353,22 @@ export function DashboardApp({
   ) : undefined;
 
   const showGoogleOutcome = section === "integrations" && googleOutcome && !hasNavigated;
+  const showSwitched = Boolean(switchedTo) && !hasNavigated;
   const banners =
-    demoEdit || publicationStatus?.dashboardMessage || showGoogleOutcome ? (
+    demoEdit || publicationStatus?.dashboardMessage || showGoogleOutcome || showSwitched ? (
       <>
+        {showSwitched && switchedTo ? (
+          <Alert tone="success" role="status">
+            {fillTemplate(shell.businessType.success, {
+              type: landingTranslations[lang].home.verticals[switchedTo].label,
+            })}
+          </Alert>
+        ) : null}
+        {showSwitched && profileUnsaved ? (
+          <Alert tone="warning" role="status">
+            {shell.businessType.profileUnsaved}
+          </Alert>
+        ) : null}
         {demoEdit ? (
           <Alert
             tone="accent"
@@ -396,22 +445,74 @@ export function DashboardApp({
           a server in another zone would paint markup the browser disagrees
           with. The shell around it is server-rendered; the content mounts in
           the browser, as the dashboard always has. */}
-      <ClientOnly fallback={<SectionPlaceholder />}>
-        <HaabBookingModule
-          injectedConfig={store}
-          userEmail={email}
-          persistAdminChanges
-          viewerLanguage={lang}
-          providerEntitlements={providerEntitlements}
-          publishingEnabled={publicationStatus?.publishingEnabled}
-          checkoutResult={hasNavigated ? undefined : checkoutResult}
-          adminSection={section}
-          onAdminSectionChange={navigate}
-          chrome="shell"
-          onStoreChange={setSnapshot}
-          onSetupPersisted={setSnapshot}
+      {/* Stays mounted while the business-type switch runs, so unsaved edits
+          to the live page survive a trip there and back. */}
+      <div hidden={section === "business-type"}>
+        <ClientOnly fallback={<SectionPlaceholder />}>
+          <HaabBookingModule
+            injectedConfig={store}
+            userEmail={email}
+            persistAdminChanges
+            viewerLanguage={lang}
+            providerEntitlements={providerEntitlements}
+            publishingEnabled={publicationStatus?.publishingEnabled}
+            checkoutResult={hasNavigated ? undefined : checkoutResult}
+            adminSection={section}
+            onAdminSectionChange={navigate}
+            chrome="shell"
+            onStoreChange={setSnapshot}
+            onSetupPersisted={setSnapshot}
+            onChangeBusinessType={
+              demoEdit
+                ? undefined
+                : () =>
+                    setBusinessTypeCheck(
+                      findBlockingBookings(
+                        snapshot.bookings,
+                        snapshot.bookingHolds,
+                        todayKey(),
+                        Date.now(),
+                      ),
+                    )
+            }
+          />
+        </ClientOnly>
+      </div>
+
+      {section === "business-type" ? (
+        demoEdit ? (
+          <Alert tone="neutral">{shell.businessType.demoUnavailable}</Alert>
+        ) : (
+          <ClientOnly fallback={<SectionPlaceholder />}>
+            <BusinessTypeSwitch
+              lang={lang}
+              liveStore={snapshot}
+              to={parseVerticalId(searchParams.get("to"))}
+              storage={browserStorage()}
+              onCancel={() => navigate("settings")}
+            />
+          </ClientOnly>
+        )
+      ) : null}
+
+      {businessTypeCheck && snapshot.vertical ? (
+        <ChangeBusinessTypeDialog
+          lang={lang}
+          currentVertical={snapshot.vertical}
+          slug={slug}
+          summary={summarizeReplacement(snapshot)}
+          blocking={businessTypeCheck}
+          onCancel={() => setBusinessTypeCheck(null)}
+          onGoToBookings={() => {
+            setBusinessTypeCheck(null);
+            navigate("bookings");
+          }}
+          onContinue={(vertical) => {
+            setBusinessTypeCheck(null);
+            navigate("business-type", { to: vertical });
+          }}
         />
-      </ClientOnly>
+      ) : null}
     </AppShell>
   );
 }

@@ -1,6 +1,12 @@
 import type { Vertical } from "@/config/verticals";
 import { applyVerticalToStore } from "@/lib/store";
-import type { BookingHoldRecord, BookingRecord, ModuleStore } from "@/lib/types";
+import {
+  VERTICAL_IDS,
+  type BookingHoldRecord,
+  type BookingRecord,
+  type ModuleStore,
+  type VerticalId,
+} from "@/lib/types";
 
 /**
  * Rules for switching a published page to another business type. Pure, so
@@ -61,4 +67,22 @@ export function summarizeReplacement(live: ModuleStore) {
 /** One draft per provider per browser. */
 export function businessTypeDraftKey(providerKey: string) {
   return `haab-business-type-draft:${providerKey}`;
+}
+
+export function parseVerticalId(value: string | null | undefined): VerticalId | undefined {
+  return VERTICAL_IDS.find((id) => id === value);
+}
+
+/**
+ * What the switch page does on arrival: start a draft, pick up the one already
+ * in this browser, ask before throwing away a draft for another type, or
+ * explain there is nothing to set up.
+ */
+export function resolveDraftAction(
+  existing: ModuleStore | null,
+  to: VerticalId | undefined,
+): "seed" | "resume" | "ask" | "missing" {
+  if (!existing) return to ? "seed" : "missing";
+  if (!to || existing.vertical === to) return "resume";
+  return "ask";
 }

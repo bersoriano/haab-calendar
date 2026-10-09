@@ -49,19 +49,26 @@ export function ChangeBusinessTypeDialog({
   const [acknowledged, setAcknowledged] = useState(false);
   const blocked = blocking.bookings.length > 0 || blocking.activeHolds > 0;
 
+  const onCancelRef = useRef(onCancel);
+
+  useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  // Once, on open: a parent re-render must not pull focus back to the panel.
   useEffect(() => {
     panelRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        onCancel();
+        onCancelRef.current();
       }
     }
 
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onCancel]);
+  }, []);
 
   let title: string;
   let body: React.ReactNode;
