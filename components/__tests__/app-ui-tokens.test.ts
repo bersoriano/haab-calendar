@@ -33,6 +33,7 @@ const MIGRATED = [
   "components/provider/CampaignBadge.tsx",
   "components/provider/DashboardOverview.tsx",
   "components/provider/BookingsList.tsx",
+  "components/provider/AdminCalendar.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
