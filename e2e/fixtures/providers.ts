@@ -13,7 +13,9 @@ export type E2ERole =
   | "billingPremium"
   | "premiumRevoked"
   | "freeGranted"
-  | "billingInactive";
+  | "billingInactive"
+  | "businessTypeSwitch"
+  | "businessTypeBlocked";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -32,6 +34,8 @@ export type E2EProviderSeed = {
     featureKey: "custom_slug" | "google_calendar_sync";
     enabled: boolean;
   }>;
+  /** Seeds one confirmed booking a week from today. */
+  upcomingBooking?: boolean;
 };
 
 export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
@@ -94,6 +98,25 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     // subscription is what people pay for, so it decides.
     legacyPlanTier: "premium",
     billing: { status: "canceled", planTier: "free" },
+  },
+  {
+    role: "businessTypeSwitch",
+    email: "business-type@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e06",
+    providerId: "00000000-0000-4000-8000-0000000e2ea6",
+    businessName: "Switching Clinic E2E",
+    slug: "switching-clinic-e2e",
+    legacyPlanTier: "free",
+  },
+  {
+    role: "businessTypeBlocked",
+    email: "business-type-blocked@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e07",
+    providerId: "00000000-0000-4000-8000-0000000e2ea7",
+    businessName: "Busy Clinic E2E",
+    slug: "busy-clinic-e2e",
+    legacyPlanTier: "free",
+    upcomingBooking: true,
   },
 ];
 

@@ -55,8 +55,20 @@ export type DashboardShellCopy = {
   google: Record<GoogleOutcome, string>;
 };
 
-/** "{type}", "{count}", "{from}" and "{to}" are filled in by the caller. */
+export type CountForms = { one: string; other: string };
+
+/** "1 service" or "3 services": `other` has a "{count}" placeholder. */
+export function countLabel(forms: CountForms, count: number) {
+  return count === 1 ? forms.one : forms.other.replace("{count}", String(count));
+}
+
+/**
+ * "{type}", "{services}", "{bookings}", "{from}" and "{to}" are filled in by
+ * the caller; counts go through countLabel so one reads in the singular.
+ */
 export type BusinessTypeCopy = {
+  servicesCount: CountForms;
+  bookingsCount: CountForms;
   cardTitle: string;
   cardBody: string;
   change: string;
@@ -164,6 +176,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       },
     },
     businessType: {
+      servicesCount: { one: "1 service", other: "{count} services" },
+      bookingsCount: { one: "1 upcoming booking", other: "{count} upcoming bookings" },
       cardTitle: "Business type",
       cardBody: "Decides your page's services, wording and booking rules.",
       change: "Change business type",
@@ -172,7 +186,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       warningTitle: "Before you switch to {type}",
       replacedTitle: "Will be replaced",
       replacedBody:
-        "Your {count} services, weekly hours and daily booking limit, by the {type} starter setup. You review it before it goes live.",
+        "Your {services}, weekly hours and daily booking limit, by the {type} starter setup. You review it before it goes live.",
       staysTitle: "Stays",
       stays: [
         "Your account and plan",
@@ -185,7 +199,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       notCarried: "Links to individual services on your current page will stop working.",
       blockedTitle: "Handle upcoming bookings first",
       blockedBookings:
-        "You have {count} upcoming bookings. Cancel or finish them before changing your business type.",
+        "You have {bookings}. Cancel them, or wait until they're done, before changing your business type.",
       blockedHolds: "Someone is booking on your page right now. Try again in a few minutes.",
       goToBookings: "Go to bookings",
       acknowledge: "I understand my current services and hours will be replaced.",
@@ -202,7 +216,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       publishLabel: "Replace and publish",
       confirmTitle: "Replace your live page?",
       confirmBody:
-        "This replaces your {count} services, weekly hours and daily limit on your live page with this setup.",
+        "This replaces your {services}, weekly hours and daily limit on your live page with this setup.",
       success: "Your page is now a {type} page. Your old link redirects here.",
       profileUnsaved:
         "Some profile changes from your draft were not saved. Review them in Settings.",
@@ -294,6 +308,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       },
     },
     businessType: {
+      servicesCount: { one: "1 servicio", other: "{count} servicios" },
+      bookingsCount: { one: "1 reserva próxima", other: "{count} reservas próximas" },
       cardTitle: "Tipo de negocio",
       cardBody: "Define los servicios, el vocabulario y las reglas de reserva de su página.",
       change: "Cambiar tipo de negocio",
@@ -302,7 +318,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       warningTitle: "Antes de cambiar a {type}",
       replacedTitle: "Se reemplazará",
       replacedBody:
-        "Sus {count} servicios, su horario semanal y su límite diario de reservas, por la configuración inicial de {type}. La revisa antes de publicarla.",
+        "Sus servicios ({services}), su horario semanal y su límite diario de reservas, por la configuración inicial de {type}. La revisa antes de publicarla.",
       staysTitle: "Se conserva",
       stays: [
         "Su cuenta y su plan",
@@ -315,7 +331,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       notCarried: "Los enlaces a servicios individuales de su página actual dejarán de funcionar.",
       blockedTitle: "Primero atienda las reservas próximas",
       blockedBookings:
-        "Tiene {count} reservas próximas. Cancélelas o espere a que terminen antes de cambiar su tipo de negocio.",
+        "Tiene {bookings}. Cancélelas, o espere a que terminen, antes de cambiar su tipo de negocio.",
       blockedHolds: "Alguien está reservando en su página en este momento. Inténtelo de nuevo en unos minutos.",
       goToBookings: "Ir a reservas",
       acknowledge: "Entiendo que mis servicios y horarios actuales se reemplazarán.",
@@ -332,7 +348,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       publishLabel: "Reemplazar y publicar",
       confirmTitle: "¿Reemplazar su página publicada?",
       confirmBody:
-        "Esto reemplaza sus {count} servicios, su horario semanal y su límite diario en su página publicada por esta configuración.",
+        "Esto reemplaza sus servicios ({services}), su horario semanal y su límite diario en su página publicada por esta configuración.",
       success: "Su página ahora es de {type}. Su enlace anterior redirige aquí.",
       profileUnsaved:
         "Algunos cambios de perfil de su borrador no se guardaron. Revíselos en Ajustes.",

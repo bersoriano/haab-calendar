@@ -78,6 +78,15 @@ describe("ChangeBusinessTypeDialog", () => {
     expect(html).toContain(copy.notCarried);
   });
 
+  it("counts one service in the singular", () => {
+    const html = render({
+      initialVertical: "healthcare",
+      summary: { services: 1, openDays: 5, hasDailyLimit: false },
+    });
+
+    expect(html).toContain("Your 1 service,");
+  });
+
   it("asks for an acknowledgement before continuing", () => {
     const html = render({ initialVertical: "healthcare" });
 
@@ -89,7 +98,7 @@ describe("ChangeBusinessTypeDialog", () => {
     const html = render({ blocking: { bookings: [upcoming], activeHolds: 0 } });
 
     expect(html).toContain(copy.blockedTitle);
-    expect(html).toContain("You have 1 upcoming bookings");
+    expect(html).toContain("You have 1 upcoming booking.");
     expect(html).toContain("Ana Ruiz");
     expect(html).toContain("Strategy session");
     expect(html).toContain(copy.goToBookings);

@@ -95,6 +95,33 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
     duration_minutes: 30,
   });
 
+  if (seed.upcomingBooking) {
+    const { data: service, error: serviceError } = await admin
+      .from("services")
+      .select("id")
+      .eq("provider_id", seed.providerId)
+      .limit(1)
+      .single<{ id: string }>();
+    if (serviceError) throw serviceError;
+
+    const { error } = await admin.from("bookings").insert({
+      provider_id: seed.providerId,
+      service_id: service.id,
+      service_name: "Consultation",
+      booking_type: "appointment",
+      duration_minutes_snapshot: 30,
+      client_name: "E2E Client",
+      client_email: "client@example.invalid",
+      date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
+      start_time: "10:00",
+      end_time: "10:30",
+      manage_token_hash: `e2e-${seed.role}-hash`,
+      confirmation_number: `E2E${seed.role.toUpperCase()}`,
+      idempotency_key: `e2e-${seed.role}-idem`,
+    });
+    if (error) throw error;
+  }
+
   if (seed.billing) {
     const { error } = await admin.from("provider_billing_subscriptions").insert({
       provider_id: seed.providerId,

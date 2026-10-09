@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { fillTemplate } from "@/components/booking/i18n/translations";
 import { translations as landingTranslations } from "@/components/landing/translations";
-import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { countLabel, dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { formatDateLabel, formatTimeRange } from "@/lib/format";
 import { buildProviderPath } from "@/lib/public-url";
@@ -81,7 +81,9 @@ export function ChangeBusinessTypeDialog({
         {blocking.bookings.length > 0 ? (
           <>
             <p className="text-sm leading-6 text-[var(--ink)]">
-              {fillTemplate(copy.blockedBookings, { count: String(blocking.bookings.length) })}
+              {fillTemplate(copy.blockedBookings, {
+                bookings: countLabel(copy.bookingsCount, blocking.bookings.length),
+              })}
             </p>
             <ul className="grid gap-2">
               {blocking.bookings.slice(0, BLOCKING_PREVIEW).map((booking) => (
@@ -160,7 +162,10 @@ export function ChangeBusinessTypeDialog({
             {copy.replacedTitle}
           </h3>
           <p className="mt-1">
-            {fillTemplate(copy.replacedBody, { count: String(summary.services), type: typeLabel })}
+            {fillTemplate(copy.replacedBody, {
+              services: countLabel(copy.servicesCount, summary.services),
+              type: typeLabel,
+            })}
           </p>
         </section>
         <section className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-[var(--ink)]">

@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { fillTemplate } from "@/components/booking/i18n/translations";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { translations as landingTranslations } from "@/components/landing/translations";
-import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { countLabel, dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Alert } from "@/components/ui/Alert";
 import { getVerticalPreset } from "@/config/verticals";
@@ -210,7 +210,9 @@ export function BusinessTypeSwitch({
               {copy.confirmTitle}
             </h2>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-              {fillTemplate(copy.confirmBody, { count: String(liveStore.services.length) })}
+              {fillTemplate(copy.confirmBody, {
+                services: countLabel(copy.servicesCount, liveStore.services.length),
+              })}
             </p>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <ActionButton
