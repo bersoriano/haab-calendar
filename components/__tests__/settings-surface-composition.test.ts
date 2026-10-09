@@ -100,9 +100,15 @@ describe("entitlement data flow", () => {
   });
 
   it("passes the snapshot through the client tree without rebuilding it", () => {
-    const home = read("components/home-experience.tsx");
+    const page = read("app/dashboard/[[...section]]/page.tsx");
+    const dashboard = read("components/provider/DashboardApp.tsx");
 
-    expect(home).not.toContain("resolveEntitlements(");
+    expect(page).toContain("providerEntitlements={load.providerEntitlements}");
+    expect(dashboard).toContain("providerEntitlements?: ProviderEntitlements");
+    expect(dashboard).toContain("providerEntitlements={providerEntitlements}");
+    for (const source of [dashboard, read("components/home-experience.tsx")]) {
+      expect(source).not.toContain("resolveEntitlements(");
+    }
   });
 });
 
