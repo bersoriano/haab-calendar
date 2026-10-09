@@ -110,7 +110,7 @@ export function AppShell({
         {copy.skipToContent}
       </a>
 
-      <aside className="hidden border-r border-[var(--line)]/60 bg-[var(--surface-lowest)] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+      <aside data-shell-sidebar="" className="hidden border-r border-[var(--line)]/60 bg-[var(--surface-lowest)] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
         {sidebar}
       </aside>
 

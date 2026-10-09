@@ -66,8 +66,11 @@ test.describe("free provider", () => {
   test("can still use the ordinary settings", async ({ page }) => {
     await page.goto("/dashboard/settings");
 
-    // Gating premium must not break the rest of the dashboard.
-    await expect(page.getByLabel(/Business name|Nombre del negocio/)).toBeVisible();
+    // Gating premium must not break the rest of the dashboard: the profile
+    // is editable, and an edit is offered for saving.
+    const businessName = page.getByLabel(/Business name|Nombre del negocio/);
+    await expect(businessName).toBeVisible();
+    await businessName.fill(`${await businessName.inputValue()} `);
     await expect(page.getByRole("button", { name: /Save changes|Guardar cambios/ })).toBeVisible();
   });
 

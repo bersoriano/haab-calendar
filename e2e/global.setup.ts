@@ -85,9 +85,12 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
 
   if (providerError) throw providerError;
 
+  // A description, like every service the dashboard can save: the store
+  // endpoint rejects a save that carries a service without one.
   await admin.from("services").insert({
     provider_id: seed.providerId,
     name: "Consultation",
+    description: "A thirty-minute visit.",
     booking_type: "appointment",
     duration_minutes: 30,
   });

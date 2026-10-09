@@ -102,7 +102,7 @@ test.describe("signed-in provider", () => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard");
 
-    const sidebar = page.locator("aside");
+    const sidebar = page.locator("aside[data-shell-sidebar]");
     const signOut = sidebar.getByRole("button", { name: /Sign out|Cerrar sesión/ });
     const [sidebarBox, signOutBox] = await Promise.all([
       sidebar.boundingBox(),
