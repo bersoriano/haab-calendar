@@ -58,7 +58,6 @@ import {
   DEFAULT_STORAGE_KEY,
 } from "@/lib/constants";
 import { cn, createId, currentTimestamp, pad, slugify } from "@/lib/utils";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 import { buildProviderPath, getPublicVerticalSegment, getServiceSlug } from "@/lib/public-url";
 import {
   toMinutes,
@@ -148,7 +147,6 @@ import {
   shouldCollapsePublicProgressIndicator,
 } from "@/lib/public-booking-step-scroll";
 import {
-  adminChoiceQuietClass,
   adminFieldClass,
   adminInsetClass,
   adminPanelClass,
@@ -199,7 +197,11 @@ import { BookingNotePanel, type BookingNoteStatus } from "@/components/booking/B
 import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
-import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
+import { AppointmentScannerDialog } from "@/components/provider/AppointmentScannerDialog";
+import { AdminCalendar } from "@/components/provider/AdminCalendar";
+import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
+import { RescheduleBookingDialog } from "@/components/provider/RescheduleBookingDialog";
+import { ToastOnChange } from "@/components/provider/ToastOnChange";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import { AppointmentAbout } from "@/components/booking/AppointmentAbout";
 import {
@@ -552,6 +554,9 @@ export function HaabBookingModule({
     null,
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
+  // Dashboard-only confirmations (link copied, cancel, reschedule), toasted
+  // once per id.
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(null);
   const [isCalendarQrModalOpen, setIsCalendarQrModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedManageLink, setCopiedManageLink] = useState(false);
@@ -621,6 +626,17 @@ export function HaabBookingModule({
     providerDashboardLanguage: storedProvider.dashboardLanguage,
     viewerLanguage,
   });
+  // Dashboard confirmations speak the owner's workspace language even while
+  // the in-app booking flow shows the public page in the clients' language.
+  const workspaceCopy =
+    dashboardCopy[
+      resolveSurfaceLanguage({
+        surface: "management",
+        publicLanguage,
+        providerDashboardLanguage: storedProvider.dashboardLanguage,
+        viewerLanguage,
+      })
+    ];
   const localizedPublicContent = localizePublicExampleContent(
     storedProvider,
     storedServices,
@@ -3326,6 +3342,9 @@ export function HaabBookingModule({
     }
 
     setRescheduleState(null);
+    if (!isDedicatedPublicPage) {
+      setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.rescheduledToast }));
+    }
   }
 
   async function confirmCancellation() {
@@ -3392,12 +3411,18 @@ export function HaabBookingModule({
     commitBookingMutation(validationStore, bookingToCommit);
     setCancellationId(null);
     setCancellationError(null);
+    if (!isDedicatedPublicPage) {
+      setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.cancelledToast }));
+    }
   }
 
   async function copyPublicLink() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
       setCopiedLink(true);
+      if (!isDedicatedPublicPage) {
+        setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.linkCopiedToast }));
+      }
       window.setTimeout(() => setCopiedLink(false), 1600);
     } catch {
       setCopiedLink(false);
@@ -3831,93 +3856,28 @@ export function HaabBookingModule({
   }
 
   function renderAdminCalendar() {
-    const weeks = createMonthMatrix(calendarMonthAnchor);
     const today = todayKey();
-    const navButtonClass =
-      "inline-flex h-11 min-w-11 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-3 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]";
+    const weekdayFormatter = getWeekdayShortFormatter(lang);
 
     return (
-      <section className={cn(adminPanelClass, "p-3 sm:p-6")}>
-        <div className="flex flex-col gap-3 px-1 sm:px-0 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label={t.publicFlow.previous}
-              className={navButtonClass}
-              onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
-            >
-              <CaretLeft aria-hidden="true" size={18} />
-            </button>
-            <button
-              type="button"
-              className={navButtonClass}
-              onClick={() => setCalendarMonthAnchor(new Date())}
-            >
-              {t.publicFlow.today}
-            </button>
-            <button
-              type="button"
-              aria-label={t.publicFlow.next}
-              className={navButtonClass}
-              onClick={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
-            >
-              <CaretRight aria-hidden="true" size={18} />
-            </button>
-            <h2
-              aria-live="polite"
-              className="ml-1 whitespace-nowrap text-base font-semibold capitalize tracking-[-0.02em] text-[var(--ink)] sm:ml-2 sm:text-xl"
-            >
-              {formatMonthLabel(calendarMonthAnchor, lang)}
-            </h2>
-          </div>
-          {services.length > 0 ? (
-            <select
-              value={activeCalendarService?.id ?? ""}
-              onChange={(event) => setCalendarServicePreference(event.target.value)}
-              aria-label={t.admin.newBookingPrefix}
-              className={cn("min-h-11 text-sm lg:max-w-xs", adminFieldClass)}
-            >
-              {services.map((service) => (
-                <option key={service.id} value={service.id}>
-                  {t.admin.newBookingPrefix}: {service.name}
-                </option>
-              ))}
-            </select>
-          ) : null}
-        </div>
+      <AdminCalendar
+        lang={lang}
+        copy={copy}
+        monthLabel={formatMonthLabel(calendarMonthAnchor, lang)}
+        weekdayLabels={WEEKDAY_KEYS.map((day) =>
+          weekdayFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`)),
+        )}
+        weeks={createMonthMatrix(calendarMonthAnchor).map((week) =>
+          week.map((date) => {
+            const dateKey = getDateKey(date);
 
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 px-1 text-xs text-[var(--muted)] sm:px-0">
-          <p>{copy.phrases.addBookingHint}</p>
-          <div className="flex flex-wrap gap-3 font-medium">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
-              {getBookingTypeLabel("appointment", lang)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--full-day)]" />
-              {getBookingTypeLabel("full-day", lang)}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/40" />
-              {t.publicFlow.open}
-            </span>
-          </div>
-        </div>
-
-        <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--muted)] sm:gap-2 sm:text-xs sm:tracking-[0.18em]">
-          {WEEKDAY_KEYS.map((day) => (
-            <p key={day}>{getWeekdayShortFormatter(lang).format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`))}</p>
-          ))}
-        </div>
-
-        <div className="mt-2 grid gap-1 sm:gap-2">
-          {weeks.map((week) => (
-            <div key={week[0].toISOString()} className="grid grid-cols-7 gap-1 sm:gap-2">
-              {week.map((date) => {
-                const dateKey = getDateKey(date);
-                const dayBookings = getBookingsForDate(bookings, dateKey);
-                const canTest =
-                  activeCalendarService &&
+            return {
+              dateKey,
+              dayOfMonth: date.getDate(),
+              inMonth: date.getMonth() === calendarMonthAnchor.getMonth(),
+              isToday: dateKey === today,
+              open: Boolean(
+                activeCalendarService &&
                   isDateAvailable(
                     dateKey,
                     activeCalendarService,
@@ -3925,87 +3885,32 @@ export function HaabBookingModule({
                     bookings,
                     undefined,
                     activeBookingHolds,
-                  );
-                const inMonth = date.getMonth() === calendarMonthAnchor.getMonth();
-                const isToday = dateKey === today;
-                const hiddenOnPhone = Math.max(0, dayBookings.length - 3);
-
-                return (
-                  <button
-                    key={dateKey}
-                    type="button"
-                    disabled={!activeCalendarService || !canTest}
-                    onClick={() =>
-                      activeCalendarService
-                        ? launchPublicFlow({
-                            serviceId: activeCalendarService.id,
-                            dateKey,
-                            step: 2,
-                          })
-                        : undefined
-                    }
-                    className={cn(
-                      "flex min-h-[64px] min-w-0 flex-col rounded-xl p-1.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] sm:min-h-[116px] sm:rounded-[22px] sm:p-3",
-                      canTest
-                        ? "bg-[var(--accent-soft)] ring-1 ring-[var(--accent)]/25 hover:shadow-[0_18px_48px_rgba(15,23,42,0.08)]"
-                        : cn(adminChoiceQuietClass, "cursor-default"),
-                      !inMonth && "opacity-55",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-1">
-                      <span
-                        className={cn(
-                          "grid h-6 min-w-6 place-items-center rounded-full text-xs font-semibold sm:h-7 sm:min-w-7 sm:text-sm",
-                          isToday
-                            ? "bg-[var(--primary)] px-1.5 text-white"
-                            : "text-[var(--ink)]",
-                        )}
-                      >
-                        {date.getDate()}
-                      </span>
-                      {canTest ? (
-                        <span className="hidden sm:inline-flex">
-                          <ToneBadge tone="primary">{t.publicFlow.open}</ToneBadge>
-                        </span>
-                      ) : null}
-                    </div>
-                    {/* Chips on wider screens; dots on phones, with the text
-                        kept for screen readers. */}
-                    <div className="mt-1.5 flex flex-wrap gap-1 sm:mt-3 sm:grid sm:gap-2">
-                      {dayBookings.map((booking, index) => (
-                        <div
-                          key={booking.id}
-                          className={cn(
-                            "h-1.5 w-1.5 rounded-full sm:h-auto sm:w-auto sm:rounded-2xl sm:px-3 sm:py-2 sm:text-xs sm:font-medium",
-                            index >= 3 && "hidden sm:block",
-                            booking.bookingType === "full-day"
-                              ? "bg-[var(--full-day)] sm:text-[var(--background)]"
-                              : "bg-[var(--accent)] sm:bg-[var(--panel-glass-92)] sm:text-[var(--accent)]",
-                          )}
-                        >
-                          <span className="sr-only sm:not-sr-only sm:block sm:font-semibold">
-                            {booking.bookingType === "full-day"
-                              ? getBookingTypeLabel("full-day", lang)
-                              : formatTimeLabel(booking.startTime, lang)}
-                          </span>
-                          <span className="sr-only sm:not-sr-only sm:mt-1 sm:block sm:truncate">
-                            {booking.serviceName}
-                          </span>
-                        </div>
-                      ))}
-                      {hiddenOnPhone > 0 ? (
-                        <span aria-hidden="true" className="text-[10px] font-semibold leading-none text-[var(--muted)] sm:hidden">
-                          +{hiddenOnPhone}
-                        </span>
-                      ) : null}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </section>
+                  ),
+              ),
+              bookings: getBookingsForDate(bookings, dateKey).map((booking) => ({
+                id: booking.id,
+                type: booking.bookingType,
+                label:
+                  booking.bookingType === "full-day"
+                    ? getBookingTypeLabel("full-day", lang)
+                    : formatTimeLabel(booking.startTime, lang),
+                serviceName: booking.serviceName,
+              })),
+            };
+          }),
+        )}
+        services={services.map((service) => ({ id: service.id, name: service.name }))}
+        selectedServiceId={activeCalendarService?.id ?? ""}
+        onServiceChange={setCalendarServicePreference}
+        onPrevious={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
+        onToday={() => setCalendarMonthAnchor(new Date())}
+        onNext={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
+        onOpenDay={(dateKey) =>
+          activeCalendarService
+            ? launchPublicFlow({ serviceId: activeCalendarService.id, dateKey, step: 2 })
+            : undefined
+        }
+      />
     );
   }
 
@@ -6735,6 +6640,36 @@ export function HaabBookingModule({
       return null;
     }
 
+    if (!isDedicatedPublicPage) {
+      return (
+        <CancelBookingDialog
+          open
+          lang={lang}
+          copy={copy}
+          serviceName={
+            services.find((service) => service.id === booking.serviceId)?.name ?? booking.serviceName
+          }
+          clientName={booking.clientName}
+          whenLabel={`${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(
+            booking.startTime,
+            booking.endTime,
+            lang,
+          )}`}
+          pending={isMutatingBooking}
+          error={cancellationError}
+          onConfirm={() => void confirmCancellation()}
+          onKeep={() => {
+            setCancellationId(null);
+            setCancellationError(null);
+          }}
+        />
+      );
+    }
+
+    // Public pages only from here (the dashboard returned its own dialog
+    // above). Kept byte-identical for the public flow, so the admin arms of
+    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
+    // cleanup.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4">
         <div
@@ -6824,6 +6759,82 @@ export function HaabBookingModule({
           )
         : [];
 
+    if (!isDedicatedPublicPage) {
+      const weekdayFormatter = getWeekdayShortFormatter(lang);
+      const currentMonth = new Date().getMonth();
+
+      return (
+        <RescheduleBookingDialog
+          open
+          lang={lang}
+          copy={copy}
+          serviceName={service.name}
+          clientName={booking.clientName}
+          serviceDescription={service.description}
+          appointment={service.bookingType === "appointment"}
+          windowLabel={rescheduleWindowLabel}
+          weekdayLabels={WEEKDAY_KEYS.map((day) =>
+            weekdayFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`)),
+          )}
+          weeks={weeks.map((week) =>
+            week.map((date) => {
+              const dateKey = getDateKey(date);
+              return {
+                dateKey,
+                dayOfMonth: date.getDate(),
+                inMonth: date.getMonth() === currentMonth,
+                available: isDateAvailable(
+                  dateKey,
+                  service,
+                  availability,
+                  bookings,
+                  booking.id,
+                  activeBookingHolds,
+                ),
+                selected: rescheduleState.dateKey === dateKey,
+              };
+            }),
+          )}
+          selectedDateLabel={formatCompactDate(rescheduleState.dateKey, lang)}
+          slots={slots.map((slot) => ({
+            value: slot,
+            label: formatTimeLabel(slot, lang),
+            selected: rescheduleState.time === slot,
+          }))}
+          pending={isMutatingBooking}
+          error={rescheduleState.error}
+          canSave={
+            !isMutatingBooking &&
+            Boolean(rescheduleState.dateKey) &&
+            (service.bookingType !== "appointment" || Boolean(rescheduleState.time))
+          }
+          onToday={() =>
+            setRescheduleState((current) =>
+              current
+                ? { ...current, dateKey: todayKey(), time: "", monthAnchor: new Date(), error: undefined }
+                : current,
+            )
+          }
+          onSelectDay={(dateKey) =>
+            setRescheduleState((current) =>
+              current
+                ? { ...current, dateKey, time: "", monthAnchor: parseDateKey(dateKey), error: undefined }
+                : current,
+            )
+          }
+          onSelectSlot={(time) =>
+            setRescheduleState((current) => (current ? { ...current, time, error: undefined } : current))
+          }
+          onSave={() => void confirmReschedule()}
+          onClose={() => setRescheduleState(null)}
+        />
+      );
+    }
+
+    // Public pages only from here (the dashboard returned its own dialog
+    // above). Kept byte-identical for the public flow, so the admin arms of
+    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
+    // cleanup.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8">
         <div
@@ -7200,6 +7211,7 @@ export function HaabBookingModule({
       />
       {renderCancellationModal()}
       {renderRescheduleModal()}
+      <ToastOnChange notice={notice} />
     </>
   );
 

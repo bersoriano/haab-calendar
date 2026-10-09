@@ -9,6 +9,15 @@ const MIGRATED_TO_APP_UI = [
   "components/app-shell/**/*.{ts,tsx}",
   "components/provider/DashboardApp.tsx",
   "components/provider/SaveBar.tsx",
+  "components/provider/CampaignBadge.tsx",
+  "components/provider/DashboardOverview.tsx",
+  "components/provider/BookingsList.tsx",
+  "components/provider/AdminCalendar.tsx",
+  "components/provider/ProviderAnalyticsSurface.tsx",
+  "components/provider/CancelBookingDialog.tsx",
+  "components/provider/RescheduleBookingDialog.tsx",
+  "components/provider/ToastOnChange.tsx",
+  "components/provider/AppointmentScannerDialog.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

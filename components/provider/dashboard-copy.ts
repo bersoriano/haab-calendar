@@ -25,6 +25,16 @@ export type DashboardShellCopy = {
   opensInNewTab: string;
   /** Toast after the save bar's save goes through. */
   changesSaved: string;
+  /** Toast after a booking is cancelled from the dashboard. */
+  cancelledToast: string;
+  /** Toast after a booking is moved from the dashboard. */
+  rescheduledToast: string;
+  /** Link under a stat to the list it counts. */
+  viewAll: string;
+  /** Label of a dialog's close button. */
+  closeDialog: string;
+  /** Read after a calendar day's "+N" overflow count. */
+  moreBookings: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -162,6 +172,11 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     dismiss: "Dismiss notification",
     opensInNewTab: "(opens in a new tab)",
     changesSaved: "Changes saved",
+    cancelledToast: "Cancellation saved",
+    rescheduledToast: "New time saved",
+    viewAll: "View all",
+    closeDialog: "Close",
+    moreBookings: "more",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -322,6 +337,11 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     dismiss: "Cerrar aviso",
     opensInNewTab: "(se abre en una pestaña nueva)",
     changesSaved: "Cambios guardados",
+    cancelledToast: "Cancelación guardada",
+    rescheduledToast: "Nuevo horario guardado",
+    viewAll: "Ver todo",
+    closeDialog: "Cerrar",
+    moreBookings: "más",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

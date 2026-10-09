@@ -116,4 +116,18 @@ describe("DashboardOverview", () => {
     expect(html).toContain(dashboardCopy.es.bookingPageTitle);
     expect(html).not.toContain(dashboardCopy.en.bookingPageTitle);
   });
+
+  it("links the upcoming and services stats to their sections", () => {
+    const html = render();
+    expect(html).toMatch(/<a[^>]*href="\/dashboard\/bookings"[^>]*>View all<span class="sr-only"> /);
+    expect(html).toMatch(/<a[^>]*href="\/dashboard\/services"[^>]*>View all<span class="sr-only"> /);
+  });
+
+  it("copies the booking link from a named button beside the URL", () => {
+    const html = render();
+    expect(html).toMatch(new RegExp(`<button[^>]*aria-label="${en.publicFlow.copyLink}"`));
+    expect(html).toContain('value="/doctors/ana"');
+    expect(html).toMatch(/readonly=""/i);
+  });
 });
+

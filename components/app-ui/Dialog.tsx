@@ -34,19 +34,34 @@ export function shouldCloseFromBackdrop(startedOnBackdrop: boolean, endedOnBackd
 export function reconcileNativeClose({
   dialog,
   isOpen,
+  selfClosed = () => false,
   onClose,
   defer,
 }: {
-  dialog: { open: boolean; showModal: () => void };
+  dialog: { open: boolean; isConnected: boolean; showModal: () => void };
   isOpen: () => boolean;
+  /**
+   * True when this close event answers the component's own close() (on
+   * unmount, or StrictMode's simulated cleanup); reading it consumes it.
+   */
+  selfClosed?: () => boolean;
   onClose: () => void;
   defer: (run: () => void) => void;
 }) {
-  if (!isOpen()) return;
+  if (selfClosed() || !isOpen() || !dialog.isConnected) return;
   onClose();
   defer(() => {
-    if (isOpen() && !dialog.open) dialog.showModal();
+    if (isOpen() && !dialog.open && dialog.isConnected) dialog.showModal();
   });
+}
+
+/**
+ * Where focus returns on close: the control that opened the dialog, or —
+ * when that control is gone (a cancelled row hides its actions) — a stable
+ * fallback, so focus never drops to <body>.
+ */
+export function focusAfterClose<T extends { isConnected: boolean }>(opener: T | null, fallback: T | null): T | null {
+  return opener?.isConnected ? opener : fallback;
 }
 
 const SIZES = { sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-3xl" } as const;
@@ -84,6 +99,8 @@ export function Dialog({
   const openRef = useRef(open);
   const onCloseRef = useRef(onClose);
   const pressStartedOnBackdrop = useRef(false);
+  // Set when the component itself calls close(), whose close event arrives later.
+  const closedBySelf = useRef(false);
 
   useEffect(() => {
     openRef.current = open;
@@ -100,9 +117,12 @@ export function Dialog({
     const releaseScroll = pageScrollLock.acquire();
 
     return () => {
-      if (dialog.open) dialog.close();
+      if (dialog.open) {
+        closedBySelf.current = true;
+        dialog.close();
+      }
       releaseScroll();
-      opener?.focus();
+      focusAfterClose(opener, document.getElementById("main-content"))?.focus();
     };
   }, [open]);
 
@@ -135,6 +155,11 @@ export function Dialog({
         reconcileNativeClose({
           dialog: event.currentTarget,
           isOpen: () => openRef.current,
+          selfClosed: () => {
+            const self = closedBySelf.current;
+            closedBySelf.current = false;
+            return self;
+          },
           onClose: () => onCloseRef.current(),
           defer: (run) => window.setTimeout(run, 0),
         })

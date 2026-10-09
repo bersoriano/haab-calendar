@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   AppointmentScannerDialog,
   AppointmentScanResult,
-} from "@/components/booking/AppointmentScanner";
+} from "@/components/provider/AppointmentScannerDialog";
 import type { BookingRecord } from "@/lib/types";
 
 const booking: BookingRecord = {
@@ -36,6 +36,18 @@ describe("appointment scan result", () => {
     expect(html).toContain("Point camera at customer appointment QR");
     expect(html).toContain("Upload QR image");
     expect(html).toContain('accept="image/*"');
+    // Focus lands on the hidden file input; its label shows the ring.
+    expect(html).toMatch(/<label[^>]*has-\[:focus-visible\]:outline-2/);
+  });
+
+  it("is a native dialog named by its title", () => {
+    const html = renderToStaticMarkup(
+      <AppointmentScannerDialog open onClose={() => undefined} lang="es" />,
+    );
+    const labelledBy = html.match(/^<dialog[^>]*aria-labelledby="([^"]+)"/)?.[1];
+    expect(labelledBy).toBeTruthy();
+    expect(html).toMatch(new RegExp(`id="${labelledBy}"[^>]*>Escanear cita<`));
+    expect(html).toContain('aria-label="Cerrar"');
   });
 
   it("shows facts admin needs to verify appointment", () => {
@@ -48,6 +60,7 @@ describe("appointment scan result", () => {
     expect(html).toContain("555-0100");
     expect(html).toContain("Bring lab results");
     expect(html).toContain("Confirmed");
+    expect(html).toContain("bg-app-success-soft");
   });
 
   it("uses Spanish scan-result labels", () => {

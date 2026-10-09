@@ -57,6 +57,21 @@ describe("StatGroup", () => {
   });
 });
 
+describe("Stat trend", () => {
+  it("colors a change by direction and keeps its words", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Visits" value={40} trend={{ label: "+25% vs previous 7 days", direction: "up" }} />
+        <Stat label="Bookings" value={3} trend={{ label: "-25% vs previous 7 days", direction: "down" }} />
+        <Stat label="Rate" value="5%" trend={{ label: "0 pts", direction: "flat" }} />
+      </StatGroup>,
+    );
+    expect(html).toMatch(/<dd[^>]*text-app-success-fg[^>]*>\+25% vs previous 7 days<\/dd>/);
+    expect(html).toMatch(/<dd[^>]*text-app-danger-fg[^>]*>-25% vs previous 7 days<\/dd>/);
+    expect(html).toMatch(/<dd[^>]*text-app-fg-muted[^>]*>0 pts<\/dd>/);
+  });
+});
+
 describe("Stat link", () => {
   it("links the stat with an accessible name that includes its label", () => {
     const html = renderToStaticMarkup(
@@ -72,6 +87,15 @@ describe("Stat link", () => {
     const element = Stat({ label: "Services", value: 1, href: "/dashboard/services", linkLabel: "View", onClick });
     const html = renderToStaticMarkup(<StatGroup>{element}</StatGroup>);
     expect(html).toContain('href="/dashboard/services"');
+  });
+
+  it("keeps the link a 44px target on phones", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Upcoming" value={3} href="/dashboard/bookings" linkLabel="View all" />
+      </StatGroup>,
+    );
+    expect(html).toMatch(/<a[^>]*class="[^"]*min-h-11[^"]*sm:min-h-0/);
   });
 
   it("renders no link without an href", () => {
@@ -150,6 +174,8 @@ describe("StackedList", () => {
     );
     expect(html).toMatch(/<h3[^>]*id="today"[^>]*>Today<\/h3>/);
     expect(html).toContain("sticky");
+    // Offset comes from the host: the shell sets it to its top bar's height.
+    expect(html).toContain("top-[var(--app-sticky-top,0px)]");
     expect(html).toMatch(/<ul[^>]*role="list"/);
     expect(html).toContain("<li");
   });

@@ -49,3 +49,6 @@ blob-report/
 
 # Local tutorials — working notes, deliberately not tracked
 docs/tutorials/
+
+# Local-only public screenshot baselines (machine-specific fonts)
+e2e/public-visual.spec.ts-snapshots/

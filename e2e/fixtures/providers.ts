@@ -15,7 +15,9 @@ export type E2ERole =
   | "freeGranted"
   | "billingInactive"
   | "businessTypeSwitch"
-  | "businessTypeBlocked";
+  | "businessTypeBlocked"
+  | "bookingActions"
+  | "publicManage";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -36,6 +38,12 @@ export type E2EProviderSeed = {
   }>;
   /** Seeds one confirmed booking a week from today. */
   upcomingBooking?: boolean;
+  /** Pins that booking to a fixed date, for screenshots that must not drift. */
+  bookingDate?: string;
+  /** A known manage-link token for that booking (stored hashed, as in production). */
+  manageToken?: string;
+  /** A fixed booking id: the public reference shown on the manage page derives from it. */
+  bookingId?: string;
 };
 
 export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
@@ -117,6 +125,33 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     slug: "busy-clinic-e2e",
     legacyPlanTier: "free",
     upcomingBooking: true,
+  },
+  {
+    // Its booking is rescheduled and cancelled by the dashboard toast spec;
+    // nothing else may depend on it.
+    role: "bookingActions",
+    email: "booking-actions@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e08",
+    providerId: "00000000-0000-4000-8000-0000000e2ea8",
+    businessName: "Booking Actions E2E",
+    slug: "booking-actions-e2e",
+    legacyPlanTier: "free",
+    upcomingBooking: true,
+  },
+  {
+    // Read-only: the public visual guard screenshots its manage page and
+    // opens (never confirms) the public cancel dialog.
+    role: "publicManage",
+    email: "public-manage@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e09",
+    providerId: "00000000-0000-4000-8000-0000000e2ea9",
+    businessName: "Manage Page E2E",
+    slug: "manage-page-e2e",
+    legacyPlanTier: "free",
+    upcomingBooking: true,
+    bookingDate: "2027-01-15",
+    manageToken: "e2e-public-manage-token",
+    bookingId: "00000000-0000-4000-8000-0000000eb009",
   },
 ];
 

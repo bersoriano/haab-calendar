@@ -1,10 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { ChartLineUp, Check, Copy } from "@phosphor-icons/react";
+import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  EmptyState,
+  Field,
+  Input,
+  SegmentedControl,
+  Stat,
+  StatGroup,
+  TBody,
+  THead,
+  Table,
+  Td,
+  Th,
+  Tr,
+} from "@/components/app-ui";
 import { analyticsCopy, type AnalyticsCopy } from "@/components/provider/analytics-copy";
-import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
-import { ActionButton, Alert, EmptyState, SectionTitle } from "@/components/ui";
 import {
   ANALYTICS_RANGES,
   DEFAULT_ANALYTICS_RANGE,
@@ -22,7 +41,6 @@ import {
 } from "@/lib/analytics/summary";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /** Tagged with the request it answers, so a stale answer reads as loading. */
 type LoadState =
@@ -55,7 +73,14 @@ export function ProviderAnalyticsSurface({
   const t = analyticsCopy[lang];
 
   if (!integratedMode) {
-    return <EmptyState title={t.previewTitle} body={t.previewBody} />;
+    return (
+      <EmptyState
+        variant="dashed"
+        icon={<ChartLineUp aria-hidden="true" size={32} />}
+        title={t.previewTitle}
+        body={t.previewBody}
+      />
+    );
   }
 
   // Premium is granted by Stripe's webhook, which can land after the redirect.
@@ -92,7 +117,9 @@ function CheckoutResultBanner({
       role="status"
       actions={
         awaitingPremium ? (
-          <ActionButton onClick={() => window.location.reload()}>{t.checkoutRefresh}</ActionButton>
+          <Button size="sm" onClick={() => window.location.reload()}>
+            {t.checkoutRefresh}
+          </Button>
         ) : undefined
       }
     >
@@ -142,45 +169,33 @@ function AnalyticsDashboard({
 
   return (
     <div className="space-y-6">
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle
+      <Card as="section">
+        <CardHeader
           title={t.title}
-          body={t.body}
-          action={
-            <div className="flex gap-2" role="group" aria-label={t.title}>
-              {ANALYTICS_RANGES.map((days) => (
-                <button
-                  key={days}
-                  type="button"
-                  aria-pressed={range === days}
-                  onClick={() => setRange(days)}
-                  className={cn(
-                    "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                    range === days
-                      ? "bg-[var(--ink)] text-[var(--background)]"
-                      : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:text-[var(--ink)]",
-                  )}
-                >
-                  {t.rangeLabel(days)}
-                </button>
-              ))}
-            </div>
+          description={t.body}
+          actions={
+            <SegmentedControl
+              ariaLabel={t.title}
+              value={String(range)}
+              onChange={(value) => setRange(Number(value) as AnalyticsRange)}
+              options={ANALYTICS_RANGES.map((days) => ({ value: String(days), label: t.rangeLabel(days) }))}
+            />
           }
         />
-        <p className="mt-4 text-xs leading-5 text-[var(--muted)]">{t.privacyNote}</p>
-      </div>
+        <CardBody className="py-3">
+          <p className="text-xs text-app-fg-muted">{t.privacyNote}</p>
+        </CardBody>
+      </Card>
 
       {!state ? (
-        <p className="text-sm text-[var(--muted)]" role="status">
+        <p className="text-sm text-app-fg-muted" role="status">
           {t.loading}
         </p>
       ) : state.status === "error" ? (
         <EmptyState
+          variant="dashed"
           title={t.loadFailed}
-          body=""
-          action={
-            <ActionButton onClick={() => setReloadKey((key) => key + 1)}>{t.retry}</ActionButton>
-          }
+          action={<Button onClick={() => setReloadKey((key) => key + 1)}>{t.retry}</Button>}
         />
       ) : isAnalyticsTeaser(state.summary) ? (
         <AnalyticsTeaserReport teaser={state.summary} lang={lang} />
@@ -227,19 +242,11 @@ export function AnalyticsTeaserReport({ teaser, lang }: { teaser: AnalyticsTease
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <StatGroup columns={2}>
         {stats.map((stat) => (
-          <div key={stat.label} className={cn(adminInsetClass, "p-5")}>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-              {stat.label}
-            </p>
-            <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-              {stat.value}
-            </p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
-          </div>
+          <Stat key={stat.label} label={stat.label} value={stat.value} detail={stat.detail} />
         ))}
-      </div>
+      </StatGroup>
 
       <div className="relative">
         <div
@@ -284,32 +291,29 @@ function UpgradeCard({ t }: { t: AnalyticsCopy }) {
   }, []);
 
   return (
-    <div className={cn(adminPanelClass, "w-full max-w-md p-6 text-center")}>
-      <h4 className="text-lg font-semibold text-[var(--ink)]">{t.premiumTitle}</h4>
-      <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{t.premiumBody}</p>
-      <ul className="mt-4 space-y-1.5 text-left text-sm text-[var(--ink)]">
+    <Card className="w-full max-w-md p-6 text-center shadow-lg">
+      <h3 className="text-lg font-semibold text-app-fg">{t.premiumTitle}</h3>
+      <p className="mt-2 text-sm text-app-fg-muted">{t.premiumBody}</p>
+      <ul className="mt-4 space-y-1.5 text-left text-sm text-app-fg">
         {t.premiumBenefits.map((benefit) => (
           <li key={benefit} className="flex gap-2">
-            <span aria-hidden="true" className="text-[var(--primary)]">✓</span>
+            <Check aria-hidden="true" size={16} weight="bold" className="mt-0.5 shrink-0 text-app-accent" />
             {benefit}
           </li>
         ))}
       </ul>
-      <ActionButton
-        tone="primary"
-        className="mt-5 w-full"
-        disabled={status === "pending"}
-        onClick={startCheckout}
-      >
+      <Button className="mt-5 w-full" loading={status === "pending"} onClick={startCheckout}>
         {status === "pending" ? t.upgradePending : t.upgradeCta}
-      </ActionButton>
+      </Button>
       {status === "unavailable" ? (
-        <p className="mt-3 text-sm text-[var(--muted)]">{t.upgradeUnavailable}</p>
+        <p className="mt-3 text-sm text-app-fg-muted">{t.upgradeUnavailable}</p>
       ) : null}
       {status === "error" ? (
-        <p className="mt-3 text-sm text-[var(--danger-strong)]">{t.upgradeFailed}</p>
+        <p role="alert" className="mt-3 text-sm font-medium text-app-danger-fg">
+          {t.upgradeFailed}
+        </p>
       ) : null}
-    </div>
+    </Card>
   );
 }
 
@@ -321,7 +325,14 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
   const conversion = conversionRate(totals.bookingVisitors, totals.visitors);
 
   if (totals.views === 0 && totals.bookings === 0 && !totals.cancelledBookings) {
-    return <EmptyState title={t.emptyTitle} body={t.emptyBody} />;
+    return (
+      <EmptyState
+        variant="dashed"
+        icon={<ChartLineUp aria-hidden="true" size={32} />}
+        title={t.emptyTitle}
+        body={t.emptyBody}
+      />
+    );
   }
 
   const previous = summary.previousTotals;
@@ -377,31 +388,24 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <StatGroup columns={4}>
         {stats.map((stat) => (
-          <div key={stat.label} className={cn(adminInsetClass, "p-5")}>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-              {stat.label}
-            </p>
-            <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-              {stat.value}
-            </p>
-            <p className="mt-2 text-sm text-[var(--muted)]">{stat.detail}</p>
-            {stat.delta ? (
-              <p
-                className={cn(
-                  "mt-1 text-xs font-semibold",
-                  stat.delta.value > 0 && "text-[var(--success-strong)]",
-                  stat.delta.value < 0 && "text-[var(--danger-strong)]",
-                  stat.delta.value === 0 && "text-[var(--muted)]",
-                )}
-              >
-                {stat.delta.label}
-              </p>
-            ) : null}
-          </div>
+          <Stat
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            detail={stat.detail}
+            trend={
+              stat.delta
+                ? {
+                    label: stat.delta.label,
+                    direction: stat.delta.value > 0 ? "up" : stat.delta.value < 0 ? "down" : "flat",
+                  }
+                : undefined
+            }
+          />
         ))}
-      </div>
+      </StatGroup>
 
       {summary.bookingHealth || summary.popularTimes ? (
         <div className="grid items-start gap-5 xl:grid-cols-[0.8fr_1.2fr]">
@@ -414,81 +418,78 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
         </div>
       ) : null}
 
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title={t.dailyTitle} />
-        <div className="mt-3 flex gap-4 text-xs text-[var(--muted)]">
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="size-2.5 rounded-sm bg-[var(--primary)] opacity-35" />
-            {t.dailyLegendVisits}
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="size-2.5 rounded-sm bg-[var(--primary)]" />
-            {t.dailyLegendBookings}
-          </span>
-        </div>
-        <div className="mt-4 flex h-40 items-end gap-[2px]" role="img" aria-label={t.dailyTitle}>
-          {summary.daily.map((day) => (
-            <div
-              key={day.day}
-              className="relative flex h-full min-w-0 flex-1 items-end"
-              title={`${day.day}: ${day.views} ${t.visits.toLowerCase()}, ${day.bookings} ${t.bookings.toLowerCase()}`}
-            >
-              <div
-                className="w-full rounded-t-[3px] bg-[var(--primary)] opacity-35"
-                style={{ height: `${(day.views / maxDaily) * 100}%` }}
-              />
-              {day.bookings > 0 ? (
-                <div
-                  className="absolute inset-x-0 bottom-0 rounded-t-[3px] bg-[var(--primary)]"
-                  style={{ height: `${(Math.min(day.bookings, day.views || day.bookings) / maxDaily) * 100}%` }}
-                />
-              ) : null}
+      <Card as="section">
+        <CardHeader
+          title={t.dailyTitle}
+          actions={
+            <div className="flex gap-4 text-xs text-app-fg-muted">
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="size-2.5 rounded-sm bg-app-chart-1/35" />
+                {t.dailyLegendVisits}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="size-2.5 rounded-sm bg-app-chart-1" />
+                {t.dailyLegendBookings}
+              </span>
             </div>
-          ))}
-        </div>
-        <div className="mt-2 flex justify-between text-xs text-[var(--muted)]">
-          <span>{summary.daily[0]?.day}</span>
-          <span>{summary.daily.at(-1)?.day}</span>
-        </div>
-      </div>
+          }
+        />
+        <CardBody>
+          <div className="flex h-40 items-end gap-[2px] border-b border-app-border" role="img" aria-label={t.dailyTitle}>
+            {summary.daily.map((day) => (
+              <div
+                key={day.day}
+                className="relative flex h-full min-w-0 flex-1 items-end"
+                title={`${day.day}: ${day.views} ${t.visits.toLowerCase()}, ${day.bookings} ${t.bookings.toLowerCase()}`}
+              >
+                <div
+                  className="w-full rounded-t-sm bg-app-chart-1/35"
+                  style={{ height: `${(day.views / maxDaily) * 100}%` }}
+                />
+                {day.bookings > 0 ? (
+                  <div
+                    className="absolute inset-x-0 bottom-0 rounded-t-sm bg-app-chart-1"
+                    style={{ height: `${(Math.min(day.bookings, day.views || day.bookings) / maxDaily) * 100}%` }}
+                  />
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 flex justify-between text-xs text-app-fg-muted">
+            <span>{summary.daily[0]?.day}</span>
+            <span>{summary.daily.at(-1)?.day}</span>
+          </div>
+        </CardBody>
+      </Card>
 
-      <div className="grid items-start gap-5 xl:grid-cols-2">
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={t.funnelTitle} body={t.funnelBody} />
-          <ol className="mt-5 space-y-3">
-            {t.funnelSteps.map((label, index) => {
-              const value = funnel[index] ?? 0;
-              const share = conversionRate(value, funnel[0] ?? 0) ?? 0;
-              return (
-                <li key={label}>
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium text-[var(--ink)]">{label}</span>
-                    <span className="text-[var(--muted)]">
-                      {number.format(value)} · {share}%
-                    </span>
-                  </div>
-                  <div className="mt-1.5 h-2.5 rounded-full bg-[var(--panel-mute-88)]">
-                    <div
-                      className="h-full rounded-full bg-[var(--primary)]"
-                      style={{ width: `${Math.min(share, 100)}%` }}
-                    />
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        </div>
+      <div className="grid items-start gap-6 xl:grid-cols-2">
+        <Card as="section">
+          <CardHeader title={t.funnelTitle} description={t.funnelBody} />
+          <CardBody>
+            <ol className="space-y-4">
+              {t.funnelSteps.map((label, index) => {
+                const value = funnel[index] ?? 0;
+                const share = conversionRate(value, funnel[0] ?? 0) ?? 0;
+                return (
+                  <li key={label}>
+                    <Meter label={label} detail={`${number.format(value)} · ${share}%`} percent={share} />
+                  </li>
+                );
+              })}
+            </ol>
+          </CardBody>
+        </Card>
 
-        <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={t.servicesTitle} />
-          <ul className="mt-5 divide-y divide-[var(--line)]">
+        <Card as="section">
+          <CardHeader title={t.servicesTitle} />
+          <ul className="divide-y divide-app-border">
             {summary.services.length === 0 ? (
-              <li className="py-2 text-sm text-[var(--muted)]">{t.none}</li>
+              <li className="px-4 py-3 text-sm text-app-fg-muted sm:px-6">{t.none}</li>
             ) : (
               summary.services.map((service) => (
-                <li key={service.serviceId} className="flex justify-between gap-3 py-2.5 text-sm">
-                  <span className="min-w-0 truncate font-medium text-[var(--ink)]">{service.name}</span>
-                  <span className="shrink-0 text-[var(--muted)]">
+                <li key={service.serviceId} className="flex justify-between gap-3 px-4 py-3 text-sm sm:px-6">
+                  <span className="min-w-0 truncate font-medium text-app-fg">{service.name}</span>
+                  <span className="shrink-0 text-app-fg-muted tabular-nums">
                     {number.format(service.selections)} {t.selections} ·{" "}
                     {number.format(service.bookings)} {t.bookings.toLowerCase()}
                   </span>
@@ -496,67 +497,78 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
               ))
             )}
           </ul>
-        </div>
+        </Card>
       </div>
 
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title={t.campaignsTitle} body={t.campaignsBody} />
-        <div className="mt-5 overflow-x-auto">
-          <table className="w-full min-w-[520px] text-left text-sm">
-            <thead>
-              <tr className="text-xs uppercase tracking-[0.12em] text-[var(--muted)]">
-                {t.campaignColumns.map((column, index) => (
-                  <th key={column} className={cn("pb-2 font-semibold", index > 2 && "text-right")}>
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--line)]">
-              {summary.campaigns.map((row) => {
-                const untagged = !row.source && !row.medium && !row.campaign;
-                return (
-                  <tr key={`${row.source}|${row.medium}|${row.campaign}`}>
-                    {untagged ? (
-                      <td className="py-2.5 text-[var(--muted)]" colSpan={3}>
-                        {t.direct}
-                      </td>
-                    ) : (
-                      <>
-                        <td className="py-2.5 font-medium text-[var(--ink)]">{row.source ?? t.none}</td>
-                        <td className="py-2.5 text-[var(--muted)]">{row.medium ?? t.none}</td>
-                        <td className="py-2.5 text-[var(--muted)]">{row.campaign ?? t.none}</td>
-                      </>
-                    )}
-                    <td className="py-2.5 text-right">{number.format(row.views)}</td>
-                    <td className="py-2.5 text-right font-semibold text-[var(--ink)]">
-                      {number.format(row.bookings)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+      <Card as="section">
+        <CardHeader title={t.campaignsTitle} description={t.campaignsBody} />
+        <Table className="min-w-[520px]">
+          <THead>
+            <Tr>
+              {t.campaignColumns.map((column, index) => (
+                <Th key={column} align={index > 2 ? "right" : "left"}>
+                  {column}
+                </Th>
+              ))}
+            </Tr>
+          </THead>
+          <TBody>
+            {summary.campaigns.map((row) => {
+              const untagged = !row.source && !row.medium && !row.campaign;
+              return (
+                <Tr key={`${row.source}|${row.medium}|${row.campaign}`}>
+                  {untagged ? (
+                    <Td className="text-app-fg-muted">
+                      <span>{t.direct}</span>
+                    </Td>
+                  ) : (
+                    <Td className="font-medium text-app-fg">{row.source ?? t.none}</Td>
+                  )}
+                  <Td>{untagged ? "" : (row.medium ?? t.none)}</Td>
+                  <Td>{untagged ? "" : (row.campaign ?? t.none)}</Td>
+                  <Td align="right" className="tabular-nums">
+                    {number.format(row.views)}
+                  </Td>
+                  <Td align="right" className="font-semibold text-app-fg tabular-nums">
+                    {number.format(row.bookings)}
+                  </Td>
+                </Tr>
+              );
+            })}
+          </TBody>
+        </Table>
 
         {summary.referrers.length > 0 ? (
-          <div className="mt-6">
-            <h4 className="text-sm font-semibold text-[var(--ink)]">{t.referrersTitle}</h4>
+          <CardBody className="border-t border-app-border">
+            <h3 className="text-sm font-semibold text-app-fg">{t.referrersTitle}</h3>
             <ul className="mt-2 flex flex-wrap gap-2">
               {summary.referrers.map((referrer) => (
-                <li
-                  key={referrer.host}
-                  className="rounded-full bg-[var(--panel-mute-88)] px-3 py-1 text-xs text-[var(--muted)]"
-                >
-                  <span className="font-medium text-[var(--ink)]">{referrer.host}</span> ·{" "}
-                  {number.format(referrer.views)}
+                <li key={referrer.host}>
+                  <Badge tone="neutral">
+                    <span className="font-semibold">{referrer.host}</span> · {number.format(referrer.views)}
+                  </Badge>
                 </li>
               ))}
             </ul>
-          </div>
+          </CardBody>
         ) : null}
-      </div>
+      </Card>
     </div>
+  );
+}
+
+/** A labelled horizontal bar on the subtle track. */
+function Meter({ label, detail, percent }: { label: ReactNode; detail: ReactNode; percent: number }) {
+  return (
+    <>
+      <div className="flex justify-between gap-3 text-sm">
+        <span className="font-medium text-app-fg">{label}</span>
+        <span className="text-app-fg-muted tabular-nums">{detail}</span>
+      </div>
+      <div className="mt-1.5 h-2 rounded-full bg-app-subtle">
+        <div className="h-full rounded-full bg-app-chart-1" style={{ width: `${Math.min(percent, 100)}%` }} />
+      </div>
+    </>
   );
 }
 
@@ -579,34 +591,35 @@ function BookingHealthPanel({
   ];
 
   return (
-    <div className={cn(adminPanelClass, "p-6")}>
-      <SectionTitle title={t.healthTitle} body={t.healthBody} />
-      <p className="mt-5 text-sm text-[var(--muted)]">
-        {t.healthCreated}:{" "}
-        <span className="font-semibold text-[var(--ink)]">{health.created}</span>
-      </p>
-      <dl className="mt-4 space-y-3">
-        {rows.map((row) => {
-          const rate = conversionRate(row.count, health.created);
-          return (
-            <div key={row.label}>
-              <div className="flex justify-between text-sm">
-                <dt className="font-medium text-[var(--ink)]">{row.label}</dt>
-                <dd className="text-[var(--muted)]">
-                  {rate === null ? t.none : `${rate}%`} · {t.healthOf(row.count, health.created)}
-                </dd>
+    <Card as="section">
+      <CardHeader title={t.healthTitle} description={t.healthBody} />
+      <CardBody>
+        <p className="text-sm text-app-fg-muted">
+          {t.healthCreated}: <span className="font-semibold text-app-fg">{health.created}</span>
+        </p>
+        <dl className="mt-4 space-y-4">
+          {rows.map((row) => {
+            const rate = conversionRate(row.count, health.created);
+            return (
+              <div key={row.label}>
+                <div className="flex justify-between gap-3 text-sm">
+                  <dt className="font-medium text-app-fg">{row.label}</dt>
+                  <dd className="text-app-fg-muted tabular-nums">
+                    {rate === null ? t.none : `${rate}%`} · {t.healthOf(row.count, health.created)}
+                  </dd>
+                </div>
+                <div className="mt-1.5 h-2 rounded-full bg-app-subtle">
+                  <div
+                    className="h-full rounded-full bg-app-chart-2"
+                    style={{ width: `${Math.min(rate ?? 0, 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="mt-1.5 h-2.5 rounded-full bg-[var(--panel-mute-88)]">
-                <div
-                  className="h-full rounded-full bg-[var(--primary)]"
-                  style={{ width: `${Math.min(rate ?? 0, 100)}%` }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </dl>
-    </div>
+            );
+          })}
+        </dl>
+      </CardBody>
+    </Card>
   );
 }
 
@@ -628,10 +641,12 @@ export function PopularTimesPanel({
 
   if (times.length === 0) {
     return (
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title={t.timesTitle} body={t.timesBody} />
-        <p className="mt-5 text-sm text-[var(--muted)]">{t.timesEmpty}</p>
-      </div>
+      <Card as="section">
+        <CardHeader title={t.timesTitle} description={t.timesBody} />
+        <CardBody>
+          <p className="text-sm text-app-fg-muted">{t.timesEmpty}</p>
+        </CardBody>
+      </Card>
     );
   }
 
@@ -640,15 +655,15 @@ export function PopularTimesPanel({
   const max = Math.max(...times.map((time) => time.bookings));
 
   return (
-    <div className={cn(adminPanelClass, "p-6")}>
-      <SectionTitle title={t.timesTitle} body={t.timesBody} />
-      <div className="mt-5 overflow-x-auto">
+    <Card as="section">
+      <CardHeader title={t.timesTitle} description={t.timesBody} />
+      <div className="overflow-x-auto px-4 py-5 sm:px-6">
         <table className="w-full border-separate border-spacing-[3px] text-xs">
           <thead>
             <tr>
               <th className="w-10" />
               {hours.map((hour) => (
-                <th key={hour} scope="col" className="font-medium text-[var(--muted)]">
+                <th key={hour} scope="col" className="font-medium text-app-fg-muted">
                   {hour % 3 === 0 ? formatHour(hour, lang) : ""}
                 </th>
               ))}
@@ -657,7 +672,7 @@ export function PopularTimesPanel({
           <tbody>
             {t.weekdaysShort.map((weekday, index) => (
               <tr key={weekday}>
-                <th scope="row" className="pr-2 text-left font-medium text-[var(--muted)]">
+                <th scope="row" className="pr-2 text-left font-medium text-app-fg-muted">
                   {weekday}
                 </th>
                 {hours.map((hour) => {
@@ -668,11 +683,11 @@ export function PopularTimesPanel({
                       key={hour}
                       title={label}
                       aria-label={label}
-                      className="h-6 min-w-5 rounded-[4px] bg-[var(--panel-mute-88)]"
+                      className="h-6 min-w-5 rounded-sm bg-app-subtle"
                     >
                       {count > 0 ? (
                         <div
-                          className="h-full w-full rounded-[4px] bg-[var(--primary)]"
+                          className="h-full w-full rounded-sm bg-app-chart-1"
                           style={{ opacity: 0.2 + 0.8 * (count / max) }}
                         />
                       ) : null}
@@ -684,7 +699,7 @@ export function PopularTimesPanel({
           </tbody>
         </table>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -719,28 +734,32 @@ function CampaignLinkBuilder({ t, publicUrl }: { t: AnalyticsCopy; publicUrl: st
   ];
 
   return (
-    <div className={cn(adminPanelClass, "p-6")}>
-      <SectionTitle title={t.builderTitle} body={t.builderBody} />
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
-        {fields.map((field) => (
-          <label key={field.label} className="block text-sm font-medium text-[var(--ink)]">
-            {field.label}
-            <input
-              className={cn(adminFieldClass, "mt-2 w-full")}
-              value={field.value}
-              maxLength={100}
-              placeholder={field.placeholder}
-              onChange={(event) => field.set(event.target.value)}
-            />
-          </label>
-        ))}
-      </div>
-      <div className={cn(adminInsetClass, "mt-4 flex flex-col gap-3 p-4 sm:flex-row sm:items-center")}>
-        <code className="min-w-0 flex-1 break-all text-sm text-[var(--ink)]">{link}</code>
-        <ActionButton tone="primary" disabled={!link} onClick={copyLink}>
-          {copied ? t.copied : t.copy}
-        </ActionButton>
-      </div>
-    </div>
+    <Card as="section">
+      <CardHeader title={t.builderTitle} description={t.builderBody} />
+      <CardBody className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-3">
+          {fields.map((field) => (
+            <Field key={field.label} label={field.label}>
+              <Input
+                value={field.value}
+                maxLength={100}
+                placeholder={field.placeholder}
+                onChange={(event) => field.set(event.target.value)}
+              />
+            </Field>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 rounded-lg bg-app-subtle p-4 sm:flex-row sm:items-center">
+          <code className="min-w-0 flex-1 break-all text-sm text-app-fg">{link}</code>
+          <Button
+            disabled={!link}
+            onClick={copyLink}
+            leadingIcon={copied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
+          >
+            {copied ? t.copied : t.copy}
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
   );
 }

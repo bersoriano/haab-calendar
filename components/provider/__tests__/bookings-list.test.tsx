@@ -94,10 +94,12 @@ describe("BookingsList", () => {
     expect(html).toContain(`4 ${en.admin.guestsSuffix}`);
   });
 
-  it("disables actions on a cancelled booking", () => {
+  it("offers no actions on a cancelled booking", () => {
     const html = render({ bookings: [bookings[1]], totalCount: 1 });
 
-    expect(html.match(/disabled=""/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(html).not.toContain(`>${en.common.cancel}<`);
+    expect(html).not.toContain(`>${en.publicFlow.reschedule}<`);
+    expect(html).toContain(en.admin.cancelled);
   });
 
   it("hides reschedule where the booking cannot move", () => {
@@ -131,7 +133,7 @@ describe("BookingsList", () => {
     for (const lang of ["en", "es"] as const) {
       const html = render({ lang, archiveCount: 5 });
       expect(html).toContain(`aria-label="${dashboardCopy[lang].sortBookingsLabel}"`);
-      expect(html).toContain(`aria-pressed="true"`);
+      expect(html).toMatch(/role="radio"[^>]*aria-checked="true"|aria-checked="true"[^>]*role="radio"/);
       expect(html).toContain(dashboardCopy[lang].archivedBookings);
       expect(html).toContain(`value="sooner"`);
       expect(html).toContain(`value="latest"`);
@@ -143,9 +145,16 @@ describe("BookingsList", () => {
     expect(render({ bookings: [], totalCount: 0, view: "archive" })).toContain(dashboardCopy.en.noArchivedBookingsTitle);
   });
 
-  it("disables booking mutations in archive", () => {
+  it("offers no booking mutations in the archive", () => {
     const html = render({ view: "archive", bookings: [bookings[0]] });
-    expect(html.match(/disabled=""/g)?.length).toBe(2);
+    expect(html).not.toContain(`>${en.common.cancel}<`);
+    expect(html).not.toContain(`>${en.publicFlow.reschedule}<`);
+  });
+
+  it("labels each day group with a sticky heading", () => {
+    const html = render();
+    // A group, not a landmark per day: long lists would flood landmark navigation.
+    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"><h3[^>]*id="bookings-2026-10-08"[^>]*sticky/);
   });
 
   it("shows saved history policy and a path to settings", () => {

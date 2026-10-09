@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createScrollLock } from "@/components/app-ui/scroll-lock";
-import { reconcileNativeClose, shouldCloseFromBackdrop } from "@/components/app-ui/Dialog";
+import { focusAfterClose, reconcileNativeClose, shouldCloseFromBackdrop } from "@/components/app-ui/Dialog";
 
 function page(overflow = "") {
   return { style: { overflow } };
@@ -50,6 +50,7 @@ describe("reconcileNativeClose", () => {
   function fakeDialog() {
     return {
       open: false,
+      isConnected: true,
       shown: 0,
       showModal() {
         this.open = true;
@@ -81,6 +82,30 @@ describe("reconcileNativeClose", () => {
     expect(dialog.shown).toBe(1);
   });
 
+  it("ignores the close event of a close the component made itself", () => {
+    // Closing on unmount or StrictMode's simulated cleanup fires a native
+    // close event later; it must not read as the browser closing the dialog.
+    const dialog = fakeDialog();
+    let closes = 0;
+    reconcileNativeClose({
+      dialog,
+      isOpen: () => true,
+      selfClosed: () => true,
+      onClose: () => {
+        closes += 1;
+      },
+      defer: (run) => run(),
+    });
+    expect(closes).toBe(0);
+    expect(dialog.shown).toBe(0);
+  });
+
+  it("never re-shows a dialog that has left the document", () => {
+    const dialog = { ...fakeDialog(), isConnected: false };
+    reconcileNativeClose({ dialog, isOpen: () => true, onClose: () => undefined, defer: (run) => run() });
+    expect(dialog.shown).toBe(0);
+  });
+
   it("does nothing for a close the owner asked for", () => {
     const dialog = fakeDialog();
     let closes = 0;
@@ -105,3 +130,18 @@ describe("shouldCloseFromBackdrop", () => {
     expect(shouldCloseFromBackdrop(true, false)).toBe(false);
   });
 });
+
+describe("focusAfterClose", () => {
+  it("returns focus to the control that opened the dialog", () => {
+    const opener = { isConnected: true };
+    expect(focusAfterClose(opener, { isConnected: true })).toBe(opener);
+  });
+
+  it("falls back when the opener is gone (e.g. a cancelled row hides its actions)", () => {
+    const fallback = { isConnected: true };
+    expect(focusAfterClose({ isConnected: false }, fallback)).toBe(fallback);
+    expect(focusAfterClose(null, fallback)).toBe(fallback);
+    expect(focusAfterClose(null, null)).toBeNull();
+  });
+});
+
