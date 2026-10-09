@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   getAvailableSlots,
   isDateAvailable,
+  normalizeDailyBookingLimit,
 } from "@/lib/availability";
 import {
   addDays,
@@ -38,7 +39,7 @@ import type {
 } from "@/lib/types";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, timezone, booking_window_days, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
@@ -59,6 +60,7 @@ type ProviderRow = {
   public_theme: string | null;
   timezone: string;
   booking_window_days: number;
+  max_bookings_per_day: number | null;
   availability: WeeklyAvailability;
   setup_complete: boolean;
   phone_number_1: string | null;
@@ -279,6 +281,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
     // "UTC" is the column default, so it reads back as "never chosen" — the
     // dashboard then offers the detected zone instead of looking configured.
     timezone: isUnsetTimeZone(row.timezone) ? "" : normalizeTimeZone(row.timezone),
+    maxBookingsPerDay: normalizeDailyBookingLimit(row.max_bookings_per_day) ?? undefined,
   };
 }
 
@@ -481,7 +484,7 @@ function assertSlotAvailable(options: {
         ignoredBookingId,
         bookingHolds,
         ignoredHoldId,
-        { timeZone: provider.timezone },
+        { timeZone: provider.timezone, dailyBookingLimit: provider.max_bookings_per_day ?? undefined },
       ).includes(time)
     ) {
       throw new PublicBookingWriteError(
@@ -501,7 +504,7 @@ function assertSlotAvailable(options: {
       ignoredBookingId,
       bookingHolds,
       ignoredHoldId,
-      { timeZone: provider.timezone },
+      { timeZone: provider.timezone, dailyBookingLimit: provider.max_bookings_per_day ?? undefined },
     )
   ) {
     throw new PublicBookingWriteError(
@@ -528,6 +531,18 @@ function isCapacityViolation(error: unknown) {
       error.message.includes("Event capacity is full"))
   );
 }
+
+/** Raised by the bookings trigger when a date already has its daily maximum. */
+function isDailyLimitViolation(error: unknown) {
+  return (
+    isPlainRecord(error) &&
+    error.code === "23514" &&
+    typeof error.message === "string" &&
+    error.message.includes("HAAB_DAILY_LIMIT")
+  );
+}
+
+const DAILY_LIMIT_MESSAGE = "That day is now fully booked. Choose another day.";
 
 export async function getPublishedProvider(
   supabase: SupabaseClient,
@@ -1167,6 +1182,9 @@ export async function confirmPublicBooking(
     .single<BookingRow>();
 
   if (error) {
+    if (isDailyLimitViolation(error)) {
+      throw new PublicBookingWriteError(DAILY_LIMIT_MESSAGE, 409, error);
+    }
     if (isUniqueViolation(error) || isCapacityViolation(error)) {
       throw new PublicBookingWriteError(
         isCapacityViolation(error)
@@ -1418,6 +1436,9 @@ async function rescheduleBookingRow(
     .single<BookingRow>();
 
   if (error) {
+    if (isDailyLimitViolation(error)) {
+      throw new PublicBookingWriteError(DAILY_LIMIT_MESSAGE, 409, error);
+    }
     if (isUniqueViolation(error) || isExclusionViolation(error)) {
       throw new PublicBookingWriteError(
         "That time was just booked. Choose another slot.",

@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { normalizePublicTheme } from "@/lib/public-theme";
+import { normalizeDailyBookingLimit } from "@/lib/availability";
 import { isUnsetTimeZone } from "@/lib/timezone";
 import {
   addDays,
@@ -33,7 +34,7 @@ import type {
 } from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, public_theme, timezone, booking_window_days, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
+  "id, full_name, business_name, slug, vertical, language, public_theme, timezone, booking_window_days, max_bookings_per_day, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 export const PUBLIC_SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 
@@ -47,6 +48,7 @@ type PublicProviderRow = {
   public_theme: string | null;
   timezone: string;
   booking_window_days: number;
+  max_bookings_per_day: number | null;
   availability: WeeklyAvailability;
   phone_number_1: string | null;
   phone_number_2: string | null;
@@ -216,6 +218,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       language: provider.language === "es" ? "es" : "en",
       publicTheme: normalizePublicTheme(provider.public_theme),
       timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
+      maxBookingsPerDay: normalizeDailyBookingLimit(provider.max_bookings_per_day) ?? undefined,
     },
     services: services.map(toPublicService),
     availability: provider.availability,

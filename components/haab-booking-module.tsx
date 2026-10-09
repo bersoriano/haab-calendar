@@ -647,6 +647,7 @@ export function HaabBookingModule({
   const availabilityClock: AvailabilityClock = {
     now: new Date(availabilityNow),
     timeZone: providerTimeZone,
+    dailyBookingLimit: provider.maxBookingsPerDay,
   };
 
   function getAvailableSlots(
