@@ -6,6 +6,7 @@ import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ActionButton, EmptyState, ToneBadge } from "@/components/ui";
 import { groupBookingsByDate } from "@/lib/booking-groups";
+import type { BookingListSort, BookingListView } from "@/lib/booking-list";
 import {
   bookingTypeTone,
   formatDateLabel,
@@ -28,6 +29,12 @@ export function BookingsList({
   copy,
   bookings,
   totalCount,
+  activeCount,
+  archiveCount,
+  view,
+  onViewChange,
+  sort,
+  onSortChange,
   todayKey,
   search,
   onSearchChange,
@@ -45,8 +52,14 @@ export function BookingsList({
   copy: VerticalCopy;
   /** Already filtered and sorted. */
   bookings: BookingRecord[];
-  /** Every booking, before filtering — tells "none yet" from "no matches". */
+  /** Bookings in the selected view, before search/status/type filtering. */
   totalCount: number;
+  activeCount: number;
+  archiveCount: number;
+  view: BookingListView;
+  onViewChange: (value: BookingListView) => void;
+  sort: BookingListSort;
+  onSortChange: (value: BookingListSort) => void;
   todayKey: string;
   search: string;
   onSearchChange: (value: string) => void;
@@ -68,8 +81,25 @@ export function BookingsList({
 
   return (
     <section className={cn(adminPanelClass, "p-4 sm:p-6")}>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-[minmax(0,1fr)_190px_190px_auto] lg:items-center">
-        <label className="relative col-span-2 block lg:col-span-1">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div role="group" aria-label={shell.bookingViewLabel} className="inline-flex self-start rounded-2xl bg-[var(--surface-soft)] p-1">
+          {(["active", "archive"] as const).map((value) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={view === value}
+              onClick={() => onViewChange(value)}
+              className={cn("inline-flex min-h-11 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]", view === value ? "bg-[var(--surface-lowest)] text-[var(--primary)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]")}
+            >
+              {value === "active" ? shell.activeBookings : shell.archivedBookings}
+              <span className="rounded-lg bg-[var(--accent-soft)] px-2 py-0.5 text-xs tabular-nums">{value === "active" ? activeCount : archiveCount}</span>
+            </button>
+          ))}
+        </div>
+        <p className="max-w-sm text-sm text-[var(--muted)]">{shell.archiveHint}</p>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_160px_160px_190px] xl:items-center">
+        <label className="relative block sm:col-span-2 xl:col-span-1">
           <MagnifyingGlass
             aria-hidden="true"
             size={18}
@@ -105,8 +135,18 @@ export function BookingsList({
           <option value="appointment">{t.admin.appointments}</option>
           <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
         </select>
+        <select
+          value={sort}
+          onChange={(event) => onSortChange(event.target.value as BookingListSort)}
+          aria-label={shell.sortBookingsLabel}
+          className={cn("min-h-12 min-w-0 sm:col-span-2 xl:col-span-1", adminFieldClass)}
+        >
+          <option value="closest">{shell.closestBookings}</option>
+          <option value="sooner">{shell.soonerBookings}</option>
+          <option value="latest">{shell.latestBookings}</option>
+        </select>
         {onScan ? (
-          <ActionButton tone="primary" className="col-span-2 lg:col-span-1" onClick={onScan}>
+          <ActionButton tone="primary" className="justify-self-start sm:col-span-2 xl:col-span-4" onClick={onScan}>
             <span className="inline-flex items-center gap-2">
               <QrCode aria-hidden="true" size={18} />
               {t.admin.scanAppointment}
@@ -137,7 +177,13 @@ export function BookingsList({
       <div className="mt-2 grid gap-6">
         {bookings.length === 0 ? (
           totalCount === 0 ? (
-            <EmptyState title={shell.noBookingsYetTitle} body={shell.noBookingsYetBody} />
+            view === "archive" ? (
+              <EmptyState title={shell.noArchivedBookingsTitle} body={shell.noArchivedBookingsBody} />
+            ) : activeCount + archiveCount === 0 ? (
+              <EmptyState title={shell.noBookingsYetTitle} body={shell.noBookingsYetBody} />
+            ) : (
+              <EmptyState title={shell.noActiveBookingsTitle} body={shell.noActiveBookingsBody} />
+            )
           ) : (
             <EmptyState title={copy.phrases.noBookingsMatchTitle} body={t.admin.tryBroaderSearch} />
           )
@@ -218,7 +264,7 @@ export function BookingsList({
                           {canReschedule(booking) ? (
                             <ActionButton
                               tone="ghost"
-                              disabled={cancelled}
+                              disabled={cancelled || view === "archive"}
                               onClick={() => onReschedule(booking.id)}
                             >
                               {t.publicFlow.reschedule}
@@ -226,7 +272,7 @@ export function BookingsList({
                           ) : null}
                           <ActionButton
                             tone="danger"
-                            disabled={cancelled}
+                            disabled={cancelled || view === "archive"}
                             onClick={() => onCancel(booking.id)}
                           >
                             {t.common.cancel}

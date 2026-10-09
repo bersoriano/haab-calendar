@@ -45,6 +45,12 @@ function render(props: Partial<Parameters<typeof BookingsList>[0]> = {}) {
       copy={copy}
       bookings={bookings}
       totalCount={bookings.length}
+      activeCount={bookings.length}
+      archiveCount={0}
+      view="active"
+      onViewChange={() => undefined}
+      sort="closest"
+      onSortChange={() => undefined}
       todayKey="2026-10-08"
       search=""
       onSearchChange={() => undefined}
@@ -109,7 +115,7 @@ describe("BookingsList", () => {
   });
 
   it("tells an empty page apart from an empty search", () => {
-    expect(render({ bookings: [], totalCount: 0 })).toContain(dashboardCopy.en.noBookingsYetTitle);
+    expect(render({ bookings: [], totalCount: 0, activeCount: 0 })).toContain(dashboardCopy.en.noBookingsYetTitle);
 
     const noMatch = render({ bookings: [], search: "zzz" });
     expect(noMatch).toContain(copy.phrases.noBookingsMatchTitle);
@@ -119,5 +125,26 @@ describe("BookingsList", () => {
   it("offers the scanner only where it works", () => {
     expect(render()).not.toContain(en.admin.scanAppointment);
     expect(render({ onScan: () => undefined })).toContain(en.admin.scanAppointment);
+  });
+
+  it("exposes archive navigation and labeled date sorting in both languages", () => {
+    for (const lang of ["en", "es"] as const) {
+      const html = render({ lang, archiveCount: 5 });
+      expect(html).toContain(`aria-label="${dashboardCopy[lang].sortBookingsLabel}"`);
+      expect(html).toContain(`aria-pressed="true"`);
+      expect(html).toContain(dashboardCopy[lang].archivedBookings);
+      expect(html).toContain(`value="sooner"`);
+      expect(html).toContain(`value="latest"`);
+    }
+  });
+
+  it("distinguishes empty active and archive views from empty searches", () => {
+    expect(render({ bookings: [], totalCount: 0, activeCount: 0, archiveCount: 3 })).toContain(dashboardCopy.en.noActiveBookingsTitle);
+    expect(render({ bookings: [], totalCount: 0, view: "archive" })).toContain(dashboardCopy.en.noArchivedBookingsTitle);
+  });
+
+  it("disables booking mutations in archive", () => {
+    const html = render({ view: "archive", bookings: [bookings[0]] });
+    expect(html.match(/disabled=""/g)?.length).toBe(2);
   });
 });
