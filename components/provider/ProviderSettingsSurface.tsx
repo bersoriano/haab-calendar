@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { adminFieldClass, adminPanelClass } from "@/components/provider/adminGlass";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
+import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
 import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { ActionButton, SectionTitle } from "@/components/ui";
@@ -18,6 +19,8 @@ export type ProviderSettingsSurfaceProps = {
   /** Same reason: "Public booking link for" reads differently per vertical. */
   publicUrlLabel: string;
   provider: ProviderInfo;
+  /** Last server-confirmed preference; never the pending form value. */
+  savedKeepBookingHistoryOneYear?: boolean;
   lang: Lang;
   publicUrl: string;
 
@@ -54,6 +57,7 @@ export function ProviderSettingsSurface({
   title,
   publicUrlLabel,
   provider,
+  savedKeepBookingHistoryOneYear = false,
   lang,
   publicUrl,
   integratedMode,
@@ -108,6 +112,17 @@ export function ProviderSettingsSurface({
             <DashboardLanguageField lang={lang} onChange={onDashboardLanguageChange} />
           </div>
         </section>
+      ) : null}
+
+      {integratedMode && canPersist ? (
+        <BookingRetentionSettings
+          lang={lang}
+          enabled={provider.keepBookingHistoryOneYear === true}
+          savedEnabled={savedKeepBookingHistoryOneYear}
+          entitlements={entitlements}
+          disabled={disabled}
+          onChange={(enabled) => onProviderChange("keepBookingHistoryOneYear", enabled)}
+        />
       ) : null}
 
       {businessType ? (

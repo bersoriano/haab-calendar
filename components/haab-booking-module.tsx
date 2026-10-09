@@ -166,6 +166,7 @@ import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { getBookingListView, type BookingListSort, type BookingListView } from "@/lib/booking-list";
+import { getBookingRetentionPolicy } from "@/lib/booking-retention";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
@@ -3805,6 +3806,8 @@ export function HaabBookingModule({
         onViewChange={setBookingListView}
         sort={bookingListSort}
         onSortChange={setBookingListSort}
+        retentionPolicy={integratedMode && persistAdminChanges ? getBookingRetentionPolicy(savedStore.provider.keepBookingHistoryOneYear, providerEntitlements) : undefined}
+        onOpenRetentionSettings={() => goToSection("settings")}
         todayKey={bookingListTodayKey}
         search={searchTerm}
         onSearchChange={setSearchTerm}
@@ -4131,6 +4134,7 @@ export function HaabBookingModule({
               booking: copy.booking,
             })}
             provider={provider}
+            savedKeepBookingHistoryOneYear={savedStore.provider.keepBookingHistoryOneYear === true}
             lang={lang}
             publicUrl={publicUrl}
             integratedMode={integratedMode}

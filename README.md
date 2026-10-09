@@ -381,3 +381,12 @@ inbound queues simply do not drain.
 
 Operational events, redaction rules, alert thresholds, and investigation steps:
 `docs/operations/premium-observability.md`.
+
+### Booking history retention
+
+The separate `.github/workflows/booking-retention.yml` workflow runs daily at
+08:17 UTC, calling `GET /api/cron/booking-retention` with the same Production
+secrets above. Bookings older than one calendar month are permanently deleted.
+Premium businesses can opt into one calendar year in Settings; off by default.
+Apply the retention migration before deploying this code, then enable the daily
+workflow. See [retention operations](docs/operations/booking-retention.md).

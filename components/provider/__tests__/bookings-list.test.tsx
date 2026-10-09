@@ -147,4 +147,10 @@ describe("BookingsList", () => {
     const html = render({ view: "archive", bookings: [bookings[0]] });
     expect(html.match(/disabled=""/g)?.length).toBe(2);
   });
+
+  it("shows saved history policy and a path to settings", () => {
+    expect(render({ retentionPolicy: "month", onOpenRetentionSettings: () => {} })).toContain(dashboardCopy.en.retentionMonth);
+    expect(render({ retentionPolicy: "year", onOpenRetentionSettings: () => {} })).toContain(dashboardCopy.en.retentionYear);
+    expect(render({ retentionPolicy: "year", onOpenRetentionSettings: () => {} })).toContain(dashboardCopy.en.retentionManage);
+  });
 });

@@ -1,6 +1,6 @@
 # Booking Retention Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Enforce one-month booking history with an optional, default-off Premium year and clear user notices.
 
@@ -32,15 +32,15 @@
 
 **Interfaces:** Provider preference `keepBookingHistoryOneYear?: boolean`; persisted column `keep_booking_history_one_year boolean not null default false`; catalog key `booking_history_retention`; RPC `purge_expired_bookings(p_now timestamptz default now(), p_batch_size integer default 500)` returns `{deletedBookings: number, hasMore: boolean}`.
 
-- [ ] Write failing unit tests for Premium access, default-off normalization, and preference persistence. Write local SQL integration tests with literal dates for the review focus.
+- [x] Write failing unit tests for Premium access, default-off normalization, and preference persistence. Write local SQL integration tests with literal dates for the review focus.
   ```ts
   expect(resolveEntitlements({providerId: "p", planTier: "premium", overrides: []}).features.booking_history_retention.enabled).toBe(true);
   expect(normalizeProvider({keepBookingHistoryOneYear: "true" as never}).keepBookingHistoryOneYear).toBe(false);
   ```
-- [ ] Run `npm test -- lib/entitlements lib/__tests__/provider-store.test.ts` and local database tests. Expected: new cases fail before implementation.
-- [ ] Implement the boolean round trip, private SQL entitlement helper, enabling trigger, and service-role-only bounded cleanup. Use `date < (provider_today - interval '1 month')::date`, or `interval '1 year'` when enabled and entitled; protect provider policy with row locks.
-- [ ] Run focused unit and local database tests. Expected: exact dates survive, older rows and cascaded dependents disappear, unauthorized writes fail, repeated batches finish.
-- [ ] Commit schema and policy as one atomic change.
+- [x] Run `npm test -- lib/entitlements lib/__tests__/provider-store.test.ts` and local database tests. Expected: new cases fail before implementation.
+- [x] Implement the boolean round trip, private SQL entitlement helper, enabling trigger, and service-role-only bounded cleanup. Use `date < (provider_today - interval '1 month')::date`, or `interval '1 year'` when enabled and entitled; protect provider policy with row locks.
+- [x] Run focused unit and local database tests. Expected: exact dates survive, older rows and cascaded dependents disappear, unauthorized writes fail, repeated batches finish.
+- [x] Commit schema and policy as one atomic change.
 
 ### Task 2: Scheduled cleanup
 
@@ -48,14 +48,14 @@
 
 **Interfaces:** `runBookingRetentionWorker(client?: SupabaseClient)` returns the RPC counters or throws on database failure. `GET /api/cron/booking-retention` requires `Authorization: Bearer CRON_SECRET` and returns counters only.
 
-- [ ] Write failing tests for absent/wrong secrets, success, RPC errors and malformed responses.
+- [x] Write failing tests for absent/wrong secrets, success, RPC errors and malformed responses.
   ```ts
   expect((await GET(new Request("http://localhost/api/cron/booking-retention"))).status).toBe(401);
   ```
-- [ ] Run focused tests. Expected: missing modules/behavior fail.
-- [ ] Implement the worker and authenticated route. Add daily Production workflow using `WORKERS_BASE_URL` and `CRON_SECRET`; drain up to 20 batches, fail on HTTP/error/backlog, never log secrets or booking identifiers.
-- [ ] Run focused tests. Expected: unauthorized calls never reach cleanup, RPC failures return 500, successful response preserves counters.
-- [ ] Commit worker and scheduler.
+- [x] Run focused tests. Expected: missing modules/behavior fail.
+- [x] Implement the worker and authenticated route. Add daily Production workflow using `WORKERS_BASE_URL` and `CRON_SECRET`; drain up to 20 batches, fail on HTTP/error/backlog, never log secrets or booking identifiers.
+- [x] Run focused tests. Expected: unauthorized calls never reach cleanup, RPC failures return 500, successful response preserves counters.
+- [x] Commit worker and scheduler.
 
 ### Task 3: Settings, notices and documentation
 
@@ -63,11 +63,11 @@
 
 **Interfaces:** `isExtendedBookingRetentionEnabled(preference, entitlements)` returns effective saved one-year access; use existing `onProviderChange` callback and save bar.
 
-- [ ] Write failing component tests for free/Premium/unknown access, default-off, enabled effective policy, downgrade and both languages. Test saved policy notices independently of draft preference.
+- [x] Write failing component tests for free/Premium/unknown access, default-off, enabled effective policy, downgrade and both languages. Test saved policy notices independently of draft preference.
   ```ts
   expect(isExtendedBookingRetentionEnabled(true, undefined)).toBe(false);
   ```
-- [ ] Run focused tests. Expected: new controls/notices missing.
-- [ ] Implement accessible checkbox, current-policy notices and Settings link. Explain permanent deletion, default-off and downgrade behavior. Update privacy and operational docs, including deployment steps and rollback limits.
-- [ ] Run typecheck, lint, full unit suite, local SQL tests and production build; check mobile UI and toggle/save behavior. Expected: all checks pass, no overflow, only saved entitled preference shows active year.
-- [ ] Commit UI and docs. Request whole-branch review and repair material findings before final report.
+- [x] Run focused tests. Expected: new controls/notices missing.
+- [x] Implement accessible checkbox, current-policy notices and Settings link. Explain permanent deletion, default-off and downgrade behavior. Update privacy and operational docs, including deployment steps and rollback limits.
+- [x] Run typecheck, lint, full unit suite, local SQL tests and production build; check mobile UI and toggle/save behavior. Expected: all checks pass, no overflow, only saved entitled preference shows active year.
+- [x] Commit UI and docs. Request whole-branch review and repair material findings before final report.

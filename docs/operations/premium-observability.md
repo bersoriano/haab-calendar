@@ -389,3 +389,10 @@ provider, and with no exporter configured the SDK drops spans silently.
 - Conflicts are never expired or cleaned up. `auto_repaired` rows accumulate.
 - There is no provider-facing notification when a conflict is created; it is
   visible in the integrations settings and nowhere else.
+
+## Booking retention cleanup
+
+`booking.retention.completed` records only `deletedBookings` and `hasMore`, plus
+request metadata. `booking.retention.failed` records a safe error code and name.
+No customer data or database error text is logged. See
+[retention operations](booking-retention.md) for backlog handling and deployment.
