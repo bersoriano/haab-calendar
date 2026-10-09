@@ -66,10 +66,17 @@ export function getPublicSlotStates(
     }
 
     // The hold that frees this time soonest is the one worth naming.
-    const freesAt = dateHolds
+    const overlapping = dateHolds
       .filter((hold) => !hold.startTime || hold.startTime === time || overlapsSlot(hold, time))
       .map((hold) => hold.expiresAt)
       .sort((left, right) => left - right)[0];
+
+    // No hold sits on this time, yet the holds still close it: the day is at
+    // its booking limit counting them. Any one lapsing reopens it, so the
+    // soonest on the date is the honest answer.
+    const freesAt =
+      overlapping ??
+      dateHolds.map((hold) => hold.expiresAt).sort((left, right) => left - right)[0];
 
     return freesAt === undefined
       ? ({ time, status: "open" } as const)

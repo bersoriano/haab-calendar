@@ -78,6 +78,11 @@ export type ProviderInfo = {
    * read back as unset. Drives slot generation and the public page's label.
    */
   timezone: string;
+  /**
+   * Most bookings accepted on one date, across all services. Undefined means
+   * no limit, which is every provider until they turn it on.
+   */
+  maxBookingsPerDay?: number;
 };
 
 export type Service = {

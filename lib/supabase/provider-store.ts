@@ -6,6 +6,7 @@ import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import { getServiceSlug } from "@/lib/public-url";
 import { normalizeAvailability, normalizeProvider, normalizeServices } from "@/lib/store";
 import { normalizePublicTheme } from "@/lib/public-theme";
+import { normalizeDailyBookingLimit } from "@/lib/availability";
 import { normalizeTimeZone, UNSET_TIME_ZONE } from "@/lib/timezone";
 import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from "@/lib/types";
 
@@ -206,6 +207,9 @@ async function upsertProvider(options: {
     // The column is not null; an unchosen zone stores the default rather than
     // failing the save, and reads back as unset.
     timezone: normalizeTimeZone(provider.timezone) || UNSET_TIME_ZONE,
+    // Null turns the limit off; anything that is not a positive whole number
+    // is treated as off rather than failing the whole settings save.
+    max_bookings_per_day: normalizeDailyBookingLimit(provider.maxBookingsPerDay),
     availability: normalizeAvailability(options.store.availability),
     setup_complete: Boolean(options.store.setupComplete),
     phone_number_1: provider.phoneNumber1.trim(),

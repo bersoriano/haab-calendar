@@ -3,6 +3,7 @@ import { getServiceSlug } from "./public-url";
 import { compareDateKeys } from "./date";
 import { DEFAULT_APPOINTMENT_DURATION_MINUTES, WEEKDAY_KEYS } from "./constants";
 import { normalizePublicTheme } from "./public-theme";
+import { normalizeDailyBookingLimit } from "./availability";
 import { normalizeTimeZone } from "./timezone";
 import { VERTICAL_IDS } from "./types";
 import type {
@@ -310,6 +311,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     // here never reaches the page.
     publicTheme: normalizePublicTheme(source?.publicTheme),
     timezone: normalizeTimeZone(source?.timezone),
+    maxBookingsPerDay: normalizeDailyBookingLimit(source?.maxBookingsPerDay) ?? undefined,
   };
 }
 
