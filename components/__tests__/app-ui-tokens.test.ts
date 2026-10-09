@@ -38,6 +38,7 @@ const MIGRATED = [
   "components/provider/CancelBookingDialog.tsx",
   "components/provider/RescheduleBookingDialog.tsx",
   "components/provider/ToastOnChange.tsx",
+  "components/provider/AppointmentScannerDialog.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

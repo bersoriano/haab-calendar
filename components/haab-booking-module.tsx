@@ -197,7 +197,7 @@ import { BookingNotePanel, type BookingNoteStatus } from "@/components/booking/B
 import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
-import { AppointmentScannerDialog } from "@/components/booking/AppointmentScanner";
+import { AppointmentScannerDialog } from "@/components/provider/AppointmentScannerDialog";
 import { AdminCalendar } from "@/components/provider/AdminCalendar";
 import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
 import { RescheduleBookingDialog } from "@/components/provider/RescheduleBookingDialog";

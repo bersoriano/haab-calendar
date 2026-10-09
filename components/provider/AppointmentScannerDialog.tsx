@@ -12,12 +12,20 @@ import type {
   IScannerControls,
 } from "@zxing/browser";
 
-import { ActionButton } from "@/components/ui/ActionButton";
-import { BookingStatusPill } from "@/components/ui/BookingStatusPill";
-import { SummaryField } from "@/components/ui/SummaryField";
-import { formatDateLabel, formatTimeRange } from "@/lib/format";
+import { QrCode, UploadSimple } from "@phosphor-icons/react";
+
+import {
+  Alert,
+  Badge,
+  Button,
+  DescriptionItem,
+  DescriptionList,
+  Dialog,
+  buttonStyles,
+} from "@/components/app-ui";
+import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingStatusBadgeTone, formatDateLabel, formatTimeRange } from "@/lib/format";
 import type { BookingRecord, Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 const resultCopy = {
   en: {
@@ -83,34 +91,50 @@ export function AppointmentScanResult({
   const copy = resultCopy[lang];
   const contact = [booking.clientEmail, booking.clientPhone].filter(Boolean).join(" · ");
 
+  const t = bookingTranslations[lang];
+  const statusLabel =
+    booking.status === "cancelled"
+      ? t.publicFlow.statusCancelled
+      : booking.status === "rescheduled"
+        ? t.publicFlow.statusUpdated
+        : t.publicFlow.statusConfirmed;
+
   return (
     <section aria-labelledby="appointment-scan-result-title">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <h3
-          id="appointment-scan-result-title"
-          className="text-xl font-semibold tracking-[-0.03em] text-[var(--ink)]"
-        >
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 id="appointment-scan-result-title" className="text-base font-semibold text-app-fg">
           {copy.title}
         </h3>
-        <BookingStatusPill status={booking.status} lang={lang} />
+        <Badge tone={bookingStatusBadgeTone(booking.status)} dot>
+          {statusLabel}
+        </Badge>
       </div>
-      <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-        <SummaryField label={copy.client} value={booking.clientName || "—"} />
-        <SummaryField label={copy.service} value={booking.serviceName} />
-        <SummaryField
-          label={copy.dateAndTime}
-          value={`${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(
-            booking.startTime,
-            booking.endTime,
-            lang,
-          )}`}
-        />
-        {contact ? <SummaryField label={copy.contact} value={contact} /> : null}
-        {booking.notes.trim() ? (
-          <SummaryField label={copy.notes} value={booking.notes} />
+      <DescriptionList className="mt-3">
+        <DescriptionItem flush term={copy.client}>
+          {booking.clientName || "—"}
+        </DescriptionItem>
+        <DescriptionItem flush term={copy.service}>
+          {booking.serviceName}
+        </DescriptionItem>
+        <DescriptionItem flush term={copy.dateAndTime}>
+          {`${formatDateLabel(booking.dateKey, lang)} · ${formatTimeRange(booking.startTime, booking.endTime, lang)}`}
+        </DescriptionItem>
+        {contact ? (
+          <DescriptionItem flush term={copy.contact}>
+            {contact}
+          </DescriptionItem>
         ) : null}
-        {booking.cost ? <SummaryField label={copy.total} value={booking.cost} /> : null}
-      </dl>
+        {booking.notes.trim() ? (
+          <DescriptionItem flush term={copy.notes}>
+            {booking.notes}
+          </DescriptionItem>
+        ) : null}
+        {booking.cost ? (
+          <DescriptionItem flush term={copy.total}>
+            {booking.cost}
+          </DescriptionItem>
+        ) : null}
+      </DescriptionList>
     </section>
   );
 }
@@ -240,15 +264,6 @@ export function AppointmentScannerDialog({
     };
   }, [booking, copy.cameraUnavailable, lookupAppointment, open, scanCycle, stopCamera]);
 
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") closeDialog();
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeDialog, open]);
-
   async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -289,73 +304,30 @@ export function AppointmentScannerDialog({
 
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/50 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="appointment-scanner-title"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-[30px] bg-[var(--surface-lowest)] p-5 shadow-[0_30px_90px_rgba(15,23,42,0.3)] ring-1 ring-[var(--line)] sm:p-7"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2
-              id="appointment-scanner-title"
-              className="text-2xl font-semibold tracking-[-0.04em] text-[var(--ink)]"
-            >
-              {copy.title}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{copy.body}</p>
-          </div>
-          <ActionButton tone="ghost" onClick={closeDialog}>
-            {copy.close}
-          </ActionButton>
-        </div>
+  const statusText =
+    error ||
+    (status === "starting" ? copy.starting : status === "looking-up" ? copy.lookingUp : copy.scanning);
 
-        {booking ? (
-          <div className="mt-6 rounded-[24px] bg-[var(--surface-soft)] p-5 ring-1 ring-[var(--line)]">
-            <AppointmentScanResult booking={booking} lang={lang} />
+  return (
+    <Dialog
+      open
+      onClose={closeDialog}
+      title={copy.title}
+      description={copy.body}
+      closeLabel={copy.close}
+      footer={
+        booking ? (
+          <div className="flex justify-end">
+            <Button leadingIcon={<QrCode aria-hidden="true" size={16} />} onClick={scanAgain}>
+              {copy.scanAgain}
+            </Button>
           </div>
         ) : (
-          <>
-            <div className="relative mt-6 aspect-[4/3] overflow-hidden rounded-[24px] bg-slate-950">
-              <video
-                ref={videoRef}
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-              />
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-[14%] rounded-[24px] border-2 border-white/80 shadow-[0_0_0_999px_rgba(15,23,42,0.22)]"
-              />
-            </div>
-
-            <p
-              role="status"
-              aria-live="polite"
-              className={cn(
-                "mt-4 text-sm font-medium",
-                error ? "text-rose-700" : "text-[var(--muted)]",
-              )}
-            >
-              {error ||
-                (status === "starting"
-                  ? copy.starting
-                  : status === "looking-up"
-                    ? copy.lookingUp
-                    : copy.scanning)}
-            </p>
-          </>
-        )}
-
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          {booking ? (
-            <ActionButton tone="primary" onClick={scanAgain}>
-              {copy.scanAgain}
-            </ActionButton>
-          ) : (
-            <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded-2xl bg-[var(--primary)] px-5 py-2 text-sm font-semibold text-[var(--on-primary)] transition hover:opacity-90">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-app-fg-muted">{copy.uploadHelp}</p>
+            {/* A label styled as the primary button, so the file input stays native. */}
+            <label className={buttonStyles({ className: "cursor-pointer" })}>
+              <UploadSimple aria-hidden="true" size={16} />
               {copy.upload}
               <input
                 type="file"
@@ -365,12 +337,32 @@ export function AppointmentScannerDialog({
                 onChange={(event) => void handleImageUpload(event)}
               />
             </label>
+          </div>
+        )
+      }
+    >
+      {booking ? (
+        <AppointmentScanResult booking={booking} lang={lang} />
+      ) : (
+        <div className="grid gap-3">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-app-fg">
+            <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-[14%] rounded-lg border-2 border-app-surface/80"
+            />
+          </div>
+          {error ? (
+            <Alert tone="danger" role="alert">
+              {error}
+            </Alert>
+          ) : (
+            <p role="status" aria-live="polite" className="text-sm font-medium text-app-fg-muted">
+              {statusText}
+            </p>
           )}
-          {!booking ? (
-            <p className="text-xs leading-5 text-[var(--muted)]">{copy.uploadHelp}</p>
-          ) : null}
         </div>
-      </div>
-    </div>
+      )}
+    </Dialog>
   );
 }
