@@ -16,7 +16,8 @@ export type E2ERole =
   | "billingInactive"
   | "businessTypeSwitch"
   | "businessTypeBlocked"
-  | "bookingActions";
+  | "bookingActions"
+  | "publicManage";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -37,6 +38,10 @@ export type E2EProviderSeed = {
   }>;
   /** Seeds one confirmed booking a week from today. */
   upcomingBooking?: boolean;
+  /** Pins that booking to a fixed date, for screenshots that must not drift. */
+  bookingDate?: string;
+  /** A known manage-link token for that booking (stored hashed, as in production). */
+  manageToken?: string;
 };
 
 export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
@@ -130,6 +135,20 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     slug: "booking-actions-e2e",
     legacyPlanTier: "free",
     upcomingBooking: true,
+  },
+  {
+    // Read-only: the public visual guard screenshots its manage page and
+    // opens (never confirms) the public cancel dialog.
+    role: "publicManage",
+    email: "public-manage@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e09",
+    providerId: "00000000-0000-4000-8000-0000000e2ea9",
+    businessName: "Manage Page E2E",
+    slug: "manage-page-e2e",
+    legacyPlanTier: "free",
+    upcomingBooking: true,
+    bookingDate: "2027-01-15",
+    manageToken: "e2e-public-manage-token",
   },
 ];
 

@@ -25,3 +25,23 @@ for (const width of [390, 1280]) {
     await expect(page).toHaveScreenshot(`public-day-selected-${width}.png`, { fullPage: true, animations: "disabled" });
   });
 }
+
+for (const width of [390, 1280]) {
+  test(`public manage page and its dialogs are unchanged at ${width}px`, async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-10-12T10:00:00"));
+    await page.setViewportSize({ width, height: 1000 });
+    const seed = providerFor("publicManage");
+    await page.goto(`/doctors/${seed.slug}/manage/${seed.manageToken}`);
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveScreenshot(`public-manage-${width}.png`, { fullPage: true, animations: "disabled" });
+
+    // Opened, never confirmed: the booking stays as seeded.
+    await page.getByRole("button", { name: /^(Cancel appointment|Cancelar cita)$/ }).click();
+    await expect(page).toHaveScreenshot(`public-manage-cancel-${width}.png`, { animations: "disabled" });
+    await page.getByRole("button", { name: /^Keep / }).click();
+
+    await page.getByRole("button", { name: /^(Reschedule|Reprogramar)$/ }).first().click();
+    await expect(page).toHaveScreenshot(`public-manage-reschedule-${width}.png`, { animations: "disabled" });
+  });
+}
+

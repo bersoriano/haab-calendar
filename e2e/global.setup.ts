@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -114,10 +115,12 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
       duration_minutes_snapshot: 30,
       client_name: "E2E Client",
       client_email: "client@example.invalid",
-      date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
+      date: seed.bookingDate ?? new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
       start_time: "10:00",
       end_time: "10:30",
-      manage_token_hash: `e2e-${seed.role}-hash`,
+      manage_token_hash: seed.manageToken
+        ? createHash("sha256").update(seed.manageToken).digest("hex")
+        : `e2e-${seed.role}-hash`,
       confirmation_number: `E2E${seed.role.toUpperCase()}`,
       idempotency_key: `e2e-${seed.role}-idem`,
     });
