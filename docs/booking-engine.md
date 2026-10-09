@@ -126,3 +126,15 @@ rejected by the database are the same set.
 The availability functions are pure and run in both places: the server validates
 a write with them, and `useModuleStore` runs them against local bookings, so an
 offline page reaches the same answer as the server for the data it can see.
+
+## Booking history retention
+
+Bookings move to the dashboard Archive after seven days. Archive is a view, not
+permanent storage: daily cleanup deletes records whose scheduled date is more
+than one calendar month in the past, in the provider timezone. Future bookings
+are protected. Premium businesses may enable one calendar year in Settings;
+this preference is off by default and applies only after saving. Disabling it
+or losing entitlement restores the month policy at the next cleanup. Deletion
+is permanent and includes related internal booking history. See
+[retention operations](operations/booking-retention.md) for boundaries, access
+controls, scheduling, and deployment.

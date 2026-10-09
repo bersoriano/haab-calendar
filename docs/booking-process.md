@@ -403,3 +403,15 @@ Browser smoke-test at least one canonical public route on a mobile viewport:
 To exercise expiry without waiting ten minutes, temporarily lower
 `BOOKING_HOLD_DURATION_MS` in `lib/constants.ts` — the server reads the same
 constant, so both sides shorten together. Restore it before committing.
+
+## Booking history retention
+
+Bookings move to the dashboard Archive after seven days. Archive is a view, not
+permanent storage: daily cleanup deletes records whose scheduled date is more
+than one calendar month in the past, in the provider timezone. Future bookings
+are protected. Premium businesses may enable one calendar year in Settings;
+this preference is off by default and applies only after saving. Disabling it
+or losing entitlement restores the month policy at the next cleanup. Deletion
+is permanent and includes related internal booking history. See
+[retention operations](operations/booking-retention.md) for boundaries, access
+controls, scheduling, and deployment.

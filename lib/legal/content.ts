@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-10-08";
+export const LEGAL_UPDATED = "2026-10-09";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -104,7 +104,8 @@ const EN_PRIVACY: LegalDocument = {
       id: "retention",
       heading: "How long data is kept, and deletion",
       body: [
-        "Account and booking data is kept while the account is active, because it is the record the business relies on.",
+        "Account data is kept while the account is active. Booking records are permanently deleted during daily cleanup once their scheduled date is more than one calendar month in the past, using the business timezone. Future bookings are kept regardless of when they were created. Records exactly at the cutoff are kept; cleanup may run later.",
+        "Premium businesses can enable one calendar year of booking history in Settings. This option is off by default and takes effect after saving. Turning it off or losing Premium access restores one-month retention at the next cleanup. Deleted bookings cannot be recovered. Related booking history and internal integration records are removed with the booking; anonymous page analytics retain their separate 13-month policy. Cleanup does not delete events already held in an external Google Calendar.",
         "Deleting an account is permanent. It removes the account, the booking page and its configuration, the bookings held under it, and the uploaded images, and it revokes any connected Google account. There is no recovery afterwards.",
         "If you booked through a business's page and want that booking removed, contact the business. They control it, and deletion on their side removes it from our systems too.",
       ],
@@ -335,7 +336,8 @@ const ES_PRIVACY: LegalDocument = {
       id: "retention",
       heading: "Cuánto tiempo se conservan los datos, y su eliminación",
       body: [
-        "Los datos de la cuenta y de las reservas se conservan mientras la cuenta esté activa, porque son el registro del que depende el negocio.",
+        "Los datos de la cuenta se conservan mientras esté activa. Las reservas se eliminan permanentemente durante la limpieza diaria cuando su fecha programada tiene más de un mes calendario de antigüedad, según la zona horaria del negocio. Las reservas futuras se conservan sin importar cuándo se crearon. Las reservas justo en el límite se conservan; la limpieza puede ejecutarse después.",
+        "Los negocios Premium pueden activar un año calendario de historial de reservas en Ajustes. Esta opción está desactivada por defecto y se aplica al guardar. Desactivarla o perder el acceso Premium restablece la conservación de un mes en la siguiente limpieza. Las reservas eliminadas no se pueden recuperar. El historial asociado y los registros internos de integración se eliminan con la reserva; la analítica anónima mantiene su política independiente de 13 meses. La limpieza no elimina eventos ya guardados en un calendario externo de Google.",
         "Eliminar una cuenta es permanente. Se eliminan la cuenta, la página de reservas y su configuración, las reservas asociadas y las imágenes subidas, y se revoca cualquier cuenta de Google conectada. Después no hay recuperación posible.",
         "Si usted reservó a través de la página de un negocio y desea que se elimine esa reserva, contacte al negocio. Ellos la controlan, y su eliminación también la retira de nuestros sistemas.",
       ],

@@ -110,6 +110,8 @@ export const GOOGLE_EVENTS = [
 ] as const;
 
 export const OPERATIONAL_EVENTS = [
+  "booking.retention.completed",
+  "booking.retention.failed",
   ...STRIPE_EVENTS,
   ...BILLING_EVENTS,
   ...ENTITLEMENT_EVENTS,

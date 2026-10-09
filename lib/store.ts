@@ -312,6 +312,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     publicTheme: normalizePublicTheme(source?.publicTheme),
     timezone: normalizeTimeZone(source?.timezone),
     maxBookingsPerDay: normalizeDailyBookingLimit(source?.maxBookingsPerDay) ?? undefined,
+    keepBookingHistoryOneYear: source?.keepBookingHistoryOneYear === true,
   };
 }
 

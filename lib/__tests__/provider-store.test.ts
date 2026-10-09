@@ -84,7 +84,7 @@ function makeProviderRow(overrides?: Partial<ProviderRow>): ProviderRow {
   };
 }
 
-function makeSupabase(options?: { provider?: ProviderRow }) {
+function makeSupabase(options?: { provider?: ProviderRow; writeError?: { code: string; message: string } }) {
   let provider = options?.provider;
   const services: ServiceRow[] = [];
   const providerInserts: Array<Record<string, unknown>> = [];
@@ -117,7 +117,7 @@ function makeSupabase(options?: { provider?: ProviderRow }) {
     const query = {
       eq: vi.fn(() => query),
       select: vi.fn(() => query),
-      single: vi.fn(async () => ({ data: { id }, error: null })),
+      single: vi.fn(async () => ({ data: { id }, error: options?.writeError ?? null })),
     };
     return query;
   }
@@ -175,6 +175,18 @@ function makeSupabase(options?: { provider?: ProviderRow }) {
 }
 
 describe("provider persistence authorization boundary", () => {
+  it("returns an actionable forbidden error when the retention gate denies a save", async () => {
+    const supabase = makeSupabase({ provider: makeProviderRow(), writeError: { code: "42501", message: "One-year booking history requires Premium access." } });
+    await expect(persistProviderStore({ supabase: supabase.client, ownerUserId: "00000000-0000-4000-8000-000000000002", store: makeStore() })).rejects.toMatchObject({ status: 403, userMessage: "One-year booking history requires Premium access." });
+  });
+  it("round-trips the extended booking history preference", async () => {
+    const supabase = makeSupabase({ provider: makeProviderRow() });
+    const store = makeStore();
+    store.provider.keepBookingHistoryOneYear = true;
+    const saved = await persistProviderStore({ supabase: supabase.client, ownerUserId: "00000000-0000-4000-8000-000000000002", store });
+    expect(supabase.providerUpdates[0].keep_booking_history_one_year).toBe(true);
+    expect(saved.provider.keepBookingHistoryOneYear).toBe(true);
+  });
   it("inserts editable fields without protected premium fields and reloads generated slug", async () => {
     const supabase = makeSupabase();
 

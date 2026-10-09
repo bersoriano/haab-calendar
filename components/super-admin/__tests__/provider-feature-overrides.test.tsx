@@ -31,7 +31,7 @@ describe("ProviderFeatureOverrides", () => {
     const html = render("free", []);
 
     expect(html).toContain("Premium access");
-    expect(html).toContain("0 of 5 enabled");
+    expect(html).toContain("0 of 6 enabled");
     expect(html).toContain("Manage premium access");
     expect(html).toContain("<details");
     expect(html).not.toContain("<details open");

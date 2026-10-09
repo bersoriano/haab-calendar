@@ -61,6 +61,7 @@ type ProviderRow = {
   timezone: string;
   booking_window_days: number;
   max_bookings_per_day: number | null;
+  keep_booking_history_one_year?: boolean;
   availability: WeeklyAvailability;
   setup_complete: boolean;
   phone_number_1: string | null;
@@ -282,6 +283,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
     // dashboard then offers the detected zone instead of looking configured.
     timezone: isUnsetTimeZone(row.timezone) ? "" : normalizeTimeZone(row.timezone),
     maxBookingsPerDay: normalizeDailyBookingLimit(row.max_bookings_per_day) ?? undefined,
+    keepBookingHistoryOneYear: includeEmail && row.keep_booking_history_one_year === true,
   };
 }
 
@@ -1521,7 +1523,7 @@ export async function getProviderDashboardContext(
 ): Promise<ProviderDashboardContext | null> {
   const { data: provider, error: providerError } = await supabase
     .from("providers")
-    .select(PROVIDER_SELECT)
+    .select(`${PROVIDER_SELECT}, keep_booking_history_one_year`)
     .eq("owner_user_id", ownerUserId)
     .maybeSingle<ProviderRow>();
 

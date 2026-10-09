@@ -4,6 +4,8 @@ import { BookingCampaignBadge } from "@/components/booking/BookingCampaignBadge"
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { BookingRetentionNotice } from "@/components/provider/BookingRetentionSettings";
+import type { BookingRetentionPolicy } from "@/lib/booking-retention";
 import { ActionButton, EmptyState, ToneBadge } from "@/components/ui";
 import { groupBookingsByDate } from "@/lib/booking-groups";
 import type { BookingListSort, BookingListView } from "@/lib/booking-list";
@@ -35,6 +37,8 @@ export function BookingsList({
   onViewChange,
   sort,
   onSortChange,
+  retentionPolicy,
+  onOpenRetentionSettings,
   todayKey,
   search,
   onSearchChange,
@@ -60,6 +64,8 @@ export function BookingsList({
   onViewChange: (value: BookingListView) => void;
   sort: BookingListSort;
   onSortChange: (value: BookingListSort) => void;
+  retentionPolicy?: BookingRetentionPolicy;
+  onOpenRetentionSettings?: () => void;
   todayKey: string;
   search: string;
   onSearchChange: (value: string) => void;
@@ -81,6 +87,11 @@ export function BookingsList({
 
   return (
     <section className={cn(adminPanelClass, "p-4 sm:p-6")}>
+      {retentionPolicy ? (
+        <div className="mb-5">
+          <BookingRetentionNotice lang={lang} policy={retentionPolicy} onOpenSettings={onOpenRetentionSettings} />
+        </div>
+      ) : null}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div role="group" aria-label={shell.bookingViewLabel} className="inline-flex self-start rounded-2xl bg-[var(--surface-soft)] p-1">
           {(["active", "archive"] as const).map((value) => (
