@@ -23,6 +23,7 @@ import type { ShellIconName, ShellNavGroup } from "@/components/app-shell/types"
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { dashboardCopy, sectionTitle } from "@/components/provider/dashboard-copy";
 import { Alert } from "@/components/ui/Alert";
+import { ClientOnly } from "@/components/ui/ClientOnly";
 import {
   DASHBOARD_SECTIONS,
   pathForSection,
@@ -241,7 +242,9 @@ export function DashboardApp({
         onNavigate={(item) => navigate(item.id as AdminTab)}
       />
 
-      <div className="mt-auto grid gap-3 border-t border-[var(--line)]/60 pt-4">
+      {/* A flex column, not a grid: grid items default to their content's
+          width, and a long email would push sign-out out of the sidebar. */}
+      <div className="mt-auto flex flex-col gap-3 border-t border-[var(--line)]/60 pt-4">
         {isSuperAdmin ? (
           <Link
             href="/super-admin"
@@ -251,7 +254,7 @@ export function DashboardApp({
             <span className="min-w-0 flex-1 truncate">{shell.superAdmin}</span>
           </Link>
         ) : null}
-        <div className="flex items-center gap-3 px-2">
+        <div className="flex min-w-0 items-center gap-3 px-2">
           <span
             aria-hidden="true"
             className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--surface-highest)] text-sm font-semibold text-[var(--ink)]"
@@ -387,19 +390,39 @@ export function DashboardApp({
         />
       }
     >
-      <HaabBookingModule
-        injectedConfig={store}
-        userEmail={email}
-        persistAdminChanges
-        viewerLanguage={lang}
-        providerEntitlements={providerEntitlements}
-        checkoutResult={hasNavigated ? undefined : checkoutResult}
-        adminSection={section}
-        onAdminSectionChange={navigate}
-        chrome="shell"
-        onStoreChange={setSnapshot}
-        onSetupPersisted={setSnapshot}
-      />
+      {/* The module renders "today", this month and the viewer's time zones;
+          a server in another zone would paint markup the browser disagrees
+          with. The shell around it is server-rendered; the content mounts in
+          the browser, as the dashboard always has. */}
+      <ClientOnly fallback={<SectionPlaceholder />}>
+        <HaabBookingModule
+          injectedConfig={store}
+          userEmail={email}
+          persistAdminChanges
+          viewerLanguage={lang}
+          providerEntitlements={providerEntitlements}
+          checkoutResult={hasNavigated ? undefined : checkoutResult}
+          adminSection={section}
+          onAdminSectionChange={navigate}
+          chrome="shell"
+          onStoreChange={setSnapshot}
+          onSetupPersisted={setSnapshot}
+        />
+      </ClientOnly>
     </AppShell>
+  );
+}
+
+/** Holds the section's space while the module mounts, without layout jump. */
+function SectionPlaceholder() {
+  return (
+    <div aria-hidden="true" className="grid animate-pulse gap-4">
+      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((index) => (
+          <div key={index} className="h-28 rounded-[24px] bg-[var(--surface-highest)]/70" />
+        ))}
+      </div>
+      <div className="h-64 rounded-[28px] bg-[var(--surface-highest)]/70" />
+    </div>
   );
 }

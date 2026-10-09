@@ -26,6 +26,11 @@ vi.mock("next/link", () => ({
 }));
 vi.mock("@/app/login/actions", () => ({ logout: () => undefined }));
 vi.mock("@/app/super-admin/actions", () => ({ stopDemoEdit: () => undefined }));
+// The module mounts in the browser only (see DashboardApp); render it inline
+// here so its props can be read.
+vi.mock("@/components/ui/ClientOnly", () => ({
+  ClientOnly: ({ children }: { children: ReactNode }) => children,
+}));
 vi.mock("@/components/haab-booking-module", () => ({
   HaabBookingModule: (props: Record<string, unknown>) => {
     captured.props.push(props);
@@ -169,5 +174,14 @@ describe("DashboardApp", () => {
     expect(render({ pathname: "/dashboard", googleOutcome: "connected" }).html).not.toContain(
       dashboardCopy.en.google.connected,
     );
+  });
+
+  it("mounts the module in the browser only, behind a placeholder", async () => {
+    const source = (await import("node:fs")).readFileSync(
+      new URL("../DashboardApp.tsx", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toMatch(/<ClientOnly[\s\S]*<HaabBookingModule[\s\S]*<\/ClientOnly>/);
   });
 });
