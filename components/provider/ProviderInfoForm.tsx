@@ -1,8 +1,7 @@
 "use client";
 
 import type { Lang, ProviderInfo } from "@/lib/types";
-import { cn } from "@/lib/utils";
-import { adminFieldClass } from "@/components/provider/adminGlass";
+import { Field, Input } from "@/components/app-ui";
 import { TimeZoneField } from "@/components/provider/TimeZoneField";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 
@@ -20,41 +19,34 @@ export function ProviderInfoForm({
   const t = bookingTranslations[lang];
   return (
     <div className="grid gap-4">
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.providerForm.fullName}
-        <input
+      <Field label={t.providerForm.fullName}>
+        <Input
           disabled={disabled}
           value={provider.fullName}
           onChange={(event) => onChange("fullName", event.target.value)}
           placeholder={t.providerForm.fullNamePlaceholder}
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.providerForm.businessName}
-        <input
+      </Field>
+      <Field label={t.providerForm.businessName}>
+        <Input
           disabled={disabled}
           value={provider.businessName}
           onChange={(event) => onChange("businessName", event.target.value)}
           placeholder={t.providerForm.businessNamePlaceholder}
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
-      </label>
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.providerForm.confirmationEmail}
-        <input
+      </Field>
+      <Field label={t.providerForm.confirmationEmail}>
+        <Input
           disabled={disabled}
           value={provider.email}
           onChange={(event) => onChange("email", event.target.value)}
           placeholder={t.providerForm.emailPlaceholder}
           type="email"
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
-      </label>
+      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          {t.providerForm.phoneNumber1}
-          <input
+        <Field label={t.providerForm.phoneNumber1}>
+          <Input
             disabled={disabled}
             value={provider.phoneNumber1}
             onChange={(event) => onChange("phoneNumber1", event.target.value)}
@@ -62,12 +54,10 @@ export function ProviderInfoForm({
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
-        </label>
-        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          {t.providerForm.phoneNumber2}
-          <input
+        </Field>
+        <Field label={t.providerForm.phoneNumber2}>
+          <Input
             disabled={disabled}
             value={provider.phoneNumber2}
             onChange={(event) => onChange("phoneNumber2", event.target.value)}
@@ -75,33 +65,28 @@ export function ProviderInfoForm({
             type="tel"
             inputMode="tel"
             autoComplete="tel"
-            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
-        </label>
+        </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          {t.providerForm.address1}
-          <input
+        <Field label={t.providerForm.address1}>
+          <Input
             disabled={disabled}
             value={provider.address1}
             onChange={(event) => onChange("address1", event.target.value)}
             placeholder={t.providerForm.address1Placeholder}
             autoComplete="street-address"
-            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
-        </label>
-        <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-          {t.providerForm.address2}
-          <input
+        </Field>
+        <Field label={t.providerForm.address2}>
+          <Input
             disabled={disabled}
             value={provider.address2}
             onChange={(event) => onChange("address2", event.target.value)}
             placeholder={t.providerForm.address2Placeholder}
             autoComplete="street-address"
-            className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
           />
-        </label>
+        </Field>
       </div>
       <TimeZoneField
         value={provider.timezone}
