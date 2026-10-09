@@ -306,6 +306,23 @@ export function getPublicThemeStyle(theme?: PublicTheme | null): PublicThemeStyl
   return THEME_STYLES[normalizePublicTheme(theme)];
 }
 
+/** The classic palette a theme without overrides falls back to. */
+const CLASSIC_SWATCH = { primary: "#005bbf", accent: "#1a73e8", action: "#00bfa5" };
+
+/**
+ * Three colors that identify a theme in the dashboard's picker: its primary,
+ * accent and action colors, falling back to the classic palette for any the
+ * theme does not override.
+ */
+export function getPublicThemeSwatch(theme?: PublicTheme | null): [string, string, string] {
+  const tokens = getPublicThemeStyle(theme).tokens;
+  return [
+    tokens["--primary"] ?? CLASSIC_SWATCH.primary,
+    tokens["--accent"] ?? CLASSIC_SWATCH.accent,
+    tokens["--action-teal"] ?? CLASSIC_SWATCH.action,
+  ];
+}
+
 export function normalizePublicTheme(value?: string | null): PublicTheme {
   const candidate = value?.trim().toLowerCase();
 

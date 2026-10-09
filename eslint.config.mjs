@@ -24,6 +24,11 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/AvailabilitySettingsSection.tsx",
   "components/provider/AvailabilityEditor.tsx",
   "components/provider/DailyBookingLimitField.tsx",
+  "components/provider/AppearanceSection.tsx",
+  "components/provider/HeaderImageUploader.tsx",
+  "components/provider/ProviderAppearanceForm.tsx",
+  "components/provider/ThemeSettingsSection.tsx",
+  "components/provider/LanguageSettingsSection.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
