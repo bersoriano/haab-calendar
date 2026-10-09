@@ -57,6 +57,21 @@ describe("StatGroup", () => {
   });
 });
 
+describe("Stat trend", () => {
+  it("colors a change by direction and keeps its words", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Visits" value={40} trend={{ label: "+25% vs previous 7 days", direction: "up" }} />
+        <Stat label="Bookings" value={3} trend={{ label: "-25% vs previous 7 days", direction: "down" }} />
+        <Stat label="Rate" value="5%" trend={{ label: "0 pts", direction: "flat" }} />
+      </StatGroup>,
+    );
+    expect(html).toMatch(/<dd[^>]*text-app-success-fg[^>]*>\+25% vs previous 7 days<\/dd>/);
+    expect(html).toMatch(/<dd[^>]*text-app-danger-fg[^>]*>-25% vs previous 7 days<\/dd>/);
+    expect(html).toMatch(/<dd[^>]*text-app-fg-muted[^>]*>0 pts<\/dd>/);
+  });
+});
+
 describe("Stat link", () => {
   it("links the stat with an accessible name that includes its label", () => {
     const html = renderToStaticMarkup(
