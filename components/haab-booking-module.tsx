@@ -6666,6 +6666,10 @@ export function HaabBookingModule({
       );
     }
 
+    // Public pages only from here (the dashboard returned its own dialog
+    // above). Kept byte-identical for the public flow, so the admin arms of
+    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
+    // cleanup.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4">
         <div
@@ -6827,6 +6831,10 @@ export function HaabBookingModule({
       );
     }
 
+    // Public pages only from here (the dashboard returned its own dialog
+    // above). Kept byte-identical for the public flow, so the admin arms of
+    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
+    // cleanup.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8">
         <div

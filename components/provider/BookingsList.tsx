@@ -213,7 +213,7 @@ export function BookingsList({
           const dateLabel = formatDateLabel(group.dateKey, lang);
 
           return (
-            <section key={group.dateKey} aria-labelledby={headingId}>
+            <div key={group.dateKey} role="group" aria-labelledby={headingId}>
               <StackedListHeading id={headingId}>
                 {group.relative ? (
                   <>
@@ -298,7 +298,7 @@ export function BookingsList({
                   );
                 })}
               </StackedList>
-            </section>
+            </div>
           );
         })
       )}

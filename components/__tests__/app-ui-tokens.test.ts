@@ -46,7 +46,8 @@ const RAW_PALETTE =
   /\b(?:bg|text|border|ring|outline|divide|fill|stroke|from|via|to|shadow|accent|placeholder|decoration)-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-\d{2,3}\b/;
 const RAW_BLACK_WHITE = /\b(?:bg|text|border|ring)-(?:white|black)\b/;
 const HEX = /#[0-9a-f]{3,8}\b/i;
-const LEGACY_VAR = /var\(--(?!color-app-|font-)/;
+// App-owned custom properties (--color-app-*, --app-*) and fonts are fine.
+const LEGACY_VAR = /var\(--(?!color-app-|font-|app-)/;
 
 function files(path: string): string[] {
   const full = join(root, path);

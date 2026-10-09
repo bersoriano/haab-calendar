@@ -30,7 +30,10 @@ export function StackedListItem({
   );
 }
 
-/** Sticks under the 4rem shell top bar while its group scrolls past. */
+/**
+ * Sticks while its group scrolls past, below whatever the host pins on top:
+ * the shell sets --app-sticky-top to its top bar's height; other hosts get 0.
+ */
 export function StackedListHeading({
   id,
   level = 3,
@@ -45,7 +48,7 @@ export function StackedListHeading({
   return (
     <Heading
       id={id}
-      className="sticky top-16 z-10 border-y border-app-border bg-app-subtle px-4 py-1.5 text-xs font-semibold text-app-fg-secondary sm:px-6"
+      className="sticky top-[var(--app-sticky-top,0px)] z-10 border-y border-app-border bg-app-subtle px-4 py-1.5 text-xs font-semibold text-app-fg-secondary sm:px-6"
     >
       {children}
     </Heading>

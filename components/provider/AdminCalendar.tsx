@@ -4,6 +4,7 @@ import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 
 import { Badge, Button, Card, IconButton, Select } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { getBookingTypeLabel } from "@/lib/format";
 import type { BookingType, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ export function AdminCalendar({
   onOpenDay: (dateKey: string) => void;
 }) {
   const t = bookingTranslations[lang];
+  const shell = dashboardCopy[lang];
 
   return (
     <Card as="section">
@@ -182,6 +184,7 @@ export function AdminCalendar({
                     {hidden > 0 ? (
                       <span className="text-[0.65rem] font-semibold leading-none text-app-fg-muted sm:text-xs">
                         +{hidden}
+                        <span className="sr-only"> {shell.moreBookings}</span>
                       </span>
                     ) : null}
                   </span>

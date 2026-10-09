@@ -76,8 +76,10 @@ describe("AdminCalendar", () => {
   });
 
   it("shows three bookings and a count for the rest", () => {
-    expect(html.match(/9:00 AM|10:00 AM|11:00 AM|12:00 AM|13:00 AM/g)?.length).toBeGreaterThanOrEqual(3);
-    expect(html).toContain("+2");
+    expect(html.match(/>(9|10|11|12|13):00 AM</g)).toHaveLength(3);
+    expect(html).not.toContain(">12:00 AM<");
+    expect(html).not.toContain(">13:00 AM<");
+    expect(html).toContain('+2<span class="sr-only"> more</span>');
   });
 
   it("labels the new-booking service picker", () => {

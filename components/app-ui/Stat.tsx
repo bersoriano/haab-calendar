@@ -68,7 +68,10 @@ export function Stat({
           <a
             href={href}
             onClick={onClick}
-            className={cn("rounded-md text-sm font-semibold text-app-accent hover:text-app-accent-hover", focusRing)}
+            className={cn(
+              "inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-app-accent hover:text-app-accent-hover sm:min-h-0",
+              focusRing,
+            )}
           >
             {linkLabel}
             <span className="sr-only"> {label}</span>

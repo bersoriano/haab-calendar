@@ -116,6 +116,7 @@ describe("AppShell", () => {
 
   it("paints the page on the app canvas", () => {
     expect(html).toContain("bg-app-canvas");
+    expect(html).toContain("[--app-sticky-top:4rem]");
     expect(html).not.toContain("var(--");
   });
 

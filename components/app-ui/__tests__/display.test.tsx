@@ -89,6 +89,15 @@ describe("Stat link", () => {
     expect(html).toContain('href="/dashboard/services"');
   });
 
+  it("keeps the link a 44px target on phones", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Upcoming" value={3} href="/dashboard/bookings" linkLabel="View all" />
+      </StatGroup>,
+    );
+    expect(html).toMatch(/<a[^>]*class="[^"]*min-h-11[^"]*sm:min-h-0/);
+  });
+
   it("renders no link without an href", () => {
     const html = renderToStaticMarkup(
       <StatGroup>
@@ -165,6 +174,8 @@ describe("StackedList", () => {
     );
     expect(html).toMatch(/<h3[^>]*id="today"[^>]*>Today<\/h3>/);
     expect(html).toContain("sticky");
+    // Offset comes from the host: the shell sets it to its top bar's height.
+    expect(html).toContain("top-[var(--app-sticky-top,0px)]");
     expect(html).toMatch(/<ul[^>]*role="list"/);
     expect(html).toContain("<li");
   });

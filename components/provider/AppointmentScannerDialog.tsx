@@ -326,7 +326,12 @@ export function AppointmentScannerDialog({
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-app-fg-muted">{copy.uploadHelp}</p>
             {/* A label styled as the primary button, so the file input stays native. */}
-            <label className={buttonStyles({ className: "cursor-pointer" })}>
+            <label
+              className={buttonStyles({
+                className:
+                  "cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-app-accent",
+              })}
+            >
               <UploadSimple aria-hidden="true" size={16} />
               {copy.upload}
               <input

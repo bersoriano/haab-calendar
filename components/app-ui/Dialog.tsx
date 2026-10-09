@@ -55,6 +55,15 @@ export function reconcileNativeClose({
   });
 }
 
+/**
+ * Where focus returns on close: the control that opened the dialog, or —
+ * when that control is gone (a cancelled row hides its actions) — a stable
+ * fallback, so focus never drops to <body>.
+ */
+export function focusAfterClose<T extends { isConnected: boolean }>(opener: T | null, fallback: T | null): T | null {
+  return opener?.isConnected ? opener : fallback;
+}
+
 const SIZES = { sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-3xl" } as const;
 
 /**
@@ -113,7 +122,7 @@ export function Dialog({
         dialog.close();
       }
       releaseScroll();
-      opener?.focus();
+      focusAfterClose(opener, document.getElementById("main-content"))?.focus();
     };
   }, [open]);
 

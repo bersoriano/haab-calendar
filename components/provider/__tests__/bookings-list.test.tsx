@@ -153,7 +153,8 @@ describe("BookingsList", () => {
 
   it("labels each day group with a sticky heading", () => {
     const html = render();
-    expect(html).toMatch(/<section aria-labelledby="bookings-2026-10-08"><h3[^>]*id="bookings-2026-10-08"[^>]*sticky/);
+    // A group, not a landmark per day: long lists would flood landmark navigation.
+    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"><h3[^>]*id="bookings-2026-10-08"[^>]*sticky/);
   });
 
   it("shows saved history policy and a path to settings", () => {

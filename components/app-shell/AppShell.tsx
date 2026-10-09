@@ -102,7 +102,7 @@ export function AppShell({
   }, [open]);
 
   return (
-    <div className="min-h-screen bg-app-canvas lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-app-canvas [--app-sticky-top:4rem] lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-app-fg focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-app-surface"

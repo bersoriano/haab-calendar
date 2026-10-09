@@ -33,6 +33,8 @@ export type DashboardShellCopy = {
   viewAll: string;
   /** Label of a dialog's close button. */
   closeDialog: string;
+  /** Read after a calendar day's "+N" overflow count. */
+  moreBookings: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -174,6 +176,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     rescheduledToast: "New time saved",
     viewAll: "View all",
     closeDialog: "Close",
+    moreBookings: "more",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -338,6 +341,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     rescheduledToast: "Nuevo horario guardado",
     viewAll: "Ver todo",
     closeDialog: "Cerrar",
+    moreBookings: "más",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

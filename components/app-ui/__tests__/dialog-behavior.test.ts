@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { createScrollLock } from "@/components/app-ui/scroll-lock";
-import { reconcileNativeClose, shouldCloseFromBackdrop } from "@/components/app-ui/Dialog";
+import { focusAfterClose, reconcileNativeClose, shouldCloseFromBackdrop } from "@/components/app-ui/Dialog";
 
 function page(overflow = "") {
   return { style: { overflow } };
@@ -130,3 +130,18 @@ describe("shouldCloseFromBackdrop", () => {
     expect(shouldCloseFromBackdrop(true, false)).toBe(false);
   });
 });
+
+describe("focusAfterClose", () => {
+  it("returns focus to the control that opened the dialog", () => {
+    const opener = { isConnected: true };
+    expect(focusAfterClose(opener, { isConnected: true })).toBe(opener);
+  });
+
+  it("falls back when the opener is gone (e.g. a cancelled row hides its actions)", () => {
+    const fallback = { isConnected: true };
+    expect(focusAfterClose({ isConnected: false }, fallback)).toBe(fallback);
+    expect(focusAfterClose(null, fallback)).toBe(fallback);
+    expect(focusAfterClose(null, null)).toBeNull();
+  });
+});
+

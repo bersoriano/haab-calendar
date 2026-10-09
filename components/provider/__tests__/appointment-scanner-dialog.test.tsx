@@ -36,6 +36,8 @@ describe("appointment scan result", () => {
     expect(html).toContain("Point camera at customer appointment QR");
     expect(html).toContain("Upload QR image");
     expect(html).toContain('accept="image/*"');
+    // Focus lands on the hidden file input; its label shows the ring.
+    expect(html).toMatch(/<label[^>]*has-\[:focus-visible\]:outline-2/);
   });
 
   it("is a native dialog named by its title", () => {
