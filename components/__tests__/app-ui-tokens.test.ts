@@ -30,6 +30,8 @@ const MIGRATED = [
   "components/app-shell/ShellSidebarParts.tsx",
   "components/provider/DashboardApp.tsx",
   "components/provider/SaveBar.tsx",
+  "components/provider/CampaignBadge.tsx",
+  "components/provider/DashboardOverview.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

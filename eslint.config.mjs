@@ -9,6 +9,8 @@ const MIGRATED_TO_APP_UI = [
   "components/app-shell/**/*.{ts,tsx}",
   "components/provider/DashboardApp.tsx",
   "components/provider/SaveBar.tsx",
+  "components/provider/CampaignBadge.tsx",
+  "components/provider/DashboardOverview.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
