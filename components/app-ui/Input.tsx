@@ -8,7 +8,7 @@ import type {
   TextareaHTMLAttributes,
 } from "react";
 
-import { isInvalid, useFieldControl } from "@/components/app-ui/Field";
+import { isInvalid, registerFieldControl, useFieldControl } from "@/components/app-ui/Field";
 import { appControl, focusRing, inputStyles } from "@/components/app-ui/styles";
 import { cn } from "@/lib/utils";
 
@@ -129,4 +129,8 @@ export function Switch({ className, ...props }: Omit<InputHTMLAttributes<HTMLInp
       />
     </span>
   );
+}
+
+for (const control of [Input, Textarea, Select, Checkbox, Switch]) {
+  registerFieldControl(control);
 }

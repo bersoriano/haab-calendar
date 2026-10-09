@@ -57,6 +57,43 @@ describe("Field", () => {
     expect(attr(html, "input", "id")).toBe("public-slug");
   });
 
+  it("takes an explicit id for a control that is not its direct child", () => {
+    const html = renderToStaticMarkup(
+      <Field label="Slug" id="public-slug">
+        <div className="flex">
+          <Input />
+        </div>
+      </Field>,
+    );
+    expect(html).toContain('for="public-slug"');
+    expect(attr(html, "input", "id")).toBe("public-slug");
+  });
+
+  it("never borrows a wrapper's id for the control", () => {
+    const html = renderToStaticMarkup(
+      <Field label="Slug">
+        <div id="slug-row">
+          <Input />
+        </div>
+      </Field>,
+    );
+    const inputId = attr(html, "input", "id");
+    expect(inputId).toBeTruthy();
+    expect(inputId).not.toBe("slug-row");
+    expect(html).toContain(`for="${inputId}"`);
+  });
+
+  it("associates a control inside a fragment", () => {
+    const html = renderToStaticMarkup(
+      <Field label="Slug">
+        <>
+          <Input />
+        </>
+      </Field>,
+    );
+    expect(html).toContain(`for="${attr(html, "input", "id")}"`);
+  });
+
   it("wires selects and textareas the same way", () => {
     const select = renderToStaticMarkup(
       <Field label="Status" error="Pick one">

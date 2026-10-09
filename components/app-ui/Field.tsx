@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useId, type ReactNode } from "react";
+import { createContext, isValidElement, useContext, useId, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,13 @@ type FieldContextValue = {
 };
 
 const FieldContext = createContext<FieldContextValue | null>(null);
+
+/** The kit's own controls; only their `id` can name a Field's control. */
+const FIELD_CONTROLS = new WeakSet<object>();
+
+export function registerFieldControl(component: object) {
+  FIELD_CONTROLS.add(component);
+}
 
 type ControlProps = {
   id?: string;
@@ -45,6 +52,7 @@ export function isInvalid(value: ControlProps["aria-invalid"]) {
 }
 
 export function Field({
+  id,
   label,
   description,
   error,
@@ -54,6 +62,11 @@ export function Field({
   className,
   children,
 }: {
+  /**
+   * The control's id. Needed when the control is not Field's direct child
+   * (e.g. inside a layout wrapper) and must keep a known id.
+   */
+  id?: string;
   label: ReactNode;
   description?: ReactNode;
   error?: ReactNode;
@@ -65,7 +78,7 @@ export function Field({
   children: ReactNode;
 }) {
   const generatedId = useId();
-  const controlId = findControlId(children) ?? generatedId;
+  const controlId = id ?? findControlId(children) ?? generatedId;
   const descriptionId = description ? `${generatedId}-description` : undefined;
   const errorId = error ? `${generatedId}-error` : undefined;
 
@@ -114,9 +127,12 @@ export function Field({
   );
 }
 
-/** An explicit id on the single child control wins over the generated one. */
+/**
+ * An id set on a kit control that is Field's direct child names it. Any other
+ * child's id (a layout wrapper's) is left alone, or the control would share it.
+ */
 function findControlId(children: ReactNode): string | undefined {
-  if (children && typeof children === "object" && "props" in children) {
+  if (isValidElement(children) && FIELD_CONTROLS.has(children.type as object)) {
     const id = (children.props as { id?: unknown }).id;
     return typeof id === "string" ? id : undefined;
   }
