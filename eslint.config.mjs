@@ -13,6 +13,7 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/DashboardOverview.tsx",
   "components/provider/BookingsList.tsx",
   "components/provider/AdminCalendar.tsx",
+  "components/provider/ProviderAnalyticsSurface.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 
