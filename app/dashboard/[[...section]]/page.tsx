@@ -7,6 +7,7 @@ import {
   pathForSection,
   sectionFromSegments,
 } from "@/lib/dashboard-routes";
+import { parseVerticalId } from "@/lib/business-type-switch";
 import { getServerLanguage } from "@/lib/language/server";
 import { loadDashboard } from "@/lib/supabase/dashboard-loader";
 import type { AdminTab } from "@/lib/types";
@@ -21,11 +22,12 @@ const META_TITLES: Record<AdminTab, string> = {
   appearance: "Appearance",
   integrations: "Integrations",
   settings: "Settings",
+  "business-type": "Change business type",
 };
 
 type DashboardPageProps = {
   params: Promise<{ section?: string[] }>;
-  searchParams: Promise<{ checkout?: string; google?: string }>;
+  searchParams: Promise<{ checkout?: string; google?: string; switched?: string; profile?: string }>;
 };
 
 export async function generateMetadata({ params }: DashboardPageProps): Promise<Metadata> {
@@ -44,7 +46,7 @@ export async function generateMetadata({ params }: DashboardPageProps): Promise<
  * this renders refreshes, deep links and new tabs.
  */
 export default async function DashboardPage({ params, searchParams }: DashboardPageProps) {
-  const [{ section: segments }, { checkout, google }] = await Promise.all([
+  const [{ section: segments }, { checkout, google, switched, profile }] = await Promise.all([
     params,
     searchParams,
   ]);
@@ -77,6 +79,8 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
       viewerLanguage={await getServerLanguage()}
       checkoutResult={parseCheckoutResult(checkout)}
       googleOutcome={parseGoogleOutcome(google)}
+      switchedTo={parseVerticalId(switched)}
+      profileUnsaved={profile === "unsaved"}
     />
   );
 }

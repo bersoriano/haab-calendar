@@ -13,7 +13,7 @@ import type { VerticalCopy } from "@/lib/vertical-copy";
 export type DashboardShellCopy = {
   navLabel: string;
   groups: { operate: string; setup: string };
-  titles: { overview: string; availability: string; integrations: string };
+  titles: { overview: string; availability: string; integrations: string; businessType: string };
   descriptions: Record<AdminTab, string>;
   copyLink: string;
   linkCopied: string;
@@ -51,14 +51,69 @@ export type DashboardShellCopy = {
   dangerZoneBody: string;
   nextStepsTitle: string;
   nextSteps: Record<NextStepId, { title: string; body: string; cta?: string }>;
+  businessType: BusinessTypeCopy;
   google: Record<GoogleOutcome, string>;
+};
+
+export type CountForms = { one: string; other: string };
+
+/** "1 service" or "3 services": `other` has a "{count}" placeholder. */
+export function countLabel(forms: CountForms, count: number) {
+  return count === 1 ? forms.one : forms.other.replace("{count}", String(count));
+}
+
+/**
+ * "{type}", "{services}", "{bookings}", "{from}" and "{to}" are filled in by
+ * the caller; counts go through countLabel so one reads in the singular.
+ */
+export type BusinessTypeCopy = {
+  servicesCount: CountForms;
+  bookingsCount: CountForms;
+  cardTitle: string;
+  cardBody: string;
+  change: string;
+  pickTitle: string;
+  pickBody: string;
+  warningTitle: string;
+  replacedTitle: string;
+  replacedBody: string;
+  staysTitle: string;
+  stays: string[];
+  linkMoves: string;
+  notCarried: string;
+  blockedTitle: string;
+  blockedBookings: string;
+  blockedHolds: string;
+  goToBookings: string;
+  acknowledge: string;
+  continue: string;
+  back: string;
+  cancel: string;
+  draftBanner: string;
+  draftBannerChoosing: string;
+  cancelChange: string;
+  replaceDraftTitle: string;
+  replaceDraftBody: string;
+  keepDraft: string;
+  startNew: string;
+  publishLabel: string;
+  confirmTitle: string;
+  confirmBody: string;
+  success: string;
+  profileUnsaved: string;
+  demoUnavailable: string;
 };
 
 export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
   en: {
     navLabel: "Dashboard",
     groups: { operate: "Operate", setup: "Set up" },
-    titles: { overview: "Overview", availability: "Availability", integrations: "Integrations" },
+    titles: {
+      overview: "Overview",
+      availability: "Availability",
+      integrations: "Integrations",
+      businessType: "Change business type",
+    },
     descriptions: {
       dashboard: "What's coming up and how your page is doing.",
       bookings: "Search, filter and manage everything that's been booked.",
@@ -69,6 +124,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       appearance: "How your public page looks and which language it speaks.",
       integrations: "Connect the tools you already use.",
       settings: "Business details, booking link and workspace language.",
+      "business-type": "Set up your page for a different kind of business.",
     },
     copyLink: "Copy link",
     linkCopied: "Copied",
@@ -120,6 +176,55 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
         body: "Publishing is turned off for this account. The message above explains why.",
       },
     },
+    businessType: {
+      servicesCount: { one: "1 service", other: "{count} services" },
+      bookingsCount: { one: "1 upcoming booking", other: "{count} upcoming bookings" },
+      cardTitle: "Business type",
+      cardBody: "Decides your page's services, wording and booking rules.",
+      change: "Change business type",
+      pickTitle: "Choose your new business type",
+      pickBody: "You'll set it up before anything on your live page changes.",
+      warningTitle: "Before you switch to {type}",
+      replacedTitle: "Will be replaced",
+      replacedBody:
+        "Your {services}, weekly hours and daily booking limit, by the {type} starter setup. You review it before it goes live.",
+      staysTitle: "Stays",
+      stays: [
+        "Your account and plan",
+        "Profile and contact details",
+        "Languages, logo, header image and theme",
+        "Past bookings",
+        "Google Calendar connection",
+      ],
+      linkMoves: "Your booking link moves from {from} to {to}. The old link redirects.",
+      notCarried: "Links to individual services on your current page will stop working.",
+      blockedTitle: "Handle upcoming bookings first",
+      blockedBookings:
+        "You have {bookings}. Cancel them, or wait until they're done, before changing your business type.",
+      blockedHolds: "Someone is booking on your page right now. Try again in a few minutes.",
+      goToBookings: "Go to bookings",
+      acknowledge: "I understand my current services and hours will be replaced.",
+      continue: "Continue",
+      back: "Back",
+      cancel: "Cancel",
+      draftBanner:
+        "Setting up your {type} page. Your live page doesn't change until you publish, and this draft stays in this browser if you leave.",
+      draftBannerChoosing:
+        "Choose your new business type below. Your live page doesn't change until you publish.",
+      cancelChange: "Cancel change",
+      replaceDraftTitle: "You have a {from} draft",
+      replaceDraftBody: "Keep working on it, or start over as {to}?",
+      keepDraft: "Keep my draft",
+      startNew: "Start over",
+      publishLabel: "Replace and publish",
+      confirmTitle: "Replace your live page?",
+      confirmBody:
+        "This replaces your {services}, weekly hours and daily limit on your live page with this setup.",
+      success: "Your page is now a {type} page. Your old link redirects here.",
+      profileUnsaved:
+        "Some profile changes from your draft were not saved. Review them in Settings.",
+      demoUnavailable: "Demo pages keep their business type.",
+    },
     google: {
       connected: "Google Calendar is connected.",
       declined: "Google Calendar wasn't connected because access was declined.",
@@ -137,7 +242,12 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
   es: {
     navLabel: "Panel",
     groups: { operate: "Operación", setup: "Configuración" },
-    titles: { overview: "Resumen", availability: "Disponibilidad", integrations: "Integraciones" },
+    titles: {
+      overview: "Resumen",
+      availability: "Disponibilidad",
+      integrations: "Integraciones",
+      businessType: "Cambiar tipo de negocio",
+    },
     descriptions: {
       dashboard: "Lo que viene y cómo va su página.",
       bookings: "Busque, filtre y gestione todo lo que le han reservado.",
@@ -148,6 +258,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       appearance: "Cómo se ve su página pública y en qué idioma habla.",
       integrations: "Conecte las herramientas que ya usa.",
       settings: "Datos del negocio, enlace de reservas e idioma de su espacio.",
+      "business-type": "Configure su página para otro tipo de negocio.",
     },
     copyLink: "Copiar enlace",
     linkCopied: "Copiado",
@@ -199,6 +310,55 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
         body: "La publicación está desactivada para esta cuenta. El mensaje de arriba explica por qué.",
       },
     },
+    businessType: {
+      servicesCount: { one: "1 servicio", other: "{count} servicios" },
+      bookingsCount: { one: "1 reserva próxima", other: "{count} reservas próximas" },
+      cardTitle: "Tipo de negocio",
+      cardBody: "Define los servicios, el vocabulario y las reglas de reserva de su página.",
+      change: "Cambiar tipo de negocio",
+      pickTitle: "Elija su nuevo tipo de negocio",
+      pickBody: "Lo configurará antes de que cambie algo en su página publicada.",
+      warningTitle: "Antes de cambiar a {type}",
+      replacedTitle: "Se reemplazará",
+      replacedBody:
+        "Sus servicios ({services}), su horario semanal y su límite diario de reservas, por la configuración inicial de {type}. La revisa antes de publicarla.",
+      staysTitle: "Se conserva",
+      stays: [
+        "Su cuenta y su plan",
+        "Perfil y datos de contacto",
+        "Idiomas, logotipo, imagen de encabezado y tema",
+        "Reservas pasadas",
+        "Conexión con Google Calendar",
+      ],
+      linkMoves: "Su enlace de reservas pasa de {from} a {to}. El enlace anterior redirige.",
+      notCarried: "Los enlaces a servicios individuales de su página actual dejarán de funcionar.",
+      blockedTitle: "Primero atienda las reservas próximas",
+      blockedBookings:
+        "Tiene {bookings}. Cancélelas, o espere a que terminen, antes de cambiar su tipo de negocio.",
+      blockedHolds: "Alguien está reservando en su página en este momento. Inténtelo de nuevo en unos minutos.",
+      goToBookings: "Ir a reservas",
+      acknowledge: "Entiendo que mis servicios y horarios actuales se reemplazarán.",
+      continue: "Continuar",
+      back: "Atrás",
+      cancel: "Cancelar",
+      draftBanner:
+        "Está configurando su página de {type}. Su página publicada no cambia hasta que publique, y este borrador se guarda en este navegador si sale.",
+      draftBannerChoosing:
+        "Elija abajo su nuevo tipo de negocio. Su página publicada no cambia hasta que publique.",
+      cancelChange: "Cancelar el cambio",
+      replaceDraftTitle: "Tiene un borrador de {from}",
+      replaceDraftBody: "¿Seguir con él o empezar de nuevo como {to}?",
+      keepDraft: "Seguir con mi borrador",
+      startNew: "Empezar de nuevo",
+      publishLabel: "Reemplazar y publicar",
+      confirmTitle: "¿Reemplazar su página publicada?",
+      confirmBody:
+        "Esto reemplaza sus servicios ({services}), su horario semanal y su límite diario en su página publicada por esta configuración.",
+      success: "Su página ahora es de {type}. Su enlace anterior redirige aquí.",
+      profileUnsaved:
+        "Algunos cambios de perfil de su borrador no se guardaron. Revíselos en Ajustes.",
+      demoUnavailable: "Las páginas de ejemplo conservan su tipo de negocio.",
+    },
     google: {
       connected: "Google Calendar está conectado.",
       declined: "Google Calendar no se conectó porque se rechazó el acceso.",
@@ -239,5 +399,7 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
       return shell.titles.integrations;
     case "settings":
       return admin.tabSettings;
+    case "business-type":
+      return shell.titles.businessType;
   }
 }

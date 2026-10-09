@@ -48,7 +48,7 @@ function requireText(value: string, message: string) {
   return trimmed;
 }
 
-function requireVertical(value?: VerticalId): VerticalId {
+export function requireVertical(value?: VerticalId): VerticalId {
   if (!value) {
     throw new ProviderStoreWriteError("Choose a booking vertical before publishing.", 400);
   }
@@ -76,7 +76,7 @@ function toLocationPricesPayload(source?: Partial<Record<LocationKey, string>>) 
   return prices;
 }
 
-function toServicePayload(providerId: string, service: Service, sortOrder: number) {
+export function toServicePayload(providerId: string, service: Service, sortOrder: number) {
   const bookingType = normalizeBookingType(service.bookingType);
 
   return {

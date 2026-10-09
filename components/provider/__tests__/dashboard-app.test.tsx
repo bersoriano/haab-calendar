@@ -13,10 +13,21 @@ import type { Lang, ModuleStore } from "@/lib/types";
  */
 const captured = vi.hoisted(() => ({
   props: [] as Record<string, unknown>[],
+  switchProps: [] as Record<string, unknown>[],
   pathname: "/dashboard",
+  search: "",
 }));
 
-vi.mock("next/navigation", () => ({ usePathname: () => captured.pathname }));
+vi.mock("next/navigation", () => ({
+  usePathname: () => captured.pathname,
+  useSearchParams: () => new URLSearchParams(captured.search),
+}));
+vi.mock("@/components/provider/BusinessTypeSwitch", () => ({
+  BusinessTypeSwitch: (props: Record<string, unknown>) => {
+    captured.switchProps.push(props);
+    return <p>business-type-switch</p>;
+  },
+}));
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => (
     <a href={href} {...rest}>
@@ -66,10 +77,15 @@ function render(
     publishingEnabled?: boolean;
     demoEdit?: { label: string; publicPath: string };
     googleOutcome?: "connected" | "failed";
+    search?: string;
+    switchedTo?: "healthcare";
+    profileUnsaved?: boolean;
   } = {},
 ) {
   captured.props.length = 0;
+  captured.switchProps.length = 0;
   captured.pathname = options.pathname ?? "/dashboard";
+  captured.search = options.search ?? "";
   const html = renderToStaticMarkup(
     <DashboardApp
       initialSection="dashboard"
@@ -79,6 +95,8 @@ function render(
       viewerLanguage={options.viewerLanguage ?? "en"}
       demoEdit={options.demoEdit}
       googleOutcome={options.googleOutcome}
+      switchedTo={options.switchedTo}
+      profileUnsaved={options.profileUnsaved}
       publicationStatus={
         options.publishingEnabled === undefined
           ? undefined
@@ -90,7 +108,7 @@ function render(
     />,
   );
 
-  return { html, moduleProps: captured.props[0] ?? {} };
+  return { html, moduleProps: captured.props[0] ?? {}, switchProps: captured.switchProps[0] };
 }
 
 describe("DashboardApp", () => {
@@ -188,5 +206,33 @@ describe("DashboardApp", () => {
     );
 
     expect(source).toMatch(/<ClientOnly[\s\S]*<HaabBookingModule[\s\S]*<\/ClientOnly>/);
+  });
+
+  it("lets the owner start a business type change, but not while editing a demo", () => {
+    expect(typeof render().moduleProps.onChangeBusinessType).toBe("function");
+    expect(
+      render({ demoEdit: { label: "Doctors", publicPath: "/doctors/dr-maya" } }).moduleProps
+        .onChangeBusinessType,
+    ).toBeUndefined();
+  });
+
+  it("runs the switch on its own page, keeping the live dashboard mounted but hidden", () => {
+    const { html, switchProps, moduleProps } = render({
+      pathname: "/dashboard/business-type",
+      search: "to=healthcare",
+    });
+
+    expect(switchProps?.to).toBe("healthcare");
+    expect(html).toContain("business-type-switch");
+    expect(moduleProps.adminSection).toBe("business-type");
+    expect(html).toMatch(/<div hidden="">/);
+  });
+
+  it("confirms a finished switch, and asks for a profile review when that save failed", () => {
+    const done = render({ switchedTo: "healthcare" }).html;
+    expect(done).toContain("Your page is now a Healthcare page");
+
+    const partial = render({ switchedTo: "healthcare", profileUnsaved: true }).html;
+    expect(partial).toContain(dashboardCopy.en.businessType.profileUnsaved);
   });
 });

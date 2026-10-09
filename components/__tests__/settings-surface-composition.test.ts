@@ -131,3 +131,25 @@ describe("dashboard sections own availability and integrations", () => {
     expect(moduleSource).toContain('chrome === "module"');
   });
 });
+
+describe("business type switch wiring", () => {
+  const moduleSource = read("components/haab-booking-module.tsx");
+
+  it("publishes setup through the host's override when one is given", () => {
+    const publish = moduleSource.slice(
+      moduleSource.indexOf("async function publishSetup("),
+      moduleSource.indexOf("async function resumeGuestDraftPublication("),
+    );
+
+    expect(publish).toContain("publishSetupOverride");
+  });
+
+  it("renders nothing of its own for the business-type section", () => {
+    const sections = moduleSource.slice(
+      moduleSource.indexOf("function renderManagementSections("),
+      moduleSource.indexOf("function renderPublicCalendar("),
+    );
+
+    expect(sections).toContain('case "business-type":');
+  });
+});

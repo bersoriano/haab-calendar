@@ -160,11 +160,13 @@ import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsS
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { isStoreDirty } from "@/lib/store-dirty";
+import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
@@ -289,6 +291,17 @@ type HaabBookingModuleProps = {
    * hosts, standalone drafts); only an explicit false reads as "off".
    */
   publishingEnabled?: boolean;
+  /**
+   * Publishes the setup wizard through the host instead of
+   * PUT /api/provider/store — the business-type switch replaces the live page
+   * through its own endpoint. Resolves to the saved store, or to null when the
+   * owner backed out of a confirmation (nothing is shown as an error then).
+   */
+  publishSetupOverride?: (store: ModuleStore) => Promise<ModuleStore | null>;
+  /** Label for the wizard's publishing step, e.g. "Replace and publish". */
+  publishLabel?: string;
+  /** Opens the host's business-type change; shows the Settings card when set. */
+  onChangeBusinessType?: () => void;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -411,6 +424,9 @@ export function HaabBookingModule({
   chrome = "module",
   onOpenDashboard,
   publishingEnabled,
+  publishSetupOverride,
+  publishLabel,
+  onChangeBusinessType,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -473,6 +489,10 @@ export function HaabBookingModule({
 
     // Leaving the page (reload, close, sign out) would drop held edits.
     function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      // A planned navigation (the business-type switch) carries the edits.
+      if (!shouldWarnBeforeLeaving(true)) {
+        return;
+      }
       event.preventDefault();
       event.returnValue = "";
     }
@@ -2206,6 +2226,27 @@ export function HaabBookingModule({
       return true;
     }
 
+    if (publishSetupOverride) {
+      setIsPersistingSetup(true);
+      try {
+        const persistedStore = await publishSetupOverride(nextStore);
+        if (!persistedStore) {
+          return false;
+        }
+        onSetupPersisted?.(persistedStore);
+        return true;
+      } catch (error) {
+        setSetupError(
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not save your booking page. Please try again.",
+        );
+        return false;
+      } finally {
+        setIsPersistingSetup(false);
+      }
+    }
+
     setIsPersistingSetup(true);
 
     try {
@@ -3718,7 +3759,11 @@ export function HaabBookingModule({
               onClick={goToNextSetupStep}
               disabled={isPersistingSetup}
             >
-              {isPersistingSetup ? t.common.saving : t.setup.continueButton}
+              {isPersistingSetup
+                ? t.common.saving
+                : setupStep === 3 && publishLabel
+                  ? publishLabel
+                  : t.setup.continueButton}
             </ActionButton>
           ) : null}
         </div>
@@ -4079,6 +4124,9 @@ export function HaabBookingModule({
             className={cn(adminPanelClass, "p-6")}
           />
         );
+      case "business-type":
+        // The host renders the switch's own setup on a separate draft.
+        return null;
       case "settings":
         return (
           <ProviderSettingsSurface
@@ -4097,6 +4145,15 @@ export function HaabBookingModule({
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
             onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
+            businessType={
+              onChangeBusinessType && vertical
+                ? {
+                    label: landingTranslations[lang].home.verticals[vertical].label,
+                    tagline: landingTranslations[lang].home.verticals[vertical].tagline,
+                    onChange: onChangeBusinessType,
+                  }
+                : undefined
+            }
           />
         );
     }
