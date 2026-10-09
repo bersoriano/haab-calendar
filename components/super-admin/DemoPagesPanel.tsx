@@ -17,7 +17,7 @@ export function DemoPagesPanel({ demoPages }: { demoPages: DemoPageSummary[] }) 
         writes to it until you exit demo editing.
       </p>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
         {demoPages.map((demo) => (
           <article
             key={demo.key}
@@ -45,7 +45,7 @@ export function DemoPagesPanel({ demoPages }: { demoPages: DemoPageSummary[] }) 
                   type="submit"
                   disabled={demo.status !== "ready"}
                   className={cn(
-                    "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
+                    "inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40",
                     SUPER_ADMIN_ACCENT_CLASS,
                   )}
                 >
