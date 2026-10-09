@@ -57,6 +57,33 @@ describe("StatGroup", () => {
   });
 });
 
+describe("Stat link", () => {
+  it("links the stat with an accessible name that includes its label", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Upcoming" value={3} href="/dashboard/bookings" linkLabel="View all" />
+      </StatGroup>,
+    );
+    expect(html).toMatch(/<a[^>]*href="\/dashboard\/bookings"[^>]*>View all<span class="sr-only"> Upcoming<\/span><\/a>/);
+  });
+
+  it("hands clicks to the caller for client-side navigation", () => {
+    const onClick = () => undefined;
+    const element = Stat({ label: "Services", value: 1, href: "/dashboard/services", linkLabel: "View", onClick });
+    const html = renderToStaticMarkup(<StatGroup>{element}</StatGroup>);
+    expect(html).toContain('href="/dashboard/services"');
+  });
+
+  it("renders no link without an href", () => {
+    const html = renderToStaticMarkup(
+      <StatGroup>
+        <Stat label="Total" value={9} />
+      </StatGroup>,
+    );
+    expect(html).not.toContain("<a");
+  });
+});
+
 describe("Avatar", () => {
   it("falls back to the first initial without an image", () => {
     const html = renderToStaticMarkup(<Avatar name="rivera clinic" />);

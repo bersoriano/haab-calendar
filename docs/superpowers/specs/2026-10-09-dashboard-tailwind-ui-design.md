@@ -111,7 +111,7 @@ Utilities read as `bg-app-surface`, `text-app-fg-muted`, `ring-app-border`, `out
 - `Card`, `CardHeader` (`title`, `description?`, `actions?`), `CardBody`, `CardFooter` (top divider, right-aligned actions).
 - `SectionHeading` — heading, description and actions row for use inside cards and pages.
 - `Badge` — `tone: "neutral" | "accent" | "success" | "warning" | "danger" | "info" | "admin"`, `dot?`. Look: `rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset`.
-- `Stat` — `label`, `value`, `detail?`, `href?`/`onClick?`. `StatGroup` lays stats out with dividers.
+- `Stat` — `label`, `value`, `detail?`, `href?` + `linkLabel` (visible link text; the label is appended for screen readers) + `onClick?` for client-side navigation. `StatGroup` lays stats out with dividers.
 - `StackedList`, `StackedListItem` (`leading?`, children, `trailing?`), `StackedListHeading` (sticky group heading).
 - `Table`, `THead`, `TBody`, `Tr`, `Th`, `Td` — wrapped so horizontal overflow scrolls inside the card, never the page.
 - `DescriptionList`, `DescriptionItem` (`term`, children).

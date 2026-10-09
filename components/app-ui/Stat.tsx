@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
+import { focusRing } from "@/components/app-ui/styles";
 import { cn } from "@/lib/utils";
 
 const COLUMNS = { 2: "lg:grid-cols-2", 3: "lg:grid-cols-3", 4: "lg:grid-cols-4" } as const;
@@ -27,24 +28,47 @@ export function StatGroup({
   );
 }
 
+/** A stat can link to where its number comes from. */
+type StatLink =
+  | { href?: undefined; linkLabel?: undefined; onClick?: undefined }
+  | {
+      href: string;
+      /** Visible link text; the stat's label is appended for screen readers. */
+      linkLabel: string;
+      /** Client callers only, e.g. shallow navigation inside the dashboard. */
+      onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
+    };
+
 /** One stat. Renders dt/dd, so it belongs inside StatGroup. */
 export function Stat({
   label,
   value,
   detail,
-  action,
+  href,
+  linkLabel,
+  onClick,
 }: {
   label: ReactNode;
   value: ReactNode;
   detail?: ReactNode;
-  action?: ReactNode;
-}) {
+} & StatLink) {
   return (
     <div className="flex flex-col bg-app-surface px-4 py-5 sm:p-6">
       <dt className="text-sm font-medium text-app-fg-muted">{label}</dt>
       <dd className="mt-1 text-3xl font-semibold tracking-tight text-app-fg tabular-nums">{value}</dd>
       {detail ? <dd className="mt-1 text-sm text-app-fg-muted">{detail}</dd> : null}
-      {action ? <dd className="mt-3">{action}</dd> : null}
+      {href ? (
+        <dd className="mt-3">
+          <a
+            href={href}
+            onClick={onClick}
+            className={cn("rounded-md text-sm font-semibold text-app-accent hover:text-app-accent-hover", focusRing)}
+          >
+            {linkLabel}
+            <span className="sr-only"> {label}</span>
+          </a>
+        </dd>
+      ) : null}
     </div>
   );
 }
