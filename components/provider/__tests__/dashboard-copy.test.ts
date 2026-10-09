@@ -30,6 +30,14 @@ describe("dashboard shell copy", () => {
     }
   });
 
+  it("words toasts in both languages", () => {
+    for (const key of ["linkCopiedToast", "dismiss"] as const) {
+      expect(dashboardCopy.en[key]).toBeTruthy();
+      expect(dashboardCopy.es[key]).toBeTruthy();
+      expect(dashboardCopy.es[key]).not.toBe(dashboardCopy.en[key]);
+    }
+  });
+
   it("names bookings and services with the vertical's own words", () => {
     const restaurant = getVerticalCopy("restaurant", "en");
 

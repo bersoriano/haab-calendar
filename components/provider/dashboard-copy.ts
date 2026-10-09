@@ -17,6 +17,10 @@ export type DashboardShellCopy = {
   descriptions: Record<AdminTab, string>;
   copyLink: string;
   linkCopied: string;
+  /** Toast after copying the booking link. */
+  linkCopiedToast: string;
+  /** Label of a toast's close button. */
+  dismiss: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -150,6 +154,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     },
     copyLink: "Copy link",
     linkCopied: "Copied",
+    linkCopiedToast: "Booking link copied",
+    dismiss: "Dismiss notification",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -306,6 +312,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     },
     copyLink: "Copiar enlace",
     linkCopied: "Copiado",
+    linkCopiedToast: "Enlace de reservas copiado",
+    dismiss: "Cerrar aviso",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

@@ -28,6 +28,8 @@ const MIGRATED = [
   "components/app-shell/ShellFooter.tsx",
   "components/app-shell/ShellIcon.tsx",
   "components/app-shell/ShellSidebarParts.tsx",
+  "components/provider/DashboardApp.tsx",
+  "components/super-admin/SuperAdminShell.tsx",
 ];
 
 const RAW_PALETTE =
