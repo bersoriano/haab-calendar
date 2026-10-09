@@ -2,7 +2,7 @@
 
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
-import { segmentStyles } from "@/components/app-ui/styles";
+import { appControl, segmentStyles } from "@/components/app-ui/styles";
 import { cn } from "@/lib/utils";
 
 /** Roving-focus movement for a radiogroup: arrows wrap, Home/End jump. */
@@ -48,6 +48,7 @@ export function SegmentedControl<T extends string>({
 
         return (
           <button
+            {...appControl}
             key={option.value}
             ref={(element) => {
               refs.current[index] = element;

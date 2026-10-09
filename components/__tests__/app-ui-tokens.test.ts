@@ -58,6 +58,10 @@ describe("app tokens", () => {
     expect(missing).toEqual([]);
   });
 
+  it("hands app controls back to the utilities after the global font reset", () => {
+    expect(css).toMatch(/\[data-app-control\]\s*\{\s*font:\s*revert-layer;\s*\}/);
+  });
+
   it("keeps migrated files on app tokens only", () => {
     const offenders = MIGRATED.flatMap(files)
       .map((file) => ({ file: relative(root, file), text: readFileSync(file, "utf8") }))

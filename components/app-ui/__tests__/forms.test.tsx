@@ -76,6 +76,25 @@ describe("Field", () => {
   });
 });
 
+describe("global font reset", () => {
+  it("is opted out by every form control", () => {
+    for (const html of [
+      renderToStaticMarkup(<Input aria-label="a" />),
+      renderToStaticMarkup(<Input aria-label="a" leadingAddon="x" />),
+      renderToStaticMarkup(<Textarea aria-label="a" />),
+      renderToStaticMarkup(
+        <Select aria-label="a">
+          <option>x</option>
+        </Select>,
+      ),
+      renderToStaticMarkup(<Checkbox aria-label="a" />),
+      renderToStaticMarkup(<Switch aria-label="a" />),
+    ]) {
+      expect(html).toMatch(/<(input|textarea|select)[^>]*data-app-control/);
+    }
+  });
+});
+
 describe("Input addons", () => {
   it("renders prefix text beside the input", () => {
     const html = renderToStaticMarkup(<Input aria-label="Slug" leadingAddon="haab.app/" />);

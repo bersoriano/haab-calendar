@@ -9,7 +9,7 @@ import type {
 } from "react";
 
 import { isInvalid, useFieldControl } from "@/components/app-ui/Field";
-import { focusRing, inputStyles } from "@/components/app-ui/styles";
+import { appControl, focusRing, inputStyles } from "@/components/app-ui/styles";
 import { cn } from "@/lib/utils";
 
 export function Input({
@@ -22,7 +22,7 @@ export function Input({
   const invalid = isInvalid(control["aria-invalid"]);
 
   if (!leadingAddon && !trailingAddon) {
-    return <input {...control} className={inputStyles({ invalid, className: cn("h-11 sm:h-9", className) })} />;
+    return <input {...control} {...appControl} className={inputStyles({ invalid, className: cn("h-11 sm:h-9", className) })} />;
   }
 
   return (
@@ -42,7 +42,8 @@ export function Input({
       ) : null}
       <input
         {...control}
-        className="block h-full min-w-0 grow bg-transparent px-3 text-base! text-app-fg placeholder:text-app-placeholder focus:outline-none disabled:cursor-not-allowed disabled:text-app-fg-muted sm:text-sm!"
+        {...appControl}
+        className="block h-full min-w-0 grow bg-transparent px-3 text-base text-app-fg placeholder:text-app-placeholder focus:outline-none disabled:cursor-not-allowed disabled:text-app-fg-muted sm:text-sm"
       />
       {trailingAddon ? (
         <span className="flex shrink-0 items-center pr-1.5 text-sm text-app-fg-muted">{trailingAddon}</span>
@@ -57,6 +58,7 @@ export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTex
   return (
     <textarea
       {...control}
+      {...appControl}
       className={inputStyles({ invalid: isInvalid(control["aria-invalid"]), className: cn("min-h-24 py-2", className) })}
     />
   );
@@ -69,6 +71,7 @@ export function Select({ className, children, ...props }: SelectHTMLAttributes<H
     <div className={cn("grid grid-cols-1", className)}>
       <select
         {...control}
+        {...appControl}
         className={inputStyles({
           invalid: isInvalid(control["aria-invalid"]),
           className: "col-start-1 row-start-1 h-11 appearance-none pr-8 sm:h-9",
@@ -91,6 +94,7 @@ export function Checkbox({ className, ...props }: Omit<InputHTMLAttributes<HTMLI
   return (
     <input
       {...control}
+      {...appControl}
       type="checkbox"
       className={cn(
         "size-4 rounded border-app-border-strong accent-app-accent disabled:cursor-not-allowed disabled:opacity-50",
@@ -118,6 +122,7 @@ export function Switch({ className, ...props }: Omit<InputHTMLAttributes<HTMLInp
       />
       <input
         {...control}
+        {...appControl}
         type="checkbox"
         role="switch"
         className="absolute inset-0 size-full cursor-pointer appearance-none focus:outline-none disabled:cursor-not-allowed forced-colors:appearance-auto"

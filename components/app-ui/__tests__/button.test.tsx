@@ -40,13 +40,15 @@ describe("Button", () => {
     expect(buttonStyles({ variant: "plain" })).toContain("hover:bg-app-subtle");
   });
 
-  it("sets its own type over the global form-control font reset", () => {
-    // globals.css has an unlayered `button, input… { font: inherit }` that
-    // outranks layered utilities; only important utilities get past it.
-    expect(buttonStyles()).toContain("text-sm!");
-    expect(buttonStyles()).toContain("font-semibold!");
-    expect(segmentStyles(true)).toContain("text-sm!");
-    expect(inputStyles()).toContain("sm:text-sm!");
+  it("opts its controls out of the global form-control font reset", () => {
+    // globals.css resets form controls to `font: inherit` outside any layer;
+    // [data-app-control] hands the cascade back to the utilities, so a
+    // consumer's className can still change the type.
+    expect(renderToStaticMarkup(<Button>Save</Button>)).toContain("data-app-control");
+    expect(renderToStaticMarkup(<IconButton label="Close" icon={<span />} />)).toContain("data-app-control");
+    expect(buttonStyles()).not.toContain("!");
+    expect(segmentStyles(true)).not.toContain("!");
+    expect(inputStyles()).not.toContain("!");
   });
 
   it("keeps 44px targets on phones", () => {

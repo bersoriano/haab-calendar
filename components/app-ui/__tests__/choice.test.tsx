@@ -35,6 +35,10 @@ describe("SegmentedControl", () => {
     expect(idle).not.toContain("text-app-fg-muted");
   });
 
+  it("opts its buttons out of the global font reset", () => {
+    expect(html.match(/data-app-control/g)).toHaveLength(2);
+  });
+
   it("shows counts", () => {
     expect(html).toContain(">9<");
   });

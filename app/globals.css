@@ -223,6 +223,13 @@ textarea {
   font: inherit;
 }
 
+/* The rule above is unlayered, so it outranks every layered font utility.
+   The signed-in app's kit (components/app-ui) marks its controls and hands
+   their type back to the utilities; public controls keep the reset. */
+[data-app-control] {
+  font: revert-layer;
+}
+
 code {
   font-family: var(--font-plex-mono), monospace;
 }

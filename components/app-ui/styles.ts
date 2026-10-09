@@ -2,11 +2,14 @@ import type { StatusTone } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /**
- * globals.css resets `button, input, select, textarea` to `font: inherit`
- * outside any cascade layer, which outranks every layered utility. Form
- * controls in the kit therefore set their type with important utilities.
+ * Type for buttons and segments. Form controls also carry `data-app-control`
+ * (see `appControl`), which lifts globals.css's unlayered `font: inherit`
+ * reset off them so these utilities — and a consumer's overrides — apply.
  */
-export const controlTextSm = "text-sm! font-semibold!";
+export const controlTextSm = "text-sm font-semibold";
+
+/** Spread on every form control the kit renders (button, input, select, textarea). */
+export const appControl = { "data-app-control": "" } as const;
 
 /** The one keyboard focus treatment for every interactive element. */
 export const focusRing =
@@ -48,7 +51,7 @@ export function buttonStyles({
 
 export function inputStyles({ invalid = false, className }: { invalid?: boolean; className?: string } = {}) {
   return cn(
-    "block w-full rounded-lg bg-app-surface px-3 text-base! text-app-fg outline-1 -outline-offset-1 placeholder:text-app-placeholder focus:outline-2 focus:-outline-offset-2 disabled:cursor-not-allowed disabled:bg-app-subtle disabled:text-app-fg-muted sm:text-sm!",
+    "block w-full rounded-lg bg-app-surface px-3 text-base text-app-fg outline-1 -outline-offset-1 placeholder:text-app-placeholder focus:outline-2 focus:-outline-offset-2 disabled:cursor-not-allowed disabled:bg-app-subtle disabled:text-app-fg-muted sm:text-sm",
     invalid
       ? "outline-app-danger-fg focus:outline-app-danger-fg"
       : "outline-app-border-strong focus:outline-app-accent",

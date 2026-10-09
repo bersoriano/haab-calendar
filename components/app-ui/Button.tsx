@@ -2,7 +2,7 @@ import { ArrowUpRight, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 
-import { buttonStyles, type ButtonSize, type ButtonVariant } from "@/components/app-ui/styles";
+import { appControl, buttonStyles, type ButtonSize, type ButtonVariant } from "@/components/app-ui/styles";
 
 type StyleProps = { variant?: ButtonVariant; size?: ButtonSize };
 
@@ -20,6 +20,7 @@ export function Button({
   StyleProps & { leadingIcon?: ReactNode; loading?: boolean }) {
   return (
     <button
+      {...appControl}
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
@@ -78,6 +79,7 @@ export function IconButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & StyleProps & { label: string; icon: ReactNode }) {
   return (
     <button
+      {...appControl}
       type={type}
       aria-label={label}
       title={label}
