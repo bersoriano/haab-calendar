@@ -11,7 +11,7 @@ import { isSuperAdminEmail } from "@/lib/super-admin-policy";
 import { resolveDemoEditTarget } from "@/lib/supabase/demo-edit";
 import { getServerLanguage } from "@/lib/language/server";
 import type { LandingVertical } from "@/components/landing/landing-ui";
-import type { ModuleStore } from "@/lib/types";
+import type { AdminTab, ModuleStore } from "@/lib/types";
 import { isGuestPublishResume } from "@/lib/guest-builder";
 import { pickFeaturedDemos } from "@/lib/demo-gallery";
 
@@ -27,17 +27,24 @@ function parseVertical(value?: string): LandingVertical | undefined {
   return LANDING_VERTICALS.find((id) => id === value);
 }
 
+/** Only tabs a link may open directly; anything else lands on the dashboard. */
+function parseAdminTab(tab: string | undefined): AdminTab | undefined {
+  return tab === "analytics" ? tab : undefined;
+}
+
 type HomePageProps = {
   searchParams: Promise<{
     lang?: string;
     vertical?: string;
     name?: string;
     resumePublish?: string;
+    tab?: string;
+    checkout?: string;
   }>;
 };
 
 export default async function Home({ searchParams }: HomePageProps) {
-  const { lang, vertical, name, resumePublish } = await searchParams;
+  const { lang, vertical, name, resumePublish, tab, checkout } = await searchParams;
   const supabase = await createClient();
 
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -137,6 +144,8 @@ export default async function Home({ searchParams }: HomePageProps) {
       demoEdit={demoEdit}
       resumeGuestPublish={isGuestPublishResume(resumePublish)}
       viewerLanguage={resolvedLanguage}
+      initialAdminTab={parseAdminTab(tab)}
+      checkoutResult={checkout === "success" || checkout === "cancelled" ? checkout : undefined}
     />
   );
 }

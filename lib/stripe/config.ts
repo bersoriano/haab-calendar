@@ -32,6 +32,14 @@ export function getStripePremiumProducts(): readonly string[] {
     .filter(Boolean);
 }
 
+/**
+ * The recurring price the in-app upgrade sells. Its product must also be listed
+ * in STRIPE_PREMIUM_PRODUCT_IDS, or the subscription it creates grants nothing.
+ */
+export function getStripePremiumPriceId(): string | undefined {
+  return process.env.STRIPE_PREMIUM_PRICE_ID?.trim() || undefined;
+}
+
 export function getStripeWebhookSecret(): string | undefined {
   return process.env.STRIPE_WEBHOOK_SECRET?.trim() || undefined;
 }

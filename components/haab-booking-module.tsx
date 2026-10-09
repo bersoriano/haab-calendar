@@ -261,6 +261,10 @@ type HaabBookingModuleProps = {
    * re-checks entitlement on every mutation that depends on one.
    */
   providerEntitlements?: ProviderEntitlements;
+  /** Dashboard tab to open first, e.g. after returning from Checkout. */
+  initialAdminTab?: AdminTab;
+  /** How a Stripe Checkout the provider just left ended. */
+  checkoutResult?: "success" | "cancelled";
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -376,6 +380,8 @@ export function HaabBookingModule({
   resumeGuestPublish = false,
   onRequestPublish,
   providerEntitlements,
+  initialAdminTab,
+  checkoutResult,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -394,7 +400,7 @@ export function HaabBookingModule({
   const [surface, setSurface] = useState<Surface>(
     surfaceMode === "public-only" ? "public" : initialSurface,
   );
-  const [adminTab, setAdminTab] = useState<AdminTab>("dashboard");
+  const [adminTab, setAdminTab] = useState<AdminTab>(initialAdminTab ?? "dashboard");
   const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
@@ -7248,6 +7254,7 @@ export function HaabBookingModule({
             {adminTab === "appearance" ? renderAppearance() : null}
             {adminTab === "analytics" ? (
               <ProviderAnalyticsSurface
+                checkoutResult={checkoutResult}
                 lang={lang}
                 publicUrl={publicUrl}
                 integratedMode={integratedMode}

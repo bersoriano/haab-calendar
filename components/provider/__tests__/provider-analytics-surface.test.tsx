@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   AnalyticsReport,
+  AnalyticsTeaserReport,
   ProviderAnalyticsSurface,
 } from "@/components/provider/ProviderAnalyticsSurface";
 import type { AnalyticsSummary } from "@/lib/analytics/summary";
@@ -37,17 +38,31 @@ const SUMMARY: AnalyticsSummary = {
 };
 
 describe("ProviderAnalyticsSurface", () => {
-  it("shows the premium upsell to free providers", () => {
+  it("tells a returning buyer when Premium is still on its way", () => {
     const html = renderToStaticMarkup(
       <ProviderAnalyticsSurface
         lang="en"
         publicUrl="/professionals/ai-automation"
         integratedMode
         entitlements={entitlements("free")}
+        checkoutResult="success"
       />,
     );
-    expect(html).toContain("Analytics is part of Premium");
-    expect(html).not.toContain("Campaign link builder");
+    expect(html).toContain("Premium turns on in a few seconds");
+    expect(html).toContain("Refresh");
+  });
+
+  it("confirms a cancelled checkout cost nothing", () => {
+    const html = renderToStaticMarkup(
+      <ProviderAnalyticsSurface
+        lang="es"
+        publicUrl="/professionals/ai-automation"
+        integratedMode
+        entitlements={entitlements("free")}
+        checkoutResult="cancelled"
+      />,
+    );
+    expect(html).toContain("No se te cobró nada");
   });
 
   it("shows the dashboard to premium providers", () => {
@@ -88,5 +103,20 @@ describe("AnalyticsReport", () => {
       totals: { views: 0, visitors: 0, serviceSelected: 0, slotSelected: 0, bookings: 0, bookingVisitors: 0 },
     };
     expect(renderToStaticMarkup(<AnalyticsReport summary={empty} lang="en" />)).toContain("No visits yet");
+  });
+});
+
+describe("AnalyticsTeaserReport", () => {
+  it("shows real visit totals and an upgrade offer over sample data", () => {
+    const html = renderToStaticMarkup(
+      <AnalyticsTeaserReport
+        lang="en"
+        teaser={{ locked: true, range: 30, timeZone: "UTC", totals: { views: 57, visitors: 41 } }}
+      />,
+    );
+    expect(html).toContain(">57<");
+    expect(html).toContain(">41<");
+    expect(html).toContain("Upgrade to Premium");
+    expect(html).toContain('aria-hidden="true"');
   });
 });
