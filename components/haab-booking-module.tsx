@@ -166,6 +166,7 @@ import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { isStoreDirty } from "@/lib/store-dirty";
+import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
@@ -488,6 +489,10 @@ export function HaabBookingModule({
 
     // Leaving the page (reload, close, sign out) would drop held edits.
     function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      // A planned navigation (the business-type switch) carries the edits.
+      if (!shouldWarnBeforeLeaving(true)) {
+        return;
+      }
       event.preventDefault();
       event.returnValue = "";
     }

@@ -14,6 +14,7 @@ import {
   resolveDraftAction,
   seedBusinessTypeDraft,
 } from "@/lib/business-type-switch";
+import { allowLeavingWithoutWarning } from "@/lib/leave-guard";
 import { normalizeStore } from "@/lib/store";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 
@@ -127,6 +128,9 @@ export function BusinessTypeSwitch({
       if (payload.userMessage) params.set("profile", "unsaved");
       pending.resolve(payload.store);
       // A full load: the whole dashboard reads the new type from the server.
+      // The draft started from the live page, unsaved edits included, so the
+      // live dashboard's leave warning has nothing left to protect.
+      allowLeavingWithoutWarning();
       window.location.assign(`/dashboard?${params.toString()}`);
     } catch {
       pending.reject(new Error("Could not change your business type. Please try again."));
