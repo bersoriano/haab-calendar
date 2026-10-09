@@ -369,6 +369,12 @@ export type BookingDict = {
     googleConflictOther: string;
     configuredByParentApp: string;
     weeklyAvailability: string;
+    dailyLimitTitle: string;
+    dailyLimitBody: string;
+    dailyLimitToggle: string;
+    dailyLimitLabel: string;
+    /** {count}: the limit. */
+    dailyLimitHint: string;
     eventSchedulingTitle: string;
     eventSchedulingBody: string;
     eventSchedulingHint: string;
@@ -945,6 +951,13 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       googleConflictOther: "Haab could not apply this change",
       configuredByParentApp: "Configured by the parent app. These settings are visible but not editable.",
       weeklyAvailability: "Weekly availability",
+      dailyLimitTitle: "Daily booking limit",
+      dailyLimitBody:
+        "Stop taking bookings for a day once it reaches a set number, even if there are open times left.",
+      dailyLimitToggle: "Limit bookings per day",
+      dailyLimitLabel: "Maximum bookings per day",
+      dailyLimitHint:
+        "After {count} bookings on a day, that day shows as full on your booking page. Holds in progress count toward the limit.",
       eventSchedulingTitle: "Event scheduling",
       eventSchedulingBody: "Weekly availability does not apply to events.",
       eventSchedulingHint:
@@ -1539,6 +1552,13 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       googleConflictOther: "Haab no pudo aplicar este cambio",
       configuredByParentApp: "Configurado por la aplicación principal. Estos ajustes son visibles pero no editables.",
       weeklyAvailability: "Disponibilidad semanal",
+      dailyLimitTitle: "Límite diario de reservas",
+      dailyLimitBody:
+        "Deja de aceptar reservas para un día al llegar a cierto número, aunque queden horarios libres.",
+      dailyLimitToggle: "Limitar reservas por día",
+      dailyLimitLabel: "Máximo de reservas por día",
+      dailyLimitHint:
+        "Después de {count} reservas en un día, ese día aparece como lleno en tu página de reservas. Las reservas en proceso cuentan para el límite.",
       eventSchedulingTitle: "Programación de eventos",
       eventSchedulingBody: "La disponibilidad semanal no aplica a los eventos.",
       eventSchedulingHint:

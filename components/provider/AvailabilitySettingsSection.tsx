@@ -3,6 +3,7 @@
 import type { Lang, VerticalId, WeeklyAvailability, WeekdayKey } from "@/lib/types";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { DailyBookingLimitField } from "@/components/provider/DailyBookingLimitField";
 import { adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
 import { ActionButton, SectionTitle } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -12,12 +13,17 @@ export function AvailabilitySettingsSection({
   availability,
   onChange,
   onManageEvents,
+  maxBookingsPerDay,
+  onMaxBookingsPerDayChange,
   disabled = false,
   lang = "en",
 }: {
   vertical?: VerticalId;
   availability: WeeklyAvailability;
   onChange: (day: WeekdayKey, patch: Partial<WeeklyAvailability[WeekdayKey]>) => void;
+  maxBookingsPerDay?: number;
+  /** Absent where the limit cannot be saved; the field is then not shown. */
+  onMaxBookingsPerDayChange?: (value: number | undefined) => void;
   onManageEvents: () => void;
   disabled?: boolean;
   lang?: Lang;
@@ -57,6 +63,14 @@ export function AvailabilitySettingsSection({
           lang={lang}
         />
       </div>
+      {onMaxBookingsPerDayChange ? (
+        <DailyBookingLimitField
+          value={maxBookingsPerDay}
+          onChange={onMaxBookingsPerDayChange}
+          disabled={disabled}
+          lang={lang}
+        />
+      ) : null}
     </div>
   );
 }

@@ -150,6 +150,8 @@ export function ProviderSettingsSurface({
         availability={availability}
         onChange={onAvailabilityChange}
         onManageEvents={onManageEvents}
+        maxBookingsPerDay={provider.maxBookingsPerDay}
+        onMaxBookingsPerDayChange={(value) => onProviderChange("maxBookingsPerDay", value)}
         disabled={isSaving}
         lang={lang}
       />
