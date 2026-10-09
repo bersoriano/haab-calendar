@@ -45,6 +45,10 @@ export type DashboardShellCopy = {
   noBookingsYetTitle: string;
   noBookingsYetBody: string;
   bookingPageTitle: string;
+  bookingLinkTitle: string;
+  workspaceLanguageTitle: string;
+  dangerZoneTitle: string;
+  dangerZoneBody: string;
   nextStepsTitle: string;
   nextSteps: Record<NextStepId, { title: string; body: string; cta?: string }>;
   google: Record<GoogleOutcome, string>;
@@ -95,6 +99,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     noBookingsYetTitle: "Nothing booked yet",
     noBookingsYetBody: "When clients book from your page, it shows up here.",
     bookingPageTitle: "Your booking page",
+    bookingLinkTitle: "Booking link",
+    workspaceLanguageTitle: "Workspace language",
+    dangerZoneTitle: "Start over",
+    dangerZoneBody: "Clears this browser's draft page, services and availability. It cannot be undone.",
     nextStepsTitle: "Finish setting up",
     nextSteps: {
       "add-service": {
@@ -170,6 +178,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     noBookingsYetTitle: "Todavía no hay nada reservado",
     noBookingsYetBody: "Cuando sus clientes reserven desde su página, aparecerá aquí.",
     bookingPageTitle: "Su página de reservas",
+    bookingLinkTitle: "Enlace de reservas",
+    workspaceLanguageTitle: "Idioma de su espacio",
+    dangerZoneTitle: "Empezar de nuevo",
+    dangerZoneBody: "Borra la página, los servicios y la disponibilidad guardados en este navegador. No se puede deshacer.",
     nextStepsTitle: "Termine de configurar",
     nextSteps: {
       "add-service": {

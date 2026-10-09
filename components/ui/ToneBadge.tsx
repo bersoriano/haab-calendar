@@ -20,7 +20,7 @@ export function ToneBadge({
           "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
         tone === "secondary" &&
           "bg-[var(--panel-mute-72)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
-        tone === "danger" && "bg-[rgba(255,241,242,0.86)] text-[#be123c]",
+        tone === "danger" && "bg-[var(--danger-soft)] text-[var(--danger-strong)]",
         tone === "neutral" &&
           "bg-[rgba(104,250,221,0.22)] text-[var(--action-teal-deep)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
         className,

@@ -100,6 +100,20 @@ describe("ProviderSettingsSurface", () => {
     expect(render()).not.toContain(en.resetStandaloneSetup);
   });
 
+  it("offers the owner's workspace language when the caller can change it", () => {
+    expect(render()).not.toContain(en.dashboardLanguageLabel);
+
+    const html = render({ onDashboardLanguageChange: () => undefined });
+    expect(html).toContain(en.dashboardLanguageLabel);
+    expect(html).not.toContain(en.clientLanguageLabel);
+  });
+
+  it("groups settings into separate cards", () => {
+    const html = render({ onDashboardLanguageChange: () => undefined });
+
+    expect(html.match(/<section/g)?.length).toBeGreaterThanOrEqual(3);
+  });
+
   it("keeps appearance fields out of settings", () => {
     const html = render();
 

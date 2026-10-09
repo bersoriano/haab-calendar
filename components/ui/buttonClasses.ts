@@ -13,7 +13,7 @@ export function buttonClasses(
     tone === "ghost" &&
       "bg-transparent text-[var(--muted)] hover:bg-[var(--panel-mute-9)] hover:text-[var(--ink)]",
     tone === "danger" &&
-      "bg-[rgba(255,241,242,0.92)] text-[#be123c] shadow-[0_18px_36px_rgba(25,28,29,0.04)] hover:bg-[rgba(255,228,230,0.96)]",
+      "bg-[rgba(255,241,242,0.92)] text-[var(--danger-strong)] shadow-[0_18px_36px_rgba(25,28,29,0.04)] hover:bg-[rgba(255,228,230,0.96)]",
     className,
   );
 }

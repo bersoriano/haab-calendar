@@ -178,8 +178,8 @@ export function ProviderIntegrationsSection({
   };
 
   const statusTones: Record<IntegrationAvailability, string> = {
-    available: "bg-emerald-100 text-emerald-800",
-    premium_required: "bg-amber-100 text-amber-900",
+    available: "bg-[var(--success-soft)] text-[var(--success-strong)]",
+    premium_required: "bg-[var(--warning-soft)] text-[var(--warning-strong)]",
     unavailable: "bg-slate-100 text-slate-700",
     publish_required: "bg-slate-100 text-slate-700",
   };
@@ -216,7 +216,7 @@ export function ProviderIntegrationsSection({
                     className={cn(
                       "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
                       connection?.connected
-                        ? "bg-emerald-100 text-emerald-800"
+                        ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
                         : "bg-slate-100 text-slate-700",
                     )}
                   >
@@ -235,7 +235,7 @@ export function ProviderIntegrationsSection({
               {availability === "available" && !demoEdit ? (
                 <div className="mt-3 grid gap-3">
                   {failed ? (
-                    <p className="text-xs font-medium text-rose-700" role="alert">
+                    <p className="text-xs font-medium text-[var(--danger-strong)]" role="alert">
                       {t.googleConnectionFailed}
                     </p>
                   ) : null}
@@ -293,7 +293,7 @@ export function ProviderIntegrationsSection({
                         type="button"
                         disabled={busy}
                         onClick={disconnect}
-                        className="inline-flex min-h-11 w-fit items-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-rose-700 disabled:cursor-wait disabled:opacity-60"
+                        className="inline-flex min-h-11 w-fit items-center rounded-2xl border border-[var(--danger-line)] bg-white px-4 text-sm font-semibold text-[var(--danger-strong)] disabled:cursor-wait disabled:opacity-60"
                       >
                         {t.googleDisconnect}
                       </button>
@@ -301,7 +301,7 @@ export function ProviderIntegrationsSection({
                   ) : null}
 
                   {connection?.status === "needs_reauth" ? (
-                    <p className="text-xs font-medium text-amber-800">
+                    <p className="text-xs font-medium text-[var(--warning-strong)]">
                       {t.googleNeedsReauth}
                     </p>
                   ) : null}

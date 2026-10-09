@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { analyticsCopy, type AnalyticsCopy } from "@/components/provider/analytics-copy";
 import { adminFieldClass, adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
-import { ActionButton, EmptyState, SectionTitle } from "@/components/ui";
+import { ActionButton, Alert, EmptyState, SectionTitle } from "@/components/ui";
 import {
   ANALYTICS_RANGES,
   DEFAULT_ANALYTICS_RANGE,
@@ -83,23 +83,21 @@ function CheckoutResultBanner({
   awaitingPremium: boolean;
 }) {
   if (result === "cancelled") {
-    return (
-      <div className="rounded-2xl border border-[var(--line)] bg-[var(--panel-mute-88)] px-4 py-3 text-sm text-[var(--muted)]">
-        {t.checkoutCancelled}
-      </div>
-    );
+    return <Alert tone="neutral">{t.checkoutCancelled}</Alert>;
   }
 
   return (
-    <div
+    <Alert
+      tone="success"
       role="status"
-      className="flex flex-col gap-3 rounded-2xl border border-[#bbf7d0] bg-[#f0fdf4] px-4 py-3 text-sm font-medium text-[#15803d] sm:flex-row sm:items-center sm:justify-between"
+      actions={
+        awaitingPremium ? (
+          <ActionButton onClick={() => window.location.reload()}>{t.checkoutRefresh}</ActionButton>
+        ) : undefined
+      }
     >
-      <span>{awaitingPremium ? t.checkoutPending : t.checkoutSucceeded}</span>
-      {awaitingPremium ? (
-        <ActionButton onClick={() => window.location.reload()}>{t.checkoutRefresh}</ActionButton>
-      ) : null}
-    </div>
+      {awaitingPremium ? t.checkoutPending : t.checkoutSucceeded}
+    </Alert>
   );
 }
 
@@ -309,7 +307,7 @@ function UpgradeCard({ t }: { t: AnalyticsCopy }) {
         <p className="mt-3 text-sm text-[var(--muted)]">{t.upgradeUnavailable}</p>
       ) : null}
       {status === "error" ? (
-        <p className="mt-3 text-sm text-[#be123c]">{t.upgradeFailed}</p>
+        <p className="mt-3 text-sm text-[var(--danger-strong)]">{t.upgradeFailed}</p>
       ) : null}
     </div>
   );
@@ -393,8 +391,8 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
               <p
                 className={cn(
                   "mt-1 text-xs font-semibold",
-                  stat.delta.value > 0 && "text-[#15803d]",
-                  stat.delta.value < 0 && "text-[#be123c]",
+                  stat.delta.value > 0 && "text-[var(--success-strong)]",
+                  stat.delta.value < 0 && "text-[var(--danger-strong)]",
                   stat.delta.value === 0 && "text-[var(--muted)]",
                 )}
               >

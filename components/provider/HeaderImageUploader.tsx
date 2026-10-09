@@ -145,7 +145,7 @@ function ProviderImageUploader({
             }}
             className={cn(
               buttonClass,
-              "text-[#be123c] hover:bg-[#fff1f2] hover:text-[#be123c]",
+              "text-[var(--danger-strong)] hover:bg-[var(--danger-soft)] hover:text-[var(--danger-strong)]",
             )}
           >
             {t.providerForm.removeImage}
@@ -154,7 +154,7 @@ function ProviderImageUploader({
       </div>
 
       {error ? (
-        <p className="text-xs font-medium text-[#be123c]">{error}</p>
+        <p className="text-xs font-medium text-[var(--danger-strong)]">{error}</p>
       ) : null}
     </div>
   );

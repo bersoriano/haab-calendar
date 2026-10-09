@@ -168,7 +168,7 @@ import { isStoreDirty } from "@/lib/store-dirty";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
-import { LanguageSettingsSection } from "@/components/provider/LanguageSettingsSection";
+import { ClientLanguageField } from "@/components/provider/LanguageSettingsSection";
 import { ThemeSettingsSection } from "@/components/provider/ThemeSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
@@ -3982,7 +3982,11 @@ export function HaabBookingModule({
     return (
       <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
         <div className={cn(adminPanelClass, "p-6")}>
-          <SectionTitle title={t.admin.appearanceTitle} body={t.admin.appearanceBody} />
+          {/* In the shell the page header already says what this section is for. */}
+          <SectionTitle
+            title={t.admin.appearanceTitle}
+            body={chrome === "module" ? t.admin.appearanceBody : undefined}
+          />
           <div className="mt-6">
             <LogoImageUploader
               value={provider.logoImageUrl}
@@ -4008,15 +4012,14 @@ export function HaabBookingModule({
             onThemeChange={(next) => updateProvider("publicTheme", next)}
             disabled={isSavingAdmin}
           />
-          <LanguageSettingsSection
-            lang={lang}
-            clientLanguage={provider.language ?? "en"}
-            onClientLanguageChange={(next) => updateProvider("language", next)}
-            onDashboardLanguageChange={(next) =>
-              updateProvider("dashboardLanguage", next)
-            }
-            disabled={isSavingAdmin}
-          />
+          <div className="mt-6">
+            <ClientLanguageField
+              lang={lang}
+              clientLanguage={provider.language ?? "en"}
+              onChange={(next) => updateProvider("language", next)}
+              disabled={isSavingAdmin}
+            />
+          </div>
         </div>
       </div>
     );
@@ -4083,6 +4086,7 @@ export function HaabBookingModule({
             onProviderChange={updateProvider}
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
+            onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
           />
         );
     }

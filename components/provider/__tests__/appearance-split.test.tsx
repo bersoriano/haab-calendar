@@ -2,6 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import {
+  ClientLanguageField,
+  DashboardLanguageField,
+} from "@/components/provider/LanguageSettingsSection";
 import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearanceForm";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import type { ProviderInfo } from "@/lib/types";
@@ -66,5 +70,25 @@ describe("appearance tab label", () => {
   it("is translated in both workspace languages", () => {
     expect(bookingTranslations.en.admin.tabAppearance).toBe("Appearance");
     expect(bookingTranslations.es.admin.tabAppearance).toBe("Apariencia");
+  });
+});
+
+describe("the two language controls live apart", () => {
+  it("puts the clients' language in Appearance", () => {
+    const html = renderToStaticMarkup(
+      <ClientLanguageField lang="en" clientLanguage="es" onChange={() => undefined} />,
+    );
+
+    expect(html).toContain(bookingTranslations.en.admin.clientLanguageLabel);
+    expect(html).not.toContain(bookingTranslations.en.admin.dashboardLanguageLabel);
+  });
+
+  it("puts the owner's workspace language on its own", () => {
+    const html = renderToStaticMarkup(
+      <DashboardLanguageField lang="es" onChange={() => undefined} />,
+    );
+
+    expect(html).toContain(bookingTranslations.es.admin.dashboardLanguageLabel);
+    expect(html).not.toContain(bookingTranslations.es.admin.clientLanguageLabel);
   });
 });
