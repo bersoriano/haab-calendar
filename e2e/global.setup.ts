@@ -144,7 +144,8 @@ setup("seed premium providers and sign them in", async ({ browser }) => {
     await page.getByLabel(/password/i).first().fill(E2E_PASSWORD);
     await page.getByRole("button", { name: /sign in|log in|entrar/i }).click();
 
-    await expect(page).toHaveURL(/\/(\?.*)?$/, { timeout: 30_000 });
+    // A configured owner is sent on from `/` to their dashboard.
+    await expect(page).toHaveURL(/\/(dashboard)?(\?.*)?$/, { timeout: 30_000 });
 
     const statePath = authStatePath(seed.role);
     await mkdir(dirname(statePath), { recursive: true });

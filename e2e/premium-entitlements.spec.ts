@@ -13,35 +13,20 @@ import { authStatePath, providerFor, type E2ERole } from "./fixtures/providers";
  */
 
 /**
- * Opens the workspace, then its Settings tab.
+ * Opens the Integrations section, where the Google Calendar card lives.
  *
- * Two steps rather than one because `/` is the landing page, not the
- * workspace: a configured owner is shown a panel that opens it, and the tab
- * strip — Settings included — only mounts once it has. Going straight for the
- * tab waits for a control that is not on the page yet.
+ * Every dashboard section is its own URL, so the test goes straight there —
+ * the same way a bookmark or a shared link would.
  */
-async function openSettings(page: Page) {
-  await page.goto("/");
+async function openIntegrations(page: Page) {
+  await page.goto("/dashboard/integrations");
 
-  // Not anchored, and not "Go to dashboard". Two translation files define a
-  // `goToDashboard` key: the landing one renders here as "Go to your dashboard
-  // →", and the booking one says "Go to dashboard" somewhere else entirely.
-  // The trailing arrow is part of the accessible name, so an anchored match on
-  // the words alone finds nothing.
-  const openWorkspace = page.getByRole("button", {
-    name: /Go to your dashboard|Ir a tu panel/,
-  });
-
-  // Asserted before clicking so a missing entry point reports what is missing
-  // instead of spending the full test timeout inside click().
-  await expect(openWorkspace).toBeVisible();
-  await openWorkspace.click();
-
-  const settings = page.getByRole("button", { name: /^(Settings|Ajustes)$/ });
-  await expect(settings).toBeVisible();
-  await settings.click();
-
-  await expect(page.getByText(/Integrations|Integraciones/)).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: /^(Integrations|Integraciones)$/ }),
+  ).toBeVisible();
+  // The section content mounts in the browser after the shell; wait for the
+  // card itself rather than for the page around it.
+  await expect(integrationCard(page)).toBeVisible();
 }
 
 function integrationCard(page: Page) {
@@ -64,7 +49,7 @@ test.describe("free provider", () => {
   test.use({ storageState: authStatePath("free") });
 
   test("sees Google Calendar gated behind premium", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
     const card = integrationCard(page);
 
     await expect(card).toContainText(/Premium feature|Función premium/);
@@ -72,16 +57,16 @@ test.describe("free provider", () => {
   });
 
   test("has no working connect control", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     const connect = integrationCard(page).getByRole("button");
     await expect(connect).toBeDisabled();
   });
 
-  test("can still use the ordinary settings on the page", async ({ page }) => {
-    await openSettings(page);
+  test("can still use the ordinary settings", async ({ page }) => {
+    await page.goto("/dashboard/settings");
 
-    // Gating premium must not break the rest of the surface.
+    // Gating premium must not break the rest of the dashboard.
     await expect(page.getByLabel(/Business name|Nombre del negocio/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Save changes|Guardar cambios/ })).toBeVisible();
   });
@@ -121,7 +106,7 @@ test.describe("billing premium provider", () => {
   test.use({ storageState: authStatePath("billingPremium") });
 
   test("sees the integration as available and not connected", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
     const card = integrationCard(page);
 
     await expect(card).toContainText(/Available|Disponible/);
@@ -129,7 +114,7 @@ test.describe("billing premium provider", () => {
   });
 
   test("offers a connect action that starts at Haab's own route", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     // Google is not configured in CI, so the card falls back to the disabled
     // control; when it is configured, the connect button appears instead. Both
@@ -181,15 +166,15 @@ test.describe("billing premium provider", () => {
   });
 
   test("keeps the premium state after a reload", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
     await page.reload();
 
-    // The workspace is client state rather than a route, so a reload lands
-    // back on the landing page and the tab strip is gone with it. Navigating
-    // again is the honest way to reach Settings, and it makes the assertion
-    // stronger: the entitlement is re-resolved on the server for a fresh page,
-    // not remembered by the tab that was already open.
-    await openSettings(page);
+    // The reload re-renders /dashboard/integrations on the server, so the
+    // entitlement is re-resolved for a fresh page rather than remembered by
+    // the tab that was already open.
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^(Integrations|Integraciones)$/ }),
+    ).toBeVisible();
 
     await expect(integrationCard(page)).toContainText(/Available|Disponible/);
   });
@@ -199,7 +184,7 @@ test.describe("manual revoke over a paid subscription", () => {
   test.use({ storageState: authStatePath("premiumRevoked") });
 
   test("reports premium required even though billing is active", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     // The subscription row says premium; the override says no, and the override
     // is what the provider sees.
@@ -225,7 +210,7 @@ test.describe("manual revoke over a paid subscription", () => {
   });
 
   test("cannot be talked out of the denial from the client", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     const enabled = await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll("button"));
@@ -242,7 +227,7 @@ test.describe("manual grant over a free plan", () => {
   test.use({ storageState: authStatePath("freeGranted") });
 
   test("reports the integration as available", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     await expect(integrationCard(page)).toContainText(/Available|Disponible/);
     await expect(integrationCard(page)).toContainText(/Not connected|Sin conectar/);
@@ -255,7 +240,7 @@ test.describe("lapsed subscription with a stale legacy plan", () => {
   test("stays gated, because the subscription decides and it has lapsed", async ({
     page,
   }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     await expect(integrationCard(page)).toContainText(/Premium feature|Función premium/);
   });
@@ -265,7 +250,7 @@ test.describe("accessibility of the entitlement state", () => {
   test.use({ storageState: authStatePath("free") });
 
   test("states the status in text, not colour alone", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
     const card = integrationCard(page);
 
     const text = (await card.textContent()) ?? "";
@@ -273,23 +258,20 @@ test.describe("accessibility of the entitlement state", () => {
   });
 
   test("exposes the disabled control through its accessible role", async ({ page }) => {
-    await openSettings(page);
+    await openIntegrations(page);
 
     const control = integrationCard(page).getByRole("button");
     await expect(control).toBeDisabled();
     await expect(control).toHaveAccessibleName(/Coming soon|Próximamente/);
   });
 
-  test("gives the settings tabs unique accessible names", async ({ page }) => {
-    await openSettings(page);
+  test("gives the dashboard sections unique accessible names", async ({ page }) => {
+    await openIntegrations(page);
 
-    const names = await page
-      .getByRole("button", { name: /Dashboard|Panel|Settings|Ajustes|Appearance|Apariencia/ })
-      .allTextContents();
+    const names = await page.getByRole("navigation").getByRole("link").allTextContents();
 
     // Asserted first: an empty list satisfies the uniqueness check trivially,
-    // so without this the test passed on a page with no tabs at all — which is
-    // exactly what it was doing.
+    // so without this the test passed on a page with no sections at all.
     expect(names.length).toBeGreaterThanOrEqual(3);
     expect(new Set(names).size).toBe(names.length);
   });
