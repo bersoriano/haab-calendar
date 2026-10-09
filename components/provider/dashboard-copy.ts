@@ -21,6 +21,8 @@ export type DashboardShellCopy = {
   linkCopiedToast: string;
   /** Label of a toast's close button. */
   dismiss: string;
+  /** Screen-reader note on links that open a new tab. */
+  opensInNewTab: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -156,6 +158,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     linkCopied: "Copied",
     linkCopiedToast: "Booking link copied",
     dismiss: "Dismiss notification",
+    opensInNewTab: "(opens in a new tab)",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -314,6 +317,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     linkCopied: "Copiado",
     linkCopiedToast: "Enlace de reservas copiado",
     dismiss: "Cerrar aviso",
+    opensInNewTab: "(se abre en una pestaña nueva)",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

@@ -60,12 +60,36 @@ describe("Button", () => {
 describe("ButtonLink", () => {
   it("opens external links safely in a new tab", () => {
     const html = renderToStaticMarkup(
-      <ButtonLink href="https://example.com" external>
+      <ButtonLink href="https://example.com" external newTabLabel="(opens in a new tab)">
         View page
       </ButtonLink>,
     );
     expect(html).toContain('target="_blank"');
     expect(html).toContain('rel="noopener noreferrer"');
+  });
+
+  it("tells screen readers an external link opens a new tab", () => {
+    const html = renderToStaticMarkup(
+      <ButtonLink href="https://example.com" external newTabLabel="(se abre en una pestaña nueva)">
+        Ver página
+      </ButtonLink>,
+    );
+    expect(html).toMatch(/<span class="sr-only">\(se abre en una pestaña nueva\)<\/span>/);
+  });
+
+  it("lets the caller style the new-tab icon without depending on child order", () => {
+    const html = renderToStaticMarkup(
+      <ButtonLink href="https://example.com" external newTabLabel="(new tab)" externalIconClassName="max-sm:hidden">
+        View page
+      </ButtonLink>,
+    );
+    expect(html).toMatch(/<svg[^>]*class="[^"]*max-sm:hidden/);
+  });
+
+  it("requires the new-tab wording on external links", () => {
+    // @ts-expect-error newTabLabel is required when external
+    const link = <ButtonLink href="https://example.com" external>View</ButtonLink>;
+    expect(link).toBeTruthy();
   });
 
   it("renders internal links without a target", () => {

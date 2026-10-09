@@ -3,9 +3,12 @@ import Link from "next/link";
 export function ShellFooter({
   links,
   note,
+  newTabLabel,
 }: {
   links: { href: string; label: string; external?: boolean }[];
   note: string;
+  /** Read after external links, e.g. "(opens in a new tab)". */
+  newTabLabel?: string;
 }) {
   const linkClass =
     "inline-flex min-h-11 items-center rounded-md transition-colors hover:text-app-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent sm:min-h-0";
@@ -20,6 +23,7 @@ export function ShellFooter({
               {link.external ? (
                 <a href={link.href} target="_blank" rel="noopener noreferrer" className={linkClass}>
                   {link.label}
+                  {newTabLabel ? <span className="sr-only"> {newTabLabel}</span> : null}
                 </a>
               ) : (
                 <Link href={link.href} className={linkClass}>

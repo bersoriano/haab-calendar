@@ -276,8 +276,10 @@ function DashboardAppContent({
       <ButtonLink
         href={publicPath}
         external
+        newTabLabel={shell.opensInNewTab}
+        externalIconClassName="max-sm:hidden"
         variant="secondary"
-        className="max-sm:w-11 max-sm:px-0 max-sm:[&>svg:last-child]:hidden"
+        className="max-sm:w-11 max-sm:px-0"
         leadingIcon={<ArrowSquareOut aria-hidden="true" size={16} className="sm:hidden" />}
       >
         <span className="sr-only sm:not-sr-only">{shell.viewPage}</span>
@@ -308,7 +310,13 @@ function DashboardAppContent({
             title={shell.editingDemo}
             actions={
               <>
-                <ButtonLink href={demoEdit.publicPath} external variant="plain" size="sm">
+                <ButtonLink
+                  href={demoEdit.publicPath}
+                  external
+                  newTabLabel={shell.opensInNewTab}
+                  variant="plain"
+                  size="sm"
+                >
                   {shell.viewLive}
                 </ButtonLink>
                 <form action={stopDemoEdit}>
@@ -355,6 +363,7 @@ function DashboardAppContent({
       footer={
         <ShellFooter
           note={`© ${new Date().getFullYear()} ${shell.rights}`}
+          newTabLabel={shell.opensInNewTab}
           links={[
             { href: "/terms", label: shell.terms },
             { href: "/privacy", label: shell.privacy },

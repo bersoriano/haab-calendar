@@ -125,6 +125,23 @@ describe("AppShell", () => {
   });
 });
 
+describe("ShellFooter", () => {
+  it("tells screen readers which links open a new tab", () => {
+    const html = renderToStaticMarkup(
+      <ShellFooter
+        note="© 2026"
+        newTabLabel="(opens in a new tab)"
+        links={[
+          { href: "/terms", label: "Terms" },
+          { href: "/doctors/x", label: "View page", external: true },
+        ]}
+      />,
+    );
+    expect(html).toMatch(/View page<span class="sr-only"> \(opens in a new tab\)<\/span>/);
+    expect(html.match(/sr-only/g)).toHaveLength(1);
+  });
+});
+
 describe("sidebar parts", () => {
   const longName = "The Extremely Long Family Medicine And Pediatrics Practice Of Doctor Rivera";
   const longEmail = "someone.with.a.very.long.address@an-extremely-long-domain-example.com";

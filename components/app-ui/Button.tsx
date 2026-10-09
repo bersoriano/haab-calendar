@@ -37,17 +37,29 @@ export function Button({
   );
 }
 
+/** An external link opens a new tab, and says so to screen readers. */
+type ExternalProps =
+  | { external?: false; newTabLabel?: undefined; externalIconClassName?: undefined }
+  | {
+      external: true;
+      /** Read after the link text, e.g. "(opens in a new tab)". */
+      newTabLabel: string;
+      externalIconClassName?: string;
+    };
+
 export function ButtonLink({
   href,
   variant = "secondary",
   size,
   leadingIcon,
-  external = false,
+  external,
+  newTabLabel,
+  externalIconClassName,
   className,
   children,
   ...rest
-}: AnchorHTMLAttributes<HTMLAnchorElement> &
-  StyleProps & { href: string; leadingIcon?: ReactNode; external?: boolean }) {
+}: Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> &
+  StyleProps & { href: string; leadingIcon?: ReactNode } & ExternalProps) {
   const classes = buttonStyles({ variant, size, className });
 
   if (external) {
@@ -55,7 +67,8 @@ export function ButtonLink({
       <a href={href} target="_blank" rel="noopener noreferrer" className={classes} {...rest}>
         {leadingIcon}
         {children}
-        <ArrowUpRight aria-hidden="true" size={16} />
+        <span className="sr-only">{newTabLabel}</span>
+        <ArrowUpRight aria-hidden="true" size={16} className={externalIconClassName} />
       </a>
     );
   }
