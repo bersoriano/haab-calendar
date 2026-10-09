@@ -23,6 +23,11 @@ const REQUIRED_TOKENS = [
  */
 const MIGRATED = [
   "components/app-ui",
+  "components/app-shell/AppShell.tsx",
+  "components/app-shell/SidebarNav.tsx",
+  "components/app-shell/ShellFooter.tsx",
+  "components/app-shell/ShellIcon.tsx",
+  "components/app-shell/ShellSidebarParts.tsx",
 ];
 
 const RAW_PALETTE =

@@ -38,5 +38,12 @@ const ICONS: Record<ShellIconName, Icon> = {
 
 export function ShellIcon({ name, active = false }: { name: ShellIconName; active?: boolean }) {
   const Component = ICONS[name];
-  return <Component aria-hidden="true" size={20} weight={active ? "fill" : "regular"} className="shrink-0" />;
+  return (
+    <Component
+      aria-hidden="true"
+      size={20}
+      weight={active ? "fill" : "regular"}
+      className={active ? "shrink-0 text-app-accent" : "shrink-0 text-app-fg-muted group-hover:text-app-fg"}
+    />
+  );
 }

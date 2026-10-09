@@ -5,16 +5,20 @@ import type { MouseEvent, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { shouldInterceptNavClick } from "@/lib/nav-click";
 import { ShellIcon } from "@/components/app-shell/ShellIcon";
+import { Badge } from "@/components/app-ui";
 import type { ShellNavGroup, ShellNavItem } from "@/components/app-shell/types";
 
 export const shellNavItemClass =
-  "group flex min-h-11 items-center gap-3 rounded-2xl px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]";
+  "group flex h-11 items-center gap-x-3 rounded-lg px-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-app-accent sm:h-9";
 
 export function shellNavItemStateClass(active: boolean) {
   return active
-    ? "bg-[var(--accent-soft)] text-[var(--primary)]"
-    : "text-[var(--muted)] hover:bg-[var(--surface-soft)] hover:text-[var(--ink)]";
+    ? "bg-app-subtle text-app-accent"
+    : "text-app-fg-secondary hover:bg-app-subtle hover:text-app-fg";
 }
+
+/** Super-admin signpost: the entry point from the dashboard into the admin area. */
+export const shellNavItemAdminClass = "text-app-admin-fg hover:bg-app-admin-soft";
 
 /**
  * An in-app link with a real `href`. With `onNavigate`, a plain click is
@@ -82,11 +86,11 @@ export function SidebarNav({
   onNavigate?: (item: ShellNavItem) => void;
 }) {
   return (
-    <nav aria-label={ariaLabel} className="grid gap-5">
+    <nav aria-label={ariaLabel} className="grid gap-6">
       {groups.map((group) => (
         <div key={group.id}>
           {group.label ? (
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--muted)]">
+            <p className="px-2 text-xs font-semibold text-app-fg-muted">
               {group.label}
             </p>
           ) : null}
@@ -104,11 +108,7 @@ export function SidebarNav({
                   >
                     <ShellIcon name={item.icon} active={active} />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {item.badge !== undefined ? (
-                      <span className="rounded-full bg-[var(--surface-highest)] px-2 py-0.5 text-xs font-semibold text-[var(--ink)]">
-                        {item.badge}
-                      </span>
-                    ) : null}
+                    {item.badge !== undefined ? <Badge tone="neutral">{item.badge}</Badge> : null}
                   </ShellLink>
                 </li>
               );

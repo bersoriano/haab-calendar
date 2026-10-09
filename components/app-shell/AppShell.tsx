@@ -102,15 +102,18 @@ export function AppShell({
   }, [open]);
 
   return (
-    <div className="min-h-screen bg-[var(--background)] lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
+    <div className="min-h-screen bg-app-canvas lg:grid lg:grid-cols-[272px_minmax(0,1fr)]">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-full focus:bg-[var(--ink)] focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-lg focus:bg-app-fg focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-app-surface"
       >
         {copy.skipToContent}
       </a>
 
-      <aside data-shell-sidebar="" className="hidden border-r border-[var(--line)]/60 bg-[var(--surface-lowest)] lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
+      <aside
+        data-shell-sidebar=""
+        className="hidden border-r border-app-border bg-app-surface lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto"
+      >
         {sidebar}
       </aside>
 
@@ -121,73 +124,67 @@ export function AppShell({
             tabIndex={-1}
             aria-label={copy.closeMenu}
             onClick={() => setOpenFor(null)}
-            className="absolute inset-0 bg-[rgba(15,23,32,0.42)] backdrop-blur-[2px]"
+            className="absolute inset-0 bg-app-overlay"
           />
           <div
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label={copy.menu ?? copy.openMenu}
-            className="absolute inset-y-0 left-0 flex w-[288px] max-w-[86vw] flex-col overflow-y-auto bg-[var(--surface-lowest)] shadow-[0_24px_64px_rgba(15,23,42,0.24)]"
+            className="relative mr-16 flex h-full w-full max-w-[288px] animate-app-drawer-in"
           >
-            <div className="flex justify-end px-3 pt-3">
+            <div className="absolute left-full top-0 flex w-16 justify-center pt-3">
               <button
                 type="button"
                 aria-label={copy.closeMenu}
                 onClick={() => setOpenFor(null)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl text-[var(--muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
+                className="inline-flex size-11 items-center justify-center rounded-full bg-app-surface text-app-fg shadow-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-app-accent"
               >
                 <X aria-hidden="true" size={20} />
               </button>
             </div>
-            {sidebar}
+            <div className="flex w-full flex-col overflow-y-auto bg-app-surface shadow-xl">{sidebar}</div>
           </div>
         </div>
       ) : null}
 
       <div className="flex min-h-screen min-w-0 flex-col">
-        <header className="sticky top-0 z-40 border-b border-[var(--line)]/60 bg-[var(--background)]/90 backdrop-blur">
-          <div className="mx-auto flex w-full max-w-[1400px] items-center gap-3 px-4 py-3 sm:px-6 lg:px-8 lg:py-4">
+        <header className="sticky top-0 z-40 border-b border-app-border bg-app-surface">
+          <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-3 px-4 sm:px-6 lg:px-8">
             <button
               ref={menuButtonRef}
               type="button"
               aria-label={copy.openMenu}
               aria-expanded={open}
               onClick={() => setOpenFor(navigationKey)}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] text-[var(--ink)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] lg:hidden"
+              className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-app-fg-secondary hover:bg-app-subtle focus-visible:outline-2 focus-visible:outline-app-accent lg:hidden"
             >
-              <List aria-hidden="true" size={20} />
+              <List aria-hidden="true" size={22} />
             </button>
             <div className="min-w-0 flex-1">
               <h1
                 id="shell-title"
                 tabIndex={-1}
-                className="truncate text-lg font-semibold tracking-[-0.03em] text-[var(--ink)] focus:outline-none sm:text-2xl"
+                className="truncate text-lg font-semibold text-app-fg focus:outline-none sm:text-xl"
               >
                 {title}
               </h1>
               {description ? (
-                <p className="mt-0.5 hidden truncate text-sm text-[var(--muted)] sm:block">
-                  {description}
-                </p>
+                <p className="hidden truncate text-sm text-app-fg-muted lg:block">{description}</p>
               ) : null}
             </div>
-            {topBarActions ? (
-              <div className="flex shrink-0 items-center gap-2">{topBarActions}</div>
-            ) : null}
+            {topBarActions ? <div className="flex shrink-0 items-center gap-2">{topBarActions}</div> : null}
           </div>
         </header>
 
         {banners ? (
-          <div className="mx-auto w-full max-w-[1400px] space-y-3 px-4 pt-4 sm:px-6 lg:px-8">
-            {banners}
-          </div>
+          <div className="mx-auto w-full max-w-7xl space-y-3 px-4 pt-6 sm:px-6 lg:px-8">{banners}</div>
         ) : null}
 
         <main
           id="main-content"
           tabIndex={-1}
-          className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 focus:outline-none sm:px-6 lg:px-8 lg:py-8"
+          className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 focus:outline-none sm:px-6 lg:px-8"
         >
           {children}
         </main>

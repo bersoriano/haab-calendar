@@ -13,7 +13,9 @@ vi.mock("next/link", () => ({
 const { AppShell } = await import("@/components/app-shell/AppShell");
 const { SidebarNav } = await import("@/components/app-shell/SidebarNav");
 const { ShellFooter } = await import("@/components/app-shell/ShellFooter");
-const { Alert } = await import("@/components/ui/Alert");
+const { ShellAccount, ShellBrand, ShellWorkspace } = await import(
+  "@/components/app-shell/ShellSidebarParts"
+);
 
 const groups = [
   {
@@ -50,6 +52,14 @@ describe("SidebarNav", () => {
     );
 
     expect(html).toContain('href="/dashboard/bookings"');
+  });
+
+  it("colors the active item from app tokens", () => {
+    const html = renderToStaticMarkup(
+      <SidebarNav groups={groups} activeId="bookings" ariaLabel="Dashboard" />,
+    );
+    expect(html).toContain("text-app-accent");
+    expect(html).not.toContain("var(--");
   });
 
   it("shows a badge when an item carries one", () => {
@@ -104,23 +114,48 @@ describe("AppShell", () => {
     expect(html).toContain("© 2026 Haab Calendar");
   });
 
+  it("paints the page on the app canvas", () => {
+    expect(html).toContain("bg-app-canvas");
+    expect(html).not.toContain("var(--");
+  });
+
   it("offers a closed menu button for small screens", () => {
     expect(html).toContain('aria-label="Open menu"');
     expect(html).toContain('aria-expanded="false"');
   });
 });
 
-describe("Alert", () => {
-  it("uses status tokens instead of fixed colors", () => {
-    const html = renderToStaticMarkup(<Alert tone="danger">Nope</Alert>);
+describe("sidebar parts", () => {
+  const longName = "The Extremely Long Family Medicine And Pediatrics Practice Of Doctor Rivera";
+  const longEmail = "someone.with.a.very.long.address@an-extremely-long-domain-example.com";
 
-    expect(html).toContain("var(--danger-soft)");
-    expect(html).not.toMatch(/#[0-9a-f]{6}/i);
+  it("links the brand home and shows an optional badge", () => {
+    const html = renderToStaticMarkup(<ShellBrand href="/super-admin" badge={<span>Super admin</span>} />);
+    expect(html).toContain('href="/super-admin"');
+    expect(html).toContain("Haab Calendar");
+    expect(html).toContain("Super admin");
   });
 
-  it("carries the role it is given", () => {
-    expect(renderToStaticMarkup(<Alert tone="success" role="status">Saved</Alert>)).toContain(
-      'role="status"',
+  it("truncates a long business name and keeps it in a title", () => {
+    const html = renderToStaticMarkup(
+      <ShellWorkspace name={longName} status={{ tone: "success", label: "Live" }} />,
     );
+    expect(html).toContain(`title="${longName}"`);
+    expect(html).toContain("truncate");
+    expect(html).toContain("Live");
+  });
+
+  it("keeps sign-out reachable beside a long email", () => {
+    const html = renderToStaticMarkup(
+      <ShellAccount
+        email={longEmail}
+        signedInAsLabel="Signed in as"
+        signOutLabel="Sign out"
+        signOutAction={async () => undefined}
+      />,
+    );
+    expect(html).toContain(`title="${longEmail}"`);
+    expect(html).toContain("min-w-0 flex-1");
+    expect(html).toMatch(/<button[^>]*type="submit"[^>]*aria-label="Sign out"|<button[^>]*aria-label="Sign out"[^>]*type="submit"/);
   });
 });
