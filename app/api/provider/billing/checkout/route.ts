@@ -86,8 +86,8 @@ export async function POST(request: NextRequest) {
       subscription_data: { metadata: { haab_provider_id: provider.id } },
       metadata: { haab_provider_id: provider.id },
       allow_promotion_codes: true,
-      success_url: `${origin}/?tab=${returnTab}&checkout=success`,
-      cancel_url: `${origin}/?tab=${returnTab}&checkout=cancelled`,
+      success_url: `${origin}/dashboard/${returnTab}?checkout=success`,
+      cancel_url: `${origin}/dashboard/${returnTab}?checkout=cancelled`,
     });
 
     if (!session.url) {

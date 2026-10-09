@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
-import { AdminHero } from "@/components/provider/AdminHero";
-import { SelectedWorkflowHeader } from "@/components/provider/SelectedWorkflowHeader";
+import { SetupHeader } from "@/components/provider/SetupHeader";
 import { logout } from "@/app/login/actions";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 import {
@@ -114,7 +113,6 @@ function HomeExperienceInner({
   const [dashboardLanguage, setDashboardLanguage] = useState<Lang>(
     () => dashboardStore?.provider.dashboardLanguage ?? viewerLanguage,
   );
-  const dashboardT = landingTranslations[dashboardLanguage];
   const [persistedDashboardStore, setPersistedDashboardStore] = useState<
     ModuleStore | undefined
   >();
@@ -253,39 +251,17 @@ function HomeExperienceInner({
         {!loggedIn ? (
           <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
         ) : null}
-        <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
-          <AdminHero lang={dashboardLanguage} />
-        </div>
-        <header
-          className={`sticky top-0 z-50 bg-[var(--surface)]/95 backdrop-blur ${
-            activeWorkflowVertical ? "" : "border-b border-[var(--line)]"
-          }`}
-        >
-          <div className="mx-auto flex w-full max-w-[1600px] items-center px-4 py-3 sm:px-6 lg:px-8">
-            {activeWorkflowVertical ? (
-              <SelectedWorkflowHeader
-                lang={dashboardLanguage}
-                vertical={activeWorkflowVertical}
-                onChooseAnother={backToHome}
-                onSignOut={loggedIn ? logout : undefined}
-                userEmail={email}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={backToHome}
-                className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)]"
-              >
-                {dashboardT.home.backToHome}
-              </button>
-            )}
-          </div>
-        </header>
+        <SetupHeader
+          lang={dashboardLanguage}
+          vertical={activeWorkflowVertical}
+          userEmail={email}
+          onChooseAnother={backToHome}
+          onBackToHome={backToHome}
+          onSignOut={loggedIn ? logout : undefined}
+        />
         <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8">
           <HaabBookingModule
             injectedConfig={effectiveConfigured ? effectiveDashboardStore : undefined}
-            userEmail={email}
-            onSignOut={loggedIn ? logout : undefined}
             persistSetup={loggedIn && !effectiveConfigured}
             persistAdminChanges={loggedIn && effectiveConfigured}
             isGuestDraft={!loggedIn}
@@ -296,11 +272,10 @@ function HomeExperienceInner({
                 setGuestDraftStore(store);
               }
             }}
-            onSetupPersisted={(store) => {
-              setPersistedDashboardStore(store);
-              router.replace("/");
-              router.refresh();
-            }}
+            // Publishing keeps the Done step on screen; "Go to dashboard" is
+            // what takes the owner to /dashboard, freshly loaded.
+            onSetupPersisted={(store) => setPersistedDashboardStore(store)}
+            onOpenDashboard={() => router.push("/dashboard")}
             initialLanguage={effectiveConfigured ? undefined : lang}
             viewerLanguage={dashboardLanguage}
             initialVerticalId={
@@ -333,7 +308,7 @@ function HomeExperienceInner({
           // Returning here after signing in shows the dashboard panel for a
           // configured provider, or the workflow picker for a new one.
           loginHref: loginHref("/", lang),
-          onOpenDashboard: () => openApp(),
+          onOpenDashboard: () => router.push("/dashboard"),
         }}
       >
         <LandingPage
@@ -341,7 +316,7 @@ function HomeExperienceInner({
           showUseCases={!effectiveConfigured}
           afterHero={
             effectiveConfigured ? (
-              <DashboardSection onOpen={() => openApp()} email={email} />
+              <DashboardSection onOpen={() => router.push("/dashboard")} email={email} />
             ) : (
               <UseCasesSection onSelectVertical={onSelectVertical} />
             )

@@ -1,7 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { createEmptyStore } from "@/lib/store";
 import type { Lang, ModuleStore } from "@/lib/types";
@@ -84,7 +83,7 @@ function renderDashboard(options: {
 function chromeLanguage(html: string): Lang | "mixed" | "none" {
   const seen = (["en", "es"] as const).filter(
     (lang) =>
-      html.includes(bookingTranslations[lang].admin.heroTitle) &&
+      html.includes(landingTranslations[lang].home.chooseAnotherWorkflow) &&
       html.includes(landingTranslations[lang].home.selectedWorkflow),
   );
 
