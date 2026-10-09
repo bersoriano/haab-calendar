@@ -74,3 +74,51 @@ describe("app tokens", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+function token(css: string, name: string) {
+  const value = css.match(new RegExp(`--color-app-${name}:\\s*(#[0-9a-f]{6})`, "i"))?.[1];
+  if (!value) throw new Error(`no hex value for --color-app-${name}`);
+  return value;
+}
+
+function luminance(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe("app token contrast", () => {
+  const css = readFileSync(join(root, "app/globals.css"), "utf8");
+
+  // Text/background pairs the kit actually paints, every state included.
+  const PAIRS: [string, string][] = [
+    ["on-accent", "accent"],
+    ["on-accent", "accent-hover"],
+    ["on-accent", "danger"],
+    ["on-accent", "danger-hover"],
+    ["accent-on-soft", "accent-soft"],
+    ["accent-on-soft", "accent-soft-hover"],
+    ["fg", "surface"],
+    ["fg-secondary", "subtle"],
+    ["fg-muted", "surface"],
+    ["fg-muted", "canvas"],
+    ["success-fg", "success-soft"],
+    ["warning-fg", "warning-soft"],
+    ["danger-fg", "danger-soft"],
+    ["info-fg", "info-soft"],
+    ["admin-fg", "admin-soft"],
+    ["neutral-fg", "neutral-soft"],
+  ];
+
+  it.each(PAIRS)("%s on %s meets WCAG AA (4.5:1)", (fg, bg) => {
+    expect(contrast(token(css, fg), token(css, bg))).toBeGreaterThanOrEqual(4.5);
+  });
+});
+

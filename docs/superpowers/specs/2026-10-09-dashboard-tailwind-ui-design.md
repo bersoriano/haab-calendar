@@ -80,7 +80,7 @@ Added to `app/globals.css` as a `@theme` block. Values are literal so a child pr
 | `success-soft` / `success-fg` / `success-ring` | `#f0fdf4` / `#15803d` / `rgb(22 163 74 / 0.2)` | success badges and alerts |
 | `warning-soft` / `warning-fg` / `warning-ring` | `#fffbeb` / `#92400e` / `rgb(217 119 6 / 0.2)` | warning |
 | `danger-soft` / `danger-fg` / `danger-ring` | `#fef2f2` / `#b91c1c` / `rgb(220 38 38 / 0.1)` | danger badges and alerts |
-| `danger` / `danger-hover` | `#dc2626` / `#ef4444` | solid danger buttons (4.8:1 with white) |
+| `danger` / `danger-hover` | `#dc2626` / `#b91c1c` | solid danger buttons (4.8:1 / 6.5:1 with white; hover darkens so it stays AA) |
 | `info-soft` / `info-fg` / `info-ring` | `#eff6ff` / `#1d4ed8` / `rgb(37 99 235 / 0.2)` | info alerts |
 | `admin-soft` / `admin-fg` / `admin-ring` | `#f5f3ff` / `#6d28d9` / `rgb(124 58 237 / 0.2)` | super-admin signposting |
 | `neutral-soft` / `neutral-fg` / `neutral-ring` | `#f9fafb` / `#4b5563` / `rgb(107 114 128 / 0.1)` | neutral badges |
