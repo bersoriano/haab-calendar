@@ -90,6 +90,7 @@ export type BusinessTypeCopy = {
   back: string;
   cancel: string;
   draftBanner: string;
+  draftBannerChoosing: string;
   cancelChange: string;
   replaceDraftTitle: string;
   replaceDraftBody: string;
@@ -208,6 +209,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       cancel: "Cancel",
       draftBanner:
         "Setting up your {type} page. Your live page doesn't change until you publish, and this draft stays in this browser if you leave.",
+      draftBannerChoosing:
+        "Choose your new business type below. Your live page doesn't change until you publish.",
       cancelChange: "Cancel change",
       replaceDraftTitle: "You have a {from} draft",
       replaceDraftBody: "Keep working on it, or start over as {to}?",
@@ -340,6 +343,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       cancel: "Cancelar",
       draftBanner:
         "Está configurando su página de {type}. Su página publicada no cambia hasta que publique, y este borrador se guarda en este navegador si sale.",
+      draftBannerChoosing:
+        "Elija abajo su nuevo tipo de negocio. Su página publicada no cambia hasta que publique.",
       cancelChange: "Cancelar el cambio",
       replaceDraftTitle: "Tiene un borrador de {from}",
       replaceDraftBody: "¿Seguir con él o empezar de nuevo como {to}?",

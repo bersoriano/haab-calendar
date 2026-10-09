@@ -18,6 +18,17 @@ import { allowLeavingWithoutWarning } from "@/lib/leave-guard";
 import { normalizeStore } from "@/lib/store";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 
+/**
+ * The banner over the draft. Follows the wizard: going Back from its first
+ * step clears the type and shows the picker, so the banner stops naming one.
+ */
+export function draftBannerText(lang: Lang, vertical: VerticalId | undefined) {
+  const copy = dashboardCopy[lang].businessType;
+  return vertical
+    ? fillTemplate(copy.draftBanner, { type: landingTranslations[lang].home.verticals[vertical].label })
+    : copy.draftBannerChoosing;
+}
+
 /** The slice of Web Storage the draft needs; injectable for tests. */
 export type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
@@ -174,8 +185,6 @@ export function BusinessTypeSwitch({
     );
   }
 
-  const typeLabel = draftVertical ? verticals[draftVertical].label : "";
-
   return (
     <div className="grid gap-5">
       <Alert
@@ -186,7 +195,7 @@ export function BusinessTypeSwitch({
           </ActionButton>
         }
       >
-        {fillTemplate(copy.draftBanner, { type: typeLabel })}
+        {draftBannerText(lang, draftVertical)}
       </Alert>
 
       <HaabBookingModule
@@ -195,6 +204,7 @@ export function BusinessTypeSwitch({
         viewerLanguage={lang}
         initialLanguage={lang}
         publishLabel={copy.publishLabel}
+        onVerticalChange={setDraftVertical}
         publishSetupOverride={(store) =>
           new Promise<ModuleStore | null>((resolve, reject) => {
             setPending({ store, resolve, reject });

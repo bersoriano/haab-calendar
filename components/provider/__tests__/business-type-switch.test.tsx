@@ -15,7 +15,9 @@ vi.mock("@/components/haab-booking-module", () => ({
   },
 }));
 
-const { BusinessTypeSwitch } = await import("@/components/provider/BusinessTypeSwitch");
+const { BusinessTypeSwitch, draftBannerText } = await import(
+  "@/components/provider/BusinessTypeSwitch"
+);
 
 const copy = dashboardCopy.en.businessType;
 
@@ -104,5 +106,24 @@ describe("BusinessTypeSwitch", () => {
 
     expect(moduleProps).toBeUndefined();
     expect(html).toContain(copy.pickTitle);
+  });
+
+  it("follows the type the owner settles on inside the wizard", () => {
+    const { moduleProps } = render({ to: "healthcare" });
+
+    expect(typeof moduleProps?.onVerticalChange).toBe("function");
+  });
+});
+
+describe("draftBannerText", () => {
+  it("names the type being set up", () => {
+    expect(draftBannerText("en", "spaces")).toContain("Setting up your Spaces page");
+  });
+
+  it("asks for a type while none is chosen, without naming the old one", () => {
+    const text = draftBannerText("en", undefined);
+
+    expect(text).toBe(copy.draftBannerChoosing);
+    expect(text).not.toContain("{type}");
   });
 });
