@@ -13,6 +13,14 @@ import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from 
 const PROVIDER_ID_SELECT = "id";
 const SERVICE_SELECT = "id, slug";
 
+function assertRetentionWriteAllowed(error: unknown) {
+  if (error && typeof error === "object" &&
+    (error as { code?: unknown }).code === "42501" &&
+    (error as { message?: unknown }).message === "One-year booking history requires Premium access.") {
+    throw new ProviderStoreWriteError("One-year booking history requires Premium access.", 403, error);
+  }
+}
+
 type ProviderIdRow = {
   id: string;
 };
@@ -171,6 +179,7 @@ async function updateProviderById(
     .single<ProviderIdRow>();
 
   if (error) {
+    assertRetentionWriteAllowed(error);
     throw new ProviderStoreWriteError(
       `Could not update your ${profileRole} profile.`,
       500,
@@ -210,6 +219,7 @@ async function upsertProvider(options: {
     // Null turns the limit off; anything that is not a positive whole number
     // is treated as off rather than failing the whole settings save.
     max_bookings_per_day: normalizeDailyBookingLimit(provider.maxBookingsPerDay),
+    keep_booking_history_one_year: provider.keepBookingHistoryOneYear === true,
     availability: normalizeAvailability(options.store.availability),
     setup_complete: Boolean(options.store.setupComplete),
     phone_number_1: provider.phoneNumber1.trim(),
@@ -245,6 +255,7 @@ async function upsertProvider(options: {
     .single<ProviderIdRow>();
 
   if (error) {
+    assertRetentionWriteAllowed(error);
     // Two first-time setups can both see no provider and both insert. One wins;
     // the loser lands here. Recover only when a row for *this owner* now
     // exists — any other unique violation (a slug collision, say) is a real

@@ -12,6 +12,7 @@ export const FEATURE_KEYS = [
   "google_calendar_busy_blocking",
   "google_calendar_two_way_sync",
   "analytics",
+  "booking_history_retention",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
@@ -49,7 +50,7 @@ const PLAN_FEATURES: Record<ProviderPlanTier, readonly FeatureKey[]> = {
   // on a provider's wider calendar, and until pricing intent is settled they
   // are reachable only through a manual override. Adding a key here is the one
   // change that turns them on for every premium provider at once.
-  premium: ["custom_slug", "google_calendar_sync", "analytics"],
+  premium: ["custom_slug", "google_calendar_sync", "analytics", "booking_history_retention"],
 };
 
 /**
@@ -84,4 +85,5 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   google_calendar_busy_blocking: "Google Calendar busy blocking",
   google_calendar_two_way_sync: "Google Calendar two-way sync",
   analytics: "Booking page analytics",
+  booking_history_retention: "One-year booking history",
 };

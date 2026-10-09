@@ -86,6 +86,8 @@ export type ProviderInfo = {
    * no limit, which is every provider until they turn it on.
    */
   maxBookingsPerDay?: number;
+  /** Opt-in preference; effective only with extended-history entitlement. */
+  keepBookingHistoryOneYear?: boolean;
 };
 
 export type Service = {
