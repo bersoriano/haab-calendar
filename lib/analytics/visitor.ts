@@ -49,6 +49,23 @@ export function getAnalyticsSecret(): string | undefined {
 }
 
 /**
+ * A daily, per-provider pseudonym for one network (the IP alone). Shared by
+ * everyone behind the same router or carrier NAT, so it only ever caps writes;
+ * it never counts people. Prefixed so it can never equal a visitor hash.
+ */
+export function computeNetworkHash(input: {
+  secret: string;
+  providerId: string;
+  ip: string;
+  now: Date;
+}): string {
+  const day = input.now.toISOString().slice(0, 10);
+  return createHash("sha256")
+    .update(["network", input.secret, day, input.providerId, input.ip].join("\n"))
+    .digest("hex");
+}
+
+/**
  * A daily, per-provider pseudonym for one visitor.
  *
  * The UTC day is part of the input, so the value changes at midnight and two

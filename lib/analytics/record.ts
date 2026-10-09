@@ -10,6 +10,7 @@ import {
 } from "@/lib/analytics/events";
 import {
   classifyDevice,
+  computeNetworkHash,
   computeVisitorHash,
   getAnalyticsSecret,
   readClientIp,
@@ -22,6 +23,14 @@ import {
  * exempt: each is a committed row, already limited by availability.
  */
 export const VISITOR_HOURLY_EVENT_CAP = 60;
+
+/**
+ * Funnel events one network (IP) can add to one page per hour, whatever user
+ * agent it claims. Far above the visitor cap because a household, an office or
+ * a mobile carrier's NAT puts many real people behind one address; low enough
+ * that rotating user agents from one machine stops counting quickly.
+ */
+export const NETWORK_HOURLY_EVENT_CAP = 300;
 
 export type RecordPublicPageEventInput = {
   providerId: string;
@@ -40,8 +49,8 @@ export type RecordPublicPageEventInput = {
  * booking line up with the page view the browser reported earlier.
  *
  * Returns false when nothing was written (no secret to hash with, or the
- * visitor is over the hourly cap); throws on a failed query so the caller can
- * decide how loudly to log it.
+ * visitor or its network is over an hourly cap); throws on a failed query so
+ * the caller can decide how loudly to log it.
  */
 export async function recordPublicPageEvent(
   admin: SupabaseClient,
@@ -53,26 +62,42 @@ export async function recordPublicPageEvent(
   }
 
   const userAgent = input.request.headers.get("user-agent");
+  const ip = readClientIp(input.request.headers);
+  const now = new Date();
   const visitorHash = computeVisitorHash({
     secret,
     providerId: input.providerId,
-    ip: readClientIp(input.request.headers),
+    ip,
     userAgent: userAgent ?? "",
-    now: new Date(),
+    now,
   });
+  const networkHash = computeNetworkHash({ secret, providerId: input.providerId, ip, now });
 
   if (!input.bookingId) {
-    const { count, error } = await admin
-      .from("public_page_events")
-      .select("id", { count: "exact", head: true })
-      .eq("provider_id", input.providerId)
-      .eq("visitor_hash", visitorHash)
-      .gte("occurred_at", new Date(Date.now() - 3_600_000).toISOString());
+    const since = new Date(now.getTime() - 3_600_000).toISOString();
+    const countRecent = (column: "visitor_hash" | "network_hash", value: string) =>
+      admin
+        .from("public_page_events")
+        .select("id", { count: "exact", head: true })
+        .eq("provider_id", input.providerId)
+        .eq(column, value)
+        .gte("occurred_at", since);
 
-    if (error) {
-      throw error;
+    const [byVisitor, byNetwork] = await Promise.all([
+      countRecent("visitor_hash", visitorHash),
+      countRecent("network_hash", networkHash),
+    ]);
+
+    if (byVisitor.error) {
+      throw byVisitor.error;
     }
-    if ((count ?? 0) >= VISITOR_HOURLY_EVENT_CAP) {
+    if (byNetwork.error) {
+      throw byNetwork.error;
+    }
+    if (
+      (byVisitor.count ?? 0) >= VISITOR_HOURLY_EVENT_CAP ||
+      (byNetwork.count ?? 0) >= NETWORK_HOURLY_EVENT_CAP
+    ) {
       return false;
     }
   }
@@ -84,6 +109,7 @@ export async function recordPublicPageEvent(
     service_id: isUuid(input.serviceId) ? input.serviceId.toLowerCase() : null,
     booking_id: input.bookingId ?? null,
     visitor_hash: visitorHash,
+    network_hash: networkHash,
     utm_source: input.attribution.utmSource ?? null,
     utm_medium: input.attribution.utmMedium ?? null,
     utm_campaign: input.attribution.utmCampaign ?? null,

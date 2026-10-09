@@ -3,12 +3,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ getSupabaseServiceKey: () => "service-key" }));
 
-import { recordPublicPageEvent, VISITOR_HOURLY_EVENT_CAP } from "@/lib/analytics/record";
+import {
+  NETWORK_HOURLY_EVENT_CAP,
+  recordPublicPageEvent,
+  VISITOR_HOURLY_EVENT_CAP,
+} from "@/lib/analytics/record";
 
 const insert = vi.fn();
+/** Called with the hash column a rate-limit count filters on. */
 const recentCount = vi.fn();
-const recentQuery = { eq: () => recentQuery, gte: () => recentCount() };
-const admin = { from: () => ({ insert, select: () => recentQuery }) } as never;
+function recentQuery() {
+  let column = "";
+  const query = {
+    eq: (name: string) => {
+      if (name !== "provider_id") {
+        column = name;
+      }
+      return query;
+    },
+    gte: () => recentCount(column),
+  };
+  return query;
+}
+const admin = { from: () => ({ insert, select: () => recentQuery() }) } as never;
 
 const SERVICE_ID = "2f1c6a0e-9b7d-4c1e-8a55-0d6f3b2a9c11";
 
@@ -91,7 +108,10 @@ describe("recordPublicPageEvent", () => {
   });
 
   it("stops counting a visitor past the hourly cap", async () => {
-    recentCount.mockResolvedValue({ count: VISITOR_HOURLY_EVENT_CAP, error: null });
+    recentCount.mockImplementation(async (column: string) => ({
+      count: column === "visitor_hash" ? VISITOR_HOURLY_EVENT_CAP : 0,
+      error: null,
+    }));
     await expect(
       recordPublicPageEvent(admin, {
         providerId: "provider-1",
@@ -116,5 +136,45 @@ describe("recordPublicPageEvent", () => {
       }),
     ).resolves.toBe(true);
     expect(recentCount).not.toHaveBeenCalled();
+  });
+
+  it("stops counting a network that rotates user agents", async () => {
+    recentCount.mockImplementation(async (column: string) => ({
+      count: column === "network_hash" ? NETWORK_HOURLY_EVENT_CAP : 0,
+      error: null,
+    }));
+    await expect(
+      recordPublicPageEvent(admin, {
+        providerId: "provider-1",
+        event: "page_view",
+        attribution: {},
+        request: bookingRequest(),
+      }),
+    ).resolves.toBe(false);
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("stores a network hash that ignores the user agent", async () => {
+    insert.mockResolvedValue({ error: null });
+    const withAgent = (userAgent: string) =>
+      new Request("https://haabcalendar.com/api/public/professionals/x/events", {
+        method: "POST",
+        headers: { "user-agent": userAgent, "x-forwarded-for": "198.51.100.20" },
+      });
+
+    for (const userAgent of ["Mozilla/5.0 (iPhone) Mobile", "Mozilla/5.0 (Macintosh)"]) {
+      await recordPublicPageEvent(admin, {
+        providerId: "provider-1",
+        event: "page_view",
+        attribution: {},
+        request: withAgent(userAgent),
+      });
+    }
+
+    const [first, second] = insert.mock.calls.map(([row]) => row);
+    expect(first.visitor_hash).not.toBe(second.visitor_hash);
+    expect(first.network_hash).toBe(second.network_hash);
+    expect(first.network_hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(first.network_hash).not.toBe(first.visitor_hash);
   });
 });

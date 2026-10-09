@@ -88,6 +88,7 @@ describe("POST public page events", () => {
       event: "page_view",
       service_id: null,
       booking_id: null,
+      network_hash: expect.stringMatching(/^[0-9a-f]{64}$/),
       utm_source: "instagram",
       utm_campaign: "fall",
       referrer_host: "l.instagram.com",
