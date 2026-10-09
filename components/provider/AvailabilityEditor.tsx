@@ -57,8 +57,8 @@ export function AvailabilityEditor({
 
         return (
           <li key={day} className="grid gap-4 py-4 first:pt-0 last:pb-0">
-            <div className="grid gap-3 sm:grid-cols-[10rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
-              <Field label={t.admin.weekdays[day]} inline className="sm:pb-2">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[10rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+              <Field label={t.admin.weekdays[day]} inline className="col-span-2 sm:col-span-1 sm:pb-2">
                 <Switch
                   disabled={disabled}
                   checked={open}
@@ -85,7 +85,7 @@ export function AvailabilityEditor({
                   </Field>
                 </>
               ) : (
-                <p className="text-sm text-app-fg-muted sm:col-span-2 sm:pb-2">{shell.closedDay}</p>
+                <p className="col-span-2 text-sm text-app-fg-muted sm:pb-2">{shell.closedDay}</p>
               )}
             </div>
 
