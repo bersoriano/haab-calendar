@@ -19,6 +19,15 @@ test.describe("dashboard toasts", () => {
     ).toBeVisible();
   });
 
+  test("copying from the overview's booking page card confirms with a toast", async ({ page, context }) => {
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.goto("/dashboard");
+    await page.locator("main").getByRole("button", { name: /^(Copy link|Copiar enlace)$/ }).click();
+    await expect(
+      page.getByRole("status").filter({ hasText: /Booking link copied|Enlace de reservas copiado/ }),
+    ).toBeVisible();
+  });
+
   test("every save is confirmed, including the same message twice", async ({ page }) => {
     await page.goto("/dashboard/appearance");
     const field = page.getByLabel(/Hero text|Texto principal/);

@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useToast } from "@/components/app-ui";
+
+/**
+ * Announce a notice id unless it is the one that was already showing when
+ * the bridge mounted — a remount (the module swaps its dialogs out around the
+ * setup wizard) must not replay an old confirmation.
+ */
+export function shouldAnnounceNotice(id: number | undefined, idAtMount: number | undefined) {
+  return id !== undefined && id !== idAtMount;
+}
 
 /**
  * Toasts a notice once per id. Rendered inside the toast provider, so a host
@@ -14,9 +23,10 @@ export function ToastOnChange({ notice }: { notice: { id: number; message: strin
   const { notify } = useToast();
   const id = notice?.id;
   const message = notice?.message;
+  const idAtMount = useRef(id);
 
   useEffect(() => {
-    if (id !== undefined && message) notify({ message });
+    if (message && shouldAnnounceNotice(id, idAtMount.current)) notify({ message });
   }, [id, message, notify]);
 
   return null;

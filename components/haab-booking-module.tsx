@@ -554,8 +554,9 @@ export function HaabBookingModule({
     null,
   );
   const [cancellationId, setCancellationId] = useState<string | null>(null);
-  // Dashboard-only confirmations (cancel, reschedule), toasted once per id.
-  const [bookingNotice, setBookingNotice] = useState<{ id: number; message: string } | null>(null);
+  // Dashboard-only confirmations (link copied, cancel, reschedule), toasted
+  // once per id.
+  const [notice, setNotice] = useState<{ id: number; message: string } | null>(null);
   const [isCalendarQrModalOpen, setIsCalendarQrModalOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedManageLink, setCopiedManageLink] = useState(false);
@@ -625,6 +626,17 @@ export function HaabBookingModule({
     providerDashboardLanguage: storedProvider.dashboardLanguage,
     viewerLanguage,
   });
+  // Dashboard confirmations speak the owner's workspace language even while
+  // the in-app booking flow shows the public page in the clients' language.
+  const workspaceCopy =
+    dashboardCopy[
+      resolveSurfaceLanguage({
+        surface: "management",
+        publicLanguage,
+        providerDashboardLanguage: storedProvider.dashboardLanguage,
+        viewerLanguage,
+      })
+    ];
   const localizedPublicContent = localizePublicExampleContent(
     storedProvider,
     storedServices,
@@ -3331,7 +3343,7 @@ export function HaabBookingModule({
 
     setRescheduleState(null);
     if (!isDedicatedPublicPage) {
-      setBookingNotice((current) => ({ id: (current?.id ?? 0) + 1, message: dashboardCopy[lang].rescheduledToast }));
+      setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.rescheduledToast }));
     }
   }
 
@@ -3400,7 +3412,7 @@ export function HaabBookingModule({
     setCancellationId(null);
     setCancellationError(null);
     if (!isDedicatedPublicPage) {
-      setBookingNotice((current) => ({ id: (current?.id ?? 0) + 1, message: dashboardCopy[lang].cancelledToast }));
+      setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.cancelledToast }));
     }
   }
 
@@ -3408,6 +3420,9 @@ export function HaabBookingModule({
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
       setCopiedLink(true);
+      if (!isDedicatedPublicPage) {
+        setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.linkCopiedToast }));
+      }
       window.setTimeout(() => setCopiedLink(false), 1600);
     } catch {
       setCopiedLink(false);
@@ -7188,7 +7203,7 @@ export function HaabBookingModule({
       />
       {renderCancellationModal()}
       {renderRescheduleModal()}
-      <ToastOnChange notice={bookingNotice} />
+      <ToastOnChange notice={notice} />
     </>
   );
 
