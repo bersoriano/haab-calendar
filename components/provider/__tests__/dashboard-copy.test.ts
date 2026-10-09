@@ -31,7 +31,7 @@ describe("dashboard shell copy", () => {
   });
 
   it("words toasts in both languages", () => {
-    for (const key of ["linkCopiedToast", "dismiss", "opensInNewTab"] as const) {
+    for (const key of ["linkCopiedToast", "dismiss", "opensInNewTab", "changesSaved"] as const) {
       expect(dashboardCopy.en[key]).toBeTruthy();
       expect(dashboardCopy.es[key]).toBeTruthy();
       expect(dashboardCopy.es[key]).not.toBe(dashboardCopy.en[key]);

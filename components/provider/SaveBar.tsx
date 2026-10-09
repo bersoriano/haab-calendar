@@ -26,7 +26,10 @@ export function SaveBar({
   visible: boolean;
   saving: boolean;
   error?: string | null;
-  /** Set once per successful save (the module clears it in between). */
+  /**
+   * Set once per successful save (the module clears it in between). Its
+   * presence triggers the "Changes saved" toast; the wording is the bar's own.
+   */
   message?: string | null;
   onSave: () => void;
   lang: Lang;
@@ -36,8 +39,8 @@ export function SaveBar({
   const { notify } = useToast();
 
   useEffect(() => {
-    if (message) notify({ message });
-  }, [message, notify]);
+    if (message) notify({ message: shell.changesSaved });
+  }, [message, notify, shell.changesSaved]);
 
   if (!visible && !error) {
     return null;

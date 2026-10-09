@@ -23,7 +23,7 @@ test.describe("dashboard toasts", () => {
     await page.goto("/dashboard/appearance");
     const field = page.getByLabel(/Hero text|Texto principal/);
     await expect(field).toBeVisible();
-    const saved = page.getByRole("status").getByText(/^(Saved\.|Guardado\.)$/);
+    const saved = page.getByRole("status").getByText(/^(Changes saved|Cambios guardados)$/);
 
     for (const suffix of ["A", "B"]) {
       await field.fill(`Welcome ${Date.now()} ${suffix}`);
