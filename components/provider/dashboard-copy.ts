@@ -37,6 +37,18 @@ export type DashboardShellCopy = {
   seeAll: string;
   statusFilterLabel: string;
   typeFilterLabel: string;
+  bookingViewLabel: string;
+  activeBookings: string;
+  archivedBookings: string;
+  archiveHint: string;
+  sortBookingsLabel: string;
+  closestBookings: string;
+  soonerBookings: string;
+  latestBookings: string;
+  noActiveBookingsTitle: string;
+  noActiveBookingsBody: string;
+  noArchivedBookingsTitle: string;
+  noArchivedBookingsBody: string;
   today: string;
   tomorrow: string;
   clearFilters: string;
@@ -148,6 +160,18 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     seeAll: "See all",
     statusFilterLabel: "Filter by status",
     typeFilterLabel: "Filter by type",
+    bookingViewLabel: "Booking view",
+    activeBookings: "Active",
+    archivedBookings: "Archive",
+    archiveHint: "Bookings more than 7 days past are kept in Archive.",
+    sortBookingsLabel: "Sort bookings",
+    closestBookings: "Closest to today",
+    soonerBookings: "Sooner first",
+    latestBookings: "Latest first",
+    noActiveBookingsTitle: "All caught up",
+    noActiveBookingsBody: "New bookings will appear here. Older bookings are available in Archive.",
+    noArchivedBookingsTitle: "No archived bookings",
+    noArchivedBookingsBody: "Bookings move here once their scheduled date is more than 7 days past.",
     today: "Today",
     tomorrow: "Tomorrow",
     clearFilters: "Clear filters",
@@ -282,6 +306,18 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     seeAll: "Ver todo",
     statusFilterLabel: "Filtrar por estado",
     typeFilterLabel: "Filtrar por tipo",
+    bookingViewLabel: "Vista de reservas",
+    activeBookings: "Activas",
+    archivedBookings: "Archivo",
+    archiveHint: "Las reservas de hace más de 7 días se conservan en Archivo.",
+    sortBookingsLabel: "Ordenar reservas",
+    closestBookings: "Más cercanas a hoy",
+    soonerBookings: "Más próximas primero",
+    latestBookings: "Más lejanas primero",
+    noActiveBookingsTitle: "Todo está al día",
+    noActiveBookingsBody: "Las nuevas reservas aparecerán aquí. Las anteriores están disponibles en Archivo.",
+    noArchivedBookingsTitle: "No hay reservas archivadas",
+    noArchivedBookingsBody: "Las reservas pasan aquí cuando su fecha es de hace más de 7 días.",
     today: "Hoy",
     tomorrow: "Mañana",
     clearFilters: "Quitar filtros",

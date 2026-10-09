@@ -165,6 +165,7 @@ import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
+import { getBookingListView, type BookingListSort, type BookingListView } from "@/lib/booking-list";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
@@ -542,6 +543,8 @@ export function HaabBookingModule({
   const deferredSearch = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"all" | BookingStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | BookingType>("all");
+  const [bookingListView, setBookingListView] = useState<BookingListView>("active");
+  const [bookingListSort, setBookingListSort] = useState<BookingListSort>("closest");
   const [rescheduleState, setRescheduleState] = useState<RescheduleState | null>(
     null,
   );
@@ -1309,10 +1312,6 @@ export function HaabBookingModule({
   }, [isDesktopColumns, resolvedBookingFlow.step]);
 
   useEffect(() => {
-    if (surface !== "public") {
-      return;
-    }
-
     const refreshAvailabilityClock = () => setAvailabilityNow(currentTimestamp());
     const intervalId = window.setInterval(refreshAvailabilityClock, 30_000);
     document.addEventListener("visibilitychange", refreshAvailabilityClock);
@@ -3425,22 +3424,13 @@ export function HaabBookingModule({
       compareDateKeys(booking.dateKey, todayKey()) >= 0 &&
       compareDateKeys(booking.dateKey, upcomingWindowEnd) <= 0,
   );
-  const filteredBookings = sortedBookings.filter((booking) => {
-    const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
-    const matchesType = typeFilter === "all" || booking.bookingType === typeFilter;
-    const query = deferredSearch.trim().toLowerCase();
-    const haystack = [
-      booking.clientName,
-      booking.clientEmail,
-      booking.clientPhone,
-      booking.serviceName,
-      booking.dateKey,
-    ]
-      .join(" ")
-      .toLowerCase();
-    const matchesQuery = !query || haystack.includes(query);
-
-    return matchesStatus && matchesType && matchesQuery;
+  const bookingListTodayKey = getDateTimeKeysInTimeZone(new Date(availabilityNow), providerTimeZone).dateKey;
+  const bookingList = getBookingListView(bookings, bookingListTodayKey, {
+    view: bookingListView,
+    sort: bookingListSort,
+    search: deferredSearch,
+    status: statusFilter,
+    type: typeFilter,
   });
   const activeCalendarService =
     services.find((service) => service.id === calendarServiceId) ?? services[0];
@@ -3807,9 +3797,15 @@ export function HaabBookingModule({
       <BookingsList
         lang={lang}
         copy={copy}
-        bookings={filteredBookings}
-        totalCount={bookings.length}
-        todayKey={todayKey()}
+        bookings={bookingList.bookings}
+        totalCount={bookingList.totalCount}
+        activeCount={bookingList.activeCount}
+        archiveCount={bookingList.archiveCount}
+        view={bookingListView}
+        onViewChange={setBookingListView}
+        sort={bookingListSort}
+        onSortChange={setBookingListSort}
+        todayKey={bookingListTodayKey}
         search={searchTerm}
         onSearchChange={setSearchTerm}
         status={statusFilter}
