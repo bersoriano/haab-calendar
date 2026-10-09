@@ -107,3 +107,24 @@ describe("trustworthy booking analytics migration", () => {
     expect(trustSql).not.toContain("security definer");
   });
 });
+
+describe("network rate-limit migration", () => {
+  const networkSql = readFileSync(
+    join(
+      import.meta.dirname,
+      "..",
+      "..",
+      "..",
+      "supabase",
+      "migrations",
+      "20261010120000_add_network_rate_limit_key.sql",
+    ),
+    "utf8",
+  );
+
+  it("stores only a hash shaped key, indexed for the hourly count", () => {
+    expect(networkSql).toContain("network_hash ~ '^[0-9a-f]{64}$'");
+    expect(networkSql).toMatch(/on public\.public_page_events\(provider_id, network_hash, occurred_at desc\)/);
+    expect(networkSql).not.toMatch(/\b(ip|ip_address)\s+(text|inet)/);
+  });
+});

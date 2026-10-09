@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}));
 
 import {
   classifyDevice,
+  computeNetworkHash,
   computeVisitorHash,
   isLikelyBot,
   readClientIp,
@@ -38,6 +39,24 @@ describe("visitor hashing", () => {
 
   it("never contains the ip", () => {
     expect(computeVisitorHash(base)).not.toContain("203.0.113.7");
+  });
+});
+
+describe("network hashing", () => {
+  const base = {
+    secret: "s3cret",
+    providerId: "provider-1",
+    ip: "203.0.113.7",
+    now: new Date("2026-10-08T15:00:00Z"),
+  };
+
+  it("rotates daily and per provider, and never contains the ip", () => {
+    const hash = computeNetworkHash(base);
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+    expect(hash).not.toContain("203.0.113.7");
+    expect(computeNetworkHash({ ...base, now: new Date("2026-10-09T00:00:00Z") })).not.toBe(hash);
+    expect(computeNetworkHash({ ...base, providerId: "provider-2" })).not.toBe(hash);
+    expect(computeNetworkHash({ ...base, ip: "203.0.113.8" })).not.toBe(hash);
   });
 });
 
