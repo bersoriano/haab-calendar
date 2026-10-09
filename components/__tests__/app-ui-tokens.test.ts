@@ -42,6 +42,9 @@ const MIGRATED = [
   "components/provider/ProviderInfoForm.tsx",
   "components/provider/TimeZoneField.tsx",
   "components/provider/ServiceEditor.tsx",
+  "components/provider/AvailabilitySettingsSection.tsx",
+  "components/provider/AvailabilityEditor.tsx",
+  "components/provider/DailyBookingLimitField.tsx",
   "components/super-admin/SuperAdminShell.tsx",
 ];
 

@@ -45,6 +45,8 @@ export type DashboardShellCopy = {
   resetSetupTitle: string;
   resetSetupBody: string;
   keepSetup: string;
+  /** A weekday with no opening hours. */
+  closedDay: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -198,6 +200,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     resetSetupBody:
       "Your profile, services and availability on this device are cleared and the setup starts again. This cannot be undone.",
     keepSetup: "Keep my setup",
+    closedDay: "Closed",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -374,6 +377,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     resetSetupBody:
       "Se borran su perfil, servicios y disponibilidad en este dispositivo y la configuración empieza de nuevo. No se puede deshacer.",
     keepSetup: "Conservar mi configuración",
+    closedDay: "Cerrado",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

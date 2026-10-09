@@ -3,9 +3,8 @@
 import { useState } from "react";
 
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
-import { adminFieldClass, adminInsetClass } from "@/components/provider/adminGlass";
+import { Field, Input, Switch } from "@/components/app-ui";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /** What a provider gets when they first switch the limit on. */
 export const DEFAULT_DAILY_BOOKING_LIMIT = 5;
@@ -42,14 +41,13 @@ export function DailyBookingLimitField({
   const draftValid = parseDailyBookingLimit(draft) !== null;
 
   return (
-    <div className={cn(adminInsetClass, "mt-6 p-5")}>
-      <h4 className="text-base font-semibold text-[var(--ink)]">{t.dailyLimitTitle}</h4>
-      <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{t.dailyLimitBody}</p>
-
-      <label className="mt-4 flex items-center gap-3 text-sm font-medium text-[var(--ink)]">
-        <input
-          type="checkbox"
-          className="size-5 accent-[var(--primary)]"
+    <div className="mt-6 grid gap-4 border-t border-app-border pt-6">
+      <div>
+        <h3 className="text-sm font-semibold text-app-fg">{t.dailyLimitTitle}</h3>
+        <p className="mt-1 text-sm text-app-fg-muted">{t.dailyLimitBody}</p>
+      </div>
+      <Field label={t.dailyLimitToggle} inline>
+        <Switch
           checked={enabled}
           disabled={disabled}
           onChange={(event) => {
@@ -62,36 +60,29 @@ export function DailyBookingLimitField({
             onChange(next);
           }}
         />
-        {t.dailyLimitToggle}
-      </label>
-
+      </Field>
       {enabled ? (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-[var(--ink)]">
-            {t.dailyLimitLabel}
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={MAX_DAILY_BOOKING_LIMIT}
-              step={1}
-              className={cn(adminFieldClass, "mt-2 block w-32")}
-              value={draft}
-              disabled={disabled}
-              aria-invalid={!draftValid}
-              onChange={(event) => {
-                setDraft(event.target.value);
-                const next = parseDailyBookingLimit(event.target.value);
-                if (next !== null) {
-                  onChange(next);
-                }
-              }}
-            />
-          </label>
-          <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-            {fillTemplate(t.dailyLimitHint, { count: String(value) })}
-          </p>
-        </div>
+        <Field label={t.dailyLimitLabel} description={fillTemplate(t.dailyLimitHint, { count: String(value) })}>
+          <Input
+            type="number"
+            name="maxBookingsPerDay"
+            inputMode="numeric"
+            min={1}
+            max={MAX_DAILY_BOOKING_LIMIT}
+            step={1}
+            className="w-32"
+            value={draft}
+            disabled={disabled}
+            aria-invalid={!draftValid}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              const next = parseDailyBookingLimit(event.target.value);
+              if (next !== null) {
+                onChange(next);
+              }
+            }}
+          />
+        </Field>
       ) : null}
     </div>
   );
