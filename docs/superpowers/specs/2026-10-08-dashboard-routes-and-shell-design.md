@@ -75,7 +75,7 @@ Sidebar groups. Nav labels for Bookings and Services use the vertical-specific c
   - `generateMetadata` sets `"<Section> · Haab Calendar"` for hard loads; `robots: noindex`.
 - `app/page.tsx`: calls `resolveHomeRedirect` before rendering. Signed-in + configured → `/dashboard` (or the legacy-tab target). Guests and unconfigured users render the landing page as today. The landing "Open dashboard" panel becomes a link to `/dashboard`.
 - Stripe Checkout `success_url` / `cancel_url` → `/dashboard/<returnTab>?checkout=success|cancelled`. Legacy `/?tab=…&checkout=…` URLs from in-flight sessions still work through `resolveHomeRedirect`.
-- Google OAuth callback → `/dashboard/integrations?google=<outcome>`. The Integrations section shows the outcome as a banner (en/es copy per known outcome) and strips the param with `history.replaceState`.
+- Google OAuth callback → `/dashboard/integrations?google=<outcome>`. The Integrations section shows the outcome as a banner (en/es copy per known outcome) until the provider navigates to another section; navigation drops the param.
 - `startDemoEdit` → `/dashboard`. `stopDemoEdit` → `/super-admin/demo-pages`.
 - Setup publish (`onSetupPersisted` while setting up) → `router.replace("/dashboard")`.
 - Admin saves on the dashboard do **not** navigate. `onSetupPersisted` keeps its meaning for the setup flow only; the dashboard host passes a handler that updates its store snapshot and nothing else.
@@ -99,7 +99,7 @@ Sidebar groups. Nav labels for Bookings and Services use the vertical-specific c
 
 New shared components in `components/app-shell/`, used by both the dashboard and super admin:
 
-- **`AppShell`** — layout grid: sidebar column + content column (top bar, banners slot, content, footer). Props: `nav`, `brand`, `account`, `topBar`, `banners`, `footer`, `children`.
+- **`AppShell`** — layout grid: sidebar column + content column (top bar, banners slot, content, footer). Props: `sidebar`, `title`, `description`, `topBarActions`, `banners`, `footer`, `children`.
 - **`SidebarNav`** — grouped items `{ id, href, label, icon, badge? }`, Phosphor icons (already a dependency), `aria-current="page"` on the active item, `<nav aria-label>`. Optional `onNavigate(href, event)`; the dashboard passes the shallow-navigation handler, super admin omits it and renders `next/link`.
 - **Sidebar layout** (≥ `lg`): sticky, full height, ~264px.
   - Top: Haab mark linking to the area home (`/dashboard` or `/super-admin`); workspace card with the provider logo (or initial), business name, and a publish status dot (live / publishing disabled).
@@ -107,7 +107,7 @@ New shared components in `components/app-shell/`, used by both the dashboard and
   - Bottom: Settings, "Super admin" (super admins only), account row (initial avatar, truncated email, Sign out via the `logout` server action).
 - **Mobile drawer** (< `lg`): the top bar shows a menu button that opens the sidebar as a drawer — focus trapped, Esc and backdrop close it, closes on navigation, body scroll locked while open.
 - **Top bar** (sticky in the content column): menu button (mobile), section title as the page `<h1>` + a one-line description, and on the right **Copy link** and **View page ↗** (icon-only on mobile). Section-specific controls live in the section's own toolbar, not here.
-- **Banners slot** (under the top bar): demo-edit notice (label, public path, View live, Exit demo editing), publication status message (`publicationStatus.dashboardMessage`), Stripe checkout result, Google outcome. Replaces `DemoEditBar` + `AccountStatusBar` full-width bars and the `AdminHero` title on the dashboard.
+- **Banners slot** (under the top bar): demo-edit notice (label, public path, View live, Exit demo editing), publication status message (`publicationStatus.dashboardMessage`), Google outcome. The Stripe checkout result stays inside Analytics, which needs entitlements to word it. Replaces `DemoEditBar` + `AccountStatusBar` full-width bars and the `AdminHero` title on the dashboard.
 - **Footer** (bottom of the content column): `© <year> Haab Calendar · Terms · Privacy · View public page`. en/es on the dashboard, English on super admin.
 - **Accessibility:** skip-to-content link, one `<h1>` per page, focus moved to it on section change, 44px minimum targets (`min-h-11`), visible focus rings, drawer focus management.
 
@@ -134,7 +134,7 @@ Shared rules: one card level (no card inside card inside card), a consistent sec
 - **Overview** — Row 1: four stat tiles (2×2 on mobile, 4 across on desktop): upcoming 7 days, services, confirmed, total. Row 2, two columns: *Upcoming 7 days* as compact rows (time block, client, service, type/status/campaign badges, reschedule/cancel actions; reschedule hidden for single-occurrence services as today) with "See all bookings →"; side column with *Your booking page* (URL, Copy, View, publish status) and *Next steps* — shown only when something is missing (no services → Services, no available days → Availability, publishing disabled → status message).
 - **Bookings** — sticky toolbar: search, status filter, type filter, result count, "Clear filters" (when any filter is active), "Scan appointment" (integrated mode). Rows grouped under date headings ("Today", "Tomorrow", then formatted dates), contact details on the second line, actions right-aligned and stacking on mobile, cancelled rows dimmed with actions disabled as today. Empty states distinguish "no bookings yet" from "no matches".
 - **Calendar** — one toolbar: ‹ Today › and month label, legend, "New booking for: [service]" select. Desktop grid keeps booking chips. Mobile cells show the date, colored dots per booking type, and "+N"; tapping an open day still launches the in-app booking flow, which renders in the content area with "Back to calendar".
-- **Analytics** — content unchanged (recent work). Its top `SectionTitle` is dropped because the top bar `<h1>` names the page; the checkout banner moves to the banners slot.
+- **Analytics** — content unchanged (recent work). Its top `SectionTitle` is dropped because the top bar `<h1>` names the page; the checkout banner stays in the section and switches to the shared `Alert`.
 - **Services** — list | editor split kept; editor column sticky on desktop; on mobile an "Add service" button scrolls to and focuses the editor. Behavior unchanged.
 - **Availability** — weekly hours (or event scheduling for the events vertical) and the daily booking limit in one panel.
 - **Appearance** — left: logo uploader + appearance fields; right: theme picker + client page language. Dashboard language moves to Settings.
