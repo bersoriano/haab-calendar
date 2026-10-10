@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { DashboardApp } from "@/components/provider/DashboardApp";
+import { DashboardLoadError } from "@/components/provider/DashboardLoadError";
 import {
   parseCheckoutResult,
   parseGoogleOutcome,
@@ -62,7 +63,13 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
     redirect(`/login?next=${encodeURIComponent(pathForSection(section))}`);
   }
 
-  // No finished page, or it could not be read: the landing page owns setup.
+  // A failed read is not "no page yet": say so here and offer a retry. The
+  // landing page would treat the owner as new and offer setup again.
+  if (load.storeLoadFailed) {
+    return <DashboardLoadError lang={await getServerLanguage()} retryHref={pathForSection(section)} />;
+  }
+
+  // No finished page: the landing page owns setup.
   if (!load.configured || !load.dashboardStore) {
     redirect("/");
   }

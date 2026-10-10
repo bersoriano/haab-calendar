@@ -79,6 +79,16 @@ describe("resolveHomeRedirect", () => {
     );
   });
 
+  it("sends an owner whose page could not be read to the dashboard, not into setup", () => {
+    // Reading as "no page yet" would offer setup to someone who has one.
+    expect(
+      resolveHomeRedirect({ loggedIn: true, configured: false, demoEditing: false, storeLoadFailed: true }),
+    ).toBe("/dashboard");
+    expect(
+      resolveHomeRedirect({ loggedIn: false, configured: false, demoEditing: false, storeLoadFailed: true }),
+    ).toBeNull();
+  });
+
   it("sends a demo-editing super admin to the dashboard", () => {
     expect(resolveHomeRedirect({ loggedIn: true, configured: false, demoEditing: true })).toBe(
       "/dashboard",

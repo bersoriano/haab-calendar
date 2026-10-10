@@ -9,6 +9,7 @@ import {
 } from "@/lib/supabase/provider-store";
 import { normalizeStore } from "@/lib/store";
 import type { ModuleStore } from "@/lib/types";
+import { describeError } from "@/lib/describe-error";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,24 +17,6 @@ export const runtime = "nodejs";
 type ProviderStoreBody = {
   store?: unknown;
 };
-
-function describeWriteCause(cause: unknown) {
-  if (cause instanceof Error) {
-    return cause.message;
-  }
-
-  if (cause && typeof cause === "object") {
-    const record = cause as Record<string, unknown>;
-    return {
-      code: typeof record.code === "string" ? record.code : undefined,
-      message: typeof record.message === "string" ? record.message : undefined,
-      details: typeof record.details === "string" ? record.details : undefined,
-      hint: typeof record.hint === "string" ? record.hint : undefined,
-    };
-  }
-
-  return String(cause);
-}
 
 export async function GET() {
   const supabase = await createClient();
@@ -69,7 +52,7 @@ export async function GET() {
   } catch (error) {
     console.error("provider_store_load_failed", {
       userId: user.id,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error),
     });
 
     return NextResponse.json(
@@ -127,7 +110,7 @@ export async function PUT(request: NextRequest) {
           "provider_store_save_failed",
           JSON.stringify({
             userId: user.id,
-            error: describeWriteCause(error.cause ?? error),
+            error: describeError(error.cause ?? error),
           }),
         );
       }
@@ -140,7 +123,7 @@ export async function PUT(request: NextRequest) {
 
     console.error("provider_store_save_failed", {
       userId: user.id,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error),
     });
 
     return NextResponse.json(

@@ -48,6 +48,9 @@ export type DashboardShellCopy = {
   /** A weekday with no opening hours. */
   closedDay: string;
   /** "{current}" and "{total}" are replaced at the call site. */
+  storeLoadFailedTitle: string;
+  storeLoadFailedBody: string;
+  tryAgain: string;
   setupStepOf: string;
   setupProgress: string;
   viewPage: string;
@@ -204,6 +207,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       "Your profile, services and availability on this device are cleared and the setup starts again. This cannot be undone.",
     keepSetup: "Keep my setup",
     closedDay: "Closed",
+    storeLoadFailedTitle: "We couldn't load your dashboard",
+    storeLoadFailedBody:
+      "Your page and bookings are safe; reading them failed just now. Try again in a moment.",
+    tryAgain: "Try again",
     setupStepOf: "Step {current} of {total}",
     setupProgress: "Setup progress",
     viewPage: "View page",
@@ -383,6 +390,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       "Se borran su perfil, servicios y disponibilidad en este dispositivo y la configuración empieza de nuevo. No se puede deshacer.",
     keepSetup: "Conservar mi configuración",
     closedDay: "Cerrado",
+    storeLoadFailedTitle: "No pudimos cargar tu panel",
+    storeLoadFailedBody:
+      "Tu página y tus reservas están a salvo; no pudimos leerlas en este momento. Inténtalo de nuevo en un momento.",
+    tryAgain: "Intentar de nuevo",
     setupStepOf: "Paso {current} de {total}",
     setupProgress: "Progreso de la configuración",
     viewPage: "Ver página",
