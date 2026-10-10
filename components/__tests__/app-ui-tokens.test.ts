@@ -58,6 +58,7 @@ const MIGRATED = [
   "components/provider/BusinessTypeSwitch.tsx",
   "components/provider/VerticalPicker.tsx",
   "components/super-admin/SuperAdminShell.tsx",
+  "components/super-admin/SuperAdminOverview.tsx",
 ];
 
 const RAW_PALETTE =

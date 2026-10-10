@@ -32,6 +32,23 @@ describe("SuperAdminOverview", () => {
     expect(html).toContain(">2<");
   });
 
+  it("names the publishing counts the way the account filters do", () => {
+    const html = render();
+
+    expect(html).toContain("<dl");
+    expect(html).toContain(">Publishing on<");
+    expect(html).toContain(">Publishing off<");
+    expect(html).toContain('href="/super-admin/accounts?status=enabled"');
+  });
+
+  it("says what each waiting item is about", () => {
+    const html = render({ pendingCleanups: 1, demoPagesNeedingSeed: 2 });
+
+    expect(html).toContain("1 deleted account still has branding files queued.");
+    expect(html).toContain("2 accounts can&#x27;t publish.");
+    expect(html).toContain("2 demo pages need seeding.");
+  });
+
   it("links straight to the accounts that cannot publish", () => {
     expect(render()).toContain('href="/super-admin/accounts?status=disabled"');
   });
