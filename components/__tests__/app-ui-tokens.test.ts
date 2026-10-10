@@ -61,6 +61,9 @@ const MIGRATED = [
   "app/super-admin",
   "components/auth/LoginHeader.tsx",
   "components/auth/AuthPageFrame.tsx",
+  "components/auth/AuthForm.tsx",
+  "components/auth/PasswordResetRequestForm.tsx",
+  "components/auth/NewPasswordForm.tsx",
 ];
 
 const RAW_PALETTE =
