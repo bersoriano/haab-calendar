@@ -51,6 +51,8 @@ export type E2EProviderSeed = {
   manageToken?: string;
   /** A fixed booking id: the public reference shown on the manage page derives from it. */
   bookingId?: string;
+  /** A fixed creation time: the manage page shows it as the pass's issue date. */
+  bookingCreatedAt?: string;
 };
 
 export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
@@ -159,6 +161,7 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     bookingDate: "2027-01-15",
     manageToken: "e2e-public-manage-token",
     bookingId: "00000000-0000-4000-8000-0000000eb009",
+    bookingCreatedAt: "2026-10-01T15:00:00.000Z",
   },
   {
     // Signs in to super admin. Nothing acts on this account itself.

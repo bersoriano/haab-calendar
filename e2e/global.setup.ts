@@ -92,6 +92,9 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
 
     const { error } = await admin.from("bookings").insert({
       ...(seed.bookingId ? { id: seed.bookingId } : {}),
+      // Otherwise the pass's "Issued" date is the day the suite was seeded,
+      // and the public screenshot guard fails the morning after.
+      ...(seed.bookingCreatedAt ? { created_at: seed.bookingCreatedAt } : {}),
       provider_id: seed.providerId,
       service_id: service.id,
       service_name: "Consultation",
