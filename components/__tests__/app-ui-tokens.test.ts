@@ -114,6 +114,8 @@ describe("app token contrast", () => {
     ["fg-secondary", "subtle"],
     ["fg-muted", "surface"],
     ["fg-muted", "canvas"],
+    // Muted hints on subtle panels (Settings' business type row; Lighthouse).
+    ["fg-muted", "subtle"],
     ["success-fg", "success-soft"],
     ["warning-fg", "warning-soft"],
     ["danger-fg", "danger-soft"],
