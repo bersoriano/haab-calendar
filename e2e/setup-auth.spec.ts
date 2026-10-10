@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import { E2E_PASSWORD, providerFor } from "./fixtures/providers";
+import { DEFAULT_STORAGE_KEY } from "../lib/constants";
 
 /**
  * The signed-out surfaces: signing in, and the guest page builder's welcome
@@ -78,3 +79,34 @@ test.describe("guest page builder on a phone", () => {
     await expectNoSidewaysScroll(page);
   });
 });
+
+test.describe("guest with a draft that has no business type yet", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("resumes on the welcome step, and choosing a type starts setup", async ({ page }) => {
+    // A browser-owned draft with a name but no business type: resuming it
+    // opens the welcome step, the one screen that asks for the type first.
+    await page.addInitScript(
+      ([key]) => {
+        if (!window.localStorage.getItem(key)) {
+          window.localStorage.setItem(key, JSON.stringify({ provider: { businessName: "Draft Without Type E2E" } }));
+        }
+      },
+      [DEFAULT_STORAGE_KEY],
+    );
+    await page.goto("/?lang=en");
+
+    await page.getByLabel("Open menu").click();
+    await page.getByRole("navigation", { name: "Mobile" }).getByRole("button", { name: "Create your page" }).click();
+
+    const welcome = page.getByRole("heading", { level: 1, name: "What kind of business are we setting up today?" });
+    await expect(welcome).toBeVisible();
+    await expect(page.getByRole("listitem").filter({ hasText: "No credit card required" })).toBeVisible();
+    await expectNoSidewaysScroll(page);
+
+    await page.getByRole("button", { name: /^Healthcare/ }).click();
+    await expect(page.getByRole("navigation", { name: "Setup progress" })).toContainText("Step 1 of 4");
+    await expect(welcome).toHaveCount(0);
+  });
+});
+
