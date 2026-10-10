@@ -176,6 +176,7 @@ import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { ModuleHeader } from "@/components/provider/ModuleHeader";
 import { SetupWizardFrame } from "@/components/provider/setup/SetupWizardFrame";
 import { WelcomeStep } from "@/components/provider/setup/WelcomeStep";
 import { getVerticalPreset } from "@/config/verticals";
@@ -7040,13 +7041,9 @@ export function HaabBookingModule({
         ) : (
           <div className="space-y-4">
             {surfaceMode === "adaptive" ? (
-              <button
-                type="button"
-                onClick={() => setSurface("management")}
-                className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
-              >
+              <Button variant="secondary" onClick={() => setSurface("management")}>
                 {t.admin.backToWorkspace}
-              </button>
+              </Button>
             ) : null}
             <section className={publicShellClass}>{renderPublicFlow()}</section>
           </div>
@@ -7082,93 +7079,33 @@ export function HaabBookingModule({
           />
         ) : null}
         {!isDedicatedPublicPage && chrome === "module" ? (
-          <div className="border-b border-[var(--line)] p-5 sm:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0">
-                <h2 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--ink)]">
-                  {provider.businessName || provider.fullName || copy.bookingWorkspace}
-                </h2>
-                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <span className="break-all text-sm text-[var(--muted)]">{publicUrl}</span>
-                  <button
-                    type="button"
-                    onClick={copyPublicLink}
-                    className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
-                  >
-                    {copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
-                  </button>
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm font-semibold text-[var(--accent)] transition hover:opacity-80"
-                  >
-                    {t.admin.viewPublicPage}
-                  </a>
-                </div>
-              </div>
-
-              {userEmail || onSignOut ? (
-                <div className="flex shrink-0 items-center gap-3">
-                  {userEmail ? (
-                    <span className="hidden text-sm text-[var(--muted)] sm:inline">{userEmail}</span>
-                  ) : null}
-                  {onSignOut ? (
-                    <form action={onSignOut}>
-                      <button
-                        type="submit"
-                        className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
-                      >
-                        {t.admin.signOut}
-                      </button>
-                    </form>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-
-            {surface === "management" && surfaceMode === "adaptive" ? (
-              <nav className="mt-6 flex flex-wrap gap-2">
-                {(
-                  [
-                    ["dashboard", t.admin.tabDashboard],
-                    ["bookings", copy.Bookings],
-                    ["calendar", t.admin.tabCalendar],
-                    ["services", copy.Services],
-                    ["availability", dashboardCopy[lang].titles.availability],
-                    ["appearance", t.admin.tabAppearance],
-                    ["analytics", t.admin.tabAnalytics],
-                    ["integrations", dashboardCopy[lang].titles.integrations],
-                    ["settings", t.admin.tabSettings],
-                  ] as Array<[AdminTab, string]>
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => goToSection(value)}
-                    className={cn(
-                      "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                      currentSection === value
-                        ? "bg-[var(--ink)] text-[var(--background)]"
-                        : "bg-[var(--panel-tint-72)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.18)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]",
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
-            ) : surfaceMode === "adaptive" ? (
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={() => setSurface("management")}
-                  className="min-h-11 rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
-                >
-                  {t.admin.backToWorkspace}
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <ModuleHeader
+            lang={lang}
+            title={provider.businessName || provider.fullName || copy.bookingWorkspace}
+            publicUrl={publicUrl}
+            copiedLink={copiedLink}
+            onCopyLink={copyPublicLink}
+            userEmail={userEmail}
+            onSignOut={onSignOut}
+            sections={
+              surface === "management" && surfaceMode === "adaptive"
+                ? ([
+                    { value: "dashboard", label: t.admin.tabDashboard },
+                    { value: "bookings", label: copy.Bookings },
+                    { value: "calendar", label: t.admin.tabCalendar },
+                    { value: "services", label: copy.Services },
+                    { value: "availability", label: dashboardCopy[lang].titles.availability },
+                    { value: "appearance", label: t.admin.tabAppearance },
+                    { value: "analytics", label: t.admin.tabAnalytics },
+                    { value: "integrations", label: dashboardCopy[lang].titles.integrations },
+                    { value: "settings", label: t.admin.tabSettings },
+                  ] satisfies Array<{ value: AdminTab; label: string }>)
+                : undefined
+            }
+            currentSection={currentSection}
+            onSelectSection={goToSection}
+            onBackToWorkspace={surfaceMode === "adaptive" ? () => setSurface("management") : undefined}
+          />
         ) : null}
 
         {surface === "management" && surfaceMode === "adaptive" ? (

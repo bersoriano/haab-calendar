@@ -70,6 +70,7 @@ const MIGRATED = [
   "components/provider/GuestDraftBar.tsx",
   "components/provider/AccountStatusBar.tsx",
   "components/provider/setup",
+  "components/provider/ModuleHeader.tsx",
 ];
 
 const RAW_PALETTE =
