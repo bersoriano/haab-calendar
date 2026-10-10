@@ -3537,7 +3537,7 @@ export function HaabBookingModule({
       >
         {setupStep === 1 ? <ProviderInfoForm provider={provider} onChange={updateProvider} lang={lang} /> : null}
 
-        {setupStep === 2 ? renderServices() : null}
+        {setupStep === 2 ? renderServices({ headingLevel: 3 }) : null}
 
         {setupStep === 3 ? (
           <div className="grid gap-6">
@@ -3767,7 +3767,10 @@ export function HaabBookingModule({
   }
 
   /** The wizard shows setup errors itself; the dashboard shows them here. */
-  function renderServices({ showError = false }: { showError?: boolean } = {}) {
+  function renderServices({
+    showError = false,
+    headingLevel = 2,
+  }: { showError?: boolean; headingLevel?: 2 | 3 } = {}) {
     return (
       <ServiceEditor
         services={services}
@@ -3785,6 +3788,7 @@ export function HaabBookingModule({
         vertical={vertical}
         lang={lang}
         error={showError ? setupError : null}
+        headingLevel={headingLevel}
       />
     );
   }
