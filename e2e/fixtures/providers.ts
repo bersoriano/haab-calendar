@@ -23,7 +23,8 @@ export type E2ERole =
   | "bookingActions"
   | "publicManage"
   | "superAdmin"
-  | "superAdminTarget";
+  | "superAdminTarget"
+  | "longEmail";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -178,6 +179,16 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     providerId: "00000000-0000-4000-8000-0000000e2eab",
     businessName: "Managed Clinic E2E",
     slug: "managed-clinic-e2e",
+    legacyPlanTier: "free",
+  },
+  {
+    // Read-only: an address with no break points, for the accounts layout.
+    role: "longEmail",
+    email: "averyveryverylongaddresswithnobreakpointsanywhere@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e12",
+    providerId: "00000000-0000-4000-8000-0000000e2eac",
+    businessName: "Long Address E2E",
+    slug: "long-address-e2e",
     legacyPlanTier: "free",
   },
 ];

@@ -3,7 +3,7 @@ import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 
 import { test as setup, expect } from "@playwright/test";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
   authStatePath,
@@ -11,39 +11,14 @@ import {
   E2E_PROVIDERS,
   type E2EProviderSeed,
 } from "./fixtures/providers";
+import { localAdminClient } from "./fixtures/local-supabase";
 
 /**
  * Seeds the premium suite's providers and signs each one in.
  *
- * Everything here writes to a database, which is why the first thing it does is
- * refuse to run against one that is not local. There is deliberately no HTTP
- * seed endpoint: a route that could reset state would be reachable by anyone
- * who found it, and a test backdoor in production is worse than no test.
+ * Everything here writes to a database, which is why the client it uses
+ * refuses any host that is not local (see fixtures/local-supabase).
  */
-
-const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "host.docker.internal"]);
-
-function requireLocalSupabase(): { url: string; serviceKey: string } {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceKey) {
-    throw new Error(
-      "E2E seeding needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY from the local stack.",
-    );
-  }
-
-  const host = new URL(url).hostname;
-
-  if (!LOCAL_HOSTS.has(host)) {
-    // The host only. Never the URL with a key in it, and never the key.
-    throw new Error(
-      `Refusing to seed E2E data against a non-local Supabase host: ${host}`,
-    );
-  }
-
-  return { url, serviceKey };
-}
 
 async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
   // Delete first so a rerun starts from the same place regardless of what the
@@ -51,31 +26,21 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
   await admin.from("providers").delete().eq("id", seed.providerId);
   await admin.auth.admin.deleteUser(seed.userId).catch(() => undefined);
 
-  const createUser = () =>
-    admin.auth.admin.createUser({
-      id: seed.userId,
-      email: seed.email,
-      password: E2E_PASSWORD,
-      email_confirm: true,
-    });
-
-  let { error: userError } = await createUser();
+  const { error: userError } = await admin.auth.admin.createUser({
+    id: seed.userId,
+    email: seed.email,
+    password: E2E_PASSWORD,
+    email_confirm: true,
+  });
 
   if (userError?.message.includes("already been registered")) {
-    // The address is held under another id: the super admin's real address
-    // may already exist on a local stack (a manual sign-up, an older seed).
-    // Local only, as checked above, so taking it over is safe.
-    const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
-    const holder = data?.users.find(
-      (user) => user.email?.toLowerCase() === seed.email.toLowerCase() && user.id !== seed.userId,
+    // Never take an address over: the super admin's is a real one, and
+    // deleting whoever holds it is not something a seed should ever do, even
+    // on a stack that looks local. Say what to do instead.
+    throw new Error(
+      `${seed.email} is already registered on this stack and was not replaced. ` +
+        "Reset the local stack (supabase db reset) or delete that user, then rerun.",
     );
-
-    if (holder) {
-      await admin.auth.admin.deleteUser(holder.id);
-      ({ error: userError } = await createUser());
-    } else {
-      userError = null;
-    }
   }
 
   if (userError) throw userError;
@@ -178,10 +143,7 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
 }
 
 setup("seed premium providers and sign them in", async ({ browser }) => {
-  const { url, serviceKey } = requireLocalSupabase();
-  const admin = createClient(url, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
+  const admin = localAdminClient();
 
   for (const seed of E2E_PROVIDERS) {
     await resetProvider(admin, seed);
