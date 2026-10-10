@@ -62,6 +62,7 @@ const MIGRATED = [
   "components/super-admin/PendingDeletionCleanups.tsx",
   "components/super-admin/DemoPagesPanel.tsx",
   "components/super-admin/ProviderFeatureOverrides.tsx",
+  "components/super-admin/DeleteAccountDialog.tsx",
 ];
 
 const RAW_PALETTE =

@@ -40,6 +40,7 @@ describe("DeleteAccountDialog", () => {
   it("renders irreversible scope and a disabled initial action", () => {
     const html = renderToStaticMarkup(
       <DeleteAccountDialog
+        open
         user={ordinaryUser}
         busy={false}
         onCancel={() => {}}
@@ -47,9 +48,9 @@ describe("DeleteAccountDialog", () => {
       />,
     );
 
-    expect(html).toContain('role="dialog"');
-    expect(html).toContain('aria-modal="true"');
-    expect(html).toContain("Delete target@example.com permanently?");
+    expect(html).toMatch(/^<dialog/);
+    expect(html).toMatch(/<h2[^>]*>(<span[^>]*>)?Delete target@example.com permanently\?/);
+    expect(html).toContain("This cannot be undone.");
     expect(html).toContain("Login and authentication identity");
     expect(html).toContain("Bookings and client details");
     expect(html).toContain("Public URLs and current Haab-hosted branding images");
@@ -58,11 +59,35 @@ describe("DeleteAccountDialog", () => {
     expect(html).toContain("to confirm");
     expect(html).toContain("Delete permanently");
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delete permanently<\/button>/);
+    expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Cancel<\/button>/);
+    // The typed confirmation is a labelled field, not a bare input.
+    const inputId = html.match(/<input[^>]*id="([^"]+)"[^>]*type="email"|<input[^>]*type="email"[^>]*id="([^"]+)"/);
+    expect(inputId).toBeTruthy();
+    expect(html).toContain(`for="${inputId?.[1] ?? inputId?.[2]}"`);
+  });
+
+  it("locks both actions while the deletion runs", () => {
+    const html = renderToStaticMarkup(
+      <DeleteAccountDialog
+        open
+        user={ordinaryUser}
+        busy
+        error="Could not delete account."
+        onCancel={() => {}}
+        onConfirm={() => {}}
+      />,
+    );
+
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Cancel<\/button>/);
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("Could not delete account.");
   });
 
   it("warns when deleting a demo owner", () => {
     const html = renderToStaticMarkup(
       <DeleteAccountDialog
+        open
         user={{
           ...ordinaryUser,
           email: "public-examples+doctors@haab-calendar.invalid",
@@ -81,6 +106,7 @@ describe("DeleteAccountDialog", () => {
   it("does not show demo consequences for an ordinary account", () => {
     const html = renderToStaticMarkup(
       <DeleteAccountDialog
+        open
         user={ordinaryUser}
         busy={false}
         onCancel={() => {}}
