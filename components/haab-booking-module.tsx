@@ -94,6 +94,7 @@ import {
   getBookingTypeLabel,
   getOccurrenceModeLabel,
   bookingTypeTone,
+  bookingTypeBadgeTone,
   formatCountdown,
 } from "@/lib/format";
 import {
@@ -146,18 +147,23 @@ import {
   scrollPublicBookingStepToTop,
   shouldCollapsePublicProgressIndicator,
 } from "@/lib/public-booking-step-scroll";
-import {
-  adminFieldClass,
-  adminInsetClass,
-  adminPanelClass,
-} from "@/components/provider/adminGlass";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
-import { ToastProvider } from "@/components/app-ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  DescriptionItem,
+  DescriptionList,
+  Field,
+  Select,
+  ToastProvider,
+} from "@/components/app-ui";
 import { moduleMountsOwnToasts } from "@/lib/module-toasts";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
@@ -170,6 +176,7 @@ import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
+import { SetupWizardFrame } from "@/components/provider/setup/SetupWizardFrame";
 import { WelcomeStep } from "@/components/provider/setup/WelcomeStep";
 import { getVerticalPreset } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -180,7 +187,6 @@ import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
 import {
   ActionButton,
-  ActionLink,
   BookingHoldCountdownBar,
   EmptyState,
   PrivateLinkCard,
@@ -3487,90 +3493,61 @@ export function HaabBookingModule({
   function renderSetupWizard() {
     const hasServices = services.length > 0;
     const setupBookingLength = getSetupBookingLengthValue(services);
+    const stepMeta: Record<SetupStep, { eyebrow?: string; title: string; description: string }> = {
+      1: { title: healthcareRole?.dataTitle ?? t.setup.step1Title, description: copy.phrases.providerInfoBody },
+      2: { title: t.setup.stepServicesTitle, description: t.setup.stepServicesBody },
+      3: { title: t.setup.step2Title, description: copy.phrases.availabilityBody },
+      4: { eyebrow: t.setup.doneEyebrow, title: copy.phrases.setupDoneTitle, description: t.setup.doneBody },
+    };
+    const meta = stepMeta[setupStep];
 
     return (
-      <>
-        <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
-          <SectionTitle
-            eyebrow={t.setup.eyebrow}
-            title={copy.phrases.setupTitle}
-            body={t.setup.wizardBody}
-          />
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {([
-              ["1", t.setup.stepProvider],
-              ["2", t.setup.stepServices],
-              ["3", t.setup.stepAvailability],
-              ["4", t.setup.stepPreview],
-            ] as [string, string][]).map(([index, label]) => {
-              const stepNumber = Number(index) as SetupStep;
-              const isCurrent = setupStep === stepNumber;
+      <SetupWizardFrame
+        lang={lang}
+        eyebrow={t.setup.eyebrow}
+        title={copy.phrases.setupTitle}
+        body={t.setup.wizardBody}
+        steps={[t.setup.stepProvider, t.setup.stepServices, t.setup.stepAvailability, t.setup.stepPreview]}
+        step={setupStep}
+        stepEyebrow={meta.eyebrow}
+        stepTitle={meta.title}
+        stepDescription={meta.description}
+        error={setupError}
+        back={
+          setupStep === 4 && setupPublished
+            ? undefined
+            : { label: t.common.back, onClick: goToPreviousSetupStep, disabled: isPersistingSetup }
+        }
+        next={
+          setupStep < 4
+            ? {
+                label: isPersistingSetup
+                  ? t.common.saving
+                  : setupStep === 3 && publishLabel
+                    ? publishLabel
+                    : t.setup.continueButton,
+                onClick: goToNextSetupStep,
+                loading: isPersistingSetup,
+              }
+            : undefined
+        }
+      >
+        {setupStep === 1 ? <ProviderInfoForm provider={provider} onChange={updateProvider} lang={lang} /> : null}
 
-              return (
-                <div
-                  key={label}
-                  className={cn(
-                    "rounded-3xl border px-4 py-4",
-                    isCurrent && "border-[var(--accent)] bg-[var(--surface-lowest)] shadow-[0_18px_50px_rgba(15,23,42,0.08)]",
-                    !isCurrent && "border-[var(--line)] bg-white/70",
-                  )}
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                    {t.setup.stepLabel} {index}
-                  </p>
-                  <p className="mt-2 text-base font-semibold text-[var(--ink)]">{label}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {setupStep === 1 ? (
-          <div className="mt-8">
-            <div className={cn(adminPanelClass, "p-6")}>
-              <SectionTitle
-                title={healthcareRole?.dataTitle ?? t.setup.step1Title}
-                body={copy.phrases.providerInfoBody}
-              />
-              <div className="mt-6">
-                <ProviderInfoForm provider={provider} onChange={updateProvider} lang={lang} />
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        {setupStep === 2 ? (
-          <div className="mt-8">
-            <div className={cn(adminPanelClass, "p-6 sm:p-8")}>
-              <SectionTitle
-                title={t.setup.stepServicesTitle}
-                body={t.setup.stepServicesBody}
-              />
-              <div className="mt-6">{renderServices()}</div>
-            </div>
-          </div>
-        ) : null}
+        {setupStep === 2 ? renderServices() : null}
 
         {setupStep === 3 ? (
-          <div className={cn("mt-8", adminPanelClass, "p-6")}>
-            <SectionTitle
-              title={t.setup.step2Title}
-              body={copy.phrases.availabilityBody}
-            />
-            <div className={cn("mt-6", adminInsetClass, "grid gap-4 p-4 sm:grid-cols-[1fr_220px] sm:items-end")}>
+          <div className="grid gap-6">
+            <div className="grid gap-4 rounded-lg bg-app-subtle p-4 sm:grid-cols-[1fr_220px] sm:items-end">
               <div>
-                <p className="text-sm font-semibold text-[var(--ink)]">{t.setup.bookingLength}</p>
-                <p className="mt-1 text-sm leading-6 text-[var(--muted)]">
-                  {t.setup.bookingLengthHint}
-                </p>
+                <p className="text-sm font-semibold text-app-fg">{t.setup.bookingLength}</p>
+                <p className="mt-1 text-sm text-app-fg-muted">{t.setup.bookingLengthHint}</p>
               </div>
-              <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                {t.setup.lengthLabel}
-                <select
+              <Field label={t.setup.lengthLabel}>
+                <Select
                   disabled={!hasServices}
                   value={setupBookingLength}
                   onChange={(event) => updateSetupBookingLength(event.target.value)}
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
                 >
                   {DURATION_OPTIONS.map((duration) => (
                     <option key={duration} value={duration}>
@@ -3578,169 +3555,86 @@ export function HaabBookingModule({
                     </option>
                   ))}
                   <option value="full-day">{t.setup.fullDayOption}</option>
-                </select>
-              </label>
+                </Select>
+              </Field>
             </div>
-            <div className="mt-6">
-              <AvailabilityEditor
-                availability={availability}
-                onChange={updateAvailabilityDay}
-                lang={lang}
-              />
-            </div>
+            <AvailabilityEditor availability={availability} onChange={updateAvailabilityDay} lang={lang} />
           </div>
         ) : null}
 
         {setupStep === 4 ? (
-          <div className="mt-8">
-            <div className={cn(adminPanelClass, "p-6")}>
-              <SectionTitle
-                eyebrow={t.setup.doneEyebrow}
-                title={copy.phrases.setupDoneTitle}
-                body={t.setup.doneBody}
-              />
-              <div className={cn("mt-6", adminInsetClass, "p-4")}>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-                  {t.setup.publicBookingPage}
-                </p>
-                <p className="mt-2 break-all text-sm font-medium text-[var(--ink)]">{publicUrl}</p>
-              </div>
-              <div className="mt-6">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
+          <div className="grid gap-6">
+            <DescriptionList className="-my-4">
+              <DescriptionItem term={t.setup.publicBookingPage} flush>
+                <span className="break-all font-mono text-app-fg">{publicUrl}</span>
+              </DescriptionItem>
+              <DescriptionItem
+                term={
+                  <span className="inline-flex items-center gap-2">
                     {t.setup.yourServices}
-                  </p>
-                  <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[var(--accent-soft)] px-2 text-xs font-semibold text-[var(--accent-strong)]">
-                    {services.length}
+                    <Badge tone="accent">{services.length}</Badge>
                   </span>
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {services.map((service, index) => (
-                    <div
-                      key={service.id}
-                      className={cn(
-                        adminInsetClass,
-                        "flex items-center gap-2.5 px-3 py-2",
-                      )}
-                    >
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--accent)] text-[0.6875rem] font-semibold leading-none text-white tabular-nums">
-                        {index + 1}
-                      </span>
-                      <span className="text-sm font-semibold text-[var(--ink)]">
-                        {service.name}
-                      </span>
-                      <span
-                        aria-hidden
-                        className="h-3 w-px bg-[var(--panel-mute-45)]"
-                      />
-                      <ToneBadge tone={bookingTypeTone(service.bookingType)}>
+                }
+                flush
+              >
+                <ul role="list" className="grid gap-2">
+                  {services.map((service) => (
+                    <li key={service.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-semibold text-app-fg">{service.name}</span>
+                      <Badge tone={bookingTypeBadgeTone(service.bookingType)}>
                         {getBookingTypeLabel(service.bookingType, lang)}
-                      </ToneBadge>
-                      <span className="text-xs font-medium text-[var(--muted)] tabular-nums">
-                        {formatDuration(service, lang)}
-                      </span>
+                      </Badge>
+                      <span className="tabular-nums text-app-fg-muted">{formatDuration(service, lang)}</span>
                       {service.medicalSpecialty ? (
-                        <span className="text-xs font-medium text-[var(--muted)]">
-                          {service.medicalSpecialty}
-                        </span>
+                        <span className="text-app-fg-muted">{service.medicalSpecialty}</span>
                       ) : null}
-                    </div>
+                    </li>
                   ))}
-                </div>
-                <p className="mt-3 text-sm text-[var(--muted)]">
+                </ul>
+                <p className="mt-3 text-app-fg-muted">
                   {t.setup.editServicesPrefix} {copy.Services} {t.setup.editServicesSuffix}
                 </p>
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {resumeGuestPublish && isPersistingSetup ? (
-                  <p
-                    role="status"
-                    className="rounded-2xl bg-[var(--accent-soft)] px-4 py-3 text-sm font-semibold text-[var(--primary)]"
+              </DescriptionItem>
+            </DescriptionList>
+
+            <div className="flex flex-wrap gap-3">
+              {resumeGuestPublish && isPersistingSetup ? (
+                <Alert tone="info" role="status">
+                  {t.setup.savingAndPublishing}
+                </Alert>
+              ) : resumeGuestPublish && setupError ? (
+                <Button variant="primary" onClick={() => void resumeGuestDraftPublication()}>
+                  {t.setup.retryPublishing}
+                </Button>
+              ) : isGuestDraft ? (
+                <>
+                  <Button variant="primary" onClick={() => leaveSetupToSurface("public")}>
+                    {t.setup.previewPage}
+                  </Button>
+                  <Button variant="secondary" onClick={() => onRequestPublish?.(activeStore)}>
+                    {t.setup.createAccountToPublish}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    variant="primary"
+                    onClick={() =>
+                      onOpenDashboard ? onOpenDashboard() : leaveSetupToSurface("management")
+                    }
                   >
-                    {t.setup.savingAndPublishing}
-                  </p>
-                ) : resumeGuestPublish && setupError ? (
-                  <ActionButton
-                    tone="primary"
-                    onClick={() => void resumeGuestDraftPublication()}
-                  >
-                    {t.setup.retryPublishing}
-                  </ActionButton>
-                ) : isGuestDraft ? (
-                  <>
-                    <ActionButton
-                      tone="primary"
-                      onClick={() => leaveSetupToSurface("public")}
-                    >
-                      {t.setup.previewPage}
-                    </ActionButton>
-                    <ActionButton
-                      tone="secondary"
-                      onClick={() => onRequestPublish?.(activeStore)}
-                    >
-                      {t.setup.createAccountToPublish}
-                    </ActionButton>
-                  </>
-                ) : (
-                  <>
-                    <ActionButton
-                      tone="primary"
-                      onClick={() =>
-                        onOpenDashboard ? onOpenDashboard() : leaveSetupToSurface("management")
-                      }
-                    >
-                      {t.setup.goToDashboard}
-                    </ActionButton>
-                    <ActionLink
-                      href={publicUrl}
-                      tone="secondary"
-                      onClick={() => leaveSetupToSurface("public")}
-                    >
-                      {t.setup.openPublicPage}
-                    </ActionLink>
-                  </>
-                )}
-              </div>
-              {isGuestDraft ? (
-                <p className="mt-4 rounded-2xl bg-[var(--teal-soft)] px-4 py-3 text-sm font-semibold text-[var(--teal)]">
-                  {t.setup.previewNotPublished}
-                </p>
-              ) : null}
+                    {t.setup.goToDashboard}
+                  </Button>
+                  <ButtonLink href={publicUrl} variant="secondary" onClick={() => leaveSetupToSurface("public")}>
+                    {t.setup.openPublicPage}
+                  </ButtonLink>
+                </>
+              )}
             </div>
+            {isGuestDraft ? <Alert tone="info">{t.setup.previewNotPublished}</Alert> : null}
           </div>
         ) : null}
-
-        {setupError ? (
-          <div className="mt-8 rounded-2xl border border-[var(--danger-line)] bg-[var(--danger-soft)] px-4 py-3 text-sm font-medium text-[var(--danger-strong)]">
-            {setupError}
-          </div>
-        ) : null}
-
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] pt-4">
-          {setupStep === 4 && setupPublished ? <span /> : (
-            <ActionButton
-              tone="ghost"
-              onClick={goToPreviousSetupStep}
-              disabled={isPersistingSetup}
-            >
-              {t.common.back}
-            </ActionButton>
-          )}
-          {setupStep < 4 ? (
-            <ActionButton
-              tone="primary"
-              onClick={goToNextSetupStep}
-              disabled={isPersistingSetup}
-            >
-              {isPersistingSetup
-                ? t.common.saving
-                : setupStep === 3 && publishLabel
-                  ? publishLabel
-                  : t.setup.continueButton}
-            </ActionButton>
-          ) : null}
-        </div>
-      </>
+      </SetupWizardFrame>
     );
   }
 
