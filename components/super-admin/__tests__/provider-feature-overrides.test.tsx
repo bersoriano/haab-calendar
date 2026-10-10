@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   blockingPrerequisites,
   FeatureAccessSummary,
+  FeatureEditor,
   ProviderFeatureOverrides,
 } from "@/components/super-admin/ProviderFeatureOverrides";
 import { resolveEntitlements } from "@/lib/entitlements/resolve";
@@ -114,7 +115,64 @@ describe("FeatureAccessSummary", () => {
     );
 
     expect(html).toContain("free plan");
-    expect(html).toContain("1 of 6 enabled");
+    // Says what is counted: this sits in the accounts row, away from the dialog.
+    expect(html).toContain("1 of 6 features on");
+  });
+});
+
+describe("FeatureEditor", () => {
+  function renderEditor(props: Partial<Parameters<typeof FeatureEditor>[0]> = {}) {
+    return renderToStaticMarkup(
+      <FeatureEditor
+        ownerEmail="owner@example.com"
+        reason=""
+        expiresAt=""
+        missing={[]}
+        overridden={false}
+        pendingAction={undefined}
+        onReasonChange={() => undefined}
+        onExpiresAtChange={() => undefined}
+        onSubmit={() => undefined}
+        onCancel={() => undefined}
+        {...props}
+      />,
+    );
+  }
+
+  it("marks the reason field when the reason is missing", () => {
+    const html = renderEditor({ error: { field: "reason", message: "A reason is required." } });
+
+    const reasonInput = html.match(/<input[^>]*placeholder="Why owner@example.com[^>]*>/)?.[0] ?? "";
+    expect(reasonInput).toContain('aria-invalid="true"');
+    expect(html).toContain("A reason is required.");
+    expect(html).not.toContain('role="alert"');
+  });
+
+  it("marks the expiry field when its date cannot be read", () => {
+    const html = renderEditor({
+      error: { field: "expiresAt", message: "Expiry must be a valid date and time." },
+    });
+
+    expect(html).toMatch(/<input[^>]*type="datetime-local"[^>]*aria-invalid="true"|<input[^>]*aria-invalid="true"[^>]*type="datetime-local"/);
+  });
+
+  it("shows any other failure inside the editor, above its actions", () => {
+    const html = renderEditor({ error: { message: "Could not update the feature override." } });
+    const alert = html.indexOf('role="alert"');
+
+    expect(alert).toBeGreaterThan(-1);
+    expect(alert).toBeLessThan(html.indexOf(">Grant<"));
+  });
+
+  it("keeps Grant locked while a prerequisite is missing and offers Clear only on an override", () => {
+    const blocked = renderEditor({ missing: ["google_calendar_sync"] });
+    const overridden = renderEditor({ overridden: true });
+
+    expect(blocked).toMatch(/<button[^>]*disabled=""[^>]*>Grant<\/button>/);
+    expect(blocked).not.toMatch(/<button[^>]*disabled=""[^>]*>Withhold<\/button>/);
+    expect(blocked).toContain("Turn on Google Calendar sync first.");
+    expect(blocked).not.toContain("Clear override");
+    expect(overridden).toContain("Clear override");
   });
 });
 

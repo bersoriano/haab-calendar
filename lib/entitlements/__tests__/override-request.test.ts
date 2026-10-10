@@ -110,3 +110,44 @@ describe("buildClearOverrideRequest", () => {
     ).toThrow(OverrideRequestError);
   });
 });
+
+describe("OverrideRequestError", () => {
+  function caught(run: () => unknown) {
+    try {
+      run();
+    } catch (error) {
+      return error as OverrideRequestError;
+    }
+    throw new Error("expected a throw");
+  }
+
+  it("names the field a missing reason belongs to, so the form can mark it", () => {
+    const error = caught(() =>
+      buildClearOverrideRequest({ providerId: PROVIDER, featureKey: "custom_slug", reason: "" }),
+    );
+
+    expect(error.field).toBe("reason");
+  });
+
+  it("names the expiry field for an unreadable date", () => {
+    const error = caught(() =>
+      buildSetOverrideRequest({
+        providerId: PROVIDER,
+        featureKey: "custom_slug",
+        enabled: true,
+        expiresAt: "not a date",
+        reason: "Trial",
+      }),
+    );
+
+    expect(error.field).toBe("expiresAt");
+  });
+
+  it("names no field for an error that is not about one", () => {
+    const error = caught(() =>
+      buildClearOverrideRequest({ providerId: "", featureKey: "custom_slug", reason: "x" }),
+    );
+
+    expect(error.field).toBeUndefined();
+  });
+});

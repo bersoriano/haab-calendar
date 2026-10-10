@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Alert, Badge, Button, Dialog, Field, Input } from "@/components/app-ui";
 import {
@@ -14,10 +14,14 @@ import {
   buildSetOverrideRequest,
   OverrideRequestError,
   type OverrideRequest,
+  type OverrideRequestField,
 } from "@/lib/entitlements/override-request";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 
 type OverrideAction = "grant" | "revoke" | "clear";
+
+/** A failed change, attached to the field it is about when there is one. */
+type EditorError = { field?: OverrideRequestField; message: string };
 
 function formatUtcDate(value?: string) {
   if (!value) return "";
@@ -58,9 +62,116 @@ export function FeatureAccessSummary({ entitlements }: { entitlements: ProviderE
     <span className="flex flex-wrap items-center gap-2">
       <Badge>{entitlements.planTier} plan</Badge>
       <span className="text-xs text-app-fg-muted">
-        {enabledCount(entitlements)} of {FEATURE_KEYS.length} enabled
+        {enabledCount(entitlements)} of {FEATURE_KEYS.length} features on
       </span>
     </span>
+  );
+}
+
+/**
+ * One feature's open editor. Presentational, so its states — a refused
+ * reason, a blocked grant — can be tested without clicking.
+ */
+export function FeatureEditor({
+  ownerEmail,
+  reason,
+  expiresAt,
+  missing,
+  overridden,
+  pendingAction,
+  error,
+  onReasonChange,
+  onExpiresAtChange,
+  onSubmit,
+  onCancel,
+}: {
+  ownerEmail: string;
+  reason: string;
+  expiresAt: string;
+  /** Prerequisites a grant would still need. */
+  missing: readonly FeatureKey[];
+  overridden: boolean;
+  pendingAction?: OverrideAction;
+  error?: EditorError;
+  onReasonChange: (value: string) => void;
+  onExpiresAtChange: (value: string) => void;
+  onSubmit: (action: OverrideAction) => void;
+  onCancel: () => void;
+}) {
+  const busy = pendingAction !== undefined;
+  const fieldError = (field: OverrideRequestField) =>
+    error?.field === field ? error.message : undefined;
+
+  return (
+    <div className="mt-3 grid gap-3 rounded-lg bg-app-subtle p-3">
+      <Field label="Reason" error={fieldError("reason")}>
+        <Input
+          type="text"
+          value={reason}
+          maxLength={500}
+          // The editor opens from "Change access", which it replaces.
+          autoFocus
+          onChange={(event) => onReasonChange(event.target.value)}
+          placeholder={`Why ${ownerEmail} needs this change`}
+        />
+      </Field>
+      <Field label="Expires" description="Optional — blank means permanent." error={fieldError("expiresAt")}>
+        <Input
+          type="datetime-local"
+          value={expiresAt}
+          onChange={(event) => onExpiresAtChange(event.target.value)}
+        />
+      </Field>
+      {missing.length > 0 ? (
+        <Alert tone="warning">
+          Turn on {listFeatures(missing)} first. Granting this alone leaves it off.
+        </Alert>
+      ) : null}
+      {error && !error.field ? (
+        <Alert tone="danger" role="alert">
+          {error.message}
+        </Alert>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          // A disabled button is a courtesy, not the rule: the resolver
+          // refuses an unmet prerequisite whatever the UI allows. Withhold and
+          // Clear are never blocked by prerequisites, because taking access
+          // away must not depend on anything.
+          disabled={busy || missing.length > 0}
+          loading={pendingAction === "grant"}
+          title={missing.length > 0 ? `Requires ${listFeatures(missing)}` : undefined}
+          onClick={() => onSubmit("grant")}
+        >
+          Grant
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={busy}
+          loading={pendingAction === "revoke"}
+          onClick={() => onSubmit("revoke")}
+        >
+          Withhold
+        </Button>
+        {overridden ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            loading={pendingAction === "clear"}
+            onClick={() => onSubmit("clear")}
+          >
+            Clear override
+          </Button>
+        ) : null}
+        <Button variant="plain" size="sm" disabled={busy} onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -86,25 +197,37 @@ export function ProviderFeatureOverrides({
   entitlements: ProviderEntitlements;
 }) {
   const snapshot = entitlements;
+  const idPrefix = useId();
   const [editing, setEditing] = useState<FeatureKey>();
   const [reason, setReason] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const [pendingAction, setPendingAction] = useState<OverrideAction>();
-  const [feedback, setFeedback] = useState<{
-    tone: "success" | "error";
-    message: string;
-  }>();
+  const [error, setError] = useState<EditorError>();
+  const [success, setSuccess] = useState<string>();
+  // The feature whose "Change access" takes focus back once its editor closes.
+  const returnFocusTo = useRef<FeatureKey>(undefined);
   const busy = pendingAction !== undefined;
 
+  const changeAccessId = (featureKey: FeatureKey) => `${idPrefix}-change-${featureKey}`;
+
+  useEffect(() => {
+    if (editing || !returnFocusTo.current) return;
+    document.getElementById(changeAccessId(returnFocusTo.current))?.focus();
+    returnFocusTo.current = undefined;
+  });
+
   function closeEditor() {
+    returnFocusTo.current = editing;
     setEditing(undefined);
     setReason("");
     setExpiresAt("");
+    setError(undefined);
   }
 
   async function send(request: OverrideRequest, action: OverrideAction, successMessage: string) {
     setPendingAction(action);
-    setFeedback(undefined);
+    setError(undefined);
+    setSuccess(undefined);
 
     try {
       const response = await fetch(request.url, {
@@ -124,14 +247,13 @@ export function ProviderFeatureOverrides({
       }
 
       onChange(result);
-      setFeedback({ tone: "success", message: successMessage });
+      setSuccess(successMessage);
       closeEditor();
-    } catch (error) {
-      setFeedback({
-        tone: "error",
+    } catch (sendError) {
+      setError({
         message:
-          error instanceof Error
-            ? error.message
+          sendError instanceof Error
+            ? sendError.message
             : "Could not update the feature override.",
       });
     } finally {
@@ -164,14 +286,13 @@ export function ProviderFeatureOverrides({
             : "Feature withheld.";
 
       return send(request, action, successMessage);
-    } catch (error) {
-      setFeedback({
-        tone: "error",
-        message:
-          error instanceof OverrideRequestError
-            ? error.message
-            : "Could not update the feature override.",
-      });
+    } catch (requestError) {
+      setSuccess(undefined);
+      setError(
+        requestError instanceof OverrideRequestError
+          ? { field: requestError.field, message: requestError.message }
+          : { message: "Could not update the feature override." },
+      );
     }
   }
 
@@ -191,13 +312,9 @@ export function ProviderFeatureOverrides({
       size="md"
       closeLabel="Close"
     >
-      {feedback ? (
-        <Alert
-          tone={feedback.tone === "success" ? "success" : "danger"}
-          role={feedback.tone === "error" ? "alert" : "status"}
-          className="mb-3"
-        >
-          {feedback.message}
+      {success ? (
+        <Alert tone="success" role="status" className="mb-3">
+          {success}
         </Alert>
       ) : null}
 
@@ -219,7 +336,6 @@ export function ProviderFeatureOverrides({
           // support case where someone grants two-way, watches it do nothing,
           // and has no way to find out why simply does not start.
           const blockedBy = feature.unmetPrerequisites ?? [];
-          const missing = blockingPrerequisites(snapshot, featureKey);
 
           return (
             <li key={featureKey} className="px-4 py-3 sm:px-6">
@@ -244,11 +360,14 @@ export function ProviderFeatureOverrides({
                 </div>
                 {!isEditing ? (
                   <Button
+                    id={changeAccessId(featureKey)}
                     variant="plain"
                     size="sm"
                     className="shrink-0"
+                    disabled={busy}
                     onClick={() => {
-                      setFeedback(undefined);
+                      setSuccess(undefined);
+                      setError(undefined);
                       setReason("");
                       setExpiresAt(feature.overrideExpiresAt?.slice(0, 16) ?? "");
                       setEditing(featureKey);
@@ -259,69 +378,19 @@ export function ProviderFeatureOverrides({
                 ) : null}
               </div>
               {isEditing ? (
-                <div className="mt-3 grid gap-3 rounded-lg bg-app-subtle p-3">
-                  <Field label="Reason">
-                    <Input
-                      type="text"
-                      value={reason}
-                      maxLength={500}
-                      onChange={(event) => setReason(event.target.value)}
-                      placeholder={`Why ${ownerEmail} needs this change`}
-                    />
-                  </Field>
-                  <Field label="Expires" description="Optional — blank means permanent.">
-                    <Input
-                      type="datetime-local"
-                      value={expiresAt}
-                      onChange={(event) => setExpiresAt(event.target.value)}
-                    />
-                  </Field>
-                  {missing.length > 0 ? (
-                    <Alert tone="warning">
-                      Turn on {listFeatures(missing)} first. Granting this alone leaves it off.
-                    </Alert>
-                  ) : null}
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      // A disabled button is a courtesy, not the rule: the
-                      // resolver refuses an unmet prerequisite whatever the UI
-                      // allows. Withhold and Clear are never blocked by
-                      // prerequisites, because taking access away must not
-                      // depend on anything.
-                      disabled={busy || missing.length > 0}
-                      loading={pendingAction === "grant"}
-                      title={missing.length > 0 ? `Requires ${listFeatures(missing)}` : undefined}
-                      onClick={() => submit(featureKey, "grant")}
-                    >
-                      Grant
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={busy}
-                      loading={pendingAction === "revoke"}
-                      onClick={() => submit(featureKey, "revoke")}
-                    >
-                      Withhold
-                    </Button>
-                    {overridden ? (
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        disabled={busy}
-                        loading={pendingAction === "clear"}
-                        onClick={() => submit(featureKey, "clear")}
-                      >
-                        Clear override
-                      </Button>
-                    ) : null}
-                    <Button variant="plain" size="sm" disabled={busy} onClick={closeEditor}>
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
+                <FeatureEditor
+                  ownerEmail={ownerEmail}
+                  reason={reason}
+                  expiresAt={expiresAt}
+                  missing={blockingPrerequisites(snapshot, featureKey)}
+                  overridden={overridden}
+                  pendingAction={pendingAction}
+                  error={error}
+                  onReasonChange={setReason}
+                  onExpiresAtChange={setExpiresAt}
+                  onSubmit={(action) => submit(featureKey, action)}
+                  onCancel={closeEditor}
+                />
               ) : null}
             </li>
           );
