@@ -239,7 +239,8 @@ export function ConfirmDialog({
   error?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
-  closeLabel?: string;
+  /** Its own word, not the cancel label: two buttons must not share a name. */
+  closeLabel: string;
   children?: ReactNode;
 }) {
   return (
@@ -252,7 +253,7 @@ export function ConfirmDialog({
       description={body}
       alert={alert}
       size="sm"
-      closeLabel={closeLabel ?? cancelLabel}
+      closeLabel={closeLabel}
       footer={
         <DialogActions>
           <Button variant="secondary" disabled={pending} onClick={onCancel}>

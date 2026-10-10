@@ -1,13 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useState, type FormEvent } from "react";
 import { useActionState } from "react";
+
 import { authenticate, type AuthFormState } from "@/app/login/actions";
+import { Alert, Button, Field, Input, focusRing } from "@/components/app-ui";
 import {
   translations,
   type Lang,
 } from "@/components/landing/translations";
 import { isGuestPublishReturnPath } from "@/lib/guest-builder";
+import { cn } from "@/lib/utils";
 
 const initialState: AuthFormState = {
   message: "",
@@ -30,6 +34,16 @@ export function AuthForm({
   const t = translations[lang].auth;
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
   const [intent, setIntent] = useState<AuthIntent>(initialIntent);
+  // Controlled: React resets a form's uncontrolled fields after its action
+  // runs, which would wipe the address on every refused attempt.
+  const [email, setEmail] = useState("");
+  // A password manager can fill the field before hydration, without an event
+  // React sees; adopt whatever is in it when the form is sent, so the re-render
+  // after a refusal does not clear it.
+  function adoptTypedEmail(event: FormEvent<HTMLFormElement>) {
+    const sent = new FormData(event.currentTarget).get("email");
+    if (typeof sent === "string") setEmail(sent);
+  }
   const showSignupPendingMessage = isPending && intent === "signup";
   const isPublishFlow = isGuestPublishReturnPath(nextPath);
 
@@ -49,56 +63,39 @@ export function AuthForm({
     : state;
 
   return (
-    <form className="mt-8 grid gap-5" action={formAction}>
+    <form className="mt-6 grid gap-5" action={formAction} onSubmit={adoptTypedEmail}>
       <input type="hidden" name="next" value={nextPath} />
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="intent" value={intent} />
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]" htmlFor="email">
-        {t.email}
-        <input
+      <Field id="email" label={t.email}>
+        <Input
           autoComplete="email"
-          className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-4 py-3 text-base text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-          id="email"
           name="email"
           placeholder={t.emailPlaceholder}
           required
           type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
-      </label>
-      <label
-        className="grid gap-2 text-sm font-medium text-[var(--ink)]"
-        htmlFor="password"
-      >
-        {t.password}
-        <input
+      </Field>
+      <Field id="password" label={t.password}>
+        <Input
           autoComplete={intent === "signup" ? "new-password" : "current-password"}
-          className="rounded-2xl border border-[rgba(193,198,214,0.55)] bg-white px-4 py-3 text-base text-[var(--ink)] outline-none transition focus:border-[var(--primary)] focus:ring-4 focus:ring-[var(--accent-soft)]"
-          id="password"
           minLength={6}
           name="password"
           placeholder={t.passwordPlaceholder}
           required
           type="password"
         />
-      </label>
-      {formMessage.message ? (
-        <p
-          aria-live="polite"
-          className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
-            formMessage.status === "success"
-              ? "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]"
-              : "bg-[rgba(219,68,55,0.1)] text-[#8f1d15]"
-          }`}
-        >
-          {formMessage.message}
-        </p>
-      ) : null}
+      </Field>
+      {/* Always mounted, so a message that arrives later is announced. */}
+      <div aria-live="polite">
+        {formMessage.message ? (
+          <Alert tone={formMessage.status === "success" ? "success" : "danger"}>{formMessage.message}</Alert>
+        ) : null}
+      </div>
       <div className="grid gap-3">
-        <button
-          className="rounded-2xl bg-[var(--primary)] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(0,91,191,0.22)] transition hover:bg-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-55"
-          disabled={isPending}
-          type="submit"
-        >
+        <Button type="submit" variant="primary" loading={isPending} className="w-full">
           {intent === "signup"
             ? isPending
               ? t.creatingAccount
@@ -108,22 +105,25 @@ export function AuthForm({
             : isPending
               ? t.signingIn
               : t.signIn}
-        </button>
-        <button
-          className="rounded-2xl px-5 py-2 text-sm font-semibold text-[var(--primary)] underline-offset-4 transition hover:underline disabled:cursor-not-allowed disabled:opacity-55"
+        </Button>
+        <Button
+          variant="plain"
           disabled={isPending}
           onClick={() => setIntent((current) => (current === "signup" ? "login" : "signup"))}
-          type="button"
+          className="w-full text-app-accent hover:text-app-accent-hover"
         >
           {intent === "signup" ? t.alreadyHaveAccount : t.newHereCreateAccount}
-        </button>
+        </Button>
         {intent === "login" ? (
-          <a
-            className="text-center text-sm font-semibold text-[var(--muted)] underline-offset-4 transition hover:text-[var(--primary)] hover:underline"
+          <Link
+            className={cn(
+              "mx-auto inline-flex min-h-11 items-center rounded-md px-1 text-sm font-semibold text-app-fg-muted transition-colors hover:text-app-fg sm:min-h-0",
+              focusRing,
+            )}
             href={`/login/reset?lang=${lang}`}
           >
             {t.forgotPassword}
-          </a>
+          </Link>
         ) : null}
       </div>
     </form>

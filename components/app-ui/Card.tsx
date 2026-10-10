@@ -23,6 +23,7 @@ export function Card({
 }
 
 export function SectionHeading({
+  eyebrow,
   title,
   description,
   actions,
@@ -30,6 +31,8 @@ export function SectionHeading({
   titleId,
   className,
 }: {
+  /** A short label above the title, kept out of the heading's name. */
+  eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
@@ -42,6 +45,7 @@ export function SectionHeading({
   return (
     <div className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}>
       <div className="min-w-0">
+        {eyebrow ? <p className="mb-1 text-xs font-semibold text-app-accent">{eyebrow}</p> : null}
         <Heading id={titleId} className="text-base font-semibold text-app-fg">
           {title}
         </Heading>

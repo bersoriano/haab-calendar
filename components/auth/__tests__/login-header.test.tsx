@@ -26,6 +26,24 @@ describe("LoginHeader", () => {
     expect(html).toContain('href="?lang=es"');
     expect(html).toContain('href="?lang=en"');
     expect(html).toContain('aria-label="Choose language"');
+    expect(html).toMatch(/<a[^>]*href="\?lang=en"[^>]*aria-current="true"/);
+  });
+
+  it("names the brand link with its own visible text", () => {
+    // An aria-label that does not contain the visible text fails label-in-name.
+    const html = renderToStaticMarkup(<LoginHeader lang="en" />);
+    const brand = html.match(/<a[^>]*href="\/\?lang=en"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? "";
+
+    expect(brand).not.toContain("aria-label");
+    expect(brand).toContain("Haab Calendar");
+    expect(brand).toMatch(/<span class="sr-only">[^<]*Back to home<\/span>/);
+  });
+
+  it("is the app's bar, not the landing page's glass band", () => {
+    const html = renderToStaticMarkup(<LoginHeader lang="en" />);
+
+    expect(html).toMatch(/^<header[^>]*bg-app-surface/);
+    expect(html).not.toContain("backdrop-blur");
   });
 
   it("lets a page build the switch links when its state lives in the query", () => {

@@ -68,6 +68,13 @@ function render(props: Partial<Parameters<typeof BookingsList>[0]> = {}) {
 }
 
 describe("BookingsList", () => {
+  it("puts its headings directly under the page's h1", () => {
+    // The section has no h2 of its own: group and empty-state headings are h2s.
+    expect(render()).not.toContain("<h3");
+    expect(render({ bookings: [] })).toMatch(/<h2[^>]*>/);
+    expect(render({ bookings: [] })).not.toContain("<h3");
+  });
+
   it("labels every filter for assistive tech", () => {
     const html = render();
 
@@ -154,7 +161,7 @@ describe("BookingsList", () => {
   it("labels each day group with a sticky heading", () => {
     const html = render();
     // A group, not a landmark per day: long lists would flood landmark navigation.
-    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"><h3[^>]*id="bookings-2026-10-08"[^>]*sticky/);
+    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"><h2[^>]*id="bookings-2026-10-08"[^>]*sticky/);
   });
 
   it("shows saved history policy and a path to settings", () => {

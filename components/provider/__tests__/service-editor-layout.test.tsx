@@ -7,7 +7,7 @@ import { getVerticalCopy } from "@/lib/vertical-copy";
 
 const copy = getVerticalCopy("spaces", "en");
 
-function render(serviceCount: number) {
+function render(serviceCount: number, headingLevel?: 2 | 3) {
   const services = normalizeServices(
     Array.from({ length: serviceCount }, (_, index) => ({
       id: `s${index}`,
@@ -32,11 +32,20 @@ function render(serviceCount: number) {
       vertical="spaces"
       copy={copy}
       lang="en"
+      headingLevel={headingLevel}
     />,
   );
 }
 
 describe("ServiceEditor layout", () => {
+  it("titles its cards at the level its host asks for", () => {
+    // The dashboard puts them under the page's h1; the wizard under a step's h3.
+    expect(render(1).match(/<h2/g)).toHaveLength(2);
+    const nested = render(1, 3);
+    expect(nested).not.toContain("<h2");
+    expect(nested.match(/<h3/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+
   it("gives the editor an anchor and its first field an id to focus", () => {
     const html = render(1);
 

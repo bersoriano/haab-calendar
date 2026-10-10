@@ -76,6 +76,7 @@ export function ServiceEditor({
   vertical,
   lang = "en",
   error,
+  headingLevel = 2,
 }: {
   services: Service[];
   serviceDraft: ServiceDraft;
@@ -93,9 +94,13 @@ export function ServiceEditor({
   lang?: Lang;
   /** Why the last save or delete was refused, for hosts that show no other error. */
   error?: string | null;
+  /** The card titles' level: 2 under a page heading, 3 under a wizard step's. */
+  headingLevel?: 2 | 3;
 }) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
+  // Headings inside the cards sit one level below the cards' own titles.
+  const SubHeading = headingLevel === 3 ? "h4" : "h3";
   const [pendingDelete, setPendingDelete] = useState<Service | null>(null);
   const showMedicalSpecialty =
     vertical === "healthcare" && serviceDraft.bookingType === "appointment";
@@ -163,6 +168,7 @@ export function ServiceEditor({
       ) : null}
       <Card as="section">
         <CardHeader
+          headingLevel={headingLevel}
           title={copy.Services}
           description={copy.phrases.serviceEditorBody}
           actions={
@@ -226,7 +232,7 @@ export function ServiceEditor({
                 }
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-semibold text-app-fg">{service.name}</h3>
+                  <SubHeading className="font-semibold text-app-fg">{service.name}</SubHeading>
                   <Badge tone={isEvents ? "neutral" : bookingTypeBadgeTone(service.bookingType)}>
                     {isEvents
                       ? getOccurrenceModeLabel(service.occurrenceMode, lang)
@@ -302,6 +308,7 @@ export function ServiceEditor({
         className="scroll-mt-24 lg:sticky lg:top-24 lg:max-h-[calc(100vh-7.5rem)] lg:overflow-y-auto"
       >
         <CardHeader
+          headingLevel={headingLevel}
           titleId="service-editor-title"
           title={editingServiceId ? copy.phrases.editServiceTitle : copy.phrases.newServiceTitle}
           description={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
@@ -584,10 +591,10 @@ export function ServiceEditor({
             />
           </Field>
           <section className="grid gap-3 border-t border-app-border pt-5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-app-fg">
+            <SubHeading className="flex items-center gap-2 text-sm font-semibold text-app-fg">
               <MapPin aria-hidden="true" size={18} className="text-app-accent" />
               {t.admin.locationSection}
-            </h3>
+            </SubHeading>
             {hasAddress1 || hasAddress2 ? (
               <div className="grid gap-2">
                 {hasAddress1 ? (
@@ -639,10 +646,10 @@ export function ServiceEditor({
             </div>
           </section>
           <section className="grid gap-3 border-t border-app-border pt-5">
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-app-fg">
+            <SubHeading className="flex items-center gap-2 text-sm font-semibold text-app-fg">
               <Phone aria-hidden="true" size={18} className="text-app-accent" />
               {t.admin.phoneSection}
-            </h3>
+            </SubHeading>
             {hasPhone1 || hasPhone2 ? (
               <div className="grid gap-2">
                 {hasPhone1 ? (

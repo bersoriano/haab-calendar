@@ -1,9 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
+import { AccountStatusBar } from "@/components/provider/AccountStatusBar";
+import { GuestDraftBar } from "@/components/provider/GuestDraftBar";
 import { SetupHeader } from "@/components/provider/SetupHeader";
 import { logout } from "@/app/login/actions";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
@@ -17,10 +18,7 @@ import {
   LanguageProvider,
   useLanguage,
 } from "@/components/landing/language-provider";
-import {
-  translations as landingTranslations,
-  type Lang as LandingLang,
-} from "@/components/landing/translations";
+import type { Lang as LandingLang } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
@@ -324,76 +322,5 @@ function HomeExperienceInner({
         />
       </LandingActionsProvider>
     </>
-  );
-}
-
-function GuestDraftBar({
-  lang,
-  onPublish,
-}: {
-  lang: LandingLang;
-  onPublish: () => void;
-}) {
-  const t = landingTranslations[lang];
-
-  return (
-    <aside className="border-b border-[var(--line)] bg-[var(--teal-soft)] px-4 py-3 sm:px-6">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold text-[var(--ink)]">
-            {t.home.guestDraftTitle}
-          </p>
-          <p className="mt-1 text-sm text-[var(--muted)]">{t.home.guestDraftBody}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onPublish}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(26,115,232,0.2)] transition hover:bg-[var(--accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2"
-        >
-          {t.home.guestDraftPublish}
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-function AccountStatusBar({
-  isSuperAdmin,
-  publicationStatus,
-}: {
-  isSuperAdmin?: boolean;
-  publicationStatus?: PublicationStatus;
-}) {
-  if (!isSuperAdmin && !publicationStatus?.dashboardMessage) {
-    return null;
-  }
-
-  return (
-    <aside className="border-b border-[var(--line)] bg-white px-4 py-3 sm:px-6">
-      <div className="mx-auto flex max-w-[1600px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {publicationStatus?.dashboardMessage ? (
-          <div
-            className={`rounded-2xl border px-4 py-3 text-sm font-medium ${
-              publicationStatus.publishingEnabled
-                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                : "border-rose-200 bg-rose-50 text-rose-800"
-            }`}
-            role={publicationStatus.publishingEnabled ? "status" : "alert"}
-          >
-            {publicationStatus.dashboardMessage}
-          </div>
-        ) : (
-          <span />
-        )}
-        {isSuperAdmin ? (
-          <Link
-            href="/super-admin"
-            className="inline-flex shrink-0 items-center justify-center rounded-full bg-violet-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-800"
-          >
-            Open super admin
-          </Link>
-        ) : null}
-      </div>
-    </aside>
   );
 }

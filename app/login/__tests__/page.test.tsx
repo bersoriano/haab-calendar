@@ -64,3 +64,33 @@ describe("login page language", () => {
     expect(html).toContain(translations.en.auth.pageTitle);
   });
 });
+
+describe("login page notices", () => {
+  it("shows a refused sign-in from the link as an alert", async () => {
+    resolved.lang = "en";
+    const html = renderToStaticMarkup(
+      await LoginPage({ searchParams: Promise.resolve({ lang: "en", message: "Link expired." }) }),
+    );
+
+    expect(html).toMatch(/<div role="alert"[^>]*>[\s\S]*Link expired\./);
+  });
+
+  it("shows a success from the link as a status", async () => {
+    resolved.lang = "en";
+    const html = renderToStaticMarkup(
+      await LoginPage({
+        searchParams: Promise.resolve({ lang: "en", message: "Check your email.", status: "success" }),
+      }),
+    );
+
+    expect(html).toMatch(/<div role="status"[^>]*>[\s\S]*Check your email\./);
+  });
+
+  it("puts the page heading above the card that holds the form", async () => {
+    resolved.lang = "en";
+    const html = renderToStaticMarkup(await LoginPage({ searchParams: Promise.resolve({ lang: "en" }) }));
+
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("<form"));
+  });
+});

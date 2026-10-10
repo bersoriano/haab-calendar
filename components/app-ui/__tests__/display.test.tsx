@@ -42,6 +42,12 @@ describe("Card", () => {
     expect(html).toContain("border-t border-app-border");
   });
 
+  it("puts an eyebrow above the heading, outside its accessible name", () => {
+    const html = renderToStaticMarkup(<CardHeader eyebrow="Ready" title="Your page is ready" />);
+
+    expect(html).toMatch(/<p[^>]*>Ready<\/p><h2[^>]*>Your page is ready<\/h2>/);
+  });
+
   it("can be an anchor target", () => {
     expect(renderToStaticMarkup(<Card id="service-editor">x</Card>)).toMatch(/^<div[^>]*id="service-editor"/);
   });

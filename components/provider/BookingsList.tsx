@@ -201,8 +201,10 @@ export function BookingsList({
 
       {bookings.length === 0 ? (
         <div className="p-4 sm:p-6">
+          {/* The section has no h2 of its own; its headings sit under the page h1. */}
           <EmptyState
             variant="dashed"
+            headingLevel={2}
             icon={<CalendarBlank aria-hidden="true" size={32} />}
             {...emptyState()}
           />
@@ -214,7 +216,7 @@ export function BookingsList({
 
           return (
             <div key={group.dateKey} role="group" aria-labelledby={headingId}>
-              <StackedListHeading id={headingId}>
+              <StackedListHeading id={headingId} level={2}>
                 {group.relative ? (
                   <>
                     <span className="text-app-accent">{shell[group.relative]}</span>
