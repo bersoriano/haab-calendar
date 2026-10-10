@@ -73,6 +73,25 @@ describe("SetupWizardFrame", () => {
     expect(html.indexOf("Add at least one service.")).toBeLessThan(html.indexOf(">Back<"));
   });
 
+  it("keeps a step's eyebrow out of its heading's name", () => {
+    const html = render({ stepEyebrow: "Ready", stepTitle: "Your page is ready" });
+
+    expect(html).toMatch(/<h2[^>]*>Your page is ready<\/h2>/);
+    expect(html.indexOf(">Ready<")).toBeLessThan(html.indexOf("<h2"));
+  });
+
+  it("lays a step out without its own card when the content brings cards", () => {
+    const html = render({ bare: true });
+    const section = html.match(/<section[^>]*>/)?.[0] ?? "";
+
+    // One card level: the step is a plain section; its content's cards are the only cards.
+    expect(section).not.toContain("ring-app-border");
+    expect(html).toMatch(/<h2[^>]*>Your services<\/h2>/);
+    expect(html).toContain("<p>step body</p>");
+    expect(html).toMatch(/<button[^>]*>Back<\/button>/);
+    expect(html).toMatch(/<button[^>]*>Continue<\/button>/);
+  });
+
   it("speaks Spanish when the page does", () => {
     expect(render({ lang: "es", step: 1 })).toContain("Paso 1 de 4");
   });

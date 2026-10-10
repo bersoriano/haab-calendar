@@ -3514,6 +3514,8 @@ export function HaabBookingModule({
         stepTitle={meta.title}
         stepDescription={meta.description}
         error={setupError}
+        // The services editor brings its own cards; never a card in a card.
+        bare={setupStep === 2}
         back={
           setupStep === 4 && setupPublished
             ? undefined

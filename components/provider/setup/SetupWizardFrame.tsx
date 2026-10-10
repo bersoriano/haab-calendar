@@ -1,7 +1,7 @@
 import { Check } from "@phosphor-icons/react/dist/ssr";
 import { useId, type ReactNode } from "react";
 
-import { Alert, Button, Card, CardBody, CardFooter, CardHeader } from "@/components/app-ui";
+import { Alert, Button, Card, CardBody, CardFooter, CardHeader, SectionHeading } from "@/components/app-ui";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ export function SetupWizardFrame({
   error,
   back,
   next,
+  bare = false,
   children,
 }: {
   lang: Lang;
@@ -43,6 +44,11 @@ export function SetupWizardFrame({
   back?: StepAction;
   /** Omitted on the last step, whose actions live in its content. */
   next?: StepAction;
+  /**
+   * The step's content brings its own cards (the services editor): lay the
+   * step out as a plain section, so cards are never nested.
+   */
+  bare?: boolean;
   children: ReactNode;
 }) {
   const copy = dashboardCopy[lang];
@@ -50,6 +56,29 @@ export function SetupWizardFrame({
   const stepOf = copy.setupStepOf
     .replace("{current}", String(step))
     .replace("{total}", String(steps.length));
+
+  const stepError = error ? (
+    <Alert tone="danger" role="alert">
+      {error}
+    </Alert>
+  ) : null;
+  const stepActions =
+    back || next ? (
+      <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {back ? (
+          <Button variant="secondary" onClick={back.onClick} disabled={back.disabled} loading={back.loading}>
+            {back.label}
+          </Button>
+        ) : (
+          <span className="hidden sm:block" />
+        )}
+        {next ? (
+          <Button variant="primary" onClick={next.onClick} disabled={next.disabled} loading={next.loading}>
+            {next.label}
+          </Button>
+        ) : null}
+      </div>
+    ) : null;
 
   return (
     <div className="grid gap-6">
@@ -60,10 +89,12 @@ export function SetupWizardFrame({
       </div>
 
       <nav aria-label={copy.setupProgress}>
-        <p className="text-sm font-medium text-app-fg-secondary sm:hidden">
+        {/* The connected steps need md's width for the longest (Spanish)
+            labels; below it, one line says where you are. */}
+        <p className="text-sm font-medium text-app-fg-secondary md:hidden">
           {stepOf} · <span className="text-app-fg">{steps[step - 1]}</span>
         </p>
-        <ol role="list" className="hidden items-center gap-3 sm:flex">
+        <ol role="list" className="hidden items-center gap-3 md:flex">
           {steps.map((label, index) => {
             const number = index + 1;
             const done = number < step;
@@ -73,7 +104,7 @@ export function SetupWizardFrame({
               <li
                 key={label}
                 aria-current={current ? "step" : undefined}
-                className="flex flex-1 items-center gap-3 last:flex-none"
+                className="flex min-w-0 flex-1 items-center gap-3 last:flex-none"
               >
                 <span
                   className={cn(
@@ -87,7 +118,7 @@ export function SetupWizardFrame({
                 </span>
                 <span
                   className={cn(
-                    "whitespace-nowrap text-sm font-medium",
+                    "truncate text-sm font-medium",
                     current ? "text-app-accent" : done ? "text-app-fg" : "text-app-fg-muted",
                   )}
                 >
@@ -105,46 +136,21 @@ export function SetupWizardFrame({
         </ol>
       </nav>
 
-      <Card as="section" aria-labelledby={stepTitleId}>
-        <CardHeader
-          titleId={stepTitleId}
-          title={
-            stepEyebrow ? (
-              <>
-                <span className="block text-xs font-semibold text-app-accent">{stepEyebrow}</span>
-                {stepTitle}
-              </>
-            ) : (
-              stepTitle
-            )
-          }
-          description={stepDescription}
-        />
-        <CardBody>{children}</CardBody>
-        {error ? (
-          <div className="px-4 pb-5 sm:px-6">
-            <Alert tone="danger" role="alert">
-              {error}
-            </Alert>
-          </div>
-        ) : null}
-        {back || next ? (
-          <CardFooter className="sm:justify-between">
-            {back ? (
-              <Button variant="secondary" onClick={back.onClick} disabled={back.disabled} loading={back.loading}>
-                {back.label}
-              </Button>
-            ) : (
-              <span className="hidden sm:block" />
-            )}
-            {next ? (
-              <Button variant="primary" onClick={next.onClick} disabled={next.disabled} loading={next.loading}>
-                {next.label}
-              </Button>
-            ) : null}
-          </CardFooter>
-        ) : null}
-      </Card>
+      {bare ? (
+        <section aria-labelledby={stepTitleId} className="grid gap-5">
+          <SectionHeading eyebrow={stepEyebrow} titleId={stepTitleId} title={stepTitle} description={stepDescription} />
+          {children}
+          {stepError}
+          {stepActions ? <div className="border-t border-app-border pt-4">{stepActions}</div> : null}
+        </section>
+      ) : (
+        <Card as="section" aria-labelledby={stepTitleId}>
+          <CardHeader eyebrow={stepEyebrow} titleId={stepTitleId} title={stepTitle} description={stepDescription} />
+          <CardBody>{children}</CardBody>
+          {stepError ? <div className="px-4 pb-5 sm:px-6">{stepError}</div> : null}
+          {stepActions ? <CardFooter>{stepActions}</CardFooter> : null}
+        </Card>
+      )}
     </div>
   );
 }
