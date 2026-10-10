@@ -84,7 +84,9 @@ export function SetupWizardFrame({
     <div className="grid gap-6">
       <div>
         {eyebrow ? <p className="text-sm font-semibold text-app-accent">{eyebrow}</p> : null}
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">{title}</h1>
+        {/* h2: hosts own the page's h1 (the dashboard titles Change business
+            type itself), so the wizard never adds a second one. */}
+        <h2 className="mt-1 text-2xl font-semibold tracking-tight text-app-fg sm:text-3xl">{title}</h2>
         {body ? <p className="mt-2 max-w-2xl text-sm text-app-fg-muted sm:text-base">{body}</p> : null}
       </div>
 
@@ -138,14 +140,26 @@ export function SetupWizardFrame({
 
       {bare ? (
         <section aria-labelledby={stepTitleId} className="grid gap-5">
-          <SectionHeading eyebrow={stepEyebrow} titleId={stepTitleId} title={stepTitle} description={stepDescription} />
+          <SectionHeading
+            headingLevel={3}
+            eyebrow={stepEyebrow}
+            titleId={stepTitleId}
+            title={stepTitle}
+            description={stepDescription}
+          />
           {children}
           {stepError}
           {stepActions ? <div className="border-t border-app-border pt-4">{stepActions}</div> : null}
         </section>
       ) : (
         <Card as="section" aria-labelledby={stepTitleId}>
-          <CardHeader eyebrow={stepEyebrow} titleId={stepTitleId} title={stepTitle} description={stepDescription} />
+          <CardHeader
+            headingLevel={3}
+            eyebrow={stepEyebrow}
+            titleId={stepTitleId}
+            title={stepTitle}
+            description={stepDescription}
+          />
           <CardBody>{children}</CardBody>
           {stepError ? <div className="px-4 pb-5 sm:px-6">{stepError}</div> : null}
           {stepActions ? <CardFooter>{stepActions}</CardFooter> : null}

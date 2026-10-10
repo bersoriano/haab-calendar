@@ -54,13 +54,13 @@ test.describe("sign in", () => {
 test.describe("guest page builder on a phone", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("walks from a business type into the wizard and refuses an empty step", async ({ page }) => {
+  test("starts the wizard from a landing business type and refuses an empty step", async ({ page }) => {
     await page.goto("/?lang=en");
     await page.getByRole("button", { name: "Start with Healthcare" }).first().click();
 
     const progress = page.getByRole("navigation", { name: "Setup progress" });
     await expect(progress).toContainText("Step 1 of 4");
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
     await expectNoSidewaysScroll(page);
 
     // Nothing filled in yet: the step says what is missing, in its own card.

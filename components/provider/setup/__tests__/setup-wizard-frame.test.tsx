@@ -25,12 +25,13 @@ function render(props: Partial<Parameters<typeof SetupWizardFrame>[0]> = {}) {
 }
 
 describe("SetupWizardFrame", () => {
-  it("names the page once and each step's card under it", () => {
+  it("titles the wizard below the host's own page heading, and each step below that", () => {
     const html = render();
 
-    expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toMatch(/<h1[^>]*>Set up your booking page<\/h1>/);
-    expect(html).toMatch(/<h2[^>]*>Your services<\/h2>/);
+    // The dashboard (Change business type) already has an h1; never add a second.
+    expect(html).not.toContain("<h1");
+    expect(html).toMatch(/<h2[^>]*>Set up your booking page<\/h2>/);
+    expect(html).toMatch(/<h3[^>]*>Your services<\/h3>/);
     expect(html).toContain("<p>step body</p>");
   });
 
@@ -76,8 +77,8 @@ describe("SetupWizardFrame", () => {
   it("keeps a step's eyebrow out of its heading's name", () => {
     const html = render({ stepEyebrow: "Ready", stepTitle: "Your page is ready" });
 
-    expect(html).toMatch(/<h2[^>]*>Your page is ready<\/h2>/);
-    expect(html.indexOf(">Ready<")).toBeLessThan(html.indexOf("<h2"));
+    expect(html).toMatch(/<h3[^>]*>Your page is ready<\/h3>/);
+    expect(html.indexOf(">Ready<")).toBeLessThan(html.indexOf("<h3"));
   });
 
   it("lays a step out without its own card when the content brings cards", () => {
@@ -86,7 +87,7 @@ describe("SetupWizardFrame", () => {
 
     // One card level: the step is a plain section; its content's cards are the only cards.
     expect(section).not.toContain("ring-app-border");
-    expect(html).toMatch(/<h2[^>]*>Your services<\/h2>/);
+    expect(html).toMatch(/<h3[^>]*>Your services<\/h3>/);
     expect(html).toContain("<p>step body</p>");
     expect(html).toMatch(/<button[^>]*>Back<\/button>/);
     expect(html).toMatch(/<button[^>]*>Continue<\/button>/);
