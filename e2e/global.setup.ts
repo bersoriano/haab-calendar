@@ -51,16 +51,34 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
   await admin.from("providers").delete().eq("id", seed.providerId);
   await admin.auth.admin.deleteUser(seed.userId).catch(() => undefined);
 
-  const { error: userError } = await admin.auth.admin.createUser({
-    id: seed.userId,
-    email: seed.email,
-    password: E2E_PASSWORD,
-    email_confirm: true,
-  });
+  const createUser = () =>
+    admin.auth.admin.createUser({
+      id: seed.userId,
+      email: seed.email,
+      password: E2E_PASSWORD,
+      email_confirm: true,
+    });
 
-  if (userError && !userError.message.includes("already been registered")) {
-    throw userError;
+  let { error: userError } = await createUser();
+
+  if (userError?.message.includes("already been registered")) {
+    // The address is held under another id: the super admin's real address
+    // may already exist on a local stack (a manual sign-up, an older seed).
+    // Local only, as checked above, so taking it over is safe.
+    const { data } = await admin.auth.admin.listUsers({ perPage: 1000 });
+    const holder = data?.users.find(
+      (user) => user.email?.toLowerCase() === seed.email.toLowerCase() && user.id !== seed.userId,
+    );
+
+    if (holder) {
+      await admin.auth.admin.deleteUser(holder.id);
+      ({ error: userError } = await createUser());
+    } else {
+      userError = null;
+    }
   }
+
+  if (userError) throw userError;
 
   const { error: providerError } = await admin.from("providers").insert({
     id: seed.providerId,
