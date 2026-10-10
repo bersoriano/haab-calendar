@@ -66,6 +66,9 @@ const MIGRATED = [
   "components/auth/NewPasswordForm.tsx",
   "app/login",
   "app/reset-password",
+  "components/provider/SetupHeader.tsx",
+  "components/provider/GuestDraftBar.tsx",
+  "components/provider/AccountStatusBar.tsx",
 ];
 
 const RAW_PALETTE =

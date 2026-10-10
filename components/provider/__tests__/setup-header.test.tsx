@@ -48,6 +48,16 @@ describe("SetupHeader", () => {
     expect(html).not.toContain("Sign out");
   });
 
+  it("is the app's bar, with no blur or brand colour fills of its own", () => {
+    const html = renderToStaticMarkup(
+      <SetupHeader lang="en" vertical="spaces" onChooseAnother={noop} onBackToHome={noop} onSignOut={noop} />,
+    );
+
+    expect(html).toMatch(/^<header[^>]*bg-app-surface/);
+    expect(html).not.toContain("backdrop-blur");
+    expect(html).toMatch(/<a[^>]*aria-label="Haab Calendar"[^>]*>[\s\S]*?<span aria-hidden="true"[^>]*>H<\/span>/);
+  });
+
   it("offers the way home before a workflow is chosen", () => {
     const html = renderToStaticMarkup(
       <SetupHeader lang="en" onChooseAnother={noop} onBackToHome={noop} />,
