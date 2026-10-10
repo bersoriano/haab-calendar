@@ -59,6 +59,8 @@ const MIGRATED = [
   "components/provider/VerticalPicker.tsx",
   "components/super-admin",
   "app/super-admin",
+  "components/auth/LoginHeader.tsx",
+  "components/auth/AuthPageFrame.tsx",
 ];
 
 const RAW_PALETTE =

@@ -1,7 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { LanguageToggle, RadioCards, SegmentedControl, nextSegmentIndex } from "@/components/app-ui";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+import { BrandMark, LanguageLinks, LanguageToggle, RadioCards, SegmentedControl, nextSegmentIndex } from "@/components/app-ui";
 
 describe("SegmentedControl", () => {
   const html = renderToStaticMarkup(
@@ -118,5 +121,25 @@ describe("LanguageToggle", () => {
   it("renders a segmented control when it changes state", () => {
     const html = renderToStaticMarkup(<LanguageToggle lang="en" onChange={() => undefined} />);
     expect(html).toContain('role="radiogroup"');
+  });
+});
+
+describe("LanguageLinks", () => {
+  it("renders the same language links as LanguageToggle's link mode", () => {
+    const hrefFor = (lang: "en" | "es") => `/login?lang=${lang}`;
+    expect(renderToStaticMarkup(<LanguageLinks lang="en" hrefFor={hrefFor} />)).toBe(
+      renderToStaticMarkup(<LanguageToggle lang="en" hrefFor={hrefFor} />),
+    );
+  });
+
+  it("stays usable from a server component, which cannot pass functions to client ones", () => {
+    const source = readFileSync(join(import.meta.dirname, "..", "LanguageLinks.tsx"), "utf8");
+    expect(source).not.toContain('"use client"');
+  });
+});
+
+describe("BrandMark", () => {
+  it("is decorative: the link around it carries the name", () => {
+    expect(renderToStaticMarkup(<BrandMark />)).toMatch(/^<span aria-hidden="true"[^>]*>H<\/span>$/);
   });
 });

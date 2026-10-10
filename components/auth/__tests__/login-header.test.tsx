@@ -26,6 +26,14 @@ describe("LoginHeader", () => {
     expect(html).toContain('href="?lang=es"');
     expect(html).toContain('href="?lang=en"');
     expect(html).toContain('aria-label="Choose language"');
+    expect(html).toMatch(/<a[^>]*href="\?lang=en"[^>]*aria-current="true"/);
+  });
+
+  it("is the app's bar, not the landing page's glass band", () => {
+    const html = renderToStaticMarkup(<LoginHeader lang="en" />);
+
+    expect(html).toMatch(/^<header[^>]*bg-app-surface/);
+    expect(html).not.toContain("backdrop-blur");
   });
 
   it("lets a page build the switch links when its state lives in the query", () => {

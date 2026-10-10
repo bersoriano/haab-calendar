@@ -16,6 +16,8 @@ export { Fieldset, FormSection } from "@/components/app-ui/Fieldset";
 export { SegmentedControl, nextSegmentIndex } from "@/components/app-ui/SegmentedControl";
 export { RadioCards } from "@/components/app-ui/RadioCards";
 export { LanguageToggle } from "@/components/app-ui/LanguageToggle";
+export { LanguageLinks } from "@/components/app-ui/LanguageLinks";
+export { BrandMark } from "@/components/app-ui/BrandMark";
 export { Dialog, DialogActions, ConfirmDialog, isBackdropClick } from "@/components/app-ui/Dialog";
 export {
   MAX_TOASTS,

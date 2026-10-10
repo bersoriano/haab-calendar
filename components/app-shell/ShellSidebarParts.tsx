@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { ShellLink } from "@/components/app-shell/SidebarNav";
-import { Avatar, Badge, IconButton } from "@/components/app-ui";
+import { Avatar, Badge, BrandMark, IconButton } from "@/components/app-ui";
 
 const brandClass =
   "flex min-h-11 items-center gap-2.5 rounded-lg px-2 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-app-accent";
@@ -23,12 +23,7 @@ export function ShellBrand({
 }) {
   const content = (
     <>
-      <span
-        aria-hidden="true"
-        className="grid size-8 shrink-0 place-items-center rounded-lg bg-app-accent text-sm font-bold text-app-on-accent"
-      >
-        H
-      </span>
+      <BrandMark />
       <span className="min-w-0">
         <span className="block text-sm font-bold text-app-fg">Haab Calendar</span>
         {badge ? <span className="mt-0.5 block">{badge}</span> : null}
