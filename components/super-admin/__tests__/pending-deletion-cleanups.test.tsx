@@ -31,4 +31,30 @@ describe("PendingDeletionCleanups", () => {
     expect(html).toContain("2 failed attempts");
     expect(html).toContain("Retry cleanup");
   });
+
+  it("marks a job whose last attempt failed with a status badge", () => {
+    const job = {
+      id: "0f9a4c2e-0000-4000-8000-000000000001",
+      attemptCount: 1,
+      createdAt: "2026-10-01T10:00:00.000Z",
+      updatedAt: "2026-10-02T10:00:00.000Z",
+    };
+    const failed = renderToStaticMarkup(
+      <PendingDeletionCleanups initialJobs={[{ ...job, lastAttemptFailed: true }]} />,
+    );
+    const queued = renderToStaticMarkup(
+      <PendingDeletionCleanups initialJobs={[{ ...job, lastAttemptFailed: false }]} />,
+    );
+
+    expect(failed).toContain('role="list"');
+    expect(failed).toMatch(/<span[^>]*ring-inset[^>]*>Last attempt failed<\/span>/);
+    expect(queued).toMatch(/<span[^>]*ring-inset[^>]*>Queued<\/span>/);
+    expect(queued).toContain("1 failed attempt ");
+  });
+
+  it("names the empty queue with a heading", () => {
+    expect(renderToStaticMarkup(<PendingDeletionCleanups initialJobs={[]} />)).toMatch(
+      /<h2[^>]*>No cleanups waiting<\/h2>/,
+    );
+  });
 });

@@ -59,6 +59,7 @@ const MIGRATED = [
   "components/provider/VerticalPicker.tsx",
   "components/super-admin/SuperAdminShell.tsx",
   "components/super-admin/SuperAdminOverview.tsx",
+  "components/super-admin/PendingDeletionCleanups.tsx",
 ];
 
 const RAW_PALETTE =
