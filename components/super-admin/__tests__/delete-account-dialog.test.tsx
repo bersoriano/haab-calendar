@@ -60,6 +60,9 @@ describe("DeleteAccountDialog", () => {
     expect(html).toContain("Delete permanently");
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delete permanently<\/button>/);
     expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Cancel<\/button>/);
+    // One Cancel: the corner button closes, under its own name.
+    expect(html).toContain('aria-label="Close"');
+    expect(html).not.toContain('aria-label="Cancel"');
     // The typed confirmation is a labelled field, not a bare input.
     const inputId = html.match(/<input[^>]*id="([^"]+)"[^>]*type="email"|<input[^>]*type="email"[^>]*id="([^"]+)"/);
     expect(inputId).toBeTruthy();

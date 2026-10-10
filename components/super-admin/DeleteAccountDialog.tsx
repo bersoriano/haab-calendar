@@ -64,6 +64,7 @@ export function DeleteAccountDialog({
       body="This cannot be undone."
       confirmLabel={busy ? "Deleting…" : "Delete permanently"}
       cancelLabel="Cancel"
+      closeLabel="Close"
       tone="danger"
       pending={busy}
       confirmDisabled={!confirmed}

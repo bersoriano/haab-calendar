@@ -360,6 +360,7 @@ export function UserPublicationTable({
           }
           confirmLabel="Disable publishing"
           cancelLabel="Cancel"
+          closeLabel="Close"
           tone="danger"
           pending={pendingUserId === disableTarget.id}
           error={disableError}
