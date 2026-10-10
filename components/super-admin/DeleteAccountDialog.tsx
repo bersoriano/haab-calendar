@@ -60,7 +60,7 @@ export function DeleteAccountDialog({
   return (
     <ConfirmDialog
       open={open}
-      title={<span className="break-all">Delete {user.email} permanently?</span>}
+      title={<span className="break-words">Delete {user.email} permanently?</span>}
       body="This cannot be undone."
       confirmLabel={busy ? "Deleting…" : "Delete permanently"}
       cancelLabel="Cancel"
@@ -94,7 +94,7 @@ export function DeleteAccountDialog({
         id={CONFIRMATION_INPUT_ID}
         label={
           <>
-            Type <code className="break-all font-mono text-app-danger-fg">{user.email}</code> to confirm
+            Type <code className="break-words font-mono text-app-danger-fg">{user.email}</code> to confirm
           </>
         }
       >

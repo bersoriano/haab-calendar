@@ -184,7 +184,7 @@ export function ProviderFeatureOverrides({
       title="Premium access"
       description={
         <>
-          <span className="break-all">{ownerEmail}</span> · {snapshot.planTier} plan ·{" "}
+          <span className="break-words">{ownerEmail}</span> · {snapshot.planTier} plan ·{" "}
           {enabledCount(snapshot)} of {FEATURE_KEYS.length} enabled
         </>
       }

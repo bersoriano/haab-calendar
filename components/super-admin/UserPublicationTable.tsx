@@ -58,7 +58,8 @@ function CardLabel({ children }: { children: string }) {
 function AccountCell({ user }: { user: ManagedUserSummary }) {
   return (
     <div className="min-w-0">
-      <p className="break-all font-medium text-app-fg">{user.email}</p>
+      {/* One line in the table (lg and up); cards below wrap long addresses. */}
+      <p className="break-words font-medium text-app-fg lg:whitespace-nowrap">{user.email}</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {user.superAdmin ? <Badge tone="admin">Super admin</Badge> : null}
         <Badge tone={user.emailConfirmedAt ? "success" : "warning"}>
@@ -472,7 +473,7 @@ export function UserPublicationTable({
                 <TBody>
                   {visibleUsers.map((user) => (
                     <Tr key={user.id}>
-                      <Td className="max-w-xs">
+                      <Td>
                         <AccountCell user={user} />
                       </Td>
                       <Td className="max-w-xs">

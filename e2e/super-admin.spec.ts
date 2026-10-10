@@ -118,6 +118,17 @@ test("the publishing filter follows the link and writes back to it", async ({ pa
   await expect(page.getByRole("radio", { name: /^All/ })).toHaveAttribute("aria-checked", "true");
 });
 
+test("the wide table keeps an email on one line", async ({ page }) => {
+  await openAccounts(page);
+
+  const email = targetRow(page).getByText(target.email, { exact: true });
+  const lines = await email.evaluate((element) => {
+    const lineHeight = parseFloat(getComputedStyle(element).lineHeight);
+    return Math.round(element.getBoundingClientRect().height / lineHeight);
+  });
+  expect(lines).toBe(1);
+});
+
 test("accounts stack as cards on a phone without sideways scrolling", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await openAccounts(page);
