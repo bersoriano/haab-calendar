@@ -69,6 +69,27 @@ describe("DeleteAccountDialog", () => {
     expect(html).toContain(`for="${inputId?.[1] ?? inputId?.[2]}"`);
   });
 
+  it("describes the dialog with everything the deletion removes", () => {
+    const html = renderToStaticMarkup(
+      <DeleteAccountDialog
+        open
+        user={{ ...ordinaryUser, demoOwner: true }}
+        busy={false}
+        onCancel={() => {}}
+        onConfirm={() => {}}
+      />,
+    );
+    const describedBy = html.match(/^<dialog[^>]*aria-describedby="([^"]+)"/)?.[1];
+    // The description sits in the dialog header, before its close button.
+    const description = html.slice(html.indexOf(`id="${describedBy}"`), html.indexOf('aria-label="Close"'));
+
+    // Focus lands on the typed confirmation, so the description is what a
+    // screen reader announces about what is at stake.
+    expect(description).toContain("This cannot be undone.");
+    expect(description).toContain("Bookings and client details");
+    expect(description).toContain("owns a public example page");
+  });
+
   it("locks both actions while the deletion runs", () => {
     const html = renderToStaticMarkup(
       <DeleteAccountDialog

@@ -68,7 +68,7 @@ export function PendingDeletionCleanups({
       }
 
       setJobs((current) => current.filter((job) => job.id !== jobId));
-      toast.notify({ message: "Branding files removed." });
+      toast.notify({ message: "Cleanup finished." });
       router.refresh();
     } catch (retryError) {
       setError(

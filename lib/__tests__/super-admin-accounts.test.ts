@@ -3,6 +3,9 @@ import {
   filterManagedUsers,
   parseAccountStatusFilter,
   summarizeAccounts,
+  clearPending,
+  closeIfFor,
+  markPending,
 } from "@/lib/super-admin-accounts";
 
 type Row = {
@@ -59,5 +62,24 @@ describe("parseAccountStatusFilter", () => {
 describe("summarizeAccounts", () => {
   it("counts accounts by publishing state", () => {
     expect(summarizeAccounts(users)).toEqual({ total: 3, enabled: 2, disabled: 1 });
+  });
+});
+
+describe("row action bookkeeping", () => {
+  it("tracks each account's pending request on its own", () => {
+    const both = markPending(markPending(new Set<string>(), "a"), "b");
+    const afterA = clearPending(both, "a");
+
+    // A finishing must not unlock B mid-request.
+    expect([...afterA]).toEqual(["b"]);
+    expect([...both]).toEqual(["a", "b"]);
+  });
+
+  it("closes a confirmation only for the account whose request finished", () => {
+    const openForB = { id: "b" };
+
+    expect(closeIfFor(openForB, "a")).toBe(openForB);
+    expect(closeIfFor(openForB, "b")).toBeUndefined();
+    expect(closeIfFor(undefined, "a")).toBeUndefined();
   });
 });

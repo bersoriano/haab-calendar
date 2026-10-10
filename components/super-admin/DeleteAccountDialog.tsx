@@ -61,7 +61,26 @@ export function DeleteAccountDialog({
     <ConfirmDialog
       open={open}
       title={<span className="break-words">Delete {user.email} permanently?</span>}
-      body="This cannot be undone."
+      body={
+        // All of it is the description: focus goes to the typed confirmation,
+        // so this is what a screen reader announces about what is at stake.
+        <div className="grid gap-3">
+          <p>This cannot be undone. Haab will permanently remove:</p>
+          <ul role="list" className="grid gap-2 text-app-fg-secondary sm:grid-cols-2">
+            {REMOVED.map((item) => (
+              <li key={item} className="rounded-lg bg-app-subtle px-3 py-2">
+                {item}
+              </li>
+            ))}
+          </ul>
+          {user.demoOwner ? (
+            <Alert tone="warning">
+              This account owns a public example page. Its URL will return 404
+              until the demo is reseeded.
+            </Alert>
+          ) : null}
+        </div>
+      }
       confirmLabel={busy ? "Deleting…" : "Delete permanently"}
       cancelLabel="Cancel"
       closeLabel="Close"
@@ -72,24 +91,6 @@ export function DeleteAccountDialog({
       onConfirm={() => onConfirm(confirmationEmail)}
       onCancel={onCancel}
     >
-      <div>
-        <p className="text-sm text-app-fg">Haab will permanently remove:</p>
-        <ul role="list" className="mt-2 grid gap-2 text-sm text-app-fg-secondary sm:grid-cols-2">
-          {REMOVED.map((item) => (
-            <li key={item} className="rounded-lg bg-app-subtle px-3 py-2">
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {user.demoOwner ? (
-        <Alert tone="warning">
-          This account owns a public example page. Its URL will return 404
-          until the demo is reseeded.
-        </Alert>
-      ) : null}
-
       <Field
         id={CONFIRMATION_INPUT_ID}
         label={

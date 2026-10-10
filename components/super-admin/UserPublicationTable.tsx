@@ -29,7 +29,10 @@ import {
 } from "@/components/super-admin/ProviderFeatureOverrides";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import {
+  clearPending,
+  closeIfFor,
   filterManagedUsers,
+  markPending,
   type AccountStatusFilter,
 } from "@/lib/super-admin-accounts";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
@@ -50,7 +53,7 @@ function formatUtcDate(value?: string) {
   }).format(new Date(value));
 }
 
-/** Names a value inside a stacked card; the table's header row does on wide screens. */
+/** Names a value inside a stacked card; the table's header row does from xl. */
 function CardLabel({ children }: { children: string }) {
   return <p className="mb-1 text-xs font-medium text-app-fg-muted">{children}</p>;
 }
@@ -58,8 +61,9 @@ function CardLabel({ children }: { children: string }) {
 function AccountCell({ user }: { user: ManagedUserSummary }) {
   return (
     <div className="min-w-0">
-      {/* One line in the table (lg and up); cards below wrap long addresses. */}
-      <p className="break-words font-medium text-app-fg lg:whitespace-nowrap">{user.email}</p>
+      {/* Addresses rarely have break points; anywhere keeps a long one from
+          widening the table instead of wrapping. */}
+      <p className="font-medium text-app-fg [overflow-wrap:anywhere]">{user.email}</p>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {user.superAdmin ? <Badge tone="admin">Super admin</Badge> : null}
         <Badge tone={user.emailConfirmedAt ? "success" : "warning"}>
@@ -151,7 +155,7 @@ export function UserPublicationTable({
   const [users, setUsers] = useState(initialUsers);
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<AccountStatusFilter>(initialStatus);
-  const [pendingUserId, setPendingUserId] = useState<string>();
+  const [pendingUserIds, setPendingUserIds] = useState<ReadonlySet<string>>(() => new Set());
   const [rowError, setRowError] = useState<{ userId: string; message: string }>();
   const [disableTarget, setDisableTarget] = useState<ManagedUserSummary>();
   const [disableError, setDisableError] = useState<string>();
@@ -160,7 +164,7 @@ export function UserPublicationTable({
   const [deletionError, setDeletionError] = useState<string>();
 
   async function updatePublication(user: ManagedUserSummary, nextEnabled: boolean) {
-    setPendingUserId(user.id);
+    setPendingUserIds((current) => markPending(current, user.id));
     setRowError(undefined);
     setDisableError(undefined);
 
@@ -194,7 +198,7 @@ export function UserPublicationTable({
             : candidate,
         ),
       );
-      setDisableTarget(undefined);
+      setDisableTarget((current) => closeIfFor(current, user.id));
       toast.notify({
         message: result.publishingEnabled
           ? "Publication enabled. The user will see a dashboard notice."
@@ -207,7 +211,7 @@ export function UserPublicationTable({
       if (nextEnabled) setRowError({ userId: user.id, message });
       else setDisableError(message);
     } finally {
-      setPendingUserId(undefined);
+      setPendingUserIds((current) => clearPending(current, user.id));
     }
   }
 
@@ -225,7 +229,7 @@ export function UserPublicationTable({
     user: ManagedUserSummary,
     confirmationEmail: string,
   ) {
-    setPendingUserId(user.id);
+    setPendingUserIds((current) => markPending(current, user.id));
     setDeletionError(undefined);
 
     try {
@@ -249,7 +253,7 @@ export function UserPublicationTable({
       setUsers((current) =>
         current.filter((candidate) => candidate.id !== user.id),
       );
-      setDeletionTarget(undefined);
+      setDeletionTarget((current) => closeIfFor(current, user.id));
       toast.notify({
         message: result.cleanupPending
           ? "Account deleted. Haab-hosted asset cleanup is queued for retry."
@@ -261,7 +265,7 @@ export function UserPublicationTable({
         error instanceof Error ? error.message : "Could not delete account.",
       );
     } finally {
-      setPendingUserId(undefined);
+      setPendingUserIds((current) => clearPending(current, user.id));
     }
   }
 
@@ -309,7 +313,7 @@ export function UserPublicationTable({
   const featuresEntitlements = featuresUser?.provider?.entitlements;
 
   function actions(user: ManagedUserSummary) {
-    const pending = pendingUserId === user.id;
+    const pending = pendingUserIds.has(user.id);
 
     return (
       <>
@@ -321,7 +325,7 @@ export function UserPublicationTable({
         <Button
           variant={user.publishingEnabled ? "secondary" : "soft"}
           size="sm"
-          loading={pending && !deletionTarget}
+          loading={pending && deletionTarget?.id !== user.id}
           disabled={pending}
           onClick={() => changePublication(user)}
         >
@@ -333,7 +337,7 @@ export function UserPublicationTable({
           </Button>
         ) : (
           <Button
-            variant="danger"
+            variant="danger-plain"
             size="sm"
             disabled={pending}
             onClick={() => {
@@ -363,7 +367,7 @@ export function UserPublicationTable({
           cancelLabel="Cancel"
           closeLabel="Close"
           tone="danger"
-          pending={pendingUserId === disableTarget.id}
+          pending={pendingUserIds.has(disableTarget.id)}
           error={disableError}
           onConfirm={() => updatePublication(disableTarget, false)}
           onCancel={() => {
@@ -385,10 +389,10 @@ export function UserPublicationTable({
         <DeleteAccountDialog
           open
           user={deletionTarget}
-          busy={pendingUserId === deletionTarget.id}
+          busy={pendingUserIds.has(deletionTarget.id)}
           error={deletionError}
           onCancel={() => {
-            if (pendingUserId !== deletionTarget.id) {
+            if (!pendingUserIds.has(deletionTarget.id)) {
               setDeletionError(undefined);
               setDeletionTarget(undefined);
             }
@@ -416,7 +420,7 @@ export function UserPublicationTable({
 
   return (
     <>
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <Input
           type="search"
           value={query}
@@ -424,7 +428,7 @@ export function UserPublicationTable({
           aria-label="Search accounts"
           placeholder="Search by email or business"
           leadingAddon={<MagnifyingGlass aria-hidden="true" size={16} />}
-          className="w-full lg:w-96"
+          className="w-full xl:w-96"
         />
         <SegmentedControl
           ariaLabel="Publishing"
@@ -458,7 +462,9 @@ export function UserPublicationTable({
           />
         ) : (
           <>
-            <div className="hidden lg:block">
+            {/* The table needs the width xl gives beside the sidebar; below
+                it, each account is a card, so nothing scrolls sideways. */}
+            <div className="hidden xl:block">
               <Table>
                 <THead>
                   <Tr>
@@ -473,10 +479,11 @@ export function UserPublicationTable({
                 <TBody>
                   {visibleUsers.map((user) => (
                     <Tr key={user.id}>
-                      <Td>
+                      {/* Room for an ordinary address on one line. */}
+                      <Td className="min-w-80">
                         <AccountCell user={user} />
                       </Td>
-                      <Td className="max-w-xs">
+                      <Td>
                         <BusinessCell user={user} />
                       </Td>
                       <Td>
@@ -494,7 +501,7 @@ export function UserPublicationTable({
               </Table>
             </div>
 
-            <StackedList className="lg:hidden">
+            <StackedList className="xl:hidden">
               {visibleUsers.map((user) => (
                 <li key={user.id} className="grid gap-4 px-4 py-5 sm:px-6">
                   <AccountCell user={user} />

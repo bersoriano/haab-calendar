@@ -128,7 +128,7 @@ describe("UserPublicationTable", () => {
 
     expect(html).toMatch(/>Features<span class="sr-only"> for new-user@example.com<\/span><\/button>/);
     expect(html).toContain("free plan");
-    expect(html).toContain("0 of 6 enabled");
+    expect(html).toContain("0 of 6 features on");
   });
 
   it("says when a search matches nobody", () => {
@@ -138,6 +138,23 @@ describe("UserPublicationTable", () => {
 
     expect(html).toContain("No accounts match");
     expect(html).not.toContain("No registered users");
+  });
+
+  it("keeps row deletion a plain danger action, not a filled button per row", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+    const deletes = html.match(/<button[^>]*>Delete account<\/button>/g) ?? [];
+
+    expect(deletes.length).toBeGreaterThan(0);
+    for (const button of deletes) {
+      expect(button).toContain("text-app-danger-fg");
+      expect(button).not.toContain("bg-app-danger ");
+    }
+  });
+
+  it("lets an address with no break points wrap anywhere instead of widening the table", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).toMatch(/<p class="[^"]*\[overflow-wrap:anywhere\][^"]*">new-user@example.com<\/p>/);
   });
 
   it("fits beside the sidebar instead of scrolling sideways", () => {
