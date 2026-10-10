@@ -29,6 +29,16 @@ describe("LoginHeader", () => {
     expect(html).toMatch(/<a[^>]*href="\?lang=en"[^>]*aria-current="true"/);
   });
 
+  it("names the brand link with its own visible text", () => {
+    // An aria-label that does not contain the visible text fails label-in-name.
+    const html = renderToStaticMarkup(<LoginHeader lang="en" />);
+    const brand = html.match(/<a[^>]*href="\/\?lang=en"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? "";
+
+    expect(brand).not.toContain("aria-label");
+    expect(brand).toContain("Haab Calendar");
+    expect(brand).toMatch(/<span class="sr-only">[^<]*Back to home<\/span>/);
+  });
+
   it("is the app's bar, not the landing page's glass band", () => {
     const html = renderToStaticMarkup(<LoginHeader lang="en" />);
 

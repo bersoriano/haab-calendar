@@ -28,13 +28,15 @@ export function LoginHeader({
   return (
     <header className="sticky top-0 z-40 border-b border-app-border bg-app-surface">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        {/* Named by its visible text, plus where it goes: an aria-label that
+            left out the visible "Haab Calendar" failed label-in-name. */}
         <Link
           href={landingHref}
-          aria-label={`${homeCopy.backToHome} — ${navCopy.brand}`}
           className={cn("flex min-h-11 shrink-0 items-center gap-2.5 rounded-md", focusRing)}
         >
           <BrandMark />
           <span className="text-sm font-bold text-app-fg max-[379px]:sr-only">{navCopy.brand}</span>
+          <span className="sr-only">{`: ${homeCopy.backToHome.replace(/^←\s*/, "")}`}</span>
         </Link>
         <div className="flex shrink-0 items-center gap-2 sm:gap-4">
           <LanguageLinks lang={lang} hrefFor={languageHrefFor ?? ((option) => `?lang=${option}`)} />
