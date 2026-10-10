@@ -6482,18 +6482,14 @@ export function HaabBookingModule({
       );
     }
 
-    // Public pages only from here (the dashboard returned its own dialog
-    // above). Kept byte-identical for the public flow, so the admin arms of
-    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
-    // cleanup.
+    // Public pages only from here: the dashboard returned its own dialog
+    // above, so everything below is the public look.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4">
         <div
           className={cn(
             "w-full max-w-lg p-6",
-            isDedicatedPublicPage
-              ? "rounded-[32px] bg-[var(--panel-tint-98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]"
-              : "rounded-[32px] border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+            "rounded-[32px] bg-[var(--panel-tint-98)] ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)]",
           )}
         >
           <SectionTitle
@@ -6522,7 +6518,7 @@ export function HaabBookingModule({
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <ActionButton
               tone="ghost"
-              className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+              className={cn(publicPillButtonClass, publicGhostButtonClass)}
               disabled={isMutatingBooking}
               onClick={() => {
                 setCancellationId(null);
@@ -6533,7 +6529,7 @@ export function HaabBookingModule({
             </ActionButton>
             <ActionButton
               tone="danger"
-              className={cn(isDedicatedPublicPage && publicPillButtonClass)}
+              className={cn(publicPillButtonClass)}
               disabled={isMutatingBooking}
               onClick={confirmCancellation}
             >
@@ -6647,18 +6643,14 @@ export function HaabBookingModule({
       );
     }
 
-    // Public pages only from here (the dashboard returned its own dialog
-    // above). Kept byte-identical for the public flow, so the admin arms of
-    // the isDedicatedPublicPage ternaries below are unreachable until PR 5's
-    // cleanup.
+    // Public pages only from here: the dashboard returned its own dialog
+    // above, so everything below is the public look.
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 px-4 py-8">
         <div
           className={cn(
             "max-h-[92vh] w-full max-w-5xl overflow-auto",
-            isDedicatedPublicPage
-              ? "rounded-[34px] bg-[var(--panel-tint-98)] p-6 ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)] xl:p-8"
-              : "rounded-[32px] border border-[var(--line)] bg-[var(--surface-lowest)] p-6 shadow-[0_30px_80px_rgba(15,23,42,0.2)]",
+            "rounded-[34px] bg-[var(--panel-tint-98)] p-6 ring-1 ring-[rgba(255,255,255,0.72)] shadow-[0_30px_72px_rgba(25,28,29,0.14)] xl:p-8",
           )}
         >
           <SectionTitle
@@ -6670,7 +6662,7 @@ export function HaabBookingModule({
             action={
               <ActionButton
                 tone="ghost"
-                className={cn(isDedicatedPublicPage && cn(publicPillButtonClass, publicGhostButtonClass))}
+                className={cn(publicPillButtonClass, publicGhostButtonClass)}
                 disabled={isMutatingBooking}
                 onClick={() => setRescheduleState(null)}
               >
@@ -6683,7 +6675,7 @@ export function HaabBookingModule({
               <div
                 className={cn(
                   "flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3",
-                  isDedicatedPublicPage ? publicGlassBarClass : "border border-[var(--line)] bg-[var(--surface-soft)]",
+                  publicGlassBarClass,
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -6773,20 +6765,12 @@ export function HaabBookingModule({
                           className={cn(
                             "min-h-[84px] rounded-[24px] p-3 text-left transition",
                             inMonth
-                              ? isDedicatedPublicPage
-                                ? publicQuietChoiceClass
-                                : "border border-[var(--line)] bg-[var(--surface-soft)]"
-                              : isDedicatedPublicPage
-                                ? publicSoftChoiceClass
-                                : "border border-[var(--line)] bg-[var(--surface-lowest)]",
+                              ? publicQuietChoiceClass
+                              : publicSoftChoiceClass,
                             available &&
-                              (isDedicatedPublicPage
-                                ? "hover:bg-[var(--panel-glass-72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]"
-                                : "hover:border-[var(--accent)]"),
+                              "hover:bg-[var(--panel-glass-72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]",
                             selected &&
-                              (isDedicatedPublicPage
-                                ? cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]")
-                                : "border-[var(--accent)] bg-[var(--accent-soft)]"),
+                              cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]"),
                             !available && "cursor-default opacity-45",
                           )}
                         >
@@ -6804,9 +6788,7 @@ export function HaabBookingModule({
             <div
               className={cn(
                 "flex h-full flex-col",
-                isDedicatedPublicPage
-                  ? publicElevatedPanelClass
-                  : "rounded-[28px] border border-[var(--line)] bg-[var(--surface-soft)] p-6",
+                publicElevatedPanelClass,
               )}
             >
               <SectionTitle
@@ -6840,15 +6822,11 @@ export function HaabBookingModule({
                         }
                         className={cn(
                           "min-h-11 rounded-2xl px-4 text-sm font-semibold transition",
-                          isDedicatedPublicPage ? publicQuietChoiceClass : "border border-[var(--line)] bg-[var(--surface-lowest)]",
+                          publicQuietChoiceClass,
                           rescheduleState.time === slot &&
-                            (isDedicatedPublicPage
-                              ? cn(publicSelectedChoiceClass, "text-[var(--accent)]")
-                              : "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"),
+                            cn(publicSelectedChoiceClass, "text-[var(--accent)]"),
                           rescheduleState.time !== slot &&
-                            (isDedicatedPublicPage
-                              ? "hover:bg-[var(--panel-glass-72)]"
-                              : "hover:border-[var(--accent)]"),
+                            "hover:bg-[var(--panel-glass-72)]",
                         )}
                       >
                         {formatTimeLabel(slot, lang)}
@@ -6865,9 +6843,7 @@ export function HaabBookingModule({
                 <div
                   className={cn(
                     "mt-6 p-4 text-sm leading-6 text-[var(--muted)]",
-                    isDedicatedPublicPage
-                      ? publicInsetCardClass
-                      : "rounded-3xl border border-white bg-white/90",
+                    publicInsetCardClass,
                   )}
                 >
                   {t.manage.newDayFreeReplaceHelper}
@@ -6876,7 +6852,7 @@ export function HaabBookingModule({
               <div className="mt-auto grid grid-cols-2 gap-3 pt-6">
                 <ActionButton
                   tone="danger"
-                  className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
+                  className={cn("w-full px-4 sm:px-6", publicPillButtonClass)}
                   disabled={isMutatingBooking}
                   onClick={() => setRescheduleState(null)}
                 >
@@ -6884,7 +6860,7 @@ export function HaabBookingModule({
                 </ActionButton>
                 <ActionButton
                   tone="primary"
-                  className={cn("w-full px-4 sm:px-6", isDedicatedPublicPage && publicPillButtonClass)}
+                  className={cn("w-full px-4 sm:px-6", publicPillButtonClass)}
                   disabled={
                     isMutatingBooking ||
                     !rescheduleState.dateKey ||
