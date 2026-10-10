@@ -72,8 +72,9 @@ export function ModuleHeader<T extends string>({
       </div>
 
       {sections ? (
-        <nav aria-label={shell.navLabel} className="mt-5 overflow-x-auto">
-          <div className="inline-flex gap-1 rounded-lg bg-app-subtle p-1">
+        <nav aria-label={shell.navLabel} className="mt-5">
+          {/* Wraps, so all nine stay in view on a phone. */}
+          <div className="flex flex-wrap gap-1 rounded-lg bg-app-subtle p-1">
             {sections.map((section) => (
               <button
                 key={section.value}

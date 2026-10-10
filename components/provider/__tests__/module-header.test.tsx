@@ -52,6 +52,9 @@ describe("ModuleHeader", () => {
     for (const section of SECTIONS) expect(html).toContain(`>${section.label}</button>`);
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     expect(html).toMatch(/<button[^>]*aria-current="page"[^>]*>Bookings<\/button>/);
+    // All nine tabs stay in view on a phone: they wrap rather than scroll away.
+    expect(html).toMatch(/<nav[^>]*><div class="[^"]*flex-wrap/);
+    expect(html).not.toContain("overflow-x-auto");
   });
 
   it("offers the way back to the workspace from the booking preview", () => {
