@@ -10,4 +10,3 @@ export { BookingHoldCountdownBar } from "@/components/ui/BookingHoldCountdownBar
 export { BookingStatusPill } from "@/components/ui/BookingStatusPill";
 export { PrivateLinkCard } from "@/components/ui/PrivateLinkCard";
 export { EmptyState } from "@/components/ui/EmptyState";
-export { Alert, type AlertTone } from "@/components/ui/Alert";

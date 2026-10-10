@@ -6,8 +6,8 @@ const root = join(import.meta.dirname, "..", "..");
 
 /** The status palette's literal values; components use the tokens instead. */
 const LITERALS = ["#fecdd3", "#fff1f2", "#be123c", "#bbf7d0", "#f0fdf4", "#15803d"];
-// Violet is super admin's signpost and lives in one module
-// (components/app-shell/super-admin-accent.ts); slate is replaced by tokens.
+// Super admin's violet signpost is the app-ui "admin" tone now; slate is
+// replaced by tokens.
 const PALETTE_CLASSES = /\b(?:bg|text|border|ring)-(?:rose|emerald|amber|red|green|violet|slate)-\d{2,3}\b/;
 
 function sources(dir: string) {

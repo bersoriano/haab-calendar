@@ -36,7 +36,8 @@ const MIGRATED_TO_APP_UI = [
   "components/provider/ChangeBusinessTypeDialog.tsx",
   "components/provider/BusinessTypeSwitch.tsx",
   "components/provider/VerticalPicker.tsx",
-  "components/super-admin/SuperAdminShell.tsx",
+  "components/super-admin/**/*.{ts,tsx}",
+  "app/super-admin/**/*.{ts,tsx}",
 ];
 
 const LEGACY_UI = ["ActionButton", "ActionLink", "buttonClasses", "ToneBadge", "EmptyState", "SectionTitle", "Alert"];
