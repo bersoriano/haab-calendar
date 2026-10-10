@@ -40,6 +40,7 @@ export default async function Home({ searchParams }: HomePageProps) {
     loggedIn: load.loggedIn,
     configured: load.configured,
     demoEditing: Boolean(load.demoEdit),
+    storeLoadFailed: load.storeLoadFailed,
     tab,
     checkout,
   });

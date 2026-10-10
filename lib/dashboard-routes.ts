@@ -88,10 +88,18 @@ export function resolveHomeRedirect(input: {
   loggedIn: boolean;
   configured: boolean;
   demoEditing: boolean;
+  /** The owner's page exists or may exist but could not be read. */
+  storeLoadFailed?: boolean;
   tab?: string;
   checkout?: string;
 }): string | null {
-  if (!input.loggedIn || (!input.configured && !input.demoEditing)) {
+  if (!input.loggedIn) {
+    return null;
+  }
+
+  // A failed read is not "no page yet": the dashboard explains and retries,
+  // where the landing page would offer setup to someone who has a page.
+  if (!input.configured && !input.demoEditing && !input.storeLoadFailed) {
     return null;
   }
 

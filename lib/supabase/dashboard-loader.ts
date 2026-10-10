@@ -1,3 +1,4 @@
+import { describeError } from "@/lib/describe-error";
 import { createClient } from "@/lib/supabase/server";
 import { getProviderDashboardContext } from "@/lib/supabase/bookings";
 import { getProviderEntitlements } from "@/lib/entitlements/server";
@@ -17,6 +18,11 @@ export type DashboardLoad = {
   isSuperAdmin: boolean;
   /** The provider (or the demo page being edited) has finished setup. */
   configured: boolean;
+  /**
+   * The owner's page could not be read (a database error), as opposed to
+   * there being none. Callers must not treat this as "no page yet".
+   */
+  storeLoadFailed: boolean;
   demoEdit?: DemoEditBanner;
   dashboardStore?: ModuleStore;
   providerEntitlements?: ProviderEntitlements;
@@ -35,6 +41,7 @@ export async function loadDashboard(): Promise<DashboardLoad> {
   const hasClaims = Boolean(claimsData?.claims);
 
   let configured = false;
+  let storeLoadFailed = false;
   let email: string | undefined;
   let dashboardStore: ModuleStore | undefined;
   let providerEntitlements: ProviderEntitlements | undefined;
@@ -95,16 +102,17 @@ export async function loadDashboard(): Promise<DashboardLoad> {
             // dashboard stays; the integrations card says it cannot tell.
             console.error("provider_entitlements_load_failed", {
               providerId: dashboardContext.providerId,
-              error: error instanceof Error ? error.message : String(error),
+              error: describeError(error),
             });
             providerEntitlements = undefined;
           }
         }
       } catch (error) {
         console.error("provider_dashboard_store_load_failed", {
-          error: error instanceof Error ? error.message : String(error),
+          error: describeError(error),
         });
         configured = false;
+        storeLoadFailed = true;
       }
     }
   }
@@ -114,6 +122,7 @@ export async function loadDashboard(): Promise<DashboardLoad> {
     email,
     isSuperAdmin,
     configured,
+    storeLoadFailed,
     demoEdit,
     dashboardStore,
     providerEntitlements,
