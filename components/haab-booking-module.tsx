@@ -473,6 +473,13 @@ export function HaabBookingModule({
   const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
+  // A refused save belongs to the section it happened in; moving to another
+  // section of the dashboard clears it, the way the in-app flow closes.
+  const [errorSection, setErrorSection] = useState<AdminTab>(currentSection);
+  if (errorSection !== currentSection) {
+    setErrorSection(currentSection);
+    if (setupError) setSetupError(null);
+  }
   const [setupPublished, setSetupPublished] = useState(false);
   const [isPersistingSetup, setIsPersistingSetup] = useState(false);
   const resumeGuestPublishAttemptedRef = useRef(false);

@@ -19,6 +19,11 @@ test.describe("services", () => {
     // Without a description the save is refused, and the dashboard says why.
     await editor.getByRole("button", { name: /^Add/ }).click();
     await expect(page.getByRole("alert").filter({ hasText: /description/ })).toBeVisible();
+    // The refusal belongs to that attempt: leaving the section clears it.
+    await page.getByRole("navigation").locator('a[href="/dashboard/bookings"]').first().click();
+    await page.getByRole("navigation").locator('a[href="/dashboard/services"]').first().click();
+    await expect(page.getByRole("alert").filter({ hasText: /description/ })).toHaveCount(0);
+    await page.locator("#service-editor-name").fill(name);
     await editor.getByLabel("Description").fill("A short test visit.");
     await editor.getByRole("button", { name: /^Add/ }).click();
     const row = page.getByRole("listitem").filter({ hasText: name });
