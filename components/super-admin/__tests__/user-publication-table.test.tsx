@@ -7,6 +7,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { UserPublicationTable } from "@/components/super-admin/UserPublicationTable";
+import { resolveEntitlements } from "@/lib/entitlements/resolve";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
 
 const users: ManagedUserSummary[] = [
@@ -82,7 +83,52 @@ describe("UserPublicationTable", () => {
     expect(html).toContain("new-user@example.com");
     expect(html).not.toContain("bsorianodev@gmail.com");
     expect(html).toContain("1 of 2 accounts");
-    expect(html).toMatch(/aria-pressed="true"[^>]*>Publishing off<|>Publishing off</);
+    expect(html).toMatch(/role="radio" aria-checked="true"[^>]*>Publishing off</);
+  });
+
+  it("counts each publishing state for the current search", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).toMatch(/>All<span[^>]*>2<\/span>/);
+    expect(html).toMatch(/>Publishing on<span[^>]*>1<\/span>/);
+    expect(html).toMatch(/>Publishing off<span[^>]*>1<\/span>/);
+  });
+
+  it("lays accounts out as a table on wide screens and as cards below", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).toContain("<table");
+    expect(html).toMatch(/<th[^>]*>Account<\/th>/);
+    expect(html).toMatch(/<th[^>]*>Publishing<\/th>/);
+    // Both layouts render; CSS shows one.
+    expect(html.match(/new-user@example.com/g)?.length).toBe(2);
+  });
+
+  it("links a live workflow's public page in a new tab", () => {
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={users} />);
+
+    expect(html).toMatch(/<a[^>]*href="\/professional\/haab-admin"[^>]*target="_blank"/);
+  });
+
+  it("opens premium access from a Features button once a provider exists", () => {
+    const withProvider: ManagedUserSummary = {
+      ...users[1],
+      provider: {
+        id: "00000000-0000-4000-8000-000000000001",
+        planTier: "free",
+        entitlements: resolveEntitlements({
+          providerId: "00000000-0000-4000-8000-000000000001",
+          planTier: "free",
+          overrides: [],
+          now: new Date("2026-08-15T12:00:00.000Z"),
+        }),
+      },
+    };
+    const html = renderToStaticMarkup(<UserPublicationTable initialUsers={[withProvider]} />);
+
+    expect(html).toMatch(/>Features<span class="sr-only"> for new-user@example.com<\/span><\/button>/);
+    expect(html).toContain("free plan");
+    expect(html).toContain("0 of 6 enabled");
   });
 
   it("says when a search matches nobody", () => {
