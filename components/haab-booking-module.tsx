@@ -6997,11 +6997,8 @@ export function HaabBookingModule({
     if (!vertical) {
       return renderWelcome();
     }
-    return (
-      <section className={cn(publicShellClass, "p-5 sm:p-8")}>
-        {renderSetupWizard()}
-      </section>
-    );
+    // Setup is part of the app, not the public page: no public glass shell.
+    return <div className="mx-auto w-full max-w-5xl">{renderSetupWizard()}</div>;
   }
 
   const saveBar =
