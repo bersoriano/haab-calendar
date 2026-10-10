@@ -34,6 +34,9 @@ export function AuthForm({
   const t = translations[lang].auth;
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
   const [intent, setIntent] = useState<AuthIntent>(initialIntent);
+  // Controlled: React resets a form's uncontrolled fields after its action
+  // runs, which would wipe the address on every refused attempt.
+  const [email, setEmail] = useState("");
   const showSignupPendingMessage = isPending && intent === "signup";
   const isPublishFlow = isGuestPublishReturnPath(nextPath);
 
@@ -64,6 +67,8 @@ export function AuthForm({
           placeholder={t.emailPlaceholder}
           required
           type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
         />
       </Field>
       <Field id="password" label={t.password}>
