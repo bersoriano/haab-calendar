@@ -30,7 +30,10 @@ export default async function PasswordResetRequestPage({
       body={t.resetBody}
       footer={
         <Link
-          className={cn("rounded-md font-semibold text-app-accent hover:text-app-accent-hover", focusRing)}
+          className={cn(
+            "inline-flex min-h-11 items-center rounded-md px-1 font-semibold text-app-accent hover:text-app-accent-hover sm:min-h-0",
+            focusRing,
+          )}
           href={`/login?lang=${language}`}
         >
           {t.resetBackToSignIn}

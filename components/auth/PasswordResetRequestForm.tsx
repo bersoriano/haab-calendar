@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type FormEvent } from "react";
 
 import { requestPasswordReset, type AuthFormState } from "@/app/login/actions";
 import { Alert, Button, Field, Input } from "@/components/app-ui";
@@ -14,9 +14,16 @@ export function PasswordResetRequestForm({ lang }: { lang: Lang }) {
   // Controlled: React resets uncontrolled fields after the action, which would
   // wipe a mistyped address the visitor only needs to correct.
   const [email, setEmail] = useState("");
+  // A password manager can fill the field before hydration, without an event
+  // React sees; adopt whatever is in it when the form is sent, so the re-render
+  // after a refusal does not clear it.
+  function adoptTypedEmail(event: FormEvent<HTMLFormElement>) {
+    const sent = new FormData(event.currentTarget).get("email");
+    if (typeof sent === "string") setEmail(sent);
+  }
 
   return (
-    <form className="grid gap-5" action={formAction}>
+    <form className="grid gap-5" action={formAction} onSubmit={adoptTypedEmail}>
       <input type="hidden" name="lang" value={lang} />
       <Field id="email" label={t.email}>
         <Input

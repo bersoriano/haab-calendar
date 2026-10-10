@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useActionState } from "react";
 
 import { authenticate, type AuthFormState } from "@/app/login/actions";
@@ -37,6 +37,13 @@ export function AuthForm({
   // Controlled: React resets a form's uncontrolled fields after its action
   // runs, which would wipe the address on every refused attempt.
   const [email, setEmail] = useState("");
+  // A password manager can fill the field before hydration, without an event
+  // React sees; adopt whatever is in it when the form is sent, so the re-render
+  // after a refusal does not clear it.
+  function adoptTypedEmail(event: FormEvent<HTMLFormElement>) {
+    const sent = new FormData(event.currentTarget).get("email");
+    if (typeof sent === "string") setEmail(sent);
+  }
   const showSignupPendingMessage = isPending && intent === "signup";
   const isPublishFlow = isGuestPublishReturnPath(nextPath);
 
@@ -56,7 +63,7 @@ export function AuthForm({
     : state;
 
   return (
-    <form className="mt-6 grid gap-5" action={formAction}>
+    <form className="mt-6 grid gap-5" action={formAction} onSubmit={adoptTypedEmail}>
       <input type="hidden" name="next" value={nextPath} />
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="intent" value={intent} />
