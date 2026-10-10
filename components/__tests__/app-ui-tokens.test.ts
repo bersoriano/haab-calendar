@@ -60,6 +60,7 @@ const MIGRATED = [
   "components/super-admin/SuperAdminShell.tsx",
   "components/super-admin/SuperAdminOverview.tsx",
   "components/super-admin/PendingDeletionCleanups.tsx",
+  "components/super-admin/DemoPagesPanel.tsx",
 ];
 
 const RAW_PALETTE =
