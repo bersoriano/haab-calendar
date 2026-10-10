@@ -215,7 +215,7 @@ export function BusinessTypeSwitch({
         })}
         confirmLabel={copy.publishLabel}
         cancelLabel={copy.cancel}
-        closeLabel={copy.cancel}
+        closeLabel={dashboardCopy[lang].closeDialog}
         tone="primary"
         pending={publishing}
         onConfirm={() => void replaceAndPublish()}

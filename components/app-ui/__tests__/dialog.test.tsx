@@ -59,6 +59,7 @@ describe("ConfirmDialog", () => {
         body="The client is emailed."
         confirmLabel="Cancel booking"
         cancelLabel="Keep booking"
+        closeLabel="Close"
         tone="danger"
         pending
         onConfirm={() => undefined}
@@ -82,6 +83,7 @@ describe("ConfirmDialog", () => {
         body="Se avisará al cliente."
         confirmLabel="Cancelar cita"
         cancelLabel="Mantener cita"
+        closeLabel="Cerrar"
         onConfirm={() => undefined}
         onCancel={() => undefined}
       />,
@@ -89,8 +91,16 @@ describe("ConfirmDialog", () => {
     const describedBy = html.match(/aria-describedby="([^"]+)"/)?.[1];
     expect(describedBy).toBeTruthy();
     expect(html).toMatch(new RegExp(`id="${describedBy}"[^>]*>Se avisará al cliente\\.`));
-    expect(html).toContain('aria-label="Mantener cita"');
-    expect(html).not.toContain('aria-label="Close"');
+    // The corner button and Cancel have different names.
+    expect(html).toContain('aria-label="Cerrar"');
+    expect(html).not.toContain('aria-label="Mantener cita"');
+  });
+
+  it("makes the caller name the close button", () => {
+    renderToStaticMarkup(
+      // @ts-expect-error closeLabel is required: a default copied the cancel label onto the close button.
+      <ConfirmDialog open title="Delete?" confirmLabel="Delete" cancelLabel="Cancel" onConfirm={() => undefined} onCancel={() => undefined} />,
+    );
   });
 
   it("can be an alert dialog for a decision that interrupts the task", () => {
@@ -101,6 +111,7 @@ describe("ConfirmDialog", () => {
         title="Replace your page?"
         confirmLabel="Replace"
         cancelLabel="Cancel"
+        closeLabel="Close"
         onConfirm={() => undefined}
         onCancel={() => undefined}
       />,
@@ -115,6 +126,7 @@ describe("ConfirmDialog", () => {
         title="Delete account?"
         confirmLabel="Delete permanently"
         cancelLabel="Cancel"
+        closeLabel="Close"
         confirmDisabled
         onConfirm={() => undefined}
         onCancel={() => undefined}
@@ -131,6 +143,7 @@ describe("ConfirmDialog", () => {
         title="Delete?"
         confirmLabel="Delete"
         cancelLabel="Cancel"
+        closeLabel="Close"
         error="Could not delete."
         onConfirm={() => undefined}
         onCancel={() => undefined}
