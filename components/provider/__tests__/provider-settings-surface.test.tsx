@@ -97,6 +97,8 @@ describe("ProviderSettingsSurface", () => {
     });
 
     expect(standalone).toContain(en.resetStandaloneSetup);
+    // Reset goes through a confirmation dialog, never straight to the handler.
+    expect(standalone).toMatch(/<dialog/);
     expect(render()).not.toContain(en.resetStandaloneSetup);
   });
 

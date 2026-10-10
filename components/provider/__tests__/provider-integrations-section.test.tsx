@@ -51,12 +51,11 @@ function render(props: Partial<Parameters<typeof ProviderIntegrationsSection>[0]
 }
 
 describe("ProviderIntegrationsSection", () => {
-  it("sits under other settings by default and takes a panel class as its own page", () => {
-    expect(render()).toContain("border-t");
+  it("is its own card and takes extra classes from the host", () => {
     const page = render({ className: "integrations-page-panel" });
 
+    expect(page).toMatch(/^<section[^>]*ring-app-border/);
     expect(page).toContain("integrations-page-panel");
-    expect(page).not.toContain("border-t border-[var(--line)] pt-6");
   });
 
   it("names the integration and explains what connecting would do", () => {

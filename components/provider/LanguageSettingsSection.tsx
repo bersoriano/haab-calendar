@@ -1,11 +1,9 @@
-import { adminFieldClass } from "@/components/provider/adminGlass";
+import { Field, LanguageToggle, Select } from "@/components/app-ui";
 import {
   bookingTranslations,
   fillTemplate,
 } from "@/components/booking/i18n/translations";
-import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /**
  * The language the owner's *clients* read on the public booking page. Lives
@@ -31,26 +29,25 @@ export function ClientLanguageField({
   const t = bookingTranslations[lang];
 
   return (
-    <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-      {t.admin.clientLanguageLabel}
-      <select
-        value={clientLanguage}
-        onChange={(event) => onChange(event.target.value as Lang)}
-        disabled={disabled}
-        className={cn("min-h-12", adminFieldClass)}
-      >
-        <option value="en">{t.language.english}</option>
-        <option value="es">{t.language.spanish}</option>
-      </select>
-      <span className="text-xs leading-5 text-[var(--muted)]">{t.admin.clientLanguageHint}</span>
+    <div className="grid gap-2">
+      <Field label={t.admin.clientLanguageLabel} description={t.admin.clientLanguageHint}>
+        <Select
+          value={clientLanguage}
+          onChange={(event) => onChange(event.target.value as Lang)}
+          disabled={disabled}
+        >
+          <option value="en">{t.language.english}</option>
+          <option value="es">{t.language.spanish}</option>
+        </Select>
+      </Field>
       {/* Said back plainly, because the owner cannot see their own public
           page while editing it. */}
-      <span className="text-xs font-semibold leading-5 text-[var(--ink)]">
+      <p className="text-sm font-medium text-app-fg">
         {fillTemplate(t.admin.clientsSeeNotice, {
           language: clientLanguage === "en" ? t.language.english : t.language.spanish,
         })}
-      </span>
-    </label>
+      </p>
+    </div>
   );
 }
 
@@ -68,9 +65,9 @@ export function DashboardLanguageField({
   const t = bookingTranslations[lang];
 
   return (
-    <div className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-      {t.admin.dashboardLanguageLabel}
-      <LanguageSwitcher lang={lang} onChange={onChange} tone="inset" className="justify-self-start" />
+    <div className="grid gap-2">
+      <p className="text-sm font-medium text-app-fg">{t.admin.dashboardLanguageLabel}</p>
+      <LanguageToggle lang={lang} onChange={onChange} className="justify-self-start" />
     </div>
   );
 }
@@ -93,7 +90,7 @@ export function LanguageSettingsSection({
   disabled?: boolean;
 }) {
   return (
-    <div className="mt-6 grid gap-6">
+    <div className="grid gap-6">
       <ClientLanguageField
         lang={lang}
         clientLanguage={clientLanguage}

@@ -2,14 +2,16 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { GoogleLogo } from "@phosphor-icons/react";
+
+import { Alert, Badge, Button, Card, CardHeader, ConfirmDialog } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { adminInsetClass } from "@/components/provider/adminGlass";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { GoogleCalendarCapabilities } from "@/components/provider/GoogleCalendarCapabilities";
-import { SectionTitle } from "@/components/ui";
+import type { StatusTone } from "@/lib/format";
 import { hasResolvedEntitlement, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { FeatureKey } from "@/lib/entitlements/catalog";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /**
  * What an integration's card is allowed to say about itself.
@@ -74,16 +76,18 @@ export function ProviderIntegrationsSection({
   integratedMode,
   demoEdit = false,
   lang = "en",
-  className = "mt-6 border-t border-[var(--line)] pt-6",
+  className,
 }: {
   entitlements?: ProviderEntitlements;
   integratedMode: boolean;
   demoEdit?: boolean;
-  /** Outer spacing: a divider under other settings, or a panel as its own page. */
+  /** Extra classes for the card, from the host. */
   className?: string;
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang].admin;
+  const shell = dashboardCopy[lang];
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
   const [connection, setConnection] = useState<ConnectionView | null>(null);
   const [calendars, setCalendars] = useState<CalendarOption[]>([]);
   const [busy, setBusy] = useState(false);
@@ -177,17 +181,17 @@ export function ProviderIntegrationsSection({
     publish_required: t.integrationPublishRequired,
   };
 
-  const statusTones: Record<IntegrationAvailability, string> = {
-    available: "bg-[var(--success-soft)] text-[var(--success-strong)]",
-    premium_required: "bg-[var(--warning-soft)] text-[var(--warning-strong)]",
-    unavailable: "bg-[var(--surface-highest)] text-[var(--ink)]",
-    publish_required: "bg-[var(--surface-highest)] text-[var(--ink)]",
+  const statusTones: Record<IntegrationAvailability, StatusTone> = {
+    available: "success",
+    premium_required: "warning",
+    unavailable: "neutral",
+    publish_required: "neutral",
   };
 
   return (
-    <section className={className}>
-      <SectionTitle title={t.integrationsTitle} body={t.integrationsBody} />
-      <ul className="mt-4 grid gap-3">
+    <Card as="section" className={className}>
+      <CardHeader title={t.integrationsTitle} description={t.integrationsBody} />
+      <ul role="list" className="divide-y divide-app-border">
         {INTEGRATIONS.map((integration) => {
           const availability = resolveIntegrationAvailability({
             entitlements,
@@ -196,85 +200,55 @@ export function ProviderIntegrationsSection({
           });
 
           return (
-            <li key={integration.key} className={cn(adminInsetClass, "p-5")}>
+            <li key={integration.key} className="grid gap-4 px-4 py-5 sm:px-6">
               <div className="flex flex-wrap items-center gap-2">
-                <h4 className="text-sm font-semibold text-[var(--ink)]">
-                  {t.googleCalendarName}
-                </h4>
+                <GoogleLogo aria-hidden="true" size={20} weight="bold" className="text-app-fg-secondary" />
+                <h3 className="text-sm font-semibold text-app-fg">{t.googleCalendarName}</h3>
                 {/* Text, not only colour: the status has to survive a screen
                     reader and a monochrome display. */}
-                <span
-                  className={cn(
-                    "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
-                    statusTones[availability],
-                  )}
-                >
-                  {statusLabels[availability]}
-                </span>
+                <Badge tone={statusTones[availability]}>{statusLabels[availability]}</Badge>
                 {availability === "available" ? (
-                  <span
-                    className={cn(
-                      "inline-flex rounded-full px-2 py-1 text-[11px] font-semibold",
-                      connection?.connected
-                        ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
-                        : "bg-[var(--surface-highest)] text-[var(--ink)]",
-                    )}
-                  >
+                  <Badge tone={connection?.connected ? "success" : "neutral"} dot>
                     {connection?.connected ? t.googleConnected : t.integrationNotConnected}
-                  </span>
+                  </Badge>
                 ) : null}
-                {demoEdit ? (
-                  <span className="inline-flex rounded-full bg-[var(--surface-highest)] px-2 py-1 text-[11px] font-semibold text-[var(--ink)]">
-                    {t.integrationReadOnly}
-                  </span>
-                ) : null}
+                {demoEdit ? <Badge tone="neutral">{t.integrationReadOnly}</Badge> : null}
               </div>
-              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                {t.googleCalendarDescription}
-              </p>
+              <p className="text-sm text-app-fg-muted">{t.googleCalendarDescription}</p>
               {availability === "available" && !demoEdit ? (
-                <div className="mt-3 grid gap-3">
+                <div className="grid gap-4">
                   {failed ? (
-                    <p className="text-xs font-medium text-[var(--danger-strong)]" role="alert">
+                    <Alert tone="danger" role="alert">
                       {t.googleConnectionFailed}
-                    </p>
+                    </Alert>
                   ) : null}
 
                   {!connection ? (
-                    <button
-                      type="button"
-                      // A real navigation, not a client-side route change: the
-                      // target is a Route Handler that redirects to Google, and
-                      // Link would try to render it as a page.
-                      onClick={() => {
-                        window.location.assign("/api/google/oauth/start");
-                      }}
-                      data-google-connect="/api/google/oauth/start"
-                      className="inline-flex min-h-11 w-fit items-center rounded-2xl bg-[var(--ink)] px-4 text-sm font-semibold text-white"
-                    >
-                      {t.googleConnect}
-                    </button>
+                    <div>
+                      <Button
+                        // A real navigation, not a client-side route change: the
+                        // target is a Route Handler that redirects to Google, and
+                        // Link would try to render it as a page.
+                        onClick={() => {
+                          window.location.assign("/api/google/oauth/start");
+                        }}
+                        data-google-connect="/api/google/oauth/start"
+                      >
+                        {t.googleConnect}
+                      </Button>
+                    </div>
                   ) : null}
 
                   {connection && !connection.connected && calendars.length > 0 ? (
                     <div className="grid gap-2">
-                      <p className="text-sm font-medium text-[var(--ink)]">
-                        {t.googleChooseCalendar}
-                      </p>
-                      <p className="text-xs leading-5 text-[var(--muted)]">
-                        {t.googleChooseCalendarHelp}
-                      </p>
-                      <ul className="grid gap-2">
+                      <p className="text-sm font-medium text-app-fg">{t.googleChooseCalendar}</p>
+                      <p className="text-sm text-app-fg-muted">{t.googleChooseCalendarHelp}</p>
+                      <ul role="list" className="flex flex-wrap gap-2">
                         {calendars.map((calendar) => (
                           <li key={calendar.id}>
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => chooseCalendar(calendar.id)}
-                              className="inline-flex min-h-11 items-center rounded-2xl border border-[var(--line)] bg-white px-4 text-sm font-semibold text-[var(--ink)] disabled:cursor-wait disabled:opacity-60"
-                            >
+                            <Button variant="secondary" disabled={busy} onClick={() => chooseCalendar(calendar.id)}>
                               {calendar.summary}
-                            </button>
+                            </Button>
                           </li>
                         ))}
                       </ul>
@@ -282,50 +256,52 @@ export function ProviderIntegrationsSection({
                   ) : null}
 
                   {connection?.connected ? (
-                    <div className="grid gap-2">
-                      <p className="text-sm text-[var(--muted)]">
+                    <div className="flex flex-col gap-3 rounded-lg bg-app-subtle p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-sm text-app-fg-muted">
                         {t.googleWritesTo}{" "}
-                        <span className="font-medium text-[var(--ink)]">
-                          {connection.calendarSummary}
-                        </span>
+                        <span className="font-medium text-app-fg">{connection.calendarSummary}</span>
                       </p>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={disconnect}
-                        className="inline-flex min-h-11 w-fit items-center rounded-2xl border border-[var(--danger-line)] bg-white px-4 text-sm font-semibold text-[var(--danger-strong)] disabled:cursor-wait disabled:opacity-60"
-                      >
+                      <Button variant="danger-plain" size="sm" disabled={busy} onClick={() => setConfirmDisconnect(true)}>
                         {t.googleDisconnect}
-                      </button>
+                      </Button>
                     </div>
                   ) : null}
 
                   {connection?.status === "needs_reauth" ? (
-                    <p className="text-xs font-medium text-[var(--warning-strong)]">
-                      {t.googleNeedsReauth}
-                    </p>
+                    <Alert tone="warning">{t.googleNeedsReauth}</Alert>
                   ) : null}
 
                   {/* Only once there is a calendar to read from and write to:
                       neither capability means anything before that. */}
-                  <GoogleCalendarCapabilities
-                    lang={lang}
-                    connected={Boolean(connection?.connected)}
-                  />
+                  <GoogleCalendarCapabilities lang={lang} connected={Boolean(connection?.connected)} />
                 </div>
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  className="mt-3 inline-flex min-h-11 items-center rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] px-4 text-sm font-semibold text-[var(--muted)] disabled:cursor-not-allowed"
-                >
-                  {t.comingSoon}
-                </button>
+                <div>
+                  <Button variant="secondary" disabled>
+                    {t.comingSoon}
+                  </Button>
+                </div>
               )}
             </li>
           );
         })}
       </ul>
-    </section>
+
+      <ConfirmDialog
+        open={confirmDisconnect}
+        title={shell.disconnectGoogleTitle}
+        body={shell.disconnectGoogleBody}
+        confirmLabel={t.googleDisconnect}
+        cancelLabel={shell.keepConnected}
+        closeLabel={shell.closeDialog}
+        tone="danger"
+        pending={busy}
+        onConfirm={async () => {
+          await disconnect();
+          setConfirmDisconnect(false);
+        }}
+        onCancel={() => setConfirmDisconnect(false)}
+      />
+    </Card>
   );
 }

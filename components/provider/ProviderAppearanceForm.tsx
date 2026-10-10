@@ -1,10 +1,9 @@
 "use client";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { adminFieldClass } from "@/components/provider/adminGlass";
+import { Field, Input } from "@/components/app-ui";
 import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
 import type { Lang, ProviderInfo } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /**
  * The parts of a provider that change how the public page looks rather than
@@ -25,26 +24,21 @@ export function ProviderAppearanceForm({
   const t = bookingTranslations[lang];
 
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-6">
       <HeaderImageUploader
         value={provider.headerImageUrl}
         onChange={(url) => onChange("headerImageUrl", url)}
         disabled={disabled}
         lang={lang}
       />
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.providerForm.heroText}
-        <input
+      <Field label={t.providerForm.heroText} description={t.providerForm.heroTextHint}>
+        <Input
           disabled={disabled}
           value={provider.heroText ?? ""}
           onChange={(event) => onChange("heroText", event.target.value)}
           placeholder={provider.businessName || t.providerForm.heroTextPlaceholder}
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
         />
-        <span className="text-xs leading-5 text-[var(--muted)]">
-          {t.providerForm.heroTextHint}
-        </span>
-      </label>
+      </Field>
     </div>
   );
 }

@@ -93,6 +93,21 @@ describe("ConfirmDialog", () => {
     expect(html).not.toContain('aria-label="Close"');
   });
 
+  it("can be an alert dialog for a decision that interrupts the task", () => {
+    const html = renderToStaticMarkup(
+      <ConfirmDialog
+        open
+        alert
+        title="Replace your page?"
+        confirmLabel="Replace"
+        cancelLabel="Cancel"
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+      />,
+    );
+    expect(html).toMatch(/^<dialog[^>]*role="alertdialog"/);
+  });
+
   it("shows a failure inside the dialog", () => {
     const html = renderToStaticMarkup(
       <ConfirmDialog

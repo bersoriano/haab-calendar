@@ -24,7 +24,7 @@ describe("DailyBookingLimitField", () => {
   it("is off by default, with no number to fill in", () => {
     const html = renderToStaticMarkup(<DailyBookingLimitField onChange={() => undefined} />);
     expect(html).toContain("Limit bookings per day");
-    expect(html).not.toContain("checked");
+    expect(html).not.toContain('checked=""');
     expect(html).not.toContain('type="number"');
   });
 
@@ -32,7 +32,7 @@ describe("DailyBookingLimitField", () => {
     const html = renderToStaticMarkup(
       <DailyBookingLimitField value={5} onChange={() => undefined} lang="es" />,
     );
-    expect(html).toContain("checked");
+    expect(html).toContain('checked=""');
     expect(html).toContain('value="5"');
     expect(html).toContain("Después de 5 reservas en un día");
   });

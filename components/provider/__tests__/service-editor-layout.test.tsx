@@ -45,7 +45,8 @@ describe("ServiceEditor layout", () => {
   });
 
   it("keeps the editor in view beside a long list on wide screens", () => {
-    expect(render(1)).toMatch(/id="service-editor"[^>]*class="[^"]*lg:sticky/);
+    const editor = render(1).match(/<[a-z]+[^>]*id="service-editor"[^>]*>/)?.[0] ?? "";
+    expect(editor).toContain("lg:sticky");
   });
 
   it("offers a jump to the editor on narrow screens once there is a list", () => {
@@ -55,4 +56,23 @@ describe("ServiceEditor layout", () => {
     expect(html).toMatch(/href="#service-editor"[^>]*class="[^"]*lg:hidden/);
     expect(html).toContain(copy.phrases.newServiceTitle);
   });
+
+  it("shows why a save or delete did not go through", () => {
+    const html = renderToStaticMarkup(
+      <ServiceEditor
+        services={[]}
+        serviceDraft={createBlankServiceDraft()}
+        onDraftChange={() => undefined}
+        editingServiceId={null}
+        onUpsert={() => undefined}
+        onReset={() => undefined}
+        onEdit={() => undefined}
+        onRemove={() => undefined}
+        provider={normalizeProvider({})}
+        error="Add a name and a description."
+      />,
+    );
+    expect(html).toMatch(/role="alert"[\s\S]*Add a name and a description\./);
+  });
 });
+

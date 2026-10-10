@@ -11,8 +11,11 @@ describe("ThemeSettingsSection", () => {
       );
 
       expect(html).toContain(label);
-      expect(html).toContain('role="radio" aria-checked="true"');
-      expect(html.match(/role="radio"/g)).toHaveLength(5);
+      // Native radios in one group: arrow keys move between themes.
+      expect(html).toContain('role="radiogroup"');
+      expect(html.match(/type="radio"/g)).toHaveLength(5);
+      expect(html.match(/checked=""/g)).toHaveLength(1);
+      expect(html).toMatch(/value="dark"[^>]*checked=""|checked=""[^>]*value="dark"/);
       expect(html).toMatch(/background:linear-gradient\(160deg,[^\"]+url\(&#x27;\/bkg2.jpg/);
     }
   });

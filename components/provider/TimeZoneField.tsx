@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { adminFieldClass } from "@/components/provider/adminGlass";
+import { Alert, Button, Field, Select } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   detectTimeZone,
@@ -12,7 +12,6 @@ import {
   isUnsetTimeZone,
 } from "@/lib/timezone";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /**
  * Choosing a time zone is the one setting a provider is likely to get wrong
@@ -65,15 +64,9 @@ export function TimeZoneField({
     !isUnsetTimeZone(detected);
 
   return (
-    <div className="grid gap-2">
-      <label className="grid gap-2 text-sm font-medium text-[var(--ink)]">
-        {t.timeZone}
-        <select
-          disabled={disabled}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-        >
+    <div className="grid gap-3">
+      <Field label={t.timeZone} description={t.timeZoneHint}>
+        <Select disabled={disabled} value={value} onChange={(event) => onChange(event.target.value)}>
           <option value="">{t.timeZoneUnset}</option>
           {groups.map((group) => (
             <optgroup key={group.region} label={group.label}>
@@ -84,63 +77,53 @@ export function TimeZoneField({
               ))}
             </optgroup>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={disabled || !detected}
           onClick={() => {
             onChange(detected);
             setDismissedPrompt(true);
           }}
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-lowest)] px-4 py-2 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-highest)] disabled:cursor-not-allowed disabled:opacity-45"
         >
           {t.timeZoneDetect}
-        </button>
+        </Button>
         {localTime ? (
-          <span className="text-xs leading-5 text-[var(--muted)]">
+          <span className="text-sm text-app-fg-muted">
             {t.timeZoneCurrentTime.replace("{time}", localTime)}
           </span>
         ) : null}
       </div>
 
-      <span className="text-xs leading-5 text-[var(--muted)]">{t.timeZoneHint}</span>
-
       {showPrompt ? (
-        <div
+        <Alert
+          tone="warning"
           role="status"
-          className="mt-1 rounded-2xl border border-[var(--warning-line)] bg-[var(--warning-soft)] px-4 py-3 text-sm text-[var(--warning-strong)]"
+          title={t.timeZonePromptTitle.replace("{zone}", formatTimeZoneChoice(detected, lang, now))}
+          actions={
+            <>
+              <Button
+                size="sm"
+                disabled={disabled}
+                onClick={() => {
+                  onChange(detected);
+                  setDismissedPrompt(true);
+                }}
+              >
+                {t.timeZonePromptAccept}
+              </Button>
+              <Button variant="plain" size="sm" onClick={() => setDismissedPrompt(true)}>
+                {t.timeZonePromptDismiss}
+              </Button>
+            </>
+          }
         >
-          <p className="font-medium">
-            {t.timeZonePromptTitle.replace(
-              "{zone}",
-              formatTimeZoneChoice(detected, lang, now),
-            )}
-          </p>
-          <p className="mt-1 leading-5">{t.timeZonePromptBody}</p>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                onChange(detected);
-                setDismissedPrompt(true);
-              }}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--warning-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-45"
-            >
-              {t.timeZonePromptAccept}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDismissedPrompt(true)}
-              className="text-sm font-semibold text-[var(--warning-strong)] hover:underline"
-            >
-              {t.timeZonePromptDismiss}
-            </button>
-          </div>
-        </div>
+          {t.timeZonePromptBody}
+        </Alert>
       ) : null}
     </div>
   );

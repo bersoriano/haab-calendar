@@ -151,7 +151,6 @@ import {
   adminInsetClass,
   adminPanelClass,
 } from "@/components/provider/adminGlass";
-import { ProviderAppearanceForm } from "@/components/provider/ProviderAppearanceForm";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
@@ -169,11 +168,8 @@ import { getBookingListView, type BookingListSort, type BookingListView } from "
 import { getBookingRetentionPolicy } from "@/lib/booking-retention";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
-import { LogoImageUploader } from "@/components/provider/HeaderImageUploader";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
-import { ClientLanguageField } from "@/components/provider/LanguageSettingsSection";
-import { ThemeSettingsSection } from "@/components/provider/ThemeSettingsSection";
 import { VerticalPicker } from "@/components/provider/VerticalPicker";
 import { getVerticalPreset, getVerticals } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -199,6 +195,7 @@ import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScannerDialog } from "@/components/provider/AppointmentScannerDialog";
 import { AdminCalendar } from "@/components/provider/AdminCalendar";
+import { AppearanceSection } from "@/components/provider/AppearanceSection";
 import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
 import { RescheduleBookingDialog } from "@/components/provider/RescheduleBookingDialog";
 import { ToastOnChange } from "@/components/provider/ToastOnChange";
@@ -476,6 +473,13 @@ export function HaabBookingModule({
   const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
+  // A refused save belongs to the section it happened in; moving to another
+  // section of the dashboard clears it, the way the in-app flow closes.
+  const [errorSection, setErrorSection] = useState<AdminTab>(currentSection);
+  if (errorSection !== currentSection) {
+    setErrorSection(currentSection);
+    if (setupError) setSetupError(null);
+  }
   const [setupPublished, setSetupPublished] = useState(false);
   const [isPersistingSetup, setIsPersistingSetup] = useState(false);
   const resumeGuestPublishAttemptedRef = useRef(false);
@@ -3914,7 +3918,8 @@ export function HaabBookingModule({
     );
   }
 
-  function renderServices() {
+  /** The wizard shows setup errors itself; the dashboard shows them here. */
+  function renderServices({ showError = false }: { showError?: boolean } = {}) {
     return (
       <ServiceEditor
         services={services}
@@ -3931,6 +3936,7 @@ export function HaabBookingModule({
         provider={provider}
         vertical={vertical}
         lang={lang}
+        error={showError ? setupError : null}
       />
     );
   }
@@ -3941,48 +3947,13 @@ export function HaabBookingModule({
    */
   function renderAppearance() {
     return (
-      <div className="grid items-start gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className={cn(adminPanelClass, "p-6")}>
-          {/* In the shell the page header already says what this section is for. */}
-          <SectionTitle
-            title={t.admin.appearanceTitle}
-            body={chrome === "module" ? t.admin.appearanceBody : undefined}
-          />
-          <div className="mt-6">
-            <LogoImageUploader
-              value={provider.logoImageUrl}
-              onChange={(url) => updateProvider("logoImageUrl", url)}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
-          <div className="mt-6 border-t border-[var(--line)] pt-6">
-            <ProviderAppearanceForm
-              provider={provider}
-              onChange={updateProvider}
-              disabled={isSavingAdmin}
-              lang={lang}
-            />
-          </div>
-        </div>
-
-        <div className={cn(adminPanelClass, "p-6")}>
-          <ThemeSettingsSection
-            lang={lang}
-            theme={provider.publicTheme ?? "default"}
-            onThemeChange={(next) => updateProvider("publicTheme", next)}
-            disabled={isSavingAdmin}
-          />
-          <div className="mt-6">
-            <ClientLanguageField
-              lang={lang}
-              clientLanguage={provider.language ?? "en"}
-              onChange={(next) => updateProvider("language", next)}
-              disabled={isSavingAdmin}
-            />
-          </div>
-        </div>
-      </div>
+      <AppearanceSection
+        provider={provider}
+        onChange={updateProvider}
+        disabled={isSavingAdmin}
+        lang={lang}
+        chrome={chrome}
+      />
     );
   }
 
@@ -3995,7 +3966,7 @@ export function HaabBookingModule({
       case "calendar":
         return renderAdminCalendar();
       case "services":
-        return renderServices();
+        return renderServices({ showError: true });
       case "appearance":
         return renderAppearance();
       case "availability":
@@ -4027,7 +3998,6 @@ export function HaabBookingModule({
             entitlements={providerEntitlements}
             integratedMode={integratedMode}
             lang={lang}
-            className={cn(adminPanelClass, "p-6")}
           />
         );
       case "business-type":

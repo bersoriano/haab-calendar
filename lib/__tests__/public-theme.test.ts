@@ -5,8 +5,7 @@ import {
   PUBLIC_THEMES,
   getPublicThemeStyle,
   isDarkPublicTheme,
-  normalizePublicTheme,
-} from "@/lib/public-theme";
+  normalizePublicTheme, getPublicThemeSwatch } from "@/lib/public-theme";
 import { normalizeProvider } from "@/lib/store";
 
 function rgb(value: string): [number, number, number, number] {
@@ -152,5 +151,16 @@ describe("the provider normalizer", () => {
     expect(
       normalizeProvider({ publicTheme: "hotpink" as never }).publicTheme,
     ).toBe(DEFAULT_PUBLIC_THEME);
+  });
+});
+
+describe("getPublicThemeSwatch", () => {
+  it("shows the classic palette for the default theme, which overrides nothing", () => {
+    expect(getPublicThemeSwatch("default")).toEqual(["#005bbf", "#1a73e8", "#00bfa5"]);
+  });
+
+  it("uses a theme's own primary, accent and action colors", () => {
+    const dark = getPublicThemeStyle("dark").tokens;
+    expect(getPublicThemeSwatch("dark")).toEqual([dark["--primary"], dark["--accent"], dark["--action-teal"] ?? "#00bfa5"]);
   });
 });

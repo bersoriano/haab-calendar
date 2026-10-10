@@ -49,9 +49,8 @@ describe("ChangeBusinessTypeDialog", () => {
   it("is a labelled modal dialog", () => {
     const html = render();
 
-    expect(html).toContain('role="dialog"');
-    expect(html).toContain('aria-modal="true"');
-    expect(html).toMatch(/aria-labelledby="[^"]+"/);
+    // A native modal <dialog>: showModal() makes it modal, so no aria-modal.
+    expect(html).toMatch(/^<dialog[^>]*aria-labelledby="[^"]+"/);
   });
 
   it("offers every other business type, not the current one", () => {

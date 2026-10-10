@@ -35,6 +35,18 @@ export type DashboardShellCopy = {
   closeDialog: string;
   /** Read after a calendar day's "+N" overflow count. */
   moreBookings: string;
+  /** "{name}" is the service's name. */
+  deleteServiceTitle: string;
+  deleteServiceBody: string;
+  keep: string;
+  disconnectGoogleTitle: string;
+  disconnectGoogleBody: string;
+  keepConnected: string;
+  resetSetupTitle: string;
+  resetSetupBody: string;
+  keepSetup: string;
+  /** A weekday with no opening hours. */
+  closedDay: string;
   viewPage: string;
   openMenu: string;
   closeMenu: string;
@@ -177,6 +189,18 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     viewAll: "View all",
     closeDialog: "Close",
     moreBookings: "more",
+    deleteServiceTitle: "Delete “{name}”?",
+    deleteServiceBody: "Clients can no longer book it. Bookings already made stay as they are.",
+    keep: "Keep",
+    disconnectGoogleTitle: "Disconnect Google Calendar?",
+    disconnectGoogleBody:
+      "New and changed bookings stop syncing to your calendar. You can connect it again at any time.",
+    keepConnected: "Keep connected",
+    resetSetupTitle: "Start your setup over?",
+    resetSetupBody:
+      "Your profile, services and availability on this device are cleared and the setup starts again. This cannot be undone.",
+    keepSetup: "Keep my setup",
+    closedDay: "Closed",
     viewPage: "View page",
     openMenu: "Open menu",
     closeMenu: "Close menu",
@@ -342,6 +366,18 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     viewAll: "Ver todo",
     closeDialog: "Cerrar",
     moreBookings: "más",
+    deleteServiceTitle: "¿Eliminar «{name}»?",
+    deleteServiceBody: "Ya no se podrá reservar. Las reservas ya hechas se conservan.",
+    keep: "Conservar",
+    disconnectGoogleTitle: "¿Desconectar Google Calendar?",
+    disconnectGoogleBody:
+      "Las reservas nuevas o modificadas dejarán de sincronizarse con su calendario. Puede volver a conectarlo cuando quiera.",
+    keepConnected: "Mantener conectado",
+    resetSetupTitle: "¿Empezar la configuración de nuevo?",
+    resetSetupBody:
+      "Se borran su perfil, servicios y disponibilidad en este dispositivo y la configuración empieza de nuevo. No se puede deshacer.",
+    keepSetup: "Conservar mi configuración",
+    closedDay: "Cerrado",
     viewPage: "Ver página",
     openMenu: "Abrir menú",
     closeMenu: "Cerrar menú",

@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { Alert, Badge, Checkbox, Field, Switch } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import type { Lang } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
 /**
  * The two capabilities a provider switches on after connecting.
@@ -151,79 +151,62 @@ export function GoogleCalendarCapabilities({
   const atLimit = selected.size >= capabilities.maxBusySources;
 
   return (
-    <div className="mt-4 grid gap-5 border-t border-[var(--line)] pt-4">
+    <div className="grid gap-5 border-t border-app-border pt-4">
       {failed ? (
-        <p className="text-xs font-medium text-[var(--danger-strong)]" role="alert">
+        <Alert tone="danger" role="alert">
           {failed}
-        </p>
+        </Alert>
       ) : null}
 
       {/* ── Busy blocking ─────────────────────────────────────────────── */}
       {capabilities.busyBlockingAvailable ? (
-        <section className="grid gap-2">
-          <h5 className="text-sm font-semibold text-[var(--ink)]">{t.googleBusyTitle}</h5>
-          <p className="text-xs leading-5 text-[var(--muted)]">{t.googleBusyBody}</p>
+        <section className="grid gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-app-fg">{t.googleBusyTitle}</h4>
+            <p className="mt-1 text-sm text-app-fg-muted">{t.googleBusyBody}</p>
+          </div>
 
-          <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
-            <input
-              type="checkbox"
+          <Field label={t.googleBusyEnable} inline>
+            <Switch
               disabled={busy}
               checked={capabilities.busyBlockingEnabled}
-              onChange={(event) =>
-                void save({ busyBlockingEnabled: event.target.checked })
-              }
-              className="size-4"
+              onChange={(event) => void save({ busyBlockingEnabled: event.target.checked })}
             />
-            {t.googleBusyEnable}
-          </label>
+          </Field>
 
           {capabilities.busyBlockingEnabled ? (
-            <div className="mt-1 grid gap-2">
-              <p className="text-sm font-medium text-[var(--ink)]">{t.googleBusyChoose}</p>
-              <p className="text-xs leading-5 text-[var(--muted)]">
-                {t.googleBusyChooseHelp}
-              </p>
+            <div className="grid gap-2 rounded-lg bg-app-subtle p-4">
+              <p className="text-sm font-medium text-app-fg">{t.googleBusyChoose}</p>
+              <p className="text-sm text-app-fg-muted">{t.googleBusyChooseHelp}</p>
 
               {calendars.length === 0 ? (
-                <p className="text-xs text-[var(--muted)]">{t.googleBusyNoCalendars}</p>
+                <p className="text-sm text-app-fg-muted">{t.googleBusyNoCalendars}</p>
               ) : (
-                <ul className="grid gap-1">
+                <ul role="list" className="grid gap-1">
                   {calendars.map((calendar) => {
                     const checked = selected.has(calendar.id);
-                    const source = capabilities.busySources.find(
-                      (entry) => entry.calendarId === calendar.id,
-                    );
+                    const source = capabilities.busySources.find((entry) => entry.calendarId === calendar.id);
 
                     return (
-                      <li key={calendar.id}>
-                        <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
-                          <input
-                            type="checkbox"
+                      <li key={calendar.id} className="flex flex-wrap items-center gap-2">
+                        <Field label={calendar.summary} inline>
+                          <Checkbox
                             // At the cap, the only allowed change is removal.
                             disabled={busy || (!checked && atLimit)}
                             checked={checked}
                             onChange={() => toggleCalendar(calendar.id)}
-                            className="size-4"
                           />
-                          <span>{calendar.summary}</span>
-                          {source?.lastErrorCode ? (
-                            <span className="text-xs font-medium text-[var(--warning-strong)]">
-                              {t.googleBusySourceFailed}
-                            </span>
-                          ) : null}
-                        </label>
+                        </Field>
+                        {source?.lastErrorCode ? (
+                          <Badge tone="warning">{t.googleBusySourceFailed}</Badge>
+                        ) : null}
                       </li>
                     );
                   })}
                 </ul>
               )}
 
-              <p
-                className={cn(
-                  "text-xs",
-                  atLimit ? "font-medium text-[var(--warning-strong)]" : "text-[var(--muted)]",
-                )}
-              >
+              <p className={atLimit ? "text-sm font-medium text-app-warning-fg" : "text-sm text-app-fg-muted"}>
                 {t.googleBusyLimit}
               </p>
             </div>
@@ -233,39 +216,28 @@ export function GoogleCalendarCapabilities({
 
       {/* ── Two-way ───────────────────────────────────────────────────── */}
       {capabilities.twoWayAvailable ? (
-        <section className="grid gap-2">
-          <h5 className="text-sm font-semibold text-[var(--ink)]">{t.googleTwoWayTitle}</h5>
-          <p className="text-xs leading-5 text-[var(--muted)]">{t.googleTwoWayBody}</p>
+        <section className="grid gap-3">
+          <div>
+            <h4 className="text-sm font-semibold text-app-fg">{t.googleTwoWayTitle}</h4>
+            <p className="mt-1 text-sm text-app-fg-muted">{t.googleTwoWayBody}</p>
+          </div>
 
-          <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
-            <input
-              type="checkbox"
+          <Field label={t.googleTwoWayEnable} inline>
+            <Switch
               disabled={busy}
               checked={capabilities.twoWayEnabled}
               onChange={(event) => void save({ twoWayEnabled: event.target.checked })}
-              className="size-4"
             />
-            {t.googleTwoWayEnable}
-          </label>
+          </Field>
 
           {capabilities.twoWayEnabled ? (
-            <div className="grid gap-1 pl-6">
-              <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
-                <input
-                  type="checkbox"
-                  disabled={busy}
-                  checked={capabilities.deletionCancelsBooking}
-                  onChange={(event) =>
-                    void save({ deletionCancelsBooking: event.target.checked })
-                  }
-                  className="size-4"
-                />
-                {t.googleTwoWayDeletion}
-              </label>
-              <p className="text-xs leading-5 text-[var(--muted)]">
-                {t.googleTwoWayDeletionHelp}
-              </p>
-            </div>
+            <Field label={t.googleTwoWayDeletion} description={t.googleTwoWayDeletionHelp} inline className="pl-14">
+              <Switch
+                disabled={busy}
+                checked={capabilities.deletionCancelsBooking}
+                onChange={(event) => void save({ deletionCancelsBooking: event.target.checked })}
+              />
+            </Field>
           ) : null}
         </section>
       ) : null}
@@ -273,27 +245,24 @@ export function GoogleCalendarCapabilities({
       {/* ── Conflicts ─────────────────────────────────────────────────── */}
       {capabilities.twoWayEnabled ? (
         <section className="grid gap-2">
-          <h5 className="text-sm font-semibold text-[var(--ink)]">
-            {t.googleConflictsTitle}
-          </h5>
-          <p className="text-xs leading-5 text-[var(--muted)]">{t.googleConflictsBody}</p>
+          <div>
+            <h4 className="text-sm font-semibold text-app-fg">{t.googleConflictsTitle}</h4>
+            <p className="mt-1 text-sm text-app-fg-muted">{t.googleConflictsBody}</p>
+          </div>
 
           {capabilities.conflicts.length === 0 ? (
-            <p className="text-xs text-[var(--muted)]">{t.googleConflictsNone}</p>
+            <p className="text-sm text-app-fg-muted">{t.googleConflictsNone}</p>
           ) : (
-            <ul className="grid gap-1">
+            <ul role="list" className="divide-y divide-app-border rounded-lg ring-1 ring-app-border">
               {capabilities.conflicts.map((conflict) => (
-                <li
-                  key={conflict.id}
-                  className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]"
-                >
-                  <span className="font-medium text-[var(--ink)]">
+                <li key={conflict.id} className="flex flex-wrap items-center gap-2 px-3 py-2 text-sm text-app-fg-muted">
+                  <span className="font-medium text-app-fg tabular-nums">
                     {conflict.bookingDate ?? ""}
                     {conflict.bookingStartTime ? ` ${conflict.bookingStartTime}` : ""}
                   </span>
                   <span>{conflictLabel(conflict.conflictType, t)}</span>
                   {conflict.status === "repairing" ? (
-                    <span className="text-[var(--warning-strong)]">{t.googleConflictRepairing}</span>
+                    <Badge tone="warning">{t.googleConflictRepairing}</Badge>
                   ) : null}
                 </li>
               ))}

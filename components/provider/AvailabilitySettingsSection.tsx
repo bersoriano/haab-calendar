@@ -4,9 +4,7 @@ import type { Lang, VerticalId, WeeklyAvailability, WeekdayKey } from "@/lib/typ
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { DailyBookingLimitField } from "@/components/provider/DailyBookingLimitField";
-import { adminInsetClass, adminPanelClass } from "@/components/provider/adminGlass";
-import { ActionButton, SectionTitle } from "@/components/ui";
-import { cn } from "@/lib/utils";
+import { Button, Card, CardBody, CardHeader } from "@/components/app-ui";
 
 export function AvailabilitySettingsSection({
   vertical,
@@ -32,45 +30,34 @@ export function AvailabilitySettingsSection({
 
   if (vertical === "events") {
     return (
-      <div className={cn(adminPanelClass, "p-6")}>
-        <SectionTitle title={t.eventSchedulingTitle} body={t.eventSchedulingBody} />
-        <div className={cn("mt-6", adminInsetClass, "p-5")}>
-          <p className="text-sm leading-6 text-[var(--muted)]">
-            {t.eventSchedulingHint}
-          </p>
-          <div className="mt-4">
-            <ActionButton
-              tone="primary"
-              disabled={disabled}
-              onClick={onManageEvents}
-            >
+      <Card as="section">
+        <CardHeader title={t.eventSchedulingTitle} description={t.eventSchedulingBody} />
+        <CardBody className="grid gap-4">
+          <p className="text-sm text-app-fg-muted">{t.eventSchedulingHint}</p>
+          <div>
+            <Button disabled={disabled} onClick={onManageEvents}>
               {t.manageEvents}
-            </ActionButton>
+            </Button>
           </div>
-        </div>
-      </div>
+        </CardBody>
+      </Card>
     );
   }
 
   return (
-    <div className={cn(adminPanelClass, "p-6")}>
-      <SectionTitle title={t.weeklyAvailability} />
-      <div className="mt-6">
-        <AvailabilityEditor
-          availability={availability}
-          onChange={onChange}
-          disabled={disabled}
-          lang={lang}
-        />
-      </div>
-      {onMaxBookingsPerDayChange ? (
-        <DailyBookingLimitField
-          value={maxBookingsPerDay}
-          onChange={onMaxBookingsPerDayChange}
-          disabled={disabled}
-          lang={lang}
-        />
-      ) : null}
-    </div>
+    <Card as="section">
+      <CardHeader title={t.weeklyAvailability} />
+      <CardBody>
+        <AvailabilityEditor availability={availability} onChange={onChange} disabled={disabled} lang={lang} />
+        {onMaxBookingsPerDayChange ? (
+          <DailyBookingLimitField
+            value={maxBookingsPerDay}
+            onChange={onMaxBookingsPerDayChange}
+            disabled={disabled}
+            lang={lang}
+          />
+        ) : null}
+      </CardBody>
+    </Card>
   );
 }

@@ -10,6 +10,7 @@ export function Card({
   ...rest
 }: {
   as?: "div" | "section" | "article";
+  id?: string;
   className?: string;
   children: ReactNode;
   "aria-labelledby"?: string;

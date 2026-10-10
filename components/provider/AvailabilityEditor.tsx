@@ -1,13 +1,19 @@
 "use client";
 
-import type { AvailabilityBlock, DayAvailability, Lang, WeekdayKey } from "@/lib/types";
-import { WEEKDAY_KEYS } from "@/lib/constants";
-import { cn } from "@/lib/utils";
-import { adminFieldClass, adminInsetClass } from "@/components/provider/adminGlass";
+import { Plus, Trash } from "@phosphor-icons/react";
+
+import { Button, Field, IconButton, Input, Switch } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { WEEKDAY_KEYS } from "@/lib/constants";
+import type { AvailabilityBlock, DayAvailability, Lang, WeekdayKey } from "@/lib/types";
 
 const DEFAULT_BLOCK = { startTime: "14:00", endTime: "16:00" };
 
+/**
+ * Opening hours per weekday, with optional breaks. A closed day collapses to
+ * one muted line; its hours are kept and come back when it is switched on.
+ */
 export function AvailabilityEditor({
   availability,
   onChange,
@@ -20,6 +26,7 @@ export function AvailabilityEditor({
   lang?: Lang;
 }) {
   const t = bookingTranslations[lang];
+  const shell = dashboardCopy[lang];
 
   function addBlockedWindow(day: WeekdayKey) {
     onChange(day, {
@@ -27,11 +34,7 @@ export function AvailabilityEditor({
     });
   }
 
-  function updateBlockedWindow(
-    day: WeekdayKey,
-    index: number,
-    patch: Partial<AvailabilityBlock>,
-  ) {
+  function updateBlockedWindow(day: WeekdayKey, index: number, patch: Partial<AvailabilityBlock>) {
     const next = [...(availability[day].blockedWindows ?? [])];
     next[index] = { ...next[index], ...patch };
     onChange(day, { blockedWindows: next });
@@ -46,116 +49,99 @@ export function AvailabilityEditor({
   }
 
   return (
-    <div className="grid gap-3">
+    <ul role="list" className="divide-y divide-app-border">
       {WEEKDAY_KEYS.map((day) => {
         const blockedWindows = availability[day].blockedWindows ?? [];
-        const dayDisabled = disabled || !availability[day].enabled;
+        const open = availability[day].enabled;
+        const dayDisabled = disabled || !open;
 
         return (
-          <div
-            key={day}
-            className={cn(adminInsetClass, "grid gap-4 p-4")}
-          >
-            <div className="grid gap-3 sm:grid-cols-[1.1fr_0.8fr_0.8fr]">
-              <label className="flex items-center gap-3 text-sm font-semibold text-[var(--ink)]">
-                <input
+          <li key={day} className="grid gap-4 py-4 first:pt-0 last:pb-0">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-[10rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-end">
+              <Field label={t.admin.weekdays[day]} inline className="col-span-2 sm:col-span-1 sm:pb-2">
+                <Switch
                   disabled={disabled}
-                  checked={availability[day].enabled}
+                  checked={open}
                   onChange={(event) => onChange(day, { enabled: event.target.checked })}
-                  type="checkbox"
-                  className="h-5 w-5 rounded border-[var(--line)] text-[var(--accent)] disabled:opacity-45"
                 />
-                {t.admin.weekdays[day]}
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                {t.admin.availabilityStart}
-                <input
-                  disabled={dayDisabled}
-                  value={availability[day].startTime}
-                  onChange={(event) => onChange(day, { startTime: event.target.value })}
-                  type="time"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                />
-              </label>
-              <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                {t.admin.availabilityEnd}
-                <input
-                  disabled={dayDisabled}
-                  value={availability[day].endTime}
-                  onChange={(event) => onChange(day, { endTime: event.target.value })}
-                  type="time"
-                  className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                />
-              </label>
+              </Field>
+              {open ? (
+                <>
+                  <Field label={t.admin.availabilityStart}>
+                    <Input
+                      disabled={dayDisabled}
+                      value={availability[day].startTime}
+                      onChange={(event) => onChange(day, { startTime: event.target.value })}
+                      type="time"
+                    />
+                  </Field>
+                  <Field label={t.admin.availabilityEnd}>
+                    <Input
+                      disabled={dayDisabled}
+                      value={availability[day].endTime}
+                      onChange={(event) => onChange(day, { endTime: event.target.value })}
+                      type="time"
+                    />
+                  </Field>
+                </>
+              ) : (
+                <p className="col-span-2 text-sm text-app-fg-muted sm:pb-2">{shell.closedDay}</p>
+              )}
             </div>
 
-            <div className="border-t border-[var(--line)] pt-4">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)]">
-                    {t.admin.blockedTimes}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--muted)]">
-                    {t.admin.blockedTimesHint}
-                  </p>
+            {open ? (
+              <div className="grid gap-3 rounded-lg bg-app-subtle p-3 sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-app-fg">{t.admin.blockedTimes}</p>
+                    <p className="mt-0.5 text-sm text-app-fg-muted">{t.admin.blockedTimesHint}</p>
+                  </div>
+                  <Button
+                    variant="soft"
+                    size="sm"
+                    disabled={dayDisabled}
+                    leadingIcon={<Plus aria-hidden="true" size={16} />}
+                    onClick={() => addBlockedWindow(day)}
+                  >
+                    {t.admin.addBlock}
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  disabled={dayDisabled}
-                  onClick={() => addBlockedWindow(day)}
-                  className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_14px_26px_rgba(25,28,29,0.05)] transition-colors hover:text-[var(--primary-container)] disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  {t.admin.addBlock}
-                </button>
-              </div>
 
-              {blockedWindows.length > 0 ? (
-                <div className="mt-4 grid gap-3">
-                  {blockedWindows.map((block, index) => (
-                    <div
-                      key={`${day}-blocked-window-${index}`}
-                      className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]"
-                    >
-                      <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                        {t.admin.blockedFrom}
-                        <input
-                          disabled={dayDisabled}
-                          value={block.startTime}
-                          onChange={(event) =>
-                            updateBlockedWindow(day, index, { startTime: event.target.value })
-                          }
-                          type="time"
-                          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                        />
-                      </label>
-                      <label className="grid gap-2 text-sm font-medium text-[var(--muted)]">
-                        {t.admin.blockedTo}
-                        <input
-                          disabled={dayDisabled}
-                          value={block.endTime}
-                          onChange={(event) =>
-                            updateBlockedWindow(day, index, { endTime: event.target.value })
-                          }
-                          type="time"
-                          className={cn("min-h-12", adminFieldClass, "disabled:opacity-45")}
-                        />
-                      </label>
-                      <button
-                        type="button"
+                {blockedWindows.map((block, index) => (
+                  <div
+                    key={`${day}-blocked-window-${index}`}
+                    className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-3"
+                  >
+                    <Field label={t.admin.blockedFrom}>
+                      <Input
                         disabled={dayDisabled}
-                        onClick={() => removeBlockedWindow(day, index)}
-                        className="inline-flex min-h-12 items-center justify-center self-end rounded-xl bg-transparent px-3 text-sm font-semibold text-[var(--danger-strong)] transition-colors hover:bg-[var(--danger-soft)] disabled:cursor-not-allowed disabled:opacity-45"
-                      >
-                        {t.admin.removeBlock}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </div>
+                        value={block.startTime}
+                        onChange={(event) => updateBlockedWindow(day, index, { startTime: event.target.value })}
+                        type="time"
+                      />
+                    </Field>
+                    <Field label={t.admin.blockedTo}>
+                      <Input
+                        disabled={dayDisabled}
+                        value={block.endTime}
+                        onChange={(event) => updateBlockedWindow(day, index, { endTime: event.target.value })}
+                        type="time"
+                      />
+                    </Field>
+                    <IconButton
+                      label={t.admin.removeBlock}
+                      icon={<Trash aria-hidden="true" size={18} />}
+                      variant="danger-plain"
+                      disabled={dayDisabled}
+                      onClick={() => removeBlockedWindow(day, index)}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
