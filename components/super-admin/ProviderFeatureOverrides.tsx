@@ -1,8 +1,8 @@
 "use client";
 
-import { CaretDown, SlidersHorizontal } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
+import { Alert, Badge, Button, Dialog, Field, Input } from "@/components/app-ui";
 import {
   FEATURE_KEYS,
   FEATURE_LABELS,
@@ -14,8 +14,14 @@ import {
   buildSetOverrideRequest,
   OverrideRequestError,
   type OverrideRequest,
+  type OverrideRequestField,
 } from "@/lib/entitlements/override-request";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
+
+type OverrideAction = "grant" | "revoke" | "clear";
+
+/** A failed change, attached to the field it is about when there is one. */
+type EditorError = { field?: OverrideRequestField; message: string };
 
 function formatUtcDate(value?: string) {
   if (!value) return "";
@@ -27,14 +33,14 @@ function formatUtcDate(value?: string) {
   }).format(new Date(value));
 }
 
-/**
- * Per-provider feature state, and the controls to change it.
- *
- * Everything shown here is resolved server-side and re-read after each write,
- * so the panel reports what the database decided rather than what the click
- * implied. A reason is mandatory in the form because it is mandatory in the
- * audit trail.
- */
+function enabledCount(snapshot: ProviderEntitlements) {
+  return FEATURE_KEYS.filter((featureKey) => snapshot.features[featureKey].enabled).length;
+}
+
+function listFeatures(keys: readonly FeatureKey[]) {
+  return keys.map((key) => FEATURE_LABELS[key]).join(" and ");
+}
+
 /**
  * The prerequisites that would keep a grant from taking effect right now.
  *
@@ -50,35 +56,178 @@ export function blockingPrerequisites(
   );
 }
 
+/** The accounts row's one line about premium access. */
+export function FeatureAccessSummary({ entitlements }: { entitlements: ProviderEntitlements }) {
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      <Badge>{entitlements.planTier} plan</Badge>
+      <span className="text-xs text-app-fg-muted">
+        {enabledCount(entitlements)} of {FEATURE_KEYS.length} features on
+      </span>
+    </span>
+  );
+}
+
+/**
+ * One feature's open editor. Presentational, so its states — a refused
+ * reason, a blocked grant — can be tested without clicking.
+ */
+export function FeatureEditor({
+  ownerEmail,
+  reason,
+  expiresAt,
+  missing,
+  overridden,
+  pendingAction,
+  error,
+  onReasonChange,
+  onExpiresAtChange,
+  onSubmit,
+  onCancel,
+}: {
+  ownerEmail: string;
+  reason: string;
+  expiresAt: string;
+  /** Prerequisites a grant would still need. */
+  missing: readonly FeatureKey[];
+  overridden: boolean;
+  pendingAction?: OverrideAction;
+  error?: EditorError;
+  onReasonChange: (value: string) => void;
+  onExpiresAtChange: (value: string) => void;
+  onSubmit: (action: OverrideAction) => void;
+  onCancel: () => void;
+}) {
+  const busy = pendingAction !== undefined;
+  const fieldError = (field: OverrideRequestField) =>
+    error?.field === field ? error.message : undefined;
+
+  return (
+    <div className="mt-3 grid gap-3 rounded-lg bg-app-subtle p-3">
+      <Field label="Reason" error={fieldError("reason")}>
+        <Input
+          type="text"
+          value={reason}
+          maxLength={500}
+          // The editor opens from "Change access", which it replaces.
+          autoFocus
+          onChange={(event) => onReasonChange(event.target.value)}
+          placeholder={`Why ${ownerEmail} needs this change`}
+        />
+      </Field>
+      <Field label="Expires" description="Optional — blank means permanent." error={fieldError("expiresAt")}>
+        <Input
+          type="datetime-local"
+          value={expiresAt}
+          onChange={(event) => onExpiresAtChange(event.target.value)}
+        />
+      </Field>
+      {missing.length > 0 ? (
+        <Alert tone="warning">
+          Turn on {listFeatures(missing)} first. Granting this alone leaves it off.
+        </Alert>
+      ) : null}
+      {error && !error.field ? (
+        <Alert tone="danger" role="alert">
+          {error.message}
+        </Alert>
+      ) : null}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          // A disabled button is a courtesy, not the rule: the resolver
+          // refuses an unmet prerequisite whatever the UI allows. Withhold and
+          // Clear are never blocked by prerequisites, because taking access
+          // away must not depend on anything.
+          disabled={busy || missing.length > 0}
+          loading={pendingAction === "grant"}
+          title={missing.length > 0 ? `Requires ${listFeatures(missing)}` : undefined}
+          onClick={() => onSubmit("grant")}
+        >
+          Grant
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={busy}
+          loading={pendingAction === "revoke"}
+          onClick={() => onSubmit("revoke")}
+        >
+          Withhold
+        </Button>
+        {overridden ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={busy}
+            loading={pendingAction === "clear"}
+            onClick={() => onSubmit("clear")}
+          >
+            Clear override
+          </Button>
+        ) : null}
+        <Button variant="plain" size="sm" disabled={busy} onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Per-provider feature state, and the controls to change it.
+ *
+ * Everything shown here is resolved server-side and re-read after each write,
+ * so the dialog reports what the database decided rather than what the click
+ * implied; `onChange` hands that snapshot back to the row. A reason is
+ * mandatory in the form because it is mandatory in the audit trail.
+ */
 export function ProviderFeatureOverrides({
+  open,
+  onClose,
+  onChange,
   ownerEmail,
   entitlements,
 }: {
+  open: boolean;
+  onClose: () => void;
+  onChange: (snapshot: ProviderEntitlements) => void;
   ownerEmail: string;
   entitlements: ProviderEntitlements;
 }) {
-  const [snapshot, setSnapshot] = useState(entitlements);
+  const snapshot = entitlements;
+  const idPrefix = useId();
   const [editing, setEditing] = useState<FeatureKey>();
   const [reason, setReason] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    tone: "success" | "error";
-    message: string;
-  }>();
-  const enabledCount = FEATURE_KEYS.filter(
-    (featureKey) => snapshot.features[featureKey].enabled,
-  ).length;
+  const [pendingAction, setPendingAction] = useState<OverrideAction>();
+  const [error, setError] = useState<EditorError>();
+  const [success, setSuccess] = useState<string>();
+  // The feature whose "Change access" takes focus back once its editor closes.
+  const returnFocusTo = useRef<FeatureKey>(undefined);
+  const busy = pendingAction !== undefined;
+
+  const changeAccessId = (featureKey: FeatureKey) => `${idPrefix}-change-${featureKey}`;
+
+  useEffect(() => {
+    if (editing || !returnFocusTo.current) return;
+    document.getElementById(changeAccessId(returnFocusTo.current))?.focus();
+    returnFocusTo.current = undefined;
+  });
 
   function closeEditor() {
+    returnFocusTo.current = editing;
     setEditing(undefined);
     setReason("");
     setExpiresAt("");
+    setError(undefined);
   }
 
-  async function send(request: OverrideRequest, successMessage: string) {
-    setBusy(true);
-    setFeedback(undefined);
+  async function send(request: OverrideRequest, action: OverrideAction, successMessage: string) {
+    setPendingAction(action);
+    setError(undefined);
+    setSuccess(undefined);
 
     try {
       const response = await fetch(request.url, {
@@ -97,26 +246,22 @@ export function ProviderFeatureOverrides({
         );
       }
 
-      setSnapshot(result);
-      setFeedback({ tone: "success", message: successMessage });
+      onChange(result);
+      setSuccess(successMessage);
       closeEditor();
-    } catch (error) {
-      setFeedback({
-        tone: "error",
+    } catch (sendError) {
+      setError({
         message:
-          error instanceof Error
-            ? error.message
+          sendError instanceof Error
+            ? sendError.message
             : "Could not update the feature override.",
       });
     } finally {
-      setBusy(false);
+      setPendingAction(undefined);
     }
   }
 
-  function submit(
-    featureKey: FeatureKey,
-    action: "grant" | "revoke" | "clear",
-  ) {
+  function submit(featureKey: FeatureKey, action: OverrideAction) {
     try {
       const request =
         action === "clear"
@@ -140,235 +285,117 @@ export function ProviderFeatureOverrides({
             ? "Feature granted."
             : "Feature withheld.";
 
-      return send(request, successMessage);
-    } catch (error) {
-      setFeedback({
-        tone: "error",
-        message:
-          error instanceof OverrideRequestError
-            ? error.message
-            : "Could not update the feature override.",
-      });
+      return send(request, action, successMessage);
+    } catch (requestError) {
+      setSuccess(undefined);
+      setError(
+        requestError instanceof OverrideRequestError
+          ? { field: requestError.field, message: requestError.message }
+          : { message: "Could not update the feature override." },
+      );
     }
   }
 
   return (
-    <details className="group w-[21rem] max-w-full rounded-2xl border border-[var(--line)] bg-white shadow-sm open:shadow-md">
-      <summary className="flex cursor-pointer list-none items-center gap-3 rounded-2xl px-4 py-3 outline-none transition hover:bg-[var(--surface)] focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--primary)]">
-          <SlidersHorizontal aria-hidden="true" size={18} weight="bold" />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-[var(--ink)]">
-              Premium access
-            </span>
-            <span className="rounded-full bg-[var(--surface-highest)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--muted)]">
-              {snapshot.planTier} plan
-            </span>
-          </span>
-          <span className="mt-1 flex items-center gap-2">
-            <span className="flex gap-1" aria-hidden="true">
-              {FEATURE_KEYS.map((featureKey) => (
-                <span
-                  key={featureKey}
-                  className={`h-1.5 w-5 rounded-full ${
-                    snapshot.features[featureKey].enabled
-                      ? "bg-[var(--success-strong)]"
-                      : "bg-[var(--line)]"
-                  }`}
-                />
-              ))}
-            </span>
-            <span className="text-xs text-[var(--muted)]">
-              {enabledCount} of {FEATURE_KEYS.length} enabled
-            </span>
-          </span>
-          <span className="sr-only">Manage premium access</span>
-        </span>
-        <CaretDown
-          aria-hidden="true"
-          className="shrink-0 text-[var(--muted)] transition-transform group-open:rotate-180"
-          size={16}
-          weight="bold"
-        />
-      </summary>
+    <Dialog
+      open={open}
+      onClose={() => {
+        if (!busy) onClose();
+      }}
+      title="Premium access"
+      description={
+        <>
+          <span className="break-words">{ownerEmail}</span> · {snapshot.planTier} plan ·{" "}
+          {enabledCount(snapshot)} of {FEATURE_KEYS.length} enabled
+        </>
+      }
+      size="md"
+      closeLabel="Close"
+    >
+      {success ? (
+        <Alert tone="success" role="status" className="mb-3">
+          {success}
+        </Alert>
+      ) : null}
 
-      <div className="border-t border-[var(--line)] px-3 py-2">
-        <ul className="divide-y divide-[var(--line)]">
-          {FEATURE_KEYS.map((featureKey) => {
-            const feature = snapshot.features[featureKey];
-            const overridden = feature.source === "override";
-            const open = editing === featureKey;
+      <ul role="list" className="-mx-4 divide-y divide-app-border border-y border-app-border sm:-mx-6">
+        {FEATURE_KEYS.map((featureKey) => {
+          const feature = snapshot.features[featureKey];
+          const overridden = feature.source === "override";
+          const isEditing = editing === featureKey;
 
-            // Two different moments, both worth showing.
-            //
-            // `unmetPrerequisites` is the resolver's verdict on a grant that has
-            // already been made: something switched this feature on, a capability
-            // it depends on is off, and the answer is therefore still no. Without
-            // it the panel reports the grant as saved and the feature as Off,
-            // with nothing connecting the two.
-            //
-            // `missing` is the same question asked before granting, so the
-            // support case where someone grants two-way, watches it do nothing,
-            // and has no way to find out why simply does not start.
-            const blockedBy = feature.unmetPrerequisites ?? [];
-            const missing = blockingPrerequisites(snapshot, featureKey);
-            const listFeatures = (keys: readonly FeatureKey[]) =>
-              keys.map((key) => FEATURE_LABELS[key]).join(" and ");
+          // Two different moments, both worth showing.
+          //
+          // `unmetPrerequisites` is the resolver's verdict on a grant that has
+          // already been made: something switched this feature on, a capability
+          // it depends on is off, and the answer is therefore still no. Without
+          // it the dialog reports the grant as saved and the feature as Off,
+          // with nothing connecting the two.
+          //
+          // `missing` is the same question asked before granting, so the
+          // support case where someone grants two-way, watches it do nothing,
+          // and has no way to find out why simply does not start.
+          const blockedBy = feature.unmetPrerequisites ?? [];
 
-            return (
-              <li key={featureKey} className="py-3 first:pt-1 last:pb-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        aria-hidden="true"
-                        className={`size-2 shrink-0 rounded-full ${
-                          feature.enabled ? "bg-[var(--success-strong)]" : "bg-[var(--line)]"
-                        }`}
-                      />
-                      <span className="text-sm font-medium leading-5 text-[var(--ink)]">
-                        {FEATURE_LABELS[featureKey]}
-                      </span>
-                      <span
-                        className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] ${
-                          feature.enabled
-                            ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
-                            : "bg-[var(--surface-highest)] text-[var(--muted)]"
-                        }`}
-                      >
-                        {feature.enabled ? "On" : "Off"}
-                      </span>
-                      {overridden ? (
-                        <span className="inline-flex rounded-full bg-[var(--warning-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--warning-strong)]">
-                          Override
-                        </span>
-                      ) : null}
-                      {blockedBy.length > 0 ? (
-                        <span className="inline-flex rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--danger-strong)]">
-                          Blocked
-                        </span>
-                      ) : null}
-                    </div>
-                    {overridden && feature.overrideExpiresAt ? (
-                      <p className="mt-1 pl-3.5 text-xs text-[var(--muted)]">
-                        Expires {formatUtcDate(feature.overrideExpiresAt)} UTC
-                      </p>
-                    ) : null}
-                    {blockedBy.length > 0 ? (
-                      <p className="mt-1 pl-3.5 text-xs font-medium text-[var(--danger-strong)]">
-                        Granted, but off: needs {listFeatures(blockedBy)}.
-                      </p>
-                    ) : null}
+          return (
+            <li key={featureKey} className="px-4 py-3 sm:px-6">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-sm font-medium text-app-fg">{FEATURE_LABELS[featureKey]}</span>
+                    <Badge tone={feature.enabled ? "success" : "neutral"}>{feature.enabled ? "On" : "Off"}</Badge>
+                    {overridden ? <Badge tone="warning">Override</Badge> : null}
+                    {blockedBy.length > 0 ? <Badge tone="danger">Blocked</Badge> : null}
                   </div>
-                  {!open ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFeedback(undefined);
-                        setReason("");
-                        setExpiresAt(
-                          feature.overrideExpiresAt?.slice(0, 16) ?? "",
-                        );
-                        setEditing(featureKey);
-                      }}
-                      className="shrink-0 rounded-full px-2 py-1 text-xs font-semibold text-[var(--primary)] outline-none transition hover:bg-[var(--accent-soft)] focus-visible:ring-2 focus-visible:ring-[var(--primary)]"
-                    >
-                      Change access
-                    </button>
+                  {overridden && feature.overrideExpiresAt ? (
+                    <p className="mt-1 text-xs text-app-fg-muted">
+                      Expires {formatUtcDate(feature.overrideExpiresAt)} UTC
+                    </p>
+                  ) : null}
+                  {blockedBy.length > 0 ? (
+                    <p className="mt-1 text-xs font-medium text-app-danger-fg">
+                      Granted, but off: needs {listFeatures(blockedBy)}.
+                    </p>
                   ) : null}
                 </div>
-                {open ? (
-                  <div className="mt-3 space-y-3 rounded-xl bg-[var(--surface-soft)] p-3">
-                    <label className="block text-xs font-semibold text-[var(--ink)]">
-                      Reason
-                      <input
-                        type="text"
-                        value={reason}
-                        maxLength={500}
-                        onChange={(event) => setReason(event.target.value)}
-                        placeholder={`Why ${ownerEmail} needs this change`}
-                        className="mt-1 w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm font-normal text-[var(--ink)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-                      />
-                    </label>
-                    <label className="block text-xs font-semibold text-[var(--ink)]">
-                      Expires (optional — blank means permanent)
-                      <input
-                        type="datetime-local"
-                        value={expiresAt}
-                        onChange={(event) => setExpiresAt(event.target.value)}
-                        className="mt-1 w-full rounded-lg border border-[var(--line)] bg-white px-3 py-2 text-sm font-normal text-[var(--ink)] outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--accent-soft)]"
-                      />
-                    </label>
-                    {missing.length > 0 ? (
-                      <p className="text-xs font-medium text-[var(--warning-strong)]">
-                        Turn on {listFeatures(missing)} first. Granting this
-                        alone leaves it off.
-                      </p>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        // A disabled button is a courtesy, not the rule: the
-                        // resolver refuses an unmet prerequisite whatever the UI
-                        // allows. Withhold and Clear are never disabled, because
-                        // taking access away must not depend on anything.
-                        disabled={busy || missing.length > 0}
-                        title={
-                          missing.length > 0
-                            ? `Requires ${listFeatures(missing)}`
-                            : undefined
-                        }
-                        onClick={() => submit(featureKey, "grant")}
-                        className="rounded-full bg-[var(--success-strong)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        Grant
-                      </button>
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => submit(featureKey, "revoke")}
-                        className="rounded-full border border-[var(--danger-line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--danger-strong)] transition hover:bg-[var(--danger-soft)] disabled:cursor-wait disabled:opacity-60"
-                      >
-                        Withhold
-                      </button>
-                      {overridden ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => submit(featureKey, "clear")}
-                          className="rounded-full border border-[var(--line)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--ink)] transition hover:bg-[var(--surface)] disabled:cursor-wait disabled:opacity-60"
-                        >
-                          Clear override
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={closeEditor}
-                        className="rounded-full px-3 py-1.5 text-xs font-semibold text-[var(--muted)] transition hover:text-[var(--ink)]"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+                {!isEditing ? (
+                  <Button
+                    id={changeAccessId(featureKey)}
+                    variant="plain"
+                    size="sm"
+                    className="shrink-0"
+                    disabled={busy}
+                    onClick={() => {
+                      setSuccess(undefined);
+                      setError(undefined);
+                      setReason("");
+                      setExpiresAt(feature.overrideExpiresAt?.slice(0, 16) ?? "");
+                      setEditing(featureKey);
+                    }}
+                  >
+                    Change access
+                  </Button>
                 ) : null}
-              </li>
-            );
-          })}
-        </ul>
-        {feedback ? (
-          <p
-            className={`text-xs font-medium ${
-              feedback.tone === "success" ? "text-[var(--success-strong)]" : "text-[var(--danger-strong)]"
-            }`}
-            role={feedback.tone === "error" ? "alert" : "status"}
-          >
-            {feedback.message}
-          </p>
-        ) : null}
-      </div>
-    </details>
+              </div>
+              {isEditing ? (
+                <FeatureEditor
+                  ownerEmail={ownerEmail}
+                  reason={reason}
+                  expiresAt={expiresAt}
+                  missing={blockingPrerequisites(snapshot, featureKey)}
+                  overridden={overridden}
+                  pendingAction={pendingAction}
+                  error={error}
+                  onReasonChange={setReason}
+                  onExpiresAtChange={setExpiresAt}
+                  onSubmit={(action) => submit(featureKey, action)}
+                  onCancel={closeEditor}
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </Dialog>
   );
 }

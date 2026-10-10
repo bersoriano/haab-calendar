@@ -36,3 +36,22 @@ export function summarizeAccounts(users: FilterableAccount[]) {
   const enabled = users.filter((user) => user.publishingEnabled).length;
   return { total: users.length, enabled, disabled: users.length - enabled };
 }
+
+/**
+ * Accounts with a request in flight. One set, not one id: a finished request
+ * on one row must not unlock another row that is still waiting.
+ */
+export function markPending(pending: ReadonlySet<string>, id: string): Set<string> {
+  return new Set(pending).add(id);
+}
+
+export function clearPending(pending: ReadonlySet<string>, id: string): Set<string> {
+  const next = new Set(pending);
+  next.delete(id);
+  return next;
+}
+
+/** Closes a per-account confirmation only when the finished request was its own. */
+export function closeIfFor<T extends { id: string }>(target: T | undefined, id: string): T | undefined {
+  return target?.id === id ? undefined : target;
+}

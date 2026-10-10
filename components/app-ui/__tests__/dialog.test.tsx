@@ -108,6 +108,22 @@ describe("ConfirmDialog", () => {
     expect(html).toMatch(/^<dialog[^>]*role="alertdialog"/);
   });
 
+  it("can keep the confirm locked while the cancel stays usable", () => {
+    const html = renderToStaticMarkup(
+      <ConfirmDialog
+        open
+        title="Delete account?"
+        confirmLabel="Delete permanently"
+        cancelLabel="Cancel"
+        confirmDisabled
+        onConfirm={() => undefined}
+        onCancel={() => undefined}
+      />,
+    );
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>Delete permanently<\/button>/);
+    expect(html).not.toMatch(/<button[^>]*disabled=""[^>]*>Cancel<\/button>/);
+  });
+
   it("shows a failure inside the dialog", () => {
     const html = renderToStaticMarkup(
       <ConfirmDialog

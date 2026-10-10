@@ -1,9 +1,13 @@
+import { SUPER_ADMIN_EMAIL } from "../../lib/super-admin-policy";
+
 /**
  * The provider states the premium suite proves.
  *
  * Each one isolates a single rule about where an entitlement comes from, so a
  * failure names the rule that broke rather than "premium is wrong somewhere".
- * Every address is `.invalid`, which can never resolve.
+ * Every address is `.invalid`, which can never resolve — except the super
+ * admin's, which the policy hard-codes; it is only ever created on the local
+ * stack, already confirmed, so nothing is sent to it.
  */
 
 export const E2E_PASSWORD = "haab-e2e-not-a-real-password";
@@ -17,7 +21,10 @@ export type E2ERole =
   | "businessTypeSwitch"
   | "businessTypeBlocked"
   | "bookingActions"
-  | "publicManage";
+  | "publicManage"
+  | "superAdmin"
+  | "superAdminTarget"
+  | "longEmail";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -152,6 +159,37 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     bookingDate: "2027-01-15",
     manageToken: "e2e-public-manage-token",
     bookingId: "00000000-0000-4000-8000-0000000eb009",
+  },
+  {
+    // Signs in to super admin. Nothing acts on this account itself.
+    role: "superAdmin",
+    email: SUPER_ADMIN_EMAIL,
+    userId: "00000000-0000-4000-8000-0000000e2e10",
+    providerId: "00000000-0000-4000-8000-0000000e2eaa",
+    businessName: "Super Admin E2E",
+    slug: "super-admin-e2e",
+    legacyPlanTier: "free",
+  },
+  {
+    // The super-admin spec toggles its publishing and feature overrides and
+    // opens (never confirms) its deletion; nothing else may depend on it.
+    role: "superAdminTarget",
+    email: "super-admin-target@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e11",
+    providerId: "00000000-0000-4000-8000-0000000e2eab",
+    businessName: "Managed Clinic E2E",
+    slug: "managed-clinic-e2e",
+    legacyPlanTier: "free",
+  },
+  {
+    // Read-only: an address with no break points, for the accounts layout.
+    role: "longEmail",
+    email: "averyveryverylongaddresswithnobreakpointsanywhere@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e12",
+    providerId: "00000000-0000-4000-8000-0000000e2eac",
+    businessName: "Long Address E2E",
+    slug: "long-address-e2e",
+    legacyPlanTier: "free",
   },
 ];
 

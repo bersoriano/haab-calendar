@@ -218,6 +218,7 @@ export function ConfirmDialog({
   cancelLabel,
   tone = "danger",
   pending = false,
+  confirmDisabled = false,
   error,
   onConfirm,
   onCancel,
@@ -233,6 +234,8 @@ export function ConfirmDialog({
   cancelLabel: string;
   tone?: "danger" | "primary";
   pending?: boolean;
+  /** Locks the confirm alone, e.g. until a typed check matches. */
+  confirmDisabled?: boolean;
   error?: ReactNode;
   onConfirm: () => void;
   onCancel: () => void;
@@ -255,7 +258,7 @@ export function ConfirmDialog({
           <Button variant="secondary" disabled={pending} onClick={onCancel}>
             {cancelLabel}
           </Button>
-          <Button variant={tone} loading={pending} onClick={onConfirm}>
+          <Button variant={tone} loading={pending} disabled={confirmDisabled} onClick={onConfirm}>
             {confirmLabel}
           </Button>
         </DialogActions>

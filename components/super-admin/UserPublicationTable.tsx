@@ -1,38 +1,47 @@
 "use client";
 
-import { MagnifyingGlass } from "@phosphor-icons/react";
-import Link from "next/link";
+import { MagnifyingGlass, UsersThree } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
-import { SUPER_ADMIN_ACCENT_SOFT_CLASS } from "@/components/app-shell/super-admin-accent";
-import { DeleteAccountDialog } from "@/components/super-admin/DeleteAccountDialog";
-import { ProviderFeatureOverrides } from "@/components/super-admin/ProviderFeatureOverrides";
-import { Alert } from "@/components/ui/Alert";
 import {
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  ConfirmDialog,
+  EmptyState,
+  Input,
+  SegmentedControl,
+  StackedList,
+  Table,
+  TBody,
+  THead,
+  Td,
+  Th,
+  Tr,
+  useToast,
+} from "@/components/app-ui";
+import { DeleteAccountDialog } from "@/components/super-admin/DeleteAccountDialog";
+import {
+  FeatureAccessSummary,
+  ProviderFeatureOverrides,
+} from "@/components/super-admin/ProviderFeatureOverrides";
+import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
+import {
+  clearPending,
+  closeIfFor,
   filterManagedUsers,
+  markPending,
   type AccountStatusFilter,
 } from "@/lib/super-admin-accounts";
 import type { ManagedUserSummary } from "@/lib/supabase/publication";
-import { cn } from "@/lib/utils";
 
 const STATUS_FILTERS: Array<{ value: AccountStatusFilter; label: string }> = [
   { value: "all", label: "All" },
   { value: "enabled", label: "Publishing on" },
   { value: "disabled", label: "Publishing off" },
 ];
-
-const ROW_COLUMNS =
-  "xl:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.5fr)_auto] xl:gap-6";
-
-/** Names a cell on stacked rows; on wide screens the header row does. */
-function CellLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--muted)] xl:sr-only">
-      {children}
-    </p>
-  );
-}
 
 function formatUtcDate(value?: string) {
   if (!value) return "Never";
@@ -42,6 +51,92 @@ function formatUtcDate(value?: string) {
     timeStyle: "short",
     timeZone: "UTC",
   }).format(new Date(value));
+}
+
+/** Names a value inside a stacked card; the table's header row does from xl. */
+function CardLabel({ children }: { children: string }) {
+  return <p className="mb-1 text-xs font-medium text-app-fg-muted">{children}</p>;
+}
+
+function AccountCell({ user }: { user: ManagedUserSummary }) {
+  return (
+    <div className="min-w-0">
+      {/* Addresses rarely have break points; anywhere keeps a long one from
+          widening the table instead of wrapping. */}
+      <p className="font-medium text-app-fg [overflow-wrap:anywhere]">{user.email}</p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {user.superAdmin ? <Badge tone="admin">Super admin</Badge> : null}
+        <Badge tone={user.emailConfirmedAt ? "success" : "warning"}>
+          {user.emailConfirmedAt ? "Confirmed" : "Unconfirmed"}
+        </Badge>
+      </div>
+      <div className="mt-2 grid gap-0.5 text-xs text-app-fg-muted">
+        <p>Joined {formatUtcDate(user.createdAt)} UTC</p>
+        <p>
+          Last sign-in {formatUtcDate(user.lastSignInAt)}
+          {user.lastSignInAt ? " UTC" : ""}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function BusinessCell({ user }: { user: ManagedUserSummary }) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      {user.workflow ? (
+        <div>
+          <p className="font-medium text-app-fg">{user.workflow.businessName}</p>
+          <p className="mt-0.5 text-xs text-app-fg-muted">
+            {user.workflow.setupComplete ? "Workflow completed" : "Workflow incomplete"}
+          </p>
+          {user.workflow.setupComplete && user.publishingEnabled ? (
+            <ButtonLink
+              href={user.workflow.publicPath}
+              variant="plain"
+              size="sm"
+              external
+              newTabLabel="(opens in a new tab)"
+              className="-ml-2 mt-1"
+            >
+              Open public page
+            </ButtonLink>
+          ) : null}
+        </div>
+      ) : (
+        <p className="text-sm text-app-fg-muted">No workflow created</p>
+      )}
+      {!user.provider ? (
+        <p className="text-xs text-app-fg-muted">No provider yet</p>
+      ) : user.provider.entitlements ? (
+        <FeatureAccessSummary entitlements={user.provider.entitlements} />
+      ) : (
+        // Saying nothing beats saying "no overrides", which would read as a
+        // provider having no granted features.
+        <p className="text-xs text-app-fg-muted">Feature data unavailable</p>
+      )}
+    </div>
+  );
+}
+
+function PublishingCell({ user, error }: { user: ManagedUserSummary; error?: string }) {
+  return (
+    <div className="min-w-0">
+      <Badge tone={user.publishingEnabled ? "success" : "danger"} dot>
+        {user.publishingEnabled ? "Enabled" : "Disabled"}
+      </Badge>
+      {user.publicationUpdatedAt ? (
+        <p className="mt-2 text-xs text-app-fg-muted">
+          Updated {formatUtcDate(user.publicationUpdatedAt)} UTC
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="mt-2 max-w-xs text-xs font-medium text-app-danger-fg">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function UserPublicationTable({
@@ -56,36 +151,22 @@ export function UserPublicationTable({
   initialStatus?: AccountStatusFilter;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [users, setUsers] = useState(initialUsers);
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<AccountStatusFilter>(initialStatus);
-  const [pendingUserId, setPendingUserId] = useState<string>();
+  const [pendingUserIds, setPendingUserIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [rowError, setRowError] = useState<{ userId: string; message: string }>();
+  const [disableTarget, setDisableTarget] = useState<ManagedUserSummary>();
+  const [disableError, setDisableError] = useState<string>();
+  const [featuresUserId, setFeaturesUserId] = useState<string>();
   const [deletionTarget, setDeletionTarget] = useState<ManagedUserSummary>();
   const [deletionError, setDeletionError] = useState<string>();
-  const [accountFeedback, setAccountFeedback] = useState<{
-    tone: "success" | "error";
-    message: string;
-  }>();
-  const [feedback, setFeedback] = useState<{
-    userId: string;
-    tone: "success" | "error";
-    message: string;
-  }>();
 
-  async function changePublication(user: ManagedUserSummary) {
-    const nextEnabled = !user.publishingEnabled;
-
-    if (
-      !nextEnabled &&
-      !window.confirm(
-        `Disable all public URLs and booking actions for ${user.email}?`,
-      )
-    ) {
-      return;
-    }
-
-    setPendingUserId(user.id);
-    setFeedback(undefined);
+  async function updatePublication(user: ManagedUserSummary, nextEnabled: boolean) {
+    setPendingUserIds((current) => markPending(current, user.id));
+    setRowError(undefined);
+    setDisableError(undefined);
 
     try {
       const response = await fetch(
@@ -117,34 +198,39 @@ export function UserPublicationTable({
             : candidate,
         ),
       );
-      setFeedback({
-        userId: user.id,
-        tone: "success",
+      setDisableTarget((current) => closeIfFor(current, user.id));
+      toast.notify({
         message: result.publishingEnabled
           ? "Publication enabled. The user will see a dashboard notice."
           : "Publication disabled. Public requests now return 404.",
       });
     } catch (error) {
-      setFeedback({
-        userId: user.id,
-        tone: "error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "Could not update publication.",
-      });
+      const message =
+        error instanceof Error ? error.message : "Could not update publication.";
+      // A refused disable answers inside its confirmation; an enable has none.
+      if (nextEnabled) setRowError({ userId: user.id, message });
+      else setDisableError(message);
     } finally {
-      setPendingUserId(undefined);
+      setPendingUserIds((current) => clearPending(current, user.id));
     }
+  }
+
+  function changePublication(user: ManagedUserSummary) {
+    if (user.publishingEnabled) {
+      setRowError(undefined);
+      setDisableError(undefined);
+      setDisableTarget(user);
+      return;
+    }
+    void updatePublication(user, true);
   }
 
   async function deleteAccount(
     user: ManagedUserSummary,
     confirmationEmail: string,
   ) {
-    setPendingUserId(user.id);
+    setPendingUserIds((current) => markPending(current, user.id));
     setDeletionError(undefined);
-    setAccountFeedback(undefined);
 
     try {
       const response = await fetch(
@@ -167,9 +253,8 @@ export function UserPublicationTable({
       setUsers((current) =>
         current.filter((candidate) => candidate.id !== user.id),
       );
-      setDeletionTarget(undefined);
-      setAccountFeedback({
-        tone: "success",
+      setDeletionTarget((current) => closeIfFor(current, user.id));
+      toast.notify({
         message: result.cleanupPending
           ? "Account deleted. Haab-hosted asset cleanup is queued for retry."
           : "Account and current Haab-hosted assets deleted permanently.",
@@ -180,8 +265,18 @@ export function UserPublicationTable({
         error instanceof Error ? error.message : "Could not delete account.",
       );
     } finally {
-      setPendingUserId(undefined);
+      setPendingUserIds((current) => clearPending(current, user.id));
     }
+  }
+
+  function updateEntitlements(userId: string, snapshot: ProviderEntitlements) {
+    setUsers((current) =>
+      current.map((candidate) =>
+        candidate.id === userId && candidate.provider
+          ? { ...candidate, provider: { ...candidate.provider, entitlements: snapshot } }
+          : candidate,
+      ),
+    );
   }
 
   // Keeps the address shareable without asking the server for the list again.
@@ -207,275 +302,97 @@ export function UserPublicationTable({
     syncFilters(query, nextStatus);
   }
 
-  const visibleUsers = filterManagedUsers(users, query, status);
+  function clearFilters() {
+    setQuery("");
+    setStatus("all");
+    syncFilters("", "all");
+  }
 
-  if (users.length === 0) {
+  const visibleUsers = filterManagedUsers(users, query, status);
+  const featuresUser = users.find((user) => user.id === featuresUserId);
+  const featuresEntitlements = featuresUser?.provider?.entitlements;
+
+  function actions(user: ManagedUserSummary) {
+    const pending = pendingUserIds.has(user.id);
+
     return (
-      <div className="space-y-4">
-        {accountFeedback ? (
-          <AccountFeedback feedback={accountFeedback} />
+      <>
+        {user.provider?.entitlements ? (
+          <Button variant="secondary" size="sm" onClick={() => setFeaturesUserId(user.id)}>
+            Features<span className="sr-only"> for {user.email}</span>
+          </Button>
         ) : null}
-        <div className="rounded-3xl border border-[var(--line)] bg-[var(--surface-lowest)] p-8 text-center">
-          <h2 className="text-lg font-semibold text-[var(--ink)]">
-            No registered users
-          </h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            Accounts will appear here as soon as they sign up.
-          </p>
-        </div>
-      </div>
+        <Button
+          variant={user.publishingEnabled ? "secondary" : "soft"}
+          size="sm"
+          loading={pending && deletionTarget?.id !== user.id}
+          disabled={pending}
+          onClick={() => changePublication(user)}
+        >
+          {user.publishingEnabled ? "Disable publishing" : "Enable publishing"}
+        </Button>
+        {user.superAdmin ? (
+          <Button variant="secondary" size="sm" disabled>
+            Protected account
+          </Button>
+        ) : (
+          <Button
+            variant="danger-plain"
+            size="sm"
+            disabled={pending}
+            onClick={() => {
+              setDeletionError(undefined);
+              setDeletionTarget(user);
+            }}
+          >
+            Delete account
+          </Button>
+        )}
+      </>
     );
   }
 
-  return (
+  const dialogs = (
     <>
-      {accountFeedback ? <AccountFeedback feedback={accountFeedback} /> : null}
-
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <label className="relative block lg:w-96">
-          <MagnifyingGlass
-            aria-hidden="true"
-            size={18}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)]"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => updateQuery(event.target.value)}
-            aria-label="Search accounts"
-            placeholder="Search by email or business"
-            className="min-h-11 w-full rounded-2xl border border-[var(--line)] bg-[var(--surface-lowest)] pl-11 pr-4 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--muted)] focus:ring-2 focus:ring-[var(--primary)]/30"
-          />
-        </label>
-        <div role="group" aria-label="Publishing" className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              aria-pressed={status === filter.value}
-              onClick={() => updateStatus(filter.value)}
-              className={cn(
-                "min-h-11 rounded-full px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)]",
-                status === filter.value
-                  ? "bg-[var(--ink)] text-[var(--background)]"
-                  : "border border-[var(--line)] bg-[var(--surface-lowest)] text-[var(--muted)] hover:text-[var(--ink)]",
-              )}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <p aria-live="polite" className="mb-3 text-sm text-[var(--muted)]">
-        {visibleUsers.length} of {users.length} accounts
-      </p>
-
-      <section className="overflow-hidden rounded-3xl border border-[var(--line)] bg-[var(--surface-lowest)] shadow-[0_18px_48px_rgba(15,23,42,0.07)]">
-        <h2 className="sr-only">Registered accounts and access controls</h2>
-        <div
-          aria-hidden="true"
-          className={cn(
-            "hidden border-b border-[var(--line)] bg-[var(--surface)] px-6 py-4 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)] xl:grid",
-            ROW_COLUMNS,
-          )}
-        >
-          <span>Account</span>
-          <span>Workflow &amp; publication</span>
-          <span>Premium access</span>
-          <span className="text-right">Actions</span>
-        </div>
-
-        {visibleUsers.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-lg font-semibold text-[var(--ink)]">No accounts match</p>
-            <p className="mt-2 text-sm text-[var(--muted)]">
-              Try another search or show every publishing state.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setStatus("all");
-                syncFilters("", "all");
-              }}
-              className="mt-4 min-h-11 rounded-full border border-[var(--line)] px-4 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--surface-soft)]"
-            >
-              Clear filters
-            </button>
-          </div>
-        ) : (
-          <ul className="divide-y divide-[var(--line)]">
-            {visibleUsers.map((user) => {
-              const pending = pendingUserId === user.id;
-              const rowFeedback = feedback?.userId === user.id ? feedback : undefined;
-
-              return (
-                <li
-                  key={user.id}
-                  className={cn("grid gap-5 px-5 py-5 sm:px-6", ROW_COLUMNS)}
-                >
-                  <div className="min-w-0">
-                    <CellLabel>Account</CellLabel>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="break-all font-semibold text-[var(--ink)]">{user.email}</span>
-                      {user.superAdmin ? (
-                        <span
-                          className={cn(
-                            "rounded-full border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em]",
-                            SUPER_ADMIN_ACCENT_SOFT_CLASS,
-                          )}
-                        >
-                          Super admin
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold",
-                          user.emailConfirmedAt
-                            ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
-                            : "bg-[var(--warning-soft)] text-[var(--warning-strong)]",
-                        )}
-                      >
-                        {user.emailConfirmedAt ? "Confirmed" : "Unconfirmed"}
-                      </span>
-                    </div>
-                    <div className="mt-3 space-y-1 text-xs leading-5 text-[var(--muted)]">
-                      <p>Joined {formatUtcDate(user.createdAt)} UTC</p>
-                      <p>
-                        Last sign-in {formatUtcDate(user.lastSignInAt)}
-                        {user.lastSignInAt ? " UTC" : ""}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid content-start gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                    <div>
-                      <CellLabel>Workflow</CellLabel>
-                      {user.workflow ? (
-                        <>
-                          <p className="font-medium text-[var(--ink)]">{user.workflow.businessName}</p>
-                          <p className="mt-1 text-xs text-[var(--muted)]">
-                            {user.workflow.setupComplete ? "Workflow completed" : "Workflow incomplete"}
-                          </p>
-                          {user.workflow.setupComplete && user.publishingEnabled ? (
-                            <Link
-                              className="mt-2 inline-block text-xs font-semibold text-[var(--primary)] underline-offset-4 hover:underline"
-                              href={user.workflow.publicPath}
-                              target="_blank"
-                            >
-                              Open public page
-                            </Link>
-                          ) : null}
-                        </>
-                      ) : (
-                        <span className="text-sm text-[var(--muted)]">No workflow created</span>
-                      )}
-                    </div>
-                    <div>
-                      <CellLabel>Publication</CellLabel>
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-3 py-1 text-xs font-semibold",
-                          user.publishingEnabled
-                            ? "bg-[var(--success-soft)] text-[var(--success-strong)]"
-                            : "bg-[var(--danger-soft)] text-[var(--danger-strong)]",
-                        )}
-                      >
-                        {user.publishingEnabled ? "Enabled" : "Disabled"}
-                      </span>
-                      {user.publicationUpdatedAt ? (
-                        <p className="mt-2 text-xs text-[var(--muted)]">
-                          Updated {formatUtcDate(user.publicationUpdatedAt)} UTC
-                        </p>
-                      ) : null}
-                      {rowFeedback ? (
-                        <p
-                          className={cn(
-                            "mt-2 max-w-xs text-xs font-medium",
-                            rowFeedback.tone === "success"
-                              ? "text-[var(--success-strong)]"
-                              : "text-[var(--danger-strong)]",
-                          )}
-                          role={rowFeedback.tone === "error" ? "alert" : "status"}
-                        >
-                          {rowFeedback.message}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="min-w-0">
-                    <CellLabel>Premium access</CellLabel>
-                    {!user.provider ? (
-                      <span className="text-sm text-[var(--muted)]">No provider yet</span>
-                    ) : user.provider.entitlements ? (
-                      <ProviderFeatureOverrides
-                        ownerEmail={user.email}
-                        entitlements={user.provider.entitlements}
-                      />
-                    ) : (
-                      // Saying nothing beats saying "no overrides", which would
-                      // read as a provider having no granted features.
-                      <span className="text-sm text-[var(--muted)]">Feature data unavailable</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 xl:flex-col xl:items-end">
-                    <button
-                      type="button"
-                      aria-pressed={!user.publishingEnabled}
-                      disabled={pending}
-                      onClick={() => changePublication(user)}
-                      className={cn(
-                        "inline-flex min-h-11 min-w-36 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-60",
-                        user.publishingEnabled
-                          ? "border border-[var(--danger-line)] bg-[var(--surface-lowest)] text-[var(--danger-strong)] hover:bg-[var(--danger-soft)]"
-                          : "bg-[var(--success-strong)] text-white hover:opacity-90",
-                      )}
-                    >
-                      {pending
-                        ? "Saving…"
-                        : user.publishingEnabled
-                          ? "Disable publishing"
-                          : "Enable publishing"}
-                    </button>
-                    {user.superAdmin ? (
-                      <button
-                        type="button"
-                        disabled
-                        className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-full border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-2 text-sm font-semibold text-[var(--muted)]"
-                      >
-                        Protected account
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={pending}
-                        onClick={() => {
-                          setDeletionError(undefined);
-                          setDeletionTarget(user);
-                        }}
-                        className="inline-flex min-h-11 min-w-36 items-center justify-center rounded-full bg-[var(--danger-strong)] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60"
-                      >
-                        Delete account
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {disableTarget ? (
+        <ConfirmDialog
+          open
+          title="Disable publishing?"
+          body={
+            <span className="break-words">
+              Disable all public URLs and booking actions for {disableTarget.email}?
+            </span>
+          }
+          confirmLabel="Disable publishing"
+          cancelLabel="Cancel"
+          closeLabel="Close"
+          tone="danger"
+          pending={pendingUserIds.has(disableTarget.id)}
+          error={disableError}
+          onConfirm={() => updatePublication(disableTarget, false)}
+          onCancel={() => {
+            setDisableError(undefined);
+            setDisableTarget(undefined);
+          }}
+        />
+      ) : null}
+      {featuresUser && featuresEntitlements ? (
+        <ProviderFeatureOverrides
+          open
+          ownerEmail={featuresUser.email}
+          entitlements={featuresEntitlements}
+          onChange={(snapshot) => updateEntitlements(featuresUser.id, snapshot)}
+          onClose={() => setFeaturesUserId(undefined)}
+        />
+      ) : null}
       {deletionTarget ? (
         <DeleteAccountDialog
+          open
           user={deletionTarget}
-          busy={pendingUserId === deletionTarget.id}
+          busy={pendingUserIds.has(deletionTarget.id)}
           error={deletionError}
           onCancel={() => {
-            if (pendingUserId !== deletionTarget.id) {
+            if (!pendingUserIds.has(deletionTarget.id)) {
               setDeletionError(undefined);
               setDeletionTarget(undefined);
             }
@@ -487,20 +404,128 @@ export function UserPublicationTable({
       ) : null}
     </>
   );
-}
 
-function AccountFeedback({
-  feedback,
-}: {
-  feedback: { tone: "success" | "error"; message: string };
-}) {
+  if (users.length === 0) {
+    return (
+      <Card as="section">
+        <EmptyState
+          headingLevel={2}
+          icon={<UsersThree aria-hidden="true" size={32} />}
+          title="No registered users"
+          body="Accounts will appear here as soon as they sign up."
+        />
+      </Card>
+    );
+  }
+
   return (
-    <Alert
-      tone={feedback.tone === "success" ? "success" : "danger"}
-      role={feedback.tone === "error" ? "alert" : "status"}
-      className="mb-4"
-    >
-      {feedback.message}
-    </Alert>
+    <>
+      <div className="mb-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <Input
+          type="search"
+          value={query}
+          onChange={(event) => updateQuery(event.target.value)}
+          aria-label="Search accounts"
+          placeholder="Search by email or business"
+          leadingAddon={<MagnifyingGlass aria-hidden="true" size={16} />}
+          className="w-full xl:w-96"
+        />
+        <SegmentedControl
+          ariaLabel="Publishing"
+          value={status}
+          onChange={updateStatus}
+          options={STATUS_FILTERS.map((filter) => ({
+            value: filter.value,
+            label: filter.label,
+            count: filterManagedUsers(users, query, filter.value).length,
+          }))}
+        />
+      </div>
+      <p aria-live="polite" className="mb-3 text-sm text-app-fg-muted">
+        {visibleUsers.length} of {users.length} accounts
+      </p>
+
+      <Card as="section" aria-labelledby="accounts-heading" className="overflow-hidden">
+        <h2 id="accounts-heading" className="sr-only">
+          Registered accounts and access controls
+        </h2>
+
+        {visibleUsers.length === 0 ? (
+          <EmptyState
+            title="No accounts match"
+            body="Try another search or show every publishing state."
+            action={
+              <Button variant="secondary" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            {/* The table needs the width xl gives beside the sidebar; below
+                it, each account is a card, so nothing scrolls sideways. */}
+            <div className="hidden xl:block">
+              <Table>
+                <THead>
+                  <Tr>
+                    <Th>Account</Th>
+                    <Th>Business</Th>
+                    <Th>Publishing</Th>
+                    <Th align="right">
+                      <span className="sr-only">Actions</span>
+                    </Th>
+                  </Tr>
+                </THead>
+                <TBody>
+                  {visibleUsers.map((user) => (
+                    <Tr key={user.id}>
+                      {/* Room for an ordinary address on one line. */}
+                      <Td className="min-w-80">
+                        <AccountCell user={user} />
+                      </Td>
+                      <Td>
+                        <BusinessCell user={user} />
+                      </Td>
+                      <Td>
+                        <PublishingCell
+                          user={user}
+                          error={rowError?.userId === user.id ? rowError.message : undefined}
+                        />
+                      </Td>
+                      <Td align="right">
+                        <div className="flex flex-col items-end gap-2">{actions(user)}</div>
+                      </Td>
+                    </Tr>
+                  ))}
+                </TBody>
+              </Table>
+            </div>
+
+            <StackedList className="xl:hidden">
+              {visibleUsers.map((user) => (
+                <li key={user.id} className="grid gap-4 px-4 py-5 sm:px-6">
+                  <AccountCell user={user} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <CardLabel>Business</CardLabel>
+                      <BusinessCell user={user} />
+                    </div>
+                    <div>
+                      <CardLabel>Publishing</CardLabel>
+                      <PublishingCell
+                        user={user}
+                        error={rowError?.userId === user.id ? rowError.message : undefined}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">{actions(user)}</div>
+                </li>
+              ))}
+            </StackedList>
+          </>
+        )}
+      </Card>
+      {dialogs}
+    </>
   );
 }

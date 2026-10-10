@@ -14,10 +14,16 @@ export type OverrideRequest = {
   body: Record<string, unknown>;
 };
 
+/** The form field a validation error belongs to, when it belongs to one. */
+export type OverrideRequestField = "reason" | "expiresAt";
+
 export class OverrideRequestError extends Error {
-  constructor(message: string) {
+  readonly field?: OverrideRequestField;
+
+  constructor(message: string, field?: OverrideRequestField) {
     super(message);
     this.name = "OverrideRequestError";
+    this.field = field;
   }
 }
 
@@ -31,7 +37,7 @@ function assertInputs(providerId: string, featureKey: string, reason: string) {
   }
 
   if (!reason.trim()) {
-    throw new OverrideRequestError("A reason is required.");
+    throw new OverrideRequestError("A reason is required.", "reason");
   }
 }
 
@@ -59,7 +65,7 @@ export function buildSetOverrideRequest(input: {
     const parsed = Date.parse(input.expiresAt);
 
     if (Number.isNaN(parsed)) {
-      throw new OverrideRequestError("Expiry must be a valid date and time.");
+      throw new OverrideRequestError("Expiry must be a valid date and time.", "expiresAt");
     }
 
     expiresAt = new Date(parsed).toISOString();
