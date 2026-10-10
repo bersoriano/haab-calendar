@@ -14,6 +14,9 @@ export function WelcomeStep({ lang, onSelect }: { lang: Lang; onSelect: (id: Ver
   const t = bookingTranslations[lang].welcome;
 
   return (
+    // The negative margins cancel the guest builder's <main> padding
+    // (px-4 py-6 sm:px-6 lg:px-8 in home-experience), so the canvas runs edge
+    // to edge. A host with other padding gets a slight bleed, as before.
     <div className="-mx-4 -my-6 flex min-h-[calc(100vh-1px)] flex-col bg-app-canvas sm:-mx-6 lg:-mx-8">
       <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
