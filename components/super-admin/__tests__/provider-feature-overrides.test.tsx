@@ -3,25 +3,37 @@ import { describe, expect, it } from "vitest";
 
 import {
   blockingPrerequisites,
+  FeatureAccessSummary,
   ProviderFeatureOverrides,
 } from "@/components/super-admin/ProviderFeatureOverrides";
 import { resolveEntitlements } from "@/lib/entitlements/resolve";
 
 const PROVIDER = "00000000-0000-4000-8000-000000000001";
 
-function render(
+function entitlements(
   planTier: string,
   overrides: Parameters<typeof resolveEntitlements>[0]["overrides"],
 ) {
+  return resolveEntitlements({
+    providerId: PROVIDER,
+    planTier,
+    overrides,
+    now: new Date("2026-08-15T12:00:00.000Z"),
+  });
+}
+
+function render(
+  planTier: string,
+  overrides: Parameters<typeof resolveEntitlements>[0]["overrides"],
+  open = true,
+) {
   return renderToStaticMarkup(
     <ProviderFeatureOverrides
+      open={open}
+      onClose={() => undefined}
+      onChange={() => undefined}
       ownerEmail="owner@example.com"
-      entitlements={resolveEntitlements({
-        providerId: PROVIDER,
-        planTier,
-        overrides,
-        now: new Date("2026-08-15T12:00:00.000Z"),
-      })}
+      entitlements={entitlements(planTier, overrides)}
     />,
   );
 }
@@ -30,11 +42,11 @@ describe("ProviderFeatureOverrides", () => {
   it("shows a free plan with every feature off and none overridden", () => {
     const html = render("free", []);
 
-    expect(html).toContain("Premium access");
+    expect(html).toMatch(/^<dialog/);
+    expect(html).toMatch(/<h2[^>]*>Premium access<\/h2>/);
+    expect(html).toContain("owner@example.com");
     expect(html).toContain("0 of 6 enabled");
-    expect(html).toContain("Manage premium access");
-    expect(html).toContain("<details");
-    expect(html).not.toContain("<details open");
+    expect(html).toContain('aria-label="Close"');
     expect(html).toContain("Custom URL slug");
     expect(html).toContain("Google Calendar sync");
     expect(html).toContain("Off");
@@ -79,6 +91,30 @@ describe("ProviderFeatureOverrides", () => {
 
     expect(html).not.toContain("Override");
     expect(html).not.toContain("On<");
+  });
+});
+
+describe("ProviderFeatureOverrides when closed", () => {
+  it("renders the dialog shell without its contents", () => {
+    const html = render("free", [], false);
+
+    expect(html).toMatch(/^<dialog/);
+    expect(html).not.toContain("Custom URL slug");
+  });
+});
+
+describe("FeatureAccessSummary", () => {
+  it("names the plan and counts the features that are on", () => {
+    const html = renderToStaticMarkup(
+      <FeatureAccessSummary
+        entitlements={entitlements("free", [
+          { featureKey: "custom_slug", enabled: true, expiresAt: null },
+        ])}
+      />,
+    );
+
+    expect(html).toContain("free plan");
+    expect(html).toContain("1 of 6 enabled");
   });
 });
 
