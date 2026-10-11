@@ -8,11 +8,20 @@ import {
 } from "@/lib/format";
 import { formatCapacityChip } from "@/lib/service-card";
 import type { Lang, Service, VerticalId } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 const eyebrowClass =
   "text-[11px] uppercase tracking-[0.14em] text-[var(--muted)] [font-family:var(--font-plex-mono)]";
 const factLabelClass = "text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--muted)]";
+// One column per fact, so type, length and capacity always share a row: equal
+// shares where there is room, and never narrower than a fact's longest word.
+const FACT_COLUMNS = [
+  "grid-cols-1",
+  "grid-cols-1",
+  "grid-cols-[repeat(2,minmax(min-content,1fr))]",
+  "grid-cols-[repeat(3,minmax(min-content,1fr))]",
+];
 
 /** One contact line in the summary's rhythm: a small icon where the status icon sits on client rows. */
 function ContactRow({
@@ -98,7 +107,6 @@ export function AppointmentAbout({
           ? getOccurrenceModeLabel(service.occurrenceMode, lang)
           : getBookingTypeLabel(service.bookingType, lang),
     },
-    ...(specialty ? [{ label: t.publicFlow.specialty, value: specialty }] : []),
     ...(length ? [{ label: t.publicFlow.length, value: length }] : []),
     ...(capacity ? [{ label: t.publicFlow.capacity, value: capacity }] : []),
   ];
@@ -109,13 +117,19 @@ export function AppointmentAbout({
         <p className="text-[13.5px] leading-[1.55] text-[var(--muted)]">{description}</p>
       ) : null}
 
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-3">
+      <dl className={cn("grid gap-x-3 gap-y-3", FACT_COLUMNS[facts.length])}>
         {facts.map((fact) => (
           <div key={fact.label} className="flex min-w-0 flex-col gap-0.5">
             <dt className={factLabelClass}>{fact.label}</dt>
             <dd className="break-words text-[14.5px] font-medium text-[var(--ink)]">{fact.value}</dd>
           </div>
         ))}
+        {specialty ? (
+          <div className="col-span-full flex min-w-0 flex-col gap-0.5">
+            <dt className={factLabelClass}>{t.publicFlow.specialty}</dt>
+            <dd className="break-words text-[14.5px] font-medium text-[var(--ink)]">{specialty}</dd>
+          </div>
+        ) : null}
       </dl>
 
       {notes ? (
@@ -141,7 +155,13 @@ export function AppointmentAbout({
       ) : null}
 
       {addresses.length > 0 || phones.length > 0 ? (
-        <div className="flex flex-col gap-3">
+        // The phone keeps its own width while the address has room to read.
+        <div
+          className={cn(
+            "grid gap-x-4 gap-y-3",
+            addresses.length > 0 && phones.length > 0 && "grid-cols-[minmax(7.5rem,1fr)_auto]",
+          )}
+        >
           {addresses.length > 0 ? (
             <ContactRow
               label={addresses.length > 1 ? t.publicFlow.locations : t.publicFlow.location}

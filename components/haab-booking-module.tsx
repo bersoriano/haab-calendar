@@ -4591,12 +4591,8 @@ export function HaabBookingModule({
         detailsTimeRange ||
         (detailsStart ? formatTimeLabel(detailsStart, lang) : t.publicFlow.fullDay),
     };
-    const detailsMeta = [
-      selectedService?.medicalSpecialty?.trim(),
-      provider.businessName || provider.fullName,
-    ]
-      .filter(Boolean)
-      .join(" · ");
+    const detailsBusinessName = provider.businessName || provider.fullName;
+    const detailsMeta = selectedService?.medicalSpecialty?.trim() ?? "";
     // Same rule confirming applies: the details card turns green once it holds.
     const detailsRows = getSummaryClientRows({
       values: bookingFlow,
@@ -5235,6 +5231,7 @@ export function HaabBookingModule({
               <div className="order-1 flex min-w-0 flex-col lg:order-2 lg:self-stretch">
                 <CompactAppointmentSummary
                   title={copy.bookingSummary}
+                  businessName={detailsBusinessName}
                   serviceName={selectedService.name}
                   date={detailsDate}
                   changeLabel={t.publicFlow.changeDateTime}
@@ -5244,6 +5241,7 @@ export function HaabBookingModule({
                 />
                 <AppointmentSummary
                   title={copy.bookingSummary}
+                  businessName={detailsBusinessName}
                   serviceName={selectedService.name}
                   meta={detailsMeta}
                   date={detailsDate}

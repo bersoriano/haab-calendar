@@ -58,7 +58,8 @@ function summary(overrides: Partial<Parameters<typeof AppointmentSummary>[0]> = 
     <AppointmentSummary
       title="Appointment summary"
       serviceName="New patient consultation"
-      meta="Family medicine · Rivera Family Medicine"
+      businessName="Rivera Family Medicine"
+      meta="Family medicine"
       date={date}
       changeLabel="Change date/time"
       onChangeDateTime={() => undefined}
@@ -152,6 +153,10 @@ describe("DetailsForm", () => {
   });
 });
 
+/** Both names inside one paragraph: one line, wrapping only when it must. */
+const ONE_LINE =
+  /<p[^>]*>(?:(?!<\/p>).)*Rivera Family Medicine(?:(?!<\/p>).)*\u00a0· (?:(?!<\/p>).)*New patient consultation(?:(?!<\/p>).)*<\/p>/;
+
 describe("AppointmentSummary", () => {
   it("leaves the client's details to the form and hides a missing price", () => {
     const html = summary({ cost: null });
@@ -159,6 +164,14 @@ describe("AppointmentSummary", () => {
     expect(html).not.toContain("Patient");
     expect(html).not.toContain("Add your");
     expect(html).not.toContain("Total");
+  });
+
+  it("names the business and the service on one line", () => {
+    expect(summary()).toMatch(ONE_LINE);
+    // A page with no name yet still names the service.
+    const unnamed = summary({ businessName: "" });
+    expect(unnamed).toContain("New patient consultation");
+    expect(unnamed).not.toContain("· <");
   });
 
   it("renders the date block for a timed, a full-day and a no-date booking", () => {
@@ -218,6 +231,23 @@ describe("CompactAppointmentSummary and MobileConfirmBar", () => {
     expect(html).toContain("9:00 – 9:30 AM");
     expect(html).not.toContain("30 min");
     expect(html).toContain("$95");
+    expect(html).not.toContain("· ");
+  });
+
+  it("names the business beside the service on a phone too", () => {
+    const html = renderToStaticMarkup(
+      <CompactAppointmentSummary
+        title="Appointment summary"
+        businessName="Rivera Family Medicine"
+        serviceName="New patient consultation"
+        date={date}
+        changeLabel="Change date/time"
+        onChangeDateTime={() => undefined}
+        cost="$95"
+      />,
+    );
+
+    expect(html).toMatch(ONE_LINE);
   });
 
   it("carries the total, the alert and the hold line above the change and confirm buttons", () => {
@@ -280,6 +310,35 @@ describe("AppointmentAbout", () => {
     }
     expect(html).toContain("Before your visit:");
     expect(html).toContain('href="tel:+12125550142"');
+  });
+
+  it("keeps type, length and capacity on one row, with the specialty under it", () => {
+    const html = render();
+    const row = html.match(/<dl class="([^"]*)">(.*?)<\/dl>/)!;
+
+    expect(row[1]).toContain("grid-cols-[repeat(3,");
+    expect(row[2].match(/<dt[^>]*>([^<]*)</g)?.map((dt) => dt.replace(/.*>(.*)</, "$1"))).toEqual([
+      "Type",
+      "Length",
+      "Capacity",
+      "Specialty",
+    ]);
+    expect(row[2]).toMatch(/<div class="[^"]*col-span-full[^"]*"><dt[^>]*>Specialty/);
+  });
+
+  it("narrows the row to the facts the service has", () => {
+    expect(render({ capacity: undefined })).toMatch(/<dl class="[^"]*grid-cols-\[repeat\(2,/);
+    expect(render({ capacity: undefined, durationMinutes: undefined })).toMatch(
+      /<dl class="[^"]*grid-cols-1/,
+    );
+  });
+
+  it("sets the address and the phone side by side, and alone when there is one", () => {
+    const sideBySide = "grid-cols-[minmax(7.5rem,1fr)_auto]";
+
+    expect(render()).toContain(sideBySide);
+    expect(render({}, { phones: [] })).not.toContain(sideBySide);
+    expect(render({}, { addresses: [] })).not.toContain(sideBySide);
   });
 
   it("hides what the service does not have", () => {
