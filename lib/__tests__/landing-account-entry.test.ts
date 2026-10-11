@@ -7,41 +7,45 @@ describe("resolveLandingAccountEntry", () => {
     expect(
       resolveLandingAccountEntry({
         loggedIn: false,
+        hasPage: false,
         canOpenDashboard: false,
         hasLoginHref: true,
       }),
     ).toBe("login");
   });
 
-  it("offers the workspace to a signed-in owner", () => {
+  it("offers the workspace to a signed-in owner with a finished page", () => {
     expect(
       resolveLandingAccountEntry({
         loggedIn: true,
+        hasPage: true,
         canOpenDashboard: true,
         hasLoginHref: true,
       }),
     ).toBe("dashboard");
   });
 
-  it("still offers the workspace to a signed-in owner with no finished page", () => {
-    // The regression this function exists for. Setup state used to gate this,
-    // so an owner whose store failed to load saw no log-in link (signed in)
-    // and no dashboard link (no page) — no way in at all.
+  it("offers setup, not the workspace, to a signed-in visitor with no finished page", () => {
+    // The workspace sends anyone without a finished page back to the landing
+    // page, so offering it here was a link that went nowhere: a new account
+    // clicked "Your dashboard" and stayed exactly where it was.
     expect(
       resolveLandingAccountEntry({
         loggedIn: true,
+        hasPage: false,
         canOpenDashboard: true,
         hasLoginHref: true,
       }),
-    ).toBe("dashboard");
+    ).toBe("setup");
   });
 
   it("never leaves a signed-in visitor with nothing when a way in exists", () => {
-    for (const canOpenDashboard of [true]) {
+    for (const hasPage of [true, false]) {
       expect(
         resolveLandingAccountEntry({
           loggedIn: true,
-          canOpenDashboard,
+          hasPage,
+          canOpenDashboard: true,
           hasLoginHref: false,
         }),
       ).not.toBe("none");
@@ -52,17 +56,23 @@ describe("resolveLandingAccountEntry", () => {
     expect(
       resolveLandingAccountEntry({
         loggedIn: false,
+        hasPage: false,
         canOpenDashboard: false,
         hasLoginHref: false,
       }),
     ).toBe("none");
 
-    expect(
-      resolveLandingAccountEntry({
-        loggedIn: true,
-        canOpenDashboard: false,
-        hasLoginHref: true,
-      }),
-    ).toBe("none");
+    // A page that reuses the landing chrome without a way into the workspace
+    // (the gallery) does not know whether there is a page, so it offers neither.
+    for (const hasPage of [true, false]) {
+      expect(
+        resolveLandingAccountEntry({
+          loggedIn: true,
+          hasPage,
+          canOpenDashboard: false,
+          hasLoginHref: true,
+        }),
+      ).toBe("none");
+    }
   });
 });

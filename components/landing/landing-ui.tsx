@@ -58,7 +58,10 @@ type LandingActions = {
   loggedIn?: boolean;
   /** Sign-in URL that returns to this page, language included. */
   loginHref?: string;
-  /** Opens the workspace for a signed-in provider who finished setup. */
+  /**
+   * Opens the workspace. Offered only once `hasPage` is true: the workspace
+   * sends anyone without a finished page back to the landing page.
+   */
   onOpenDashboard?: () => void;
 };
 
@@ -187,16 +190,18 @@ function DemoButton({
 }
 
 /**
- * The returning-provider entry point: a sign-in link, or a way back into the
- * workspace. See lib/landing-account-entry.ts for why setup state does not
- * gate this.
+ * The account entry point: a sign-in link, a way back into the workspace, or
+ * the start of setup for someone signed in with no page yet. See
+ * lib/landing-account-entry.ts for how the three are told apart.
  */
 function useAccountEntry() {
-  const { loggedIn, loginHref, onOpenDashboard } = useLandingActions();
+  const { loggedIn, hasPage, loginHref, onOpenDashboard } = useLandingActions();
+  const { openStart } = useLandingDialogs();
   const { t } = useLanguage();
 
   const entry = resolveLandingAccountEntry({
     loggedIn: Boolean(loggedIn),
+    hasPage: Boolean(hasPage),
     canOpenDashboard: Boolean(onOpenDashboard),
     hasLoginHref: Boolean(loginHref),
   });
@@ -207,6 +212,10 @@ function useAccountEntry() {
 
   if (entry === "dashboard" && onOpenDashboard) {
     return { kind: "dashboard", onClick: onOpenDashboard, label: t.nav.dashboard } as const;
+  }
+
+  if (entry === "setup") {
+    return { kind: "setup", onClick: openStart, label: t.nav.createPageLong } as const;
   }
 
   return null;
@@ -306,6 +315,9 @@ export function StickyNav({
 } = {}) {
   const { lang, setLang, t } = useLanguage();
   const { hasPage } = useLandingActions();
+  // Setup is the bar's primary button already, under the same words. The
+  // account entry stands in for it only where that button is not shown.
+  const entryStartsSetup = useAccountEntry()?.kind === "setup";
   const anchor = sectionAnchor(anchorsGoHome, lang);
   const heroPassed = useHeroPassed(alwaysShowCta);
   const navLinks = [
@@ -335,7 +347,9 @@ export function StickyNav({
         </nav>
         <div className="flex shrink-0 items-center gap-2 xl:gap-3.5">
           <LangPill lang={lang} onChange={setLang} />
-          <AccountEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
+          {entryStartsSetup ? null : (
+            <AccountEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
+          )}
           {hasPage ? null : (
             <StartButton
               className={cn(
@@ -372,7 +386,7 @@ export function StickyNav({
                 </a>
               ))}
               <div className="mt-1 border-t border-[var(--lp-line-soft)] pt-1.5">
-                {hasPage ? null : (
+                {hasPage || entryStartsSetup ? null : (
                   <StartButton className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-bold text-[var(--lp-teal-700)] transition hover:bg-[var(--lp-paper)] sm:hidden">
                     {t.nav.createPageLong}
                   </StartButton>
@@ -393,8 +407,9 @@ function HeroAccountLine() {
   const { hasPage } = useLandingActions();
   const { t } = useLanguage();
 
-  // The primary button already says this for an owner.
-  if (!entry || hasPage) {
+  // The primary button already says this for an owner, and for someone
+  // signed in with no page yet.
+  if (!entry || hasPage || entry.kind === "setup") {
     return null;
   }
 
