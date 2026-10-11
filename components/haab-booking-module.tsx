@@ -180,6 +180,7 @@ import {
   type BookingReviewFilter,
 } from "@/lib/booking-review";
 import { getBookingRetentionPolicy } from "@/lib/booking-retention";
+import { describeBookingWriteFailure } from "@/lib/booking-write-failure";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
@@ -3339,7 +3340,10 @@ export function HaabBookingModule({
               ? service.bookingType === "appointment"
                 ? t.errors.rescheduleSlotUnavailable
                 : t.errors.rescheduleDateUnavailable
-              : t.errors.rescheduleFailed,
+              : describeBookingWriteFailure(response.status, {
+                  signedOut: workspaceCopy.signedOutError,
+                  fallback: t.errors.rescheduleFailed,
+                }),
           );
           return;
         }
@@ -3424,7 +3428,12 @@ export function HaabBookingModule({
         };
 
         if (!response.ok || !payload.booking) {
-          setCancellationError(t.errors.cancelFailed);
+          setCancellationError(
+            describeBookingWriteFailure(response.status, {
+              signedOut: workspaceCopy.signedOutError,
+              fallback: t.errors.cancelFailed,
+            }),
+          );
           return;
         }
 
@@ -3490,7 +3499,13 @@ export function HaabBookingModule({
       const payload = (await response.json().catch(() => ({}))) as { booking?: BookingRecord };
 
       if (!response.ok || !payload.booking) {
-        throw new Error(`review ${response.status}`);
+        const message = describeBookingWriteFailure(response.status, {
+          signedOut: workspaceCopy.signedOutError,
+          fallback: workspaceCopy.review.failed,
+        });
+
+        setNotice((current) => ({ id: (current?.id ?? 0) + 1, message }));
+        return;
       }
 
       // Applied to the bookings as they are now: several flags can be flipped

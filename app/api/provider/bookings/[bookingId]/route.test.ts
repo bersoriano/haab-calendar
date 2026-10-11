@@ -1,8 +1,9 @@
 import type { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
+  cancelProviderBooking: vi.fn(),
   setProviderBookingReviewed: vi.fn(),
 }));
 
@@ -18,7 +19,11 @@ vi.mock("@/lib/supabase/demo-edit", () => ({
 
 vi.mock("@/lib/supabase/bookings", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/supabase/bookings")>();
-  return { ...actual, setProviderBookingReviewed: mocks.setProviderBookingReviewed };
+  return {
+    ...actual,
+    cancelProviderBooking: mocks.cancelProviderBooking,
+    setProviderBookingReviewed: mocks.setProviderBookingReviewed,
+  };
 });
 
 import { PATCH } from "@/app/api/provider/bookings/[bookingId]/route";
@@ -75,5 +80,59 @@ describe("PATCH /api/provider/bookings/[bookingId] — review", () => {
 
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ userMessage: "That booking was not found." });
+  });
+});
+
+describe("PATCH /api/provider/bookings/[bookingId] — a refused write leaves a trace", () => {
+  beforeEach(() => {
+    mocks.getUser.mockReset();
+    mocks.cancelProviderBooking.mockReset();
+    mocks.getUser.mockResolvedValue({ data: { user: { id: "owner-1" } }, error: null });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("logs what the database said when a cancel fails", async () => {
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.cancelProviderBooking.mockRejectedValue(
+      new PublicBookingWriteError("Could not update that booking.", 500, {
+        code: "42501",
+        message: "permission denied for table bookings",
+      }),
+    );
+
+    const response = await patch({ action: "cancel" });
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ userMessage: "Could not update that booking." });
+    expect(logged).toHaveBeenCalledWith("provider_booking_update_refused", {
+      userId: "owner-1",
+      bookingId: "booking-1",
+      action: "cancel",
+      status: 500,
+      error: "42501: permission denied for table bookings",
+    });
+  });
+
+  it("notes an expected refusal as a warning, not an error", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    const warnings = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mocks.cancelProviderBooking.mockRejectedValue(
+      new PublicBookingWriteError("That booking was not found.", 404),
+    );
+
+    const response = await patch({ action: "cancel" });
+
+    expect(response.status).toBe(404);
+    expect(errors).not.toHaveBeenCalled();
+    expect(warnings).toHaveBeenCalledWith("provider_booking_update_refused", {
+      userId: "owner-1",
+      bookingId: "booking-1",
+      action: "cancel",
+      status: 404,
+      error: "That booking was not found.",
+    });
   });
 });

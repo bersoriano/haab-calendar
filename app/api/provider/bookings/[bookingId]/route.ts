@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { describeError } from "@/lib/describe-error";
 import { createClient } from "@/lib/supabase/server";
 import {
   cancelProviderBooking,
@@ -136,6 +137,19 @@ export async function PATCH(
     );
   } catch (error) {
     if (error instanceof PublicBookingWriteError) {
+      // The provider only ever sees one sentence, so without this nothing says
+      // which rule turned the request away. A 4xx is an expected answer; a 5xx
+      // is the database refusing, and its own words are the only lead.
+      const log = error.status >= 500 ? console.error : console.warn;
+
+      log("provider_booking_update_refused", {
+        userId: user.id,
+        bookingId,
+        action,
+        status: error.status,
+        error: describeError(error.cause ?? error),
+      });
+
       return NextResponse.json(
         { userMessage: error.userMessage },
         { status: error.status },
@@ -146,7 +160,7 @@ export async function PATCH(
       userId: user.id,
       bookingId,
       action,
-      error: error instanceof Error ? error.message : String(error),
+      error: describeError(error),
     });
 
     return NextResponse.json(
