@@ -106,6 +106,8 @@ export type DashboardShellCopy = {
   clearFilters: string;
   /** "{shown}" and "{total}" are filled in. */
   resultsCount: string;
+  /** Matches in the view not shown; "{count}" and "{view}" are replaced at the call site. */
+  otherViewMatches: string;
   noBookingsYetTitle: string;
   noBookingsYetBody: string;
   bookingPageTitle: string;
@@ -268,6 +270,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     tomorrow: "Tomorrow",
     clearFilters: "Clear filters",
     resultsCount: "{shown} of {total}",
+    otherViewMatches: "{count} more in {view}",
     noBookingsYetTitle: "Nothing booked yet",
     noBookingsYetBody: "When clients book from your page, it shows up here.",
     bookingPageTitle: "Your booking page",
@@ -454,6 +457,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     tomorrow: "Mañana",
     clearFilters: "Quitar filtros",
     resultsCount: "{shown} de {total}",
+    otherViewMatches: "{count} más en {view}",
     noBookingsYetTitle: "Todavía no hay nada reservado",
     noBookingsYetBody: "Cuando sus clientes reserven desde su página, aparecerá aquí.",
     bookingPageTitle: "Su página de reservas",

@@ -3682,6 +3682,7 @@ export function HaabBookingModule({
         totalCount={bookingList.totalCount}
         activeCount={bookingList.activeCount}
         archiveCount={bookingList.archiveCount}
+        otherViewMatches={bookingList.otherViewMatches}
         view={bookingListView}
         onViewChange={setBookingListView}
         sort={bookingListSort}

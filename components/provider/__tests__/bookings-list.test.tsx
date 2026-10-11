@@ -131,6 +131,19 @@ describe("BookingsList", () => {
     expect(noMatch).not.toContain(dashboardCopy.en.noBookingsYetTitle);
   });
 
+  it("points to matches in the other view while a search or filter is on", () => {
+    const found = render({ search: "jose", bookings: [], otherViewMatches: 2 });
+    expect(found).toMatch(/<button[^>]*>(?:(?!<\/button>).)*2 more in Archive/);
+
+    const fromArchive = render({ view: "archive", status: "cancelled", otherViewMatches: 1 });
+    expect(fromArchive).toMatch(/<button[^>]*>(?:(?!<\/button>).)*1 more in Active/);
+
+    // Nothing to point at, or nothing being searched: no pointer.
+    expect(render({ search: "jose", otherViewMatches: 0 })).not.toContain("more in");
+    expect(render({ otherViewMatches: 3 })).not.toContain("more in");
+    expect(render({ lang: "es", search: "jose", otherViewMatches: 2 })).toContain("2 más en Archivo");
+  });
+
   it("leaves scanning to its own section", () => {
     expect(render()).not.toContain(en.admin.scanAppointment);
   });
