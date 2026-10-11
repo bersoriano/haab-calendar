@@ -221,11 +221,14 @@ function useAccountEntry() {
   return null;
 }
 
-/** Footer variant: drops the whole row rather than leaving an empty bullet. */
+/**
+ * Footer variant: drops the whole row rather than leaving an empty bullet. The
+ * footer has its own create button, so a setup entry would only repeat it.
+ */
 function AccountEntryListItem() {
   const entry = useAccountEntry();
 
-  if (!entry) {
+  if (!entry || entry.kind === "setup") {
     return null;
   }
 

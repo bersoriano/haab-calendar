@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
+  Footer,
   getLandingStartMode,
   LandingActionsProvider,
   StickyNav,
@@ -77,6 +78,30 @@ describe("landing account entry", () => {
     // a single row. The account entry must not add a second copy beside either.
     expect(html.split(">Create your page</button>").length - 1).toBe(1);
     expect(html.split(">Create your page<svg").length - 1).toBe(1);
+  });
+
+  it("leaves the footer to its own create button for a visitor with no page", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLang="en">
+        <LandingActionsProvider
+          actions={{
+            onStart: () => undefined,
+            onSelectVertical: () => undefined,
+            loggedIn: true,
+            hasPage: false,
+            onOpenDashboard: () => undefined,
+          }}
+        >
+          <Footer />
+        </LandingActionsProvider>
+      </LanguageProvider>,
+    );
+
+    // The footer already carries the create button (label, then an arrow), so
+    // the account row would only repeat it in the links beside it.
+    expect(html).not.toContain("Your dashboard");
+    expect(html).toContain("Create your page<svg");
+    expect(html).not.toContain(">Create your page</button>");
   });
 
   it("keeps the log-in entry reachable on phones through the menu", () => {
