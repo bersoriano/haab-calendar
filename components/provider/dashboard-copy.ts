@@ -35,6 +35,8 @@ export type DashboardShellCopy = {
   cancelledToast: string;
   /** Toast after a booking is moved from the dashboard. */
   rescheduledToast: string;
+  /** Shown when a booking change is refused because the session is gone. */
+  signedOutError: string;
   /** Link under a stat to the list it counts. */
   viewAll: string;
   /** Label of a dialog's close button. */
@@ -220,6 +222,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     changesSaved: "Changes saved",
     cancelledToast: "Cancellation saved",
     rescheduledToast: "New time saved",
+    signedOutError: "You've been signed out. Reload the page to sign in again.",
     viewAll: "View all",
     closeDialog: "Close",
     moreBookings: "more",
@@ -421,6 +424,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     changesSaved: "Cambios guardados",
     cancelledToast: "Cancelación guardada",
     rescheduledToast: "Nuevo horario guardado",
+    signedOutError: "Su sesión terminó. Recargue la página para iniciar sesión de nuevo.",
     viewAll: "Ver todo",
     closeDialog: "Cerrar",
     moreBookings: "más",
