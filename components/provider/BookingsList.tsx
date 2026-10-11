@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarBlank, MagnifyingGlass, X } from "@phosphor-icons/react";
+import { ArrowRight, CalendarBlank, MagnifyingGlass, X } from "@phosphor-icons/react";
 
 import {
   Badge,
@@ -45,6 +45,7 @@ export function BookingsList({
   totalCount,
   activeCount,
   archiveCount,
+  otherViewMatches = 0,
   view,
   onViewChange,
   sort,
@@ -71,6 +72,8 @@ export function BookingsList({
   totalCount: number;
   activeCount: number;
   archiveCount: number;
+  /** What the current search and filters find in the view not shown. */
+  otherViewMatches?: number;
   view: BookingListView;
   onViewChange: (value: BookingListView) => void;
   sort: BookingListSort;
@@ -171,12 +174,28 @@ export function BookingsList({
         </div>
 
         <div className="flex min-h-9 flex-wrap items-center justify-between gap-2 text-sm text-app-fg-muted">
-          <p aria-live="polite">
-            {fillTemplate(shell.resultsCount, {
-              shown: String(bookings.length),
-              total: String(totalCount),
-            })}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p aria-live="polite">
+              {fillTemplate(shell.resultsCount, {
+                shown: String(bookings.length),
+                total: String(totalCount),
+              })}
+            </p>
+            {/* A search only lists one view; say when the other one holds matches too. */}
+            {filtersActive && otherViewMatches > 0 ? (
+              <Button
+                variant="plain"
+                size="sm"
+                onClick={() => onViewChange(readOnly ? "active" : "archive")}
+              >
+                {fillTemplate(shell.otherViewMatches, {
+                  count: String(otherViewMatches),
+                  view: readOnly ? shell.activeBookings : shell.archivedBookings,
+                })}
+                <ArrowRight aria-hidden="true" size={16} />
+              </Button>
+            ) : null}
+          </div>
           {filtersActive ? (
             <Button
               variant="plain"
