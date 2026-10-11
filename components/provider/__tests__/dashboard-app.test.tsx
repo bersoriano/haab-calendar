@@ -165,6 +165,59 @@ describe("DashboardApp", () => {
     expect(render({ isSuperAdmin: true }).html).toContain('href="/super-admin"');
   });
 
+  describe("new bookings", () => {
+    const booked = (reviewedAt?: string) => ({
+      id: reviewedAt ? "seen" : "new",
+      serviceId: "s",
+      serviceName: "Strategy session",
+      bookingType: "appointment" as const,
+      dateKey: "2026-10-20",
+      startTime: "09:00",
+      endTime: "10:00",
+      clientName: "Ana",
+      clientEmail: "ana@example.com",
+      clientPhone: "555",
+      notes: "",
+      cost: "",
+      status: "confirmed" as const,
+      createdAt: "2026-10-10T00:00:00.000Z",
+      updatedAt: "2026-10-10T00:00:00.000Z",
+      manageToken: "",
+      reviewedAt,
+    });
+    const shell = (vertical: "professional" | "events", bookings: ReturnType<typeof booked>[]) => {
+      captured.props.length = 0;
+      captured.pathname = "/dashboard";
+      captured.search = "";
+      const html = renderToStaticMarkup(
+        <DashboardApp
+          initialSection="dashboard"
+          store={{ ...store(), vertical, bookings }}
+          email="owner@example.com"
+          isSuperAdmin={false}
+          viewerLanguage="en"
+        />,
+      );
+      return html.match(/<a[^>]*href="\/dashboard\/bookings"[\s\S]*?<\/a>/)?.[0] ?? "";
+    };
+
+    it("flags the bookings item while a professional has bookings not yet seen", () => {
+      expect(shell("professional", [booked(), booked(), booked("2026-10-11T00:00:00.000Z")])).toContain(
+        '<span class="sr-only">2 new</span>',
+      );
+    });
+
+    it("does not flag it once every booking is seen, or for another vertical", () => {
+      expect(shell("professional", [booked("2026-10-11T00:00:00.000Z")])).not.toContain("sr-only");
+      expect(shell("events", [booked()])).not.toContain("sr-only");
+    });
+
+    it("lets the module keep the count current", () => {
+      shell("professional", []);
+      expect(captured.props[0]?.onNewBookingCountChange).toBeTypeOf("function");
+    });
+  });
+
   it("titles the page after the active section", () => {
     expect(render({ pathname: "/dashboard/availability" }).html).toMatch(
       /<h1[^>]*>Availability<\/h1>/,

@@ -144,6 +144,81 @@ describe("BookingsList", () => {
     expect(render({ lang: "es", search: "jose", otherViewMatches: 2 })).toContain("2 más en Archivo");
   });
 
+  describe("review flag", () => {
+    const review = {
+      filter: "all" as const,
+      onFilterChange: () => undefined,
+      pendingIds: new Set<string>(),
+      onToggle: () => undefined,
+    };
+    const seenAt = "2026-10-08T09:00:00.000Z";
+    const mixed = [
+      booking({ id: "new", clientName: "Ana Ruiz" }),
+      booking({ id: "seen", clientName: "Bo Diaz", reviewedAt: seenAt }),
+    ];
+    /** One booking's row, so a button is read against the right client. */
+    const rowOf = (html: string, name: string) => html.match(new RegExp(`<li[^>]*>(?:(?!</li>)[\\s\\S])*${name}(?:(?!</li>)[\\s\\S])*</li>`))?.[0] ?? "";
+
+    it("is absent where bookings are not reviewed", () => {
+      const html = render({ bookings: mixed });
+
+      expect(html).not.toContain("Mark as seen");
+      expect(html).not.toContain("Mark as new");
+      expect(html).not.toContain(dashboardCopy.en.review.filterLabel);
+    });
+
+    it("badges a new booking and offers to mark it as seen", () => {
+      const row = rowOf(render({ bookings: mixed, review }), "Ana Ruiz");
+
+      expect(row).toMatch(/<span[^>]*>(?:<span[^>]*><\/span>)?New<\/span>/);
+      expect(row).toContain("Mark as seen");
+      expect(row).not.toContain("Mark as new");
+    });
+
+    it("drops the badge once seen and offers to mark it as new again", () => {
+      const row = rowOf(render({ bookings: mixed, review }), "Bo Diaz");
+
+      expect(row).not.toMatch(/>New</);
+      expect(row).toContain("Mark as new");
+      expect(row).not.toContain("Mark as seen");
+    });
+
+    it("keeps the flag editable in the archive and on a cancelled booking", () => {
+      const archived = rowOf(render({ bookings: mixed, review, view: "archive" }), "Ana Ruiz");
+      expect(archived).toContain("Mark as seen");
+      expect(archived).not.toContain(en.publicFlow.reschedule);
+
+      const cancelled = rowOf(
+        render({ bookings: [booking({ id: "x", clientName: "Cy Lee", status: "cancelled" })], review }),
+        "Cy Lee",
+      );
+      expect(cancelled).toContain("Mark as seen");
+    });
+
+    it("shows a flag being saved as busy", () => {
+      const row = rowOf(render({ bookings: mixed, review: { ...review, pendingIds: new Set(["new"]) } }), "Ana Ruiz");
+      expect(row).toMatch(/<button[^>]*disabled=""[^>]*>(?:(?!<\/button>)[\s\S])*Mark as seen/);
+    });
+
+    it("filters by new or seen, and counts that as a filter to clear", () => {
+      const html = render({ bookings: mixed, review: { ...review, filter: "new" } });
+
+      expect(html).toMatch(
+        new RegExp(`<select[^>]*aria-label="${dashboardCopy.en.review.filterLabel}"[^>]*>(?:(?!</select>)[\\s\\S])*<option value="new" selected="">New</option>`),
+      );
+      expect(html).toContain(dashboardCopy.en.clearFilters);
+      expect(render({ bookings: mixed, review })).not.toContain(dashboardCopy.en.clearFilters);
+    });
+
+    it("is worded in Spanish", () => {
+      const html = render({ bookings: mixed, review, lang: "es" });
+
+      expect(html).toContain("Marcar como revisado");
+      expect(html).toContain("Sin revisar");
+      expect(html).not.toContain("Mark as seen");
+    });
+  });
+
   it("leaves scanning to its own section", () => {
     expect(render()).not.toContain(en.admin.scanAppointment);
   });

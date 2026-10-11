@@ -106,6 +106,23 @@ export type DashboardShellCopy = {
   clearFilters: string;
   /** "{shown}" and "{total}" are filled in. */
   resultsCount: string;
+  /** Bookings the provider has not marked as seen (professional services). */
+  review: {
+    newBadge: string;
+    markSeen: string;
+    markNew: string;
+    filterLabel: string;
+    filterAll: string;
+    filterNew: string;
+    filterSeen: string;
+    failed: string;
+    /** "{count}" and "{bookings}" are replaced at the call site. */
+    overviewTitle: string;
+    overviewBody: string;
+    overviewAction: string;
+    /** Read after the sidebar item's name; "{count}" is replaced at the call site. */
+    navAlert: string;
+  };
   /** Matches in the view not shown; "{count}" and "{view}" are replaced at the call site. */
   otherViewMatches: string;
   noBookingsYetTitle: string;
@@ -271,6 +288,20 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     clearFilters: "Clear filters",
     resultsCount: "{shown} of {total}",
     otherViewMatches: "{count} more in {view}",
+    review: {
+      newBadge: "New",
+      markSeen: "Mark as seen",
+      markNew: "Mark as new",
+      filterLabel: "Filter by new or seen",
+      filterAll: "New and seen",
+      filterNew: "New",
+      filterSeen: "Seen",
+      failed: "Could not update that booking. Check your connection and try again.",
+      overviewTitle: "{count} new {bookings}",
+      overviewBody: "Mark each one as seen once you have looked at it.",
+      overviewAction: "Review",
+      navAlert: "{count} new",
+    },
     noBookingsYetTitle: "Nothing booked yet",
     noBookingsYetBody: "When clients book from your page, it shows up here.",
     bookingPageTitle: "Your booking page",
@@ -458,6 +489,20 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     clearFilters: "Quitar filtros",
     resultsCount: "{shown} de {total}",
     otherViewMatches: "{count} más en {view}",
+    review: {
+      newBadge: "Sin revisar",
+      markSeen: "Marcar como revisado",
+      markNew: "Marcar sin revisar",
+      filterLabel: "Filtrar por revisión",
+      filterAll: "Revisado y sin revisar",
+      filterNew: "Sin revisar",
+      filterSeen: "Revisado",
+      failed: "No se pudo actualizar esa reserva. Revise su conexión e inténtelo de nuevo.",
+      overviewTitle: "{count} {bookings} sin revisar",
+      overviewBody: "Marque cada una como revisado cuando la haya visto.",
+      overviewAction: "Revisar",
+      navAlert: "{count} sin revisar",
+    },
     noBookingsYetTitle: "Todavía no hay nada reservado",
     noBookingsYetBody: "Cuando sus clientes reserven desde su página, aparecerá aquí.",
     bookingPageTitle: "Su página de reservas",

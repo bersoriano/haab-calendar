@@ -37,6 +37,7 @@ import {
   parseVerticalId,
   summarizeReplacement,
 } from "@/lib/business-type-switch";
+import { countNewBookings, tracksBookingReview } from "@/lib/booking-review";
 import { todayKey } from "@/lib/date";
 import type { DemoEditBanner } from "@/lib/demo-pages";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
@@ -144,6 +145,11 @@ export function DashboardApp({
   // One-shot notices from the URL (Checkout, Google) belong to the page the
   // provider landed on, not to every section they visit afterwards.
   const [hasNavigated, setHasNavigated] = useState(false);
+  // The module owns the live bookings (it refreshes them); it reports how many
+  // are still new so the sidebar can flag them from the first paint on.
+  const [newBookingCount, setNewBookingCount] = useState(() =>
+    tracksBookingReview(store.vertical) ? countNewBookings(store.bookings) : 0,
+  );
   const lastSectionRef = useRef(section);
 
   const lang: Lang = snapshot.provider.dashboardLanguage ?? viewerLanguage;
@@ -191,6 +197,10 @@ export function DashboardApp({
       href: pathForSection(entry.id),
       label: sectionTitle(entry.id, lang, verticalCopy),
       icon: SECTION_ICONS[entry.id],
+      alert:
+        entry.id === "bookings" && newBookingCount > 0
+          ? fillTemplate(shell.review.navAlert, { count: String(newBookingCount) })
+          : undefined,
     }));
   }
 
@@ -364,6 +374,7 @@ export function DashboardApp({
               chrome="shell"
               onStoreChange={setSnapshot}
               onSetupPersisted={setSnapshot}
+              onNewBookingCountChange={setNewBookingCount}
               onChangeBusinessType={
                 demoEdit
                   ? undefined

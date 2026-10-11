@@ -26,6 +26,8 @@ export type ShellNavItem = {
   label: string;
   icon: ShellIconName;
   badge?: string | number;
+  /** Shows an alert icon beside the label; the text is what a screen reader hears. */
+  alert?: string;
 };
 
 export type ShellNavGroup = {

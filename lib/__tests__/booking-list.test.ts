@@ -89,6 +89,25 @@ describe("getBookingListView", () => {
     });
   });
 
+  it("filters by what the provider has and has not seen, in either view", () => {
+    const seenAt = "2026-10-09T08:00:00.000Z";
+    const items = [
+      booking("new-active", "2026-10-10"),
+      booking("seen-active", "2026-10-10", "10:00", { reviewedAt: seenAt }),
+      booking("new-archived", "2026-09-01"),
+      booking("seen-archived", "2026-09-02", "09:00", { reviewedAt: seenAt }),
+    ];
+    const ids = (options: Parameters<typeof getBookingListView>[2]) =>
+      getBookingListView(items, "2026-10-09", options).bookings.map((b) => b.id);
+
+    expect(ids({ review: "new" })).toEqual(["new-active"]);
+    expect(ids({ review: "seen" })).toEqual(["seen-active"]);
+    expect(ids({ review: "new", view: "archive" })).toEqual(["new-archived"]);
+    expect(ids({ review: "all" })).toEqual(["seen-active", "new-active"]);
+    // New bookings waiting in the other view are counted like any other match.
+    expect(getBookingListView(items, "2026-10-09", { review: "new" }).otherViewMatches).toBe(1);
+  });
+
   it("uses provider's day at midnight and moves bookings when that day advances", () => {
     const today = getDateTimeKeysInTimeZone(new Date("2026-10-10T02:00:00Z"), "America/Mexico_City").dateKey;
     const items = [booking("boundary", "2026-10-02")];

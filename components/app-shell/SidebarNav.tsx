@@ -1,5 +1,6 @@
 "use client";
 
+import { BellRinging } from "@phosphor-icons/react";
 import Link from "next/link";
 import type { MouseEvent, ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -108,6 +109,12 @@ export function SidebarNav({
                   >
                     <ShellIcon name={item.icon} active={active} />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {item.alert ? (
+                      <span title={item.alert} className="flex shrink-0 items-center text-app-accent">
+                        <BellRinging aria-hidden="true" size={18} weight="fill" />
+                        <span className="sr-only">{item.alert}</span>
+                      </span>
+                    ) : null}
                     {item.badge !== undefined ? <Badge tone="neutral">{item.badge}</Badge> : null}
                   </ShellLink>
                 </li>

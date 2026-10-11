@@ -62,6 +62,29 @@ describe("SidebarNav", () => {
     expect(html).not.toContain("var(--");
   });
 
+  it("flags an item that carries an alert, in words a screen reader hears", () => {
+    const flagged = renderToStaticMarkup(
+      <SidebarNav
+        groups={[
+          {
+            id: "operate",
+            items: [
+              { id: "bookings", href: "/dashboard/bookings", label: "Sessions", icon: "bookings", alert: "3 new" },
+              { id: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: "calendar" },
+            ],
+          },
+        ]}
+        activeId="none"
+        ariaLabel="Dashboard"
+      />,
+    );
+    const [sessions, calendar] = flagged.match(/<a[\s\S]*?<\/a>/g) ?? [];
+
+    expect(sessions).toMatch(/<svg[^>]*aria-hidden="true"/);
+    expect(sessions).toContain('<span class="sr-only">3 new</span>');
+    expect(calendar).not.toContain("sr-only");
+  });
+
   it("shows a badge when an item carries one", () => {
     const html = renderToStaticMarkup(
       <SidebarNav

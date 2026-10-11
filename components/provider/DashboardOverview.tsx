@@ -4,6 +4,7 @@ import { ArrowRight, CalendarBlank, Check, Copy } from "@phosphor-icons/react";
 import type { MouseEvent } from "react";
 
 import {
+  Alert,
   Badge,
   Button,
   ButtonLink,
@@ -18,9 +19,10 @@ import {
   Stat,
   StatGroup,
 } from "@/components/app-ui";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { CampaignBadge } from "@/components/provider/CampaignBadge";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { isNewBooking } from "@/lib/booking-review";
 import { getWeekdayShortFormatter } from "@/lib/constants";
 import type { NextStep } from "@/lib/dashboard-overview";
 import { pathForSection } from "@/lib/dashboard-routes";
@@ -58,6 +60,7 @@ export function DashboardOverview({
   onReschedule,
   onCancel,
   onSeeAllBookings,
+  newBookings,
   publicUrl,
   copiedLink,
   onCopyLink,
@@ -73,6 +76,8 @@ export function DashboardOverview({
   onReschedule: (bookingId: string) => void;
   onCancel: (bookingId: string) => void;
   onSeeAllBookings: () => void;
+  /** Present only where bookings are reviewed: how many are new, and the way to them. */
+  newBookings?: { count: number; onReview: () => void };
   publicUrl: string;
   copiedLink: boolean;
   onCopyLink: () => void;
@@ -111,6 +116,23 @@ export function DashboardOverview({
 
   return (
     <div className="grid gap-6">
+      {newBookings && newBookings.count > 0 ? (
+        <Alert
+          tone="info"
+          role="status"
+          title={fillTemplate(shell.review.overviewTitle, {
+            count: String(newBookings.count),
+            bookings: (newBookings.count === 1 ? copy.booking : copy.bookings).toLowerCase(),
+          })}
+          actions={
+            <Button size="sm" variant="primary" onClick={newBookings.onReview}>
+              {shell.review.overviewAction}
+            </Button>
+          }
+        >
+          {shell.review.overviewBody}
+        </Alert>
+      ) : null}
       <StatGroup columns={4}>
         <Stat
           label={t.admin.upcoming7Days}
@@ -181,6 +203,11 @@ export function DashboardOverview({
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-semibold text-app-fg">{booking.clientName}</p>
+                      {newBookings && isNewBooking(booking) ? (
+                        <Badge tone="accent" dot>
+                          {shell.review.newBadge}
+                        </Badge>
+                      ) : null}
                       <Badge tone={bookingTypeBadgeTone(booking.bookingType)}>
                         {getBookingTypeLabel(booking.bookingType, lang)}
                       </Badge>
