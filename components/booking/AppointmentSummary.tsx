@@ -95,6 +95,30 @@ function ChangeLink({ label, onClick, className }: { label: string; onClick: () 
   );
 }
 
+/** "{business} · {service}" on one line; the service alone when the page has no name yet. */
+function BookingNames({
+  businessName,
+  serviceName,
+  className,
+}: {
+  businessName?: string;
+  serviceName: string;
+  className?: string;
+}) {
+  return (
+    <p className={cn("break-words", className)}>
+      {businessName ? (
+        <>
+          <span>{businessName}</span>
+          {/* The dot stays with the business, so a wrapped line never starts with it. */}
+          {"\u00a0· "}
+        </>
+      ) : null}
+      <span className="font-semibold text-[var(--ink)]">{serviceName}</span>
+    </p>
+  );
+}
+
 /** Says why confirming was refused, where the eye already is: above the button. */
 export function BookingErrorAlert({
   id,
@@ -121,6 +145,7 @@ export function BookingErrorAlert({
 
 export function AppointmentSummary({
   title,
+  businessName,
   serviceName,
   meta,
   date,
@@ -132,8 +157,10 @@ export function AppointmentSummary({
   lang,
 }: {
   title: string;
+  /** Leads the service's line; empty when the page has no name yet. */
+  businessName: string;
   serviceName: string;
-  /** "{specialty} · {provider}", already joined; empty parts are the caller's to drop. */
+  /** The specialty, set under the names; empty hides the line. */
   meta: string;
   date: SummaryDate | null;
   changeLabel: string;
@@ -186,7 +213,11 @@ export function AppointmentSummary({
         ) : null}
 
         <div className="flex flex-col gap-0.5">
-          <span className="break-words text-[15px] font-semibold text-[var(--ink)]">{serviceName}</span>
+          <BookingNames
+            businessName={businessName}
+            serviceName={serviceName}
+            className="text-[15px] font-medium text-[var(--ink-secondary)]"
+          />
           {meta ? <span className="break-words text-[13.5px] text-[var(--muted)]">{meta}</span> : null}
         </div>
 
@@ -260,6 +291,7 @@ export function AppointmentSummary({
 /** The phone's version: what you are booking, on one card, before the form. */
 export function CompactAppointmentSummary({
   title,
+  businessName,
   serviceName,
   date,
   changeLabel,
@@ -268,6 +300,7 @@ export function CompactAppointmentSummary({
   cost,
 }: {
   title: string;
+  businessName?: string;
   serviceName: string;
   date: SummaryDate | null;
   changeLabel: string;
@@ -290,7 +323,11 @@ export function CompactAppointmentSummary({
               {date.timeShort || date.label}
             </span>
           ) : null}
-          <span className="break-words text-[13.5px] text-[var(--ink-secondary)]">{serviceName}</span>
+          <BookingNames
+            businessName={businessName}
+            serviceName={serviceName}
+            className="text-[13.5px] text-[var(--ink-secondary)]"
+          />
           {onChangeDateTime ? (
             <ChangeLink
               label={changeLabel}
