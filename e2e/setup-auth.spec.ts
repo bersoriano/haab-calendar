@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
+import { localAdminClient } from "./fixtures/local-supabase";
 import { E2E_PASSWORD, providerFor } from "./fixtures/providers";
 import { DEFAULT_STORAGE_KEY } from "../lib/constants";
 
@@ -110,3 +111,46 @@ test.describe("guest with a draft that has no business type yet", () => {
   });
 });
 
+test.describe("signed-in account with no page yet", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  // An account and nothing else: no provider row, so no page, finished or not.
+  const account = {
+    id: "00000000-0000-4000-8000-0000000e2ef0",
+    email: "no-page-yet@example.invalid",
+  };
+
+  test.beforeEach(async () => {
+    const admin = localAdminClient();
+    await admin.auth.admin.deleteUser(account.id).catch(() => undefined);
+    const { error } = await admin.auth.admin.createUser({
+      id: account.id,
+      email: account.email,
+      password: E2E_PASSWORD,
+      email_confirm: true,
+    });
+    if (error) throw error;
+  });
+
+  test("is offered setup from the menu, not a dashboard it does not have", async ({ page }) => {
+    await page.goto("/login?lang=en");
+    await page.getByLabel("Email").fill(account.email);
+    await page.getByLabel("Password").fill(E2E_PASSWORD);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+    // Signing in lands on the landing page: there is no dashboard to open yet.
+    await expect(page.getByLabel("Open menu")).toBeVisible({ timeout: 30_000 });
+    expect(new URL(page.url()).pathname).toBe("/");
+
+    // The dashboard sends this account straight back, so the menu must not
+    // offer it: "Your dashboard" was a button that left a new owner where
+    // they already were.
+    await page.getByLabel("Open menu").click();
+    const menu = page.getByRole("navigation", { name: "Mobile" });
+    await expect(menu.getByRole("button", { name: "Your dashboard" })).toHaveCount(0);
+    await expect(menu.getByRole("link", { name: "Log in" })).toHaveCount(0);
+
+    await menu.getByRole("button", { name: "Create your page" }).click();
+    await expect(page.getByRole("heading", { name: "Claim your booking link." })).toBeVisible();
+  });
+});
