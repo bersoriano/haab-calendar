@@ -167,6 +167,25 @@ export async function signup(
     redirect(credentials.next);
   }
 
+  // An address that already holds a confirmed account gets no error here:
+  // Supabase answers with a made-up user that has no identities, and sends no
+  // email. Reporting that as "account created" leaves the owner waiting for a
+  // link that never arrives — the usual way in is confirming on a phone and
+  // coming back to this form, still set to create. If the password is theirs
+  // they have proved the account is too, so let them in.
+  if (data.user?.identities?.length === 0) {
+    const { error: signInError } = await supabase.auth.signInWithPassword(
+      credentials.data,
+    );
+
+    if (!signInError) {
+      revalidatePath("/", "layout");
+      redirect(credentials.next);
+    }
+    // A refused sign-in falls through to the answer a new account gets.
+    // Anything else would tell a stranger which addresses hold accounts here.
+  }
+
   return {
     message: t.accountCreated,
     status: "success",
