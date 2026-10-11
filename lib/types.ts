@@ -168,6 +168,11 @@ export type BookingRecord = {
   status: BookingStatus;
   /** The campaign link and referring site the client booked through. */
   campaign?: BookingCampaign;
+  /**
+   * When the provider marked the booking as seen; absent while it is still
+   * new. Provider-side only: never sent to the client who booked.
+   */
+  reviewedAt?: string;
   createdAt: string;
   updatedAt: string;
   manageToken: string;

@@ -1,4 +1,5 @@
 import { addDays, getDateKey, parseDateKey } from "@/lib/date";
+import { matchesReviewFilter, type BookingReviewFilter } from "@/lib/booking-review";
 import type { BookingRecord, BookingStatus, BookingType } from "@/lib/types";
 
 export type BookingListSort = "closest" | "sooner" | "latest";
@@ -36,12 +37,13 @@ function searchMatcher(search: string) {
 export function getBookingListView(
   items: BookingRecord[],
   todayKey: string,
-  { view = "active", sort = "closest", search = "", status = "all", type = "all" }: {
+  { view = "active", sort = "closest", search = "", status = "all", type = "all", review = "all" }: {
     view?: BookingListView;
     sort?: BookingListSort;
     search?: string;
     status?: "all" | BookingStatus;
     type?: "all" | BookingType;
+    review?: BookingReviewFilter;
   } = {},
 ) {
   const cutoff = getDateKey(addDays(parseDateKey(todayKey), -7));
@@ -53,6 +55,7 @@ export function getBookingListView(
   const matches = items.filter((booking) =>
     (status === "all" || booking.status === status) &&
     (type === "all" || booking.bookingType === type) &&
+    matchesReviewFilter(booking, review) &&
     matchesSearch(booking));
   const bookings = matches.filter((booking) => (booking.dateKey < cutoff) === (view === "archive")).sort((left, right) => {
     const dateOrder = left.dateKey.localeCompare(right.dateKey);

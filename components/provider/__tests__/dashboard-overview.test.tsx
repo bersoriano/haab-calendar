@@ -90,6 +90,49 @@ describe("DashboardOverview", () => {
     expect(html).toContain(dashboardCopy.en.pageLive);
   });
 
+  describe("new bookings", () => {
+    const sessions = getVerticalCopy("professional", "en");
+
+    it("announces how many are new, with a way to review them", () => {
+      const html = render({ copy: sessions, newBookings: { count: 3, onReview: () => undefined } });
+
+      expect(html).toContain("3 new sessions");
+      expect(html).toMatch(/<button[^>]*>(?:(?!<\/button>)[\s\S])*Review/);
+      expect(render({ copy: sessions, newBookings: { count: 1, onReview: () => undefined } })).toContain(
+        "1 new session<",
+      );
+    });
+
+    it("says nothing when none are new, or where bookings are not reviewed", () => {
+      expect(render({ copy: sessions, newBookings: { count: 0, onReview: () => undefined } })).not.toContain(
+        "new session",
+      );
+      expect(render()).not.toContain("new appointment");
+    });
+
+    it("badges the upcoming bookings that are still new", () => {
+      const newBookings = { count: 1, onReview: () => undefined };
+
+      expect(render({ newBookings })).toMatch(/>New<\/span>/);
+      expect(
+        render({ newBookings, upcomingBookings: [{ ...booking, reviewedAt: "2026-10-08T09:00:00.000Z" }] }),
+      ).not.toMatch(/>New<\/span>/);
+      // Without review, an unreviewed booking is just a booking.
+      expect(render()).not.toMatch(/>New<\/span>/);
+    });
+
+    it("is worded in Spanish", () => {
+      const html = render({
+        lang: "es",
+        copy: getVerticalCopy("professional", "es"),
+        newBookings: { count: 2, onReview: () => undefined },
+      });
+
+      expect(html).toContain("2 sesiones sin revisar");
+      expect(html).toContain("Revisar");
+    });
+  });
+
   it("shows no checklist when nothing is missing", () => {
     expect(render()).not.toContain(dashboardCopy.en.nextStepsTitle);
   });

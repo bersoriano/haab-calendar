@@ -173,6 +173,12 @@ import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { getBookingListView, type BookingListSort, type BookingListView } from "@/lib/booking-list";
+import {
+  countNewBookings,
+  isNewBooking,
+  tracksBookingReview,
+  type BookingReviewFilter,
+} from "@/lib/booking-review";
 import { getBookingRetentionPolicy } from "@/lib/booking-retention";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
@@ -314,6 +320,11 @@ type HaabBookingModuleProps = {
   publishLabel?: string;
   /** Opens the host's business-type change; shows the Settings card when set. */
   onChangeBusinessType?: () => void;
+  /**
+   * How many bookings the provider has not marked as seen, reported whenever
+   * it changes. Always 0 for a vertical that does not review bookings.
+   */
+  onNewBookingCountChange?: (count: number) => void;
 };
 
 function formatSlotSizeOption(minutes: number, lang: Lang = "en") {
@@ -439,6 +450,7 @@ export function HaabBookingModule({
   publishSetupOverride,
   publishLabel,
   onChangeBusinessType,
+  onNewBookingCountChange,
 }: HaabBookingModuleProps) {
   const {
     integratedMode,
@@ -562,6 +574,8 @@ export function HaabBookingModule({
   const [typeFilter, setTypeFilter] = useState<"all" | BookingType>("all");
   const [bookingListView, setBookingListView] = useState<BookingListView>("active");
   const [bookingListSort, setBookingListSort] = useState<BookingListSort>("closest");
+  const [reviewFilter, setReviewFilter] = useState<BookingReviewFilter>("all");
+  const [reviewPendingIds, setReviewPendingIds] = useState<ReadonlySet<string>>(() => new Set());
   const [rescheduleState, setRescheduleState] = useState<RescheduleState | null>(
     null,
   );
@@ -663,6 +677,12 @@ export function HaabBookingModule({
   const availability = activeStore.availability;
   const vertical = activeStore.vertical;
   const copy = getVerticalCopy(vertical, lang);
+  const reviewsBookings = tracksBookingReview(vertical);
+  const newBookingCount = reviewsBookings ? countNewBookings(bookings) : 0;
+
+  useEffect(() => {
+    onNewBookingCountChange?.(newBookingCount);
+  }, [newBookingCount, onNewBookingCountChange]);
   const t = bookingTranslations[lang];
   const healthcareRole = vertical === "healthcare" ? t.healthcareRole : null;
   const eventOrganizerRole = vertical === "events" ? t.eventOrganizerRole : null;
@@ -3428,6 +3448,61 @@ export function HaabBookingModule({
     }
   }
 
+  /** Flips a booking between new and seen: the provider's own flag. */
+  async function toggleBookingReviewed(bookingId: string) {
+    const latestStandaloneStore = actions.readStandaloneStoreSnapshot();
+    const baseStore = latestStandaloneStore ?? activeStore;
+    const booking = baseStore.bookings.find((candidate) => candidate.id === bookingId);
+
+    if (!booking || reviewPendingIds.has(bookingId)) {
+      return;
+    }
+
+    const reviewed = isNewBooking(booking);
+
+    if (!integratedMode) {
+      if (latestStandaloneStore) {
+        actions.setStandaloneStore(latestStandaloneStore);
+      }
+      commitBookingMutation(baseStore, {
+        ...booking,
+        reviewedAt: reviewed ? new Date().toISOString() : undefined,
+      });
+      return;
+    }
+
+    const setPending = (pending: boolean) =>
+      setReviewPendingIds((current) => {
+        const next = new Set(current);
+        if (pending) next.add(bookingId);
+        else next.delete(bookingId);
+        return next;
+      });
+
+    setPending(true);
+
+    try {
+      const response = await fetch(`/api/provider/bookings/${encodeURIComponent(bookingId)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "review", reviewed }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { booking?: BookingRecord };
+
+      if (!response.ok || !payload.booking) {
+        throw new Error(`review ${response.status}`);
+      }
+
+      // Applied to the bookings as they are now: several flags can be flipped
+      // one after another without an earlier answer undoing a later one.
+      actions.patchIntegratedBooking({ ...payload.booking, manageToken: booking.manageToken });
+    } catch {
+      setNotice((current) => ({ id: (current?.id ?? 0) + 1, message: workspaceCopy.review.failed }));
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function copyPublicLink() {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}${publicUrl}`);
@@ -3471,6 +3546,7 @@ export function HaabBookingModule({
     search: deferredSearch,
     status: statusFilter,
     type: typeFilter,
+    review: reviewsBookings ? reviewFilter : "all",
   });
   const activeCalendarService =
     services.find((service) => service.id === calendarServiceId) ?? services[0];
@@ -3658,6 +3734,17 @@ export function HaabBookingModule({
         onReschedule={openReschedule}
         onCancel={openCancellation}
         onSeeAllBookings={() => goToSection("bookings")}
+        newBookings={
+          reviewsBookings
+            ? {
+                count: newBookingCount,
+                onReview: () => {
+                  setReviewFilter("new");
+                  goToSection("bookings");
+                },
+              }
+            : undefined
+        }
         publicUrl={publicUrl}
         copiedLink={copiedLink}
         onCopyLink={() => void copyPublicLink()}
@@ -3700,10 +3787,21 @@ export function HaabBookingModule({
           setSearchTerm("");
           setStatusFilter("all");
           setTypeFilter("all");
+          setReviewFilter("all");
         }}
         canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
         onReschedule={openReschedule}
         onCancel={openCancellation}
+        review={
+          reviewsBookings
+            ? {
+                filter: reviewFilter,
+                onFilterChange: setReviewFilter,
+                pendingIds: reviewPendingIds,
+                onToggle: (bookingId) => void toggleBookingReviewed(bookingId),
+              }
+            : undefined
+        }
       />
     );
   }

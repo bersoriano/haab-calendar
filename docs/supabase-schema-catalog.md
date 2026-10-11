@@ -325,6 +325,7 @@ durable object for the provider dashboard.
 | `details_schema_key` | `text` | details schema family | Defaults to `"base"`. |
 | `details_schema_version` | `integer` | details schema version | Must be positive. |
 | `service_snapshot` | `jsonb` | service snapshot | Copy of key service fields at booking time. |
+| `reviewed_at` | `timestamptz` | `BookingRecord.reviewedAt` | When the provider marked the booking as seen; null while it is new. Provider-side only: never returned to the client who booked. Not integration-relevant, so changing it neither bumps `integration_version` nor queues an outbox event. Shown only where `tracksBookingReview(vertical)` is true (professional services). |
 | `created_at` | `timestamptz` | `BookingRecord.createdAt` | Insert timestamp. |
 | `updated_at` | `timestamptz` | `BookingRecord.updatedAt` | Maintained by trigger. |
 | `integration_version` | `bigint` | not exposed | Server-managed. Rises by one per integration-relevant change; drives the outbox and its deduplication. A client-supplied value is ignored. |
@@ -336,6 +337,8 @@ Important constraints and indexes:
 - Exact active slot uniqueness also protects repeated full-day or appointment slots.
 - `(provider_id, idempotency_key)` is unique.
 - `manage_token_hash` and `confirmation_number` are unique.
+- A partial index on `provider_id` where `reviewed_at is null` serves the
+  dashboard's count of new bookings.
 - `public.bookings` belongs to the `supabase_realtime` publication. Authenticated
   provider dashboards receive only rows allowed by the existing owner RLS
   policy, then reload their booking list through `GET /api/provider/store`.

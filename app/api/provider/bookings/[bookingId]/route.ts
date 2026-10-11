@@ -5,6 +5,7 @@ import {
   cancelProviderBooking,
   PublicBookingWriteError,
   rescheduleProviderBooking,
+  setProviderBookingReviewed,
 } from "@/lib/supabase/bookings";
 import { resolveDemoEditTarget, type DemoEditTarget } from "@/lib/supabase/demo-edit";
 
@@ -33,6 +34,7 @@ type ProviderBookingBody = {
   action?: unknown;
   dateKey?: unknown;
   time?: unknown;
+  reviewed?: unknown;
 };
 
 function readString(value: unknown) {
@@ -94,6 +96,18 @@ export async function PATCH(
   try {
     if (action === "cancel") {
       const result = await cancelProviderBooking(bookingClient, bookingId);
+      return NextResponse.json(result);
+    }
+
+    if (action === "review") {
+      if (typeof body.reviewed !== "boolean") {
+        return NextResponse.json(
+          { userMessage: "Say whether the booking has been seen." },
+          { status: 400 },
+        );
+      }
+
+      const result = await setProviderBookingReviewed(bookingClient, bookingId, body.reviewed);
       return NextResponse.json(result);
     }
 

@@ -49,6 +49,7 @@ export function useModuleStore(params: {
     ) => void;
     releaseBookingHold: (holdId?: string) => void;
     replaceIntegratedBookings: (nextBookings: BookingRecord[]) => void;
+    patchIntegratedBooking: (booking: BookingRecord) => void;
   };
 } {
   const { injectedConfig, initialLanguage, storageKey, onStoreChange, onBookingsChange } = params;
@@ -289,6 +290,22 @@ export function useModuleStore(params: {
     setShadowBookings(sortBookings(normalizeBookings(nextBookings)));
   }
 
+  /**
+   * Swaps one booking for the server's answer about it. Reads the bookings as
+   * they are when it applies, not as they were when the request left, so
+   * several answers arriving in a row cannot undo each other.
+   */
+  function patchIntegratedBooking(booking: BookingRecord) {
+    if (!integratedMode) {
+      return;
+    }
+
+    const [patched] = normalizeBookings([booking]);
+    setShadowBookings((current) =>
+      sortBookings(current.map((candidate) => (candidate.id === patched.id ? patched : candidate))),
+    );
+  }
+
   return {
     integratedMode,
     hydrated,
@@ -302,6 +319,7 @@ export function useModuleStore(params: {
       commitBookingHolds,
       releaseBookingHold,
       replaceIntegratedBookings,
+      patchIntegratedBooking,
     },
   };
 }

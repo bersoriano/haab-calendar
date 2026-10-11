@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CalendarBlank, MagnifyingGlass, X } from "@phosphor-icons/react";
+import { ArrowRight, CalendarBlank, Check, MagnifyingGlass, X } from "@phosphor-icons/react";
 
 import {
   Badge,
@@ -20,6 +20,7 @@ import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { BookingRetentionPolicy } from "@/lib/booking-retention";
 import { groupBookingsByDate } from "@/lib/booking-groups";
 import type { BookingListSort, BookingListView } from "@/lib/booking-list";
+import { isNewBooking, type BookingReviewFilter } from "@/lib/booking-review";
 import {
   bookingStatusBadgeTone,
   bookingTypeBadgeTone,
@@ -63,6 +64,7 @@ export function BookingsList({
   canReschedule,
   onReschedule,
   onCancel,
+  review,
 }: {
   lang: Lang;
   copy: VerticalCopy;
@@ -91,10 +93,19 @@ export function BookingsList({
   canReschedule: (booking: BookingRecord) => boolean;
   onReschedule: (bookingId: string) => void;
   onCancel: (bookingId: string) => void;
+  /** Present only where bookings are reviewed: the new/seen flag, its filter and its toggle. */
+  review?: {
+    filter: BookingReviewFilter;
+    onFilterChange: (value: BookingReviewFilter) => void;
+    /** Bookings whose flag is being saved. */
+    pendingIds: ReadonlySet<string>;
+    onToggle: (bookingId: string) => void;
+  };
 }) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
-  const filtersActive = search.trim() !== "" || status !== "all" || type !== "all";
+  const filtersActive =
+    search.trim() !== "" || status !== "all" || type !== "all" || (review ? review.filter !== "all" : false);
   const groups = groupBookingsByDate(bookings, todayKey);
   const readOnly = view === "archive";
 
@@ -132,7 +143,13 @@ export function BookingsList({
           <BookingRetentionNotice lang={lang} policy={retentionPolicy} onOpenSettings={onOpenRetentionSettings} />
         ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_repeat(3,11rem)]">
+        <div
+          className={cn(
+            "grid grid-cols-1 gap-3 sm:grid-cols-2",
+            // Four selects leave no room for the search beside them: it takes its own row.
+            review ? "xl:grid-cols-4" : "xl:grid-cols-[minmax(0,1fr)_repeat(3,11rem)]",
+          )}
+        >
           <Input
             type="search"
             value={search}
@@ -140,7 +157,7 @@ export function BookingsList({
             placeholder={copy.phrases.searchPlaceholder}
             aria-label={copy.phrases.searchPlaceholder}
             leadingAddon={<MagnifyingGlass aria-hidden="true" size={16} />}
-            className="sm:col-span-2 xl:col-span-1"
+            className={review ? "sm:col-span-2 xl:col-span-4" : "sm:col-span-2 xl:col-span-1"}
           />
           <Select
             value={status}
@@ -161,11 +178,23 @@ export function BookingsList({
             <option value="appointment">{t.admin.appointments}</option>
             <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
           </Select>
+          {review ? (
+            <Select
+              value={review.filter}
+              onChange={(event) => review.onFilterChange(event.target.value as BookingReviewFilter)}
+              aria-label={shell.review.filterLabel}
+            >
+              <option value="all">{shell.review.filterAll}</option>
+              <option value="new">{shell.review.filterNew}</option>
+              <option value="seen">{shell.review.filterSeen}</option>
+            </Select>
+          ) : null}
           <Select
             value={sort}
             onChange={(event) => onSortChange(event.target.value as BookingListSort)}
             aria-label={shell.sortBookingsLabel}
-            className="sm:col-span-2 xl:col-span-1"
+            // Three selects leave the sort alone on its row; four pair up.
+            className={review ? undefined : "sm:col-span-2 xl:col-span-1"}
           >
             <option value="closest">{shell.closestBookings}</option>
             <option value="sooner">{shell.soonerBookings}</option>
@@ -239,6 +268,7 @@ export function BookingsList({
                 {group.items.map((booking) => {
                   const cancelled = booking.status === "cancelled";
                   const actionable = !cancelled && !readOnly;
+                  const isNew = review ? isNewBooking(booking) : false;
 
                   return (
                     <li
@@ -252,8 +282,18 @@ export function BookingsList({
                         {formatTimeRange(booking.startTime, booking.endTime, lang)}
                       </p>
                       <div className="min-w-0">
-                        <p className={cn("font-semibold", cancelled ? "text-app-fg-muted" : "text-app-fg")}>
+                        <p
+                          className={cn(
+                            "flex flex-wrap items-center gap-2 font-semibold",
+                            cancelled ? "text-app-fg-muted" : "text-app-fg",
+                          )}
+                        >
                           {booking.clientName}
+                          {isNew ? (
+                            <Badge tone="accent" dot>
+                              {shell.review.newBadge}
+                            </Badge>
+                          ) : null}
                         </p>
                         <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-app-fg-muted">
                           <span className="break-all">{booking.clientEmail}</span>
@@ -294,16 +334,30 @@ export function BookingsList({
                           <CampaignBadge campaign={booking.campaign} lang={lang} />
                         </div>
                       </div>
-                      {actionable ? (
+                      {actionable || review ? (
                         <div className="flex flex-wrap gap-2 lg:justify-end">
-                          {canReschedule(booking) ? (
+                          {/* Seen or not is the provider's own note: it stays editable in the archive and on a cancelled booking. */}
+                          {review ? (
+                            <Button
+                              variant={isNew ? "secondary" : "plain"}
+                              size="sm"
+                              loading={review.pendingIds.has(booking.id)}
+                              onClick={() => review.onToggle(booking.id)}
+                              leadingIcon={isNew ? <Check aria-hidden="true" size={16} /> : undefined}
+                            >
+                              {isNew ? shell.review.markSeen : shell.review.markNew}
+                            </Button>
+                          ) : null}
+                          {actionable && canReschedule(booking) ? (
                             <Button variant="secondary" size="sm" onClick={() => onReschedule(booking.id)}>
                               {t.publicFlow.reschedule}
                             </Button>
                           ) : null}
-                          <Button variant="danger-plain" size="sm" onClick={() => onCancel(booking.id)}>
-                            {t.common.cancel}
-                          </Button>
+                          {actionable ? (
+                            <Button variant="danger-plain" size="sm" onClick={() => onCancel(booking.id)}>
+                              {t.common.cancel}
+                            </Button>
+                          ) : null}
                         </div>
                       ) : null}
                     </li>
