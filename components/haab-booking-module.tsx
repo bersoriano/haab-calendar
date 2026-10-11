@@ -200,7 +200,7 @@ import { BookingNotePanel, type BookingNoteStatus } from "@/components/booking/B
 import { BookingPass, RefinedBookingPass, type PassField } from "@/components/booking/BookingPass";
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
-import { AppointmentScannerDialog } from "@/components/provider/AppointmentScannerDialog";
+import { AppointmentScanner } from "@/components/provider/AppointmentScanner";
 import { AdminCalendar } from "@/components/provider/AdminCalendar";
 import { AppearanceSection } from "@/components/provider/AppearanceSection";
 import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
@@ -477,7 +477,6 @@ export function HaabBookingModule({
 
     setAdminTab(next);
   }
-  const [isAppointmentScannerOpen, setIsAppointmentScannerOpen] = useState(false);
   const [setupStep, setSetupStep] = useState<SetupStep>(1);
   const [setupError, setSetupError] = useState<string | null>(null);
   // A refused save belongs to the section it happened in; moving to another
@@ -3702,7 +3701,6 @@ export function HaabBookingModule({
         canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
         onReschedule={openReschedule}
         onCancel={openCancellation}
-        onScan={integratedMode ? () => setIsAppointmentScannerOpen(true) : undefined}
       />
     );
   }
@@ -3815,6 +3813,9 @@ export function HaabBookingModule({
         return renderDashboard();
       case "bookings":
         return renderBookingsList();
+      case "scan":
+        // Looks appointments up on the server, so only where there is one.
+        return integratedMode ? <AppointmentScanner lang={lang} /> : null;
       case "calendar":
         return renderAdminCalendar();
       case "services":
@@ -6997,11 +6998,6 @@ export function HaabBookingModule({
   const modals = (
     <>
       {renderCalendarQrModal()}
-      <AppointmentScannerDialog
-        open={integratedMode && isAppointmentScannerOpen}
-        onClose={() => setIsAppointmentScannerOpen(false)}
-        lang={lang}
-      />
       {renderCancellationModal()}
       {renderRescheduleModal()}
       <ToastOnChange notice={notice} />

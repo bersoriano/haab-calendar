@@ -56,6 +56,16 @@ describe("dashboard sections", () => {
     );
   });
 
+  it("gives the appointment scanner its own section, listed after bookings", () => {
+    expect(pathForSection("scan")).toBe("/dashboard/scan");
+    expect(sectionFromPathname("/dashboard/scan")).toBe("scan");
+
+    const operate = DASHBOARD_SECTIONS.filter((section) => section.group === "operate").map(
+      (section) => section.id,
+    );
+    expect(operate).toEqual(["dashboard", "bookings", "scan", "calendar", "analytics"]);
+  });
+
   it("recognises admin tabs", () => {
     expect(isAdminTab("integrations")).toBe(true);
     expect(isAdminTab("billing")).toBe(false);

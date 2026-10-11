@@ -240,9 +240,9 @@ The success screen is laid out as a receipt worth keeping:
 The ICS event and appointment QR both lead back to the private manage URL. The
 manage URL contains the raw token and should be treated like a password-reset
 link: anyone with the URL can manage that booking. The database stores only
-`manage_token_hash`. A signed-in provider can scan the QR from the Bookings tab;
-the server resolves the token through provider-scoped RLS before returning the
-appointment details.
+`manage_token_hash`. A signed-in provider can scan the QR from the dashboard's
+Scan appointment section (`/dashboard/scan`); the server resolves the token
+through provider-scoped RLS before returning the appointment details.
 
 ## 7. Self-service reschedule and cancellation
 

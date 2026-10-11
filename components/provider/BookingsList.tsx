@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarBlank, MagnifyingGlass, QrCode, X } from "@phosphor-icons/react";
+import { CalendarBlank, MagnifyingGlass, X } from "@phosphor-icons/react";
 
 import {
   Badge,
@@ -61,7 +61,6 @@ export function BookingsList({
   canReschedule,
   onReschedule,
   onCancel,
-  onScan,
 }: {
   lang: Lang;
   copy: VerticalCopy;
@@ -88,8 +87,6 @@ export function BookingsList({
   canReschedule: (booking: BookingRecord) => boolean;
   onReschedule: (bookingId: string) => void;
   onCancel: (bookingId: string) => void;
-  /** Present only where the appointment scanner works. */
-  onScan?: () => void;
 }) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
@@ -113,25 +110,18 @@ export function BookingsList({
   return (
     <Card as="section">
       <div className="grid gap-4 border-b border-app-border px-4 py-4 sm:px-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <SegmentedControl
-              ariaLabel={shell.bookingViewLabel}
-              value={view}
-              onChange={onViewChange}
-              options={[
-                { value: "active", label: shell.activeBookings, count: activeCount },
-                { value: "archive", label: shell.archivedBookings, count: archiveCount },
-              ]}
-              className="self-start"
-            />
-            <p className="text-sm text-app-fg-muted">{shell.archiveHint}</p>
-          </div>
-          {onScan ? (
-            <Button onClick={onScan} leadingIcon={<QrCode aria-hidden="true" size={18} />} className="self-start">
-              {t.admin.scanAppointment}
-            </Button>
-          ) : null}
+        <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+          <SegmentedControl
+            ariaLabel={shell.bookingViewLabel}
+            value={view}
+            onChange={onViewChange}
+            options={[
+              { value: "active", label: shell.activeBookings, count: activeCount },
+              { value: "archive", label: shell.archivedBookings, count: archiveCount },
+            ]}
+            className="self-start"
+          />
+          <p className="text-sm text-app-fg-muted">{shell.archiveHint}</p>
         </div>
 
         {retentionPolicy ? (

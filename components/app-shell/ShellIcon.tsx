@@ -11,6 +11,7 @@ import {
   ListChecks,
   PaintBrush,
   PlugsConnected,
+  QrCode,
   ShieldStar,
   SquaresFour,
   Stack,
@@ -22,6 +23,7 @@ import type { ShellIconName } from "@/components/app-shell/types";
 const ICONS: Record<ShellIconName, Icon> = {
   overview: SquaresFour,
   bookings: ListChecks,
+  scan: QrCode,
   calendar: CalendarBlank,
   analytics: ChartLineUp,
   services: Stack,

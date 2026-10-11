@@ -131,9 +131,8 @@ describe("BookingsList", () => {
     expect(noMatch).not.toContain(dashboardCopy.en.noBookingsYetTitle);
   });
 
-  it("offers the scanner only where it works", () => {
+  it("leaves scanning to its own section", () => {
     expect(render()).not.toContain(en.admin.scanAppointment);
-    expect(render({ onScan: () => undefined })).toContain(en.admin.scanAppointment);
   });
 
   it("exposes archive navigation and labeled date sorting in both languages", () => {

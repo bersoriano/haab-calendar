@@ -2,9 +2,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import {
-  AppointmentScannerDialog,
+  AppointmentScanner,
   AppointmentScanResult,
-} from "@/components/provider/AppointmentScannerDialog";
+} from "@/components/provider/AppointmentScanner";
 import type { BookingRecord } from "@/lib/types";
 
 const booking: BookingRecord = {
@@ -26,28 +26,25 @@ const booking: BookingRecord = {
   manageToken: "",
 };
 
-describe("appointment scan result", () => {
+describe("appointment scanner", () => {
   it("offers camera scanning and image upload", () => {
-    const html = renderToStaticMarkup(
-      <AppointmentScannerDialog open onClose={() => undefined} lang="en" />,
-    );
+    const html = renderToStaticMarkup(<AppointmentScanner lang="en" />);
 
-    expect(html).toContain("Scan appointment");
-    expect(html).toContain("Point camera at customer appointment QR");
+    expect(html).toContain("<video");
+    expect(html).toContain("Starting camera…");
     expect(html).toContain("Upload QR image");
     expect(html).toContain('accept="image/*"');
     // Focus lands on the hidden file input; its label shows the ring.
     expect(html).toMatch(/<label[^>]*has-\[:focus-visible\]:outline-2/);
   });
 
-  it("is a native dialog named by its title", () => {
-    const html = renderToStaticMarkup(
-      <AppointmentScannerDialog open onClose={() => undefined} lang="es" />,
-    );
-    const labelledBy = html.match(/^<dialog[^>]*aria-labelledby="([^"]+)"/)?.[1];
-    expect(labelledBy).toBeTruthy();
-    expect(html).toMatch(new RegExp(`id="${labelledBy}"[^>]*>Escanear cita<`));
-    expect(html).toContain('aria-label="Cerrar"');
+  it("sits in the page, not in a dialog", () => {
+    const html = renderToStaticMarkup(<AppointmentScanner lang="es" />);
+
+    expect(html).not.toContain("<dialog");
+    // The shell's page heading already names the section.
+    expect(html).not.toMatch(/<h[1-3]/);
+    expect(html).toContain("Subir imagen QR");
   });
 
   it("shows facts admin needs to verify appointment", () => {
