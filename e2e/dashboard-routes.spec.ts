@@ -11,6 +11,7 @@ import { authStatePath } from "./fixtures/providers";
 const SECTIONS: Array<{ path: string; heading: RegExp }> = [
   { path: "/dashboard", heading: /^(Overview|Resumen)$/ },
   { path: "/dashboard/bookings", heading: /^(Appointments|Bookings|Citas|Reservas)$/ },
+  { path: "/dashboard/scan", heading: /^(Scan appointment|Escanear cita)$/ },
   { path: "/dashboard/calendar", heading: /^(Calendar|Calendario)$/ },
   { path: "/dashboard/analytics", heading: /^(Analytics|Analítica|Estadísticas)$/ },
   { path: "/dashboard/services", heading: /services|servicios|specialties|especialidades|events|eventos/i },

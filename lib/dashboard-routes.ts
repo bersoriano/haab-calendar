@@ -20,6 +20,7 @@ export type DashboardSectionDef = {
 export const DASHBOARD_SECTIONS: readonly DashboardSectionDef[] = [
   { id: "dashboard", segment: "", group: "operate" },
   { id: "bookings", segment: "bookings", group: "operate" },
+  { id: "scan", segment: "scan", group: "operate" },
   { id: "calendar", segment: "calendar", group: "operate" },
   { id: "analytics", segment: "analytics", group: "operate" },
   { id: "services", segment: "services", group: "setup" },

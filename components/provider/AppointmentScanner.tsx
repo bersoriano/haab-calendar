@@ -18,9 +18,11 @@ import {
   Alert,
   Badge,
   Button,
+  Card,
+  CardBody,
+  CardFooter,
   DescriptionItem,
   DescriptionList,
-  Dialog,
   buttonStyles,
 } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
@@ -50,8 +52,6 @@ const resultCopy = {
 
 const scannerCopy = {
   en: {
-    title: "Scan appointment",
-    body: "Point camera at customer appointment QR.",
     starting: "Starting camera…",
     scanning: "Looking for appointment QR…",
     lookingUp: "Retrieving appointment…",
@@ -61,11 +61,8 @@ const scannerCopy = {
     imageUnreadable: "No appointment QR was found in that image.",
     lookupFailed: "Could not retrieve that appointment.",
     scanAgain: "Scan another",
-    close: "Close",
   },
   es: {
-    title: "Escanear cita",
-    body: "Apunte la cámara al QR de la cita del cliente.",
     starting: "Iniciando cámara…",
     scanning: "Buscando el QR de la cita…",
     lookingUp: "Consultando la cita…",
@@ -75,7 +72,6 @@ const scannerCopy = {
     imageUnreadable: "No se encontró un QR de cita en esa imagen.",
     lookupFailed: "No se pudo consultar esa cita.",
     scanAgain: "Escanear otra",
-    close: "Cerrar",
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -102,9 +98,9 @@ export function AppointmentScanResult({
   return (
     <section aria-labelledby="appointment-scan-result-title">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 id="appointment-scan-result-title" className="text-base font-semibold text-app-fg">
+        <h2 id="appointment-scan-result-title" className="text-base font-semibold text-app-fg">
           {copy.title}
-        </h3>
+        </h2>
         <Badge tone={bookingStatusBadgeTone(booking.status)} dot>
           {statusLabel}
         </Badge>
@@ -139,15 +135,11 @@ export function AppointmentScanResult({
   );
 }
 
-export function AppointmentScannerDialog({
-  open,
-  onClose,
-  lang = "en",
-}: {
-  open: boolean;
-  onClose: () => void;
-  lang?: Lang;
-}) {
+/**
+ * The scanner as a dashboard section: the camera runs while the section is on
+ * screen and stops when the owner leaves it.
+ */
+export function AppointmentScanner({ lang = "en" }: { lang?: Lang }) {
   const copy = scannerCopy[lang];
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
@@ -209,18 +201,8 @@ export function AppointmentScannerDialog({
     [copy.lookupFailed, stopCamera],
   );
 
-  const closeDialog = useCallback(() => {
-    sessionRef.current += 1;
-    handledCodeRef.current = true;
-    stopCamera();
-    setBooking(null);
-    setError("");
-    setStatus("starting");
-    onClose();
-  }, [onClose, stopCamera]);
-
   useEffect(() => {
-    if (!open || booking) return;
+    if (booking) return;
 
     let cancelled = false;
     handledCodeRef.current = false;
@@ -262,7 +244,7 @@ export function AppointmentScannerDialog({
       cancelled = true;
       stopCamera();
     };
-  }, [booking, copy.cameraUnavailable, lookupAppointment, open, scanCycle, stopCamera]);
+  }, [booking, copy.cameraUnavailable, lookupAppointment, scanCycle, stopCamera]);
 
   async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -302,72 +284,64 @@ export function AppointmentScannerDialog({
     setScanCycle((current) => current + 1);
   }
 
-  if (!open) return null;
-
   const statusText =
     error ||
     (status === "starting" ? copy.starting : status === "looking-up" ? copy.lookingUp : copy.scanning);
 
   return (
-    <Dialog
-      open
-      onClose={closeDialog}
-      title={copy.title}
-      description={copy.body}
-      closeLabel={copy.close}
-      footer={
-        booking ? (
-          <div className="flex justify-end">
-            <Button leadingIcon={<QrCode aria-hidden="true" size={16} />} onClick={scanAgain}>
-              {copy.scanAgain}
-            </Button>
-          </div>
+    <Card className="max-w-2xl">
+      <CardBody>
+        {booking ? (
+          <AppointmentScanResult booking={booking} lang={lang} />
         ) : (
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-app-fg-muted">{copy.uploadHelp}</p>
-            {/* A label styled as the primary button, so the file input stays native. */}
-            <label
-              className={buttonStyles({
-                className:
-                  "cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-app-accent",
-              })}
-            >
-              <UploadSimple aria-hidden="true" size={16} />
-              {copy.upload}
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="sr-only"
-                onChange={(event) => void handleImageUpload(event)}
+          <div className="grid gap-3">
+            <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-app-fg">
+              <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-[14%] rounded-lg border-2 border-app-surface/80"
               />
-            </label>
+            </div>
+            {error ? (
+              <Alert tone="danger" role="alert">
+                {error}
+              </Alert>
+            ) : (
+              <p role="status" aria-live="polite" className="text-sm font-medium text-app-fg-muted">
+                {statusText}
+              </p>
+            )}
           </div>
-        )
-      }
-    >
+        )}
+      </CardBody>
       {booking ? (
-        <AppointmentScanResult booking={booking} lang={lang} />
+        <CardFooter>
+          <Button leadingIcon={<QrCode aria-hidden="true" size={16} />} onClick={scanAgain}>
+            {copy.scanAgain}
+          </Button>
+        </CardFooter>
       ) : (
-        <div className="grid gap-3">
-          <div className="relative aspect-[4/3] overflow-hidden rounded-lg bg-app-fg">
-            <video ref={videoRef} muted playsInline className="h-full w-full object-cover" />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-[14%] rounded-lg border-2 border-app-surface/80"
+        <div className="flex flex-col gap-2 border-t border-app-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <p className="text-xs text-app-fg-muted">{copy.uploadHelp}</p>
+          {/* A label styled as the primary button, so the file input stays native. */}
+          <label
+            className={buttonStyles({
+              className:
+                "cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-app-accent",
+            })}
+          >
+            <UploadSimple aria-hidden="true" size={16} />
+            {copy.upload}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="sr-only"
+              onChange={(event) => void handleImageUpload(event)}
             />
-          </div>
-          {error ? (
-            <Alert tone="danger" role="alert">
-              {error}
-            </Alert>
-          ) : (
-            <p role="status" aria-live="polite" className="text-sm font-medium text-app-fg-muted">
-              {statusText}
-            </p>
-          )}
+          </label>
         </div>
       )}
-    </Dialog>
+    </Card>
   );
 }

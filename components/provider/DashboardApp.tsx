@@ -49,6 +49,7 @@ import { getVerticalCopy } from "@/lib/vertical-copy";
 const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   dashboard: "overview",
   bookings: "bookings",
+  scan: "scan",
   calendar: "calendar",
   analytics: "analytics",
   services: "services",
