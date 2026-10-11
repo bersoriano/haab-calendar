@@ -37,6 +37,14 @@ function render(
 }
 
 describe("ServiceCard", () => {
+  it("keeps the line breaks the owner typed into the notes", () => {
+    const html = render({ notes: "Bring a photo ID.\nArrive 10 minutes early." });
+
+    expect(html).toMatch(
+      /<span class="[^"]*whitespace-pre-line[^"]*">(?:(?!<\/span><\/span>)[\s\S])*Bring a photo ID\.\nArrive 10 minutes early\./,
+    );
+  });
+
   it("is one button with no nested button", () => {
     const html = render();
 

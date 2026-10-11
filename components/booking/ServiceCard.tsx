@@ -241,7 +241,7 @@ export function ServiceCard({
             <circle cx="12" cy="12" r="9" />
             <path d="M12 11v5M12 8h.01" />
           </svg>
-          <span>
+          <span className="whitespace-pre-line">
             <span className="font-semibold">{copy.phrases.beforeVisitLabel}</span> {notes}
           </span>
         </span>

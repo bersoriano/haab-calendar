@@ -5105,7 +5105,9 @@ export function HaabBookingModule({
                     {formatCost(service.cost, lang) ? (
                       <span>{t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
                     ) : null}
-                    {service.notes ? <span>{t.publicFlow.notes}: {service.notes}</span> : null}
+                    {service.notes ? (
+                      <span className="whitespace-pre-line">{t.publicFlow.notes}: {service.notes}</span>
+                    ) : null}
                   </div>
                   {(() => {
                     const cardAddresses = [
@@ -5522,7 +5524,10 @@ export function HaabBookingModule({
                           ) : null}
                           <SummaryField label={t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
                           {selectedService.notes ? (
-                            <SummaryField label={t.publicFlow.notes} value={selectedService.notes} />
+                            <SummaryField
+                              label={t.publicFlow.notes}
+                              value={<span className="whitespace-pre-line">{selectedService.notes}</span>}
+                            />
                           ) : null}
                           {aboutAddresses.length > 0 ? (
                             <SummaryField

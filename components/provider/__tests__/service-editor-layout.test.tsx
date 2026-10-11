@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { ServiceEditor } from "@/components/provider/ServiceEditor";
 import { createBlankServiceDraft, normalizeProvider, normalizeServices } from "@/lib/store";
 import { getVerticalCopy } from "@/lib/vertical-copy";
@@ -64,6 +65,33 @@ describe("ServiceEditor layout", () => {
     const html = render(3);
     expect(html).toMatch(/href="#service-editor"[^>]*class="[^"]*lg:hidden/);
     expect(html).toContain(copy.phrases.newServiceTitle);
+  });
+
+  it("takes the notes on several lines and lists them the way they were typed", () => {
+    const notes = "Bring a photo ID.\nArrive 10 minutes early.";
+    const html = renderToStaticMarkup(
+      <ServiceEditor
+        services={normalizeServices([
+          { id: "s", name: "Court", description: "Indoor court", bookingType: "appointment", durationMinutes: 60, notes },
+        ])}
+        serviceDraft={{ ...createBlankServiceDraft("spaces"), notes }}
+        onDraftChange={() => undefined}
+        editingServiceId={null}
+        onUpsert={() => undefined}
+        onReset={() => undefined}
+        onEdit={() => undefined}
+        onRemove={() => undefined}
+        provider={normalizeProvider({})}
+        vertical="spaces"
+        copy={copy}
+        lang="en"
+      />,
+    );
+    const placeholder = bookingTranslations.en.admin.notesPlaceholder;
+
+    expect(html).toMatch(new RegExp(`<textarea[^>]*placeholder="${placeholder}"[^>]*>Bring a photo ID\\.\nArrive`));
+    expect(html).not.toMatch(new RegExp(`<input[^>]*placeholder="${placeholder}"`));
+    expect(html).toMatch(/<span class="[^"]*whitespace-pre-line[^"]*">[^<]*Bring a photo ID\.\nArrive 10 minutes early\./);
   });
 
   it("shows why a save or delete did not go through", () => {
