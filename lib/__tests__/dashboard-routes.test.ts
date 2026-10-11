@@ -63,7 +63,19 @@ describe("dashboard sections", () => {
     const operate = DASHBOARD_SECTIONS.filter((section) => section.group === "operate").map(
       (section) => section.id,
     );
-    expect(operate).toEqual(["dashboard", "bookings", "scan", "calendar", "analytics"]);
+    expect(operate).toEqual([
+      "dashboard",
+      "bookings",
+      "scan",
+      "calendar",
+      "analytics",
+      "campaigns",
+    ]);
+  });
+
+  it("gives campaigns their own section, listed after analytics", () => {
+    expect(pathForSection("campaigns")).toBe("/dashboard/campaigns");
+    expect(sectionFromPathname("/dashboard/campaigns")).toBe("campaigns");
   });
 
   it("recognises admin tabs", () => {
