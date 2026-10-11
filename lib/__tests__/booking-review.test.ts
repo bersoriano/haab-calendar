@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canMarkBookingAsNew,
   countNewBookings,
   isNewBooking,
   matchesReviewFilter,
@@ -24,6 +25,21 @@ describe("booking review", () => {
     expect(isNewBooking(seen)).toBe(false);
     expect(countNewBookings([fresh, seen, fresh])).toBe(2);
     expect(countNewBookings([])).toBe(0);
+  });
+
+  it("lets only a live booking, today or later, go back to new", () => {
+    const today = "2026-10-11";
+    const on = (dateKey: string, status: "confirmed" | "rescheduled" | "cancelled" = "confirmed") => ({
+      dateKey,
+      status,
+    });
+
+    expect(canMarkBookingAsNew(on("2026-10-11"), today)).toBe(true);
+    expect(canMarkBookingAsNew(on("2026-10-12", "rescheduled"), today)).toBe(true);
+    // Its day has passed, or it was called off: nothing left to look at again.
+    expect(canMarkBookingAsNew(on("2026-10-10"), today)).toBe(false);
+    expect(canMarkBookingAsNew(on("2026-10-12", "cancelled"), today)).toBe(false);
+    expect(canMarkBookingAsNew(on("2026-10-10", "cancelled"), today)).toBe(false);
   });
 
   it("filters by new, by seen, or not at all", () => {
