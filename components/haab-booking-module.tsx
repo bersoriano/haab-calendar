@@ -150,6 +150,7 @@ import {
 } from "@/lib/public-booking-step-scroll";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
+import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
@@ -3841,10 +3842,13 @@ export function HaabBookingModule({
           <ProviderAnalyticsSurface
             checkoutResult={checkoutResult}
             lang={lang}
-            publicUrl={publicUrl}
             integratedMode={integratedMode}
             entitlements={providerEntitlements}
           />
+        );
+      case "campaigns":
+        return (
+          <ProviderCampaignsSurface lang={lang} publicUrl={publicUrl} integratedMode={integratedMode} />
         );
       case "integrations":
         return (

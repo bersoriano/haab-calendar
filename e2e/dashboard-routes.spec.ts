@@ -14,6 +14,7 @@ const SECTIONS: Array<{ path: string; heading: RegExp }> = [
   { path: "/dashboard/scan", heading: /^(Scan appointment|Escanear cita)$/ },
   { path: "/dashboard/calendar", heading: /^(Calendar|Calendario)$/ },
   { path: "/dashboard/analytics", heading: /^(Analytics|Analítica|Estadísticas)$/ },
+  { path: "/dashboard/campaigns", heading: /^(Campaigns|Campañas)$/ },
   { path: "/dashboard/services", heading: /services|servicios|specialties|especialidades|events|eventos/i },
   { path: "/dashboard/availability", heading: /^(Availability|Disponibilidad)$/ },
   { path: "/dashboard/appearance", heading: /^(Appearance|Apariencia)$/ },

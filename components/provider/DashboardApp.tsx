@@ -52,6 +52,7 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   scan: "scan",
   calendar: "calendar",
   analytics: "analytics",
+  campaigns: "campaigns",
   services: "services",
   availability: "availability",
   appearance: "appearance",

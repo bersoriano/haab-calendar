@@ -51,24 +51,9 @@ export type AnalyticsCopy = {
   funnelTitle: string;
   funnelBody: string;
   funnelSteps: [string, string, string, string];
-  campaignsTitle: string;
-  campaignsBody: string;
-  campaignColumns: [string, string, string, string, string];
-  direct: string;
   none: string;
-  referrersTitle: string;
   servicesTitle: string;
   selections: string;
-  builderTitle: string;
-  builderBody: string;
-  builderSource: string;
-  builderSourcePlaceholder: string;
-  builderMedium: string;
-  builderMediumPlaceholder: string;
-  builderCampaign: string;
-  builderCampaignPlaceholder: string;
-  copy: string;
-  copied: string;
   privacyNote: string;
 };
 
@@ -100,7 +85,7 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     previewBody: "Publish your booking page with an account to start measuring visits and bookings.",
     emptyTitle: "No visits yet",
     emptyBody:
-      "Share your booking link — or a campaign link from the builder below — and visits will show up here within a minute.",
+      "Share your booking link — or a campaign link from Campaigns — and visits will show up here within a minute.",
     visits: "Visits",
     visitsDetail: "Times your page was opened",
     visitors: "Visitors",
@@ -132,25 +117,9 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     funnelTitle: "Booking funnel",
     funnelBody: "How many visitors reached each step.",
     funnelSteps: ["Opened the page", "Chose a service", "Chose a time", "Booked"],
-    campaignsTitle: "Campaigns",
-    campaignsBody: "Grouped by the utm tags on the link a visitor opened.",
-    campaignColumns: ["Source", "Medium", "Campaign", "Visits", "Bookings"],
-    direct: "Direct / untagged",
     none: "—",
-    referrersTitle: "Referring sites",
     servicesTitle: "Services",
     selections: "chose it",
-    builderTitle: "Campaign link builder",
-    builderBody:
-      "Use a different link for each post, ad or message so you can see which one brings bookings.",
-    builderSource: "Source",
-    builderSourcePlaceholder: "instagram",
-    builderMedium: "Medium",
-    builderMediumPlaceholder: "social",
-    builderCampaign: "Campaign",
-    builderCampaignPlaceholder: "fall-promo",
-    copy: "Copy link",
-    copied: "Copied",
     privacyNote:
       "Measured without cookies. Visitors are counted with a daily anonymous identifier and no personal data is stored.",
   },
@@ -181,7 +150,7 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     previewBody: "Publica tu página de reservas con una cuenta para empezar a medir visitas y reservas.",
     emptyTitle: "Aún no hay visitas",
     emptyBody:
-      "Comparte tu enlace de reservas — o un enlace de campaña del generador de abajo — y las visitas aparecerán aquí en un minuto.",
+      "Comparte tu enlace de reservas — o un enlace de campaña desde Campañas — y las visitas aparecerán aquí en un minuto.",
     visits: "Visitas",
     visitsDetail: "Veces que se abrió tu página",
     visitors: "Visitantes",
@@ -214,25 +183,9 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     funnelTitle: "Embudo de reserva",
     funnelBody: "Cuántos visitantes llegaron a cada paso.",
     funnelSteps: ["Abrieron la página", "Eligieron un servicio", "Eligieron un horario", "Reservaron"],
-    campaignsTitle: "Campañas",
-    campaignsBody: "Agrupadas por las etiquetas utm del enlace que abrió cada visitante.",
-    campaignColumns: ["Fuente", "Medio", "Campaña", "Visitas", "Reservas"],
-    direct: "Directo / sin etiqueta",
     none: "—",
-    referrersTitle: "Sitios de referencia",
     servicesTitle: "Servicios",
     selections: "lo eligieron",
-    builderTitle: "Generador de enlaces de campaña",
-    builderBody:
-      "Usa un enlace distinto para cada publicación, anuncio o mensaje y descubre cuál genera reservas.",
-    builderSource: "Fuente",
-    builderSourcePlaceholder: "instagram",
-    builderMedium: "Medio",
-    builderMediumPlaceholder: "social",
-    builderCampaign: "Campaña",
-    builderCampaignPlaceholder: "promo-otono",
-    copy: "Copiar enlace",
-    copied: "Copiado",
     privacyNote:
       "Se mide sin cookies. Los visitantes se cuentan con un identificador anónimo diario y no se guardan datos personales.",
   },

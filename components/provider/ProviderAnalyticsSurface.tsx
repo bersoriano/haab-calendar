@@ -1,33 +1,24 @@
 "use client";
 
-import { ChartLineUp, Check, Copy } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { ChartLineUp, Check } from "@phosphor-icons/react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import {
   Alert,
-  Badge,
   Button,
   Card,
   CardBody,
   CardHeader,
   EmptyState,
-  Field,
-  Input,
   SegmentedControl,
   Stat,
   StatGroup,
-  TBody,
-  THead,
-  Table,
-  Td,
-  Th,
-  Tr,
 } from "@/components/app-ui";
 import { analyticsCopy, type AnalyticsCopy } from "@/components/provider/analytics-copy";
+import { useAnalyticsSummary } from "@/components/provider/use-analytics-summary";
 import {
   ANALYTICS_RANGES,
   DEFAULT_ANALYTICS_RANGE,
-  buildCampaignUrl,
   changePercent,
   conversionRate,
   popularTimeHours,
@@ -35,22 +26,14 @@ import {
   type AnalyticsBookingHealth,
   type AnalyticsPopularTime,
   type AnalyticsRange,
-  type AnalyticsResponse,
   type AnalyticsSummary,
   type AnalyticsTeaser,
 } from "@/lib/analytics/summary";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import type { Lang } from "@/lib/types";
 
-/** Tagged with the request it answers, so a stale answer reads as loading. */
-type LoadState =
-  | { key: string; status: "error" }
-  | { key: string; status: "ready"; summary: AnalyticsResponse };
-
 export type ProviderAnalyticsSurfaceProps = {
   lang: Lang;
-  /** Path of the public booking page, e.g. `/professionals/ai-automation`. */
-  publicUrl: string;
   integratedMode: boolean;
   /** Resolved server-side. Presentation only — the route re-checks. */
   entitlements?: ProviderEntitlements;
@@ -59,13 +42,12 @@ export type ProviderAnalyticsSurfaceProps = {
 };
 
 /**
- * The Analytics tab: visits, the booking funnel and campaign performance for
- * the provider's public page. Free plans get their visit totals and an upgrade
+ * The Analytics tab: visits and the booking funnel for the provider's public
+ * page; campaign links have their own section. Free plans get their visit totals and an upgrade
  * offer; /api/provider/analytics decides which, from the entitlement.
  */
 export function ProviderAnalyticsSurface({
   lang,
-  publicUrl,
   integratedMode,
   entitlements,
   checkoutResult,
@@ -93,7 +75,7 @@ export function ProviderAnalyticsSurface({
       {checkoutResult ? (
         <CheckoutResultBanner t={t} result={checkoutResult} awaitingPremium={awaitingPremium} />
       ) : null}
-      <AnalyticsDashboard t={t} lang={lang} publicUrl={publicUrl} />
+      <AnalyticsDashboard t={t} lang={lang} />
     </div>
   );
 }
@@ -128,44 +110,9 @@ function CheckoutResultBanner({
   );
 }
 
-function AnalyticsDashboard({
-  t,
-  lang,
-  publicUrl,
-}: {
-  t: AnalyticsCopy;
-  lang: Lang;
-  publicUrl: string;
-}) {
+function AnalyticsDashboard({ t, lang }: { t: AnalyticsCopy; lang: Lang }) {
   const [range, setRange] = useState<AnalyticsRange>(DEFAULT_ANALYTICS_RANGE);
-  const [loaded, setLoaded] = useState<LoadState | null>(null);
-  const [reloadKey, setReloadKey] = useState(0);
-  const requestKey = `${range}:${reloadKey}`;
-  const state = loaded?.key === requestKey ? loaded : null;
-
-  useEffect(() => {
-    const controller = new AbortController();
-
-    fetch(`/api/provider/analytics?range=${range}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(`analytics ${response.status}`);
-        }
-        const summary = (await response.json()) as AnalyticsResponse;
-        setLoaded({ key: requestKey, status: "ready", summary });
-      })
-      .catch((error: unknown) => {
-        if (!controller.signal.aborted) {
-          console.error("provider_analytics_load_failed", error);
-          setLoaded({ key: requestKey, status: "error" });
-        }
-      });
-
-    return () => controller.abort();
-  }, [range, requestKey]);
+  const { state, retry } = useAnalyticsSummary(range);
 
   return (
     <div className="space-y-6">
@@ -195,22 +142,20 @@ function AnalyticsDashboard({
         <EmptyState
           variant="dashed"
           title={t.loadFailed}
-          action={<Button onClick={() => setReloadKey((key) => key + 1)}>{t.retry}</Button>}
+          action={<Button onClick={retry}>{t.retry}</Button>}
         />
       ) : isAnalyticsTeaser(state.summary) ? (
         <AnalyticsTeaserReport teaser={state.summary} lang={lang} />
       ) : (
         <AnalyticsReport summary={state.summary} lang={lang} />
       )}
-
-      <CampaignLinkBuilder t={t} publicUrl={publicUrl} />
     </div>
   );
 }
 
 /**
  * A believable report to sit behind the blur. Made up on purpose: the real
- * funnel and campaigns never reach a free plan's browser.
+ * funnel never reaches a free plan's browser.
  */
 const SAMPLE_SUMMARY: AnalyticsSummary = {
   range: 30,
@@ -264,7 +209,8 @@ export function AnalyticsTeaserReport({ teaser, lang }: { teaser: AnalyticsTease
   );
 }
 
-function UpgradeCard({ t }: { t: AnalyticsCopy }) {
+/** The Premium offer and its checkout; `body` rewords it for another section. */
+export function UpgradeCard({ t, body }: { t: AnalyticsCopy; body?: string }) {
   const [status, setStatus] = useState<"idle" | "pending" | "unavailable" | "error">("idle");
 
   const startCheckout = useCallback(async () => {
@@ -293,7 +239,7 @@ function UpgradeCard({ t }: { t: AnalyticsCopy }) {
   return (
     <Card className="w-full max-w-md p-6 text-center shadow-lg">
       <h3 className="text-lg font-semibold text-app-fg">{t.premiumTitle}</h3>
-      <p className="mt-2 text-sm text-app-fg-muted">{t.premiumBody}</p>
+      <p className="mt-2 text-sm text-app-fg-muted">{body ?? t.premiumBody}</p>
       <ul className="mt-4 space-y-1.5 text-left text-sm text-app-fg">
         {t.premiumBenefits.map((benefit) => (
           <li key={benefit} className="flex gap-2">
@@ -500,59 +446,6 @@ export function AnalyticsReport({ summary, lang }: { summary: AnalyticsSummary; 
         </Card>
       </div>
 
-      <Card as="section">
-        <CardHeader title={t.campaignsTitle} description={t.campaignsBody} />
-        <Table className="min-w-[520px]">
-          <THead>
-            <Tr>
-              {t.campaignColumns.map((column, index) => (
-                <Th key={column} align={index > 2 ? "right" : "left"}>
-                  {column}
-                </Th>
-              ))}
-            </Tr>
-          </THead>
-          <TBody>
-            {summary.campaigns.map((row) => {
-              const untagged = !row.source && !row.medium && !row.campaign;
-              return (
-                <Tr key={`${row.source}|${row.medium}|${row.campaign}`}>
-                  {untagged ? (
-                    <Td className="text-app-fg-muted">
-                      <span>{t.direct}</span>
-                    </Td>
-                  ) : (
-                    <Td className="font-medium text-app-fg">{row.source ?? t.none}</Td>
-                  )}
-                  <Td>{untagged ? "" : (row.medium ?? t.none)}</Td>
-                  <Td>{untagged ? "" : (row.campaign ?? t.none)}</Td>
-                  <Td align="right" className="tabular-nums">
-                    {number.format(row.views)}
-                  </Td>
-                  <Td align="right" className="font-semibold text-app-fg tabular-nums">
-                    {number.format(row.bookings)}
-                  </Td>
-                </Tr>
-              );
-            })}
-          </TBody>
-        </Table>
-
-        {summary.referrers.length > 0 ? (
-          <CardBody className="border-t border-app-border">
-            <h3 className="text-sm font-semibold text-app-fg">{t.referrersTitle}</h3>
-            <ul className="mt-2 flex flex-wrap gap-2">
-              {summary.referrers.map((referrer) => (
-                <li key={referrer.host}>
-                  <Badge tone="neutral">
-                    <span className="font-semibold">{referrer.host}</span> · {number.format(referrer.views)}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </CardBody>
-        ) : null}
-      </Card>
     </div>
   );
 }
@@ -573,10 +466,6 @@ function Meter({ label, detail, percent }: { label: ReactNode; detail: ReactNode
 }
 
 // The origin never changes while the page is open; the server render has none.
-const subscribeToNothing = () => () => undefined;
-const readOrigin = () => window.location.origin;
-const readNoOrigin = () => "";
-
 function BookingHealthPanel({
   health,
   lang,
@@ -699,67 +588,6 @@ export function PopularTimesPanel({
           </tbody>
         </table>
       </div>
-    </Card>
-  );
-}
-
-function CampaignLinkBuilder({ t, publicUrl }: { t: AnalyticsCopy; publicUrl: string }) {
-  const [source, setSource] = useState("");
-  const [medium, setMedium] = useState("");
-  const [campaign, setCampaign] = useState("");
-  const [copied, setCopied] = useState(false);
-  const origin = useSyncExternalStore(subscribeToNothing, readOrigin, readNoOrigin);
-
-  const link = origin ? buildCampaignUrl(`${origin}${publicUrl}`, { source, medium, campaign }) : "";
-
-  const copyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }, [link]);
-
-  const fields = [
-    { label: t.builderSource, placeholder: t.builderSourcePlaceholder, value: source, set: setSource },
-    { label: t.builderMedium, placeholder: t.builderMediumPlaceholder, value: medium, set: setMedium },
-    {
-      label: t.builderCampaign,
-      placeholder: t.builderCampaignPlaceholder,
-      value: campaign,
-      set: setCampaign,
-    },
-  ];
-
-  return (
-    <Card as="section">
-      <CardHeader title={t.builderTitle} description={t.builderBody} />
-      <CardBody className="grid gap-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          {fields.map((field) => (
-            <Field key={field.label} label={field.label}>
-              <Input
-                value={field.value}
-                maxLength={100}
-                placeholder={field.placeholder}
-                onChange={(event) => field.set(event.target.value)}
-              />
-            </Field>
-          ))}
-        </div>
-        <div className="flex flex-col gap-3 rounded-lg bg-app-subtle p-4 sm:flex-row sm:items-center">
-          <code className="min-w-0 flex-1 break-all text-sm text-app-fg">{link}</code>
-          <Button
-            disabled={!link}
-            onClick={copyLink}
-            leadingIcon={copied ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />}
-          >
-            {copied ? t.copied : t.copy}
-          </Button>
-        </div>
-      </CardBody>
     </Card>
   );
 }

@@ -17,6 +17,7 @@ export type AdminTab =
   | "availability"
   | "appearance"
   | "analytics"
+  | "campaigns"
   | "integrations"
   | "settings"
   | "business-type";

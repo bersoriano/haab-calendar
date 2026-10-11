@@ -13,7 +13,13 @@ import type { VerticalCopy } from "@/lib/vertical-copy";
 export type DashboardShellCopy = {
   navLabel: string;
   groups: { operate: string; setup: string };
-  titles: { overview: string; availability: string; integrations: string; businessType: string };
+  titles: {
+    overview: string;
+    campaigns: string;
+    availability: string;
+    integrations: string;
+    businessType: string;
+  };
   descriptions: Record<AdminTab, string>;
   copyLink: string;
   linkCopied: string;
@@ -168,6 +174,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     groups: { operate: "Operate", setup: "Set up" },
     titles: {
       overview: "Overview",
+      campaigns: "Campaigns",
       availability: "Availability",
       integrations: "Integrations",
       businessType: "Change business type",
@@ -178,6 +185,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       scan: "Point the camera at a customer's QR code to pull up their appointment.",
       calendar: "Your month at a glance. Pick an open day to add a booking.",
       analytics: "Visits, bookings and where they come from.",
+      campaigns: "Make a link for each place you share your page, and see which ones bring bookings.",
       services: "What clients can book, with prices and times.",
       availability: "When you can be booked.",
       appearance: "How your public page looks and which language it speaks.",
@@ -352,6 +360,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     groups: { operate: "Operación", setup: "Configuración" },
     titles: {
       overview: "Resumen",
+      campaigns: "Campañas",
       availability: "Disponibilidad",
       integrations: "Integraciones",
       businessType: "Cambiar tipo de negocio",
@@ -362,6 +371,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       scan: "Apunte la cámara al código QR del cliente para consultar su cita.",
       calendar: "Su mes de un vistazo. Elija un día abierto para agregar una reserva.",
       analytics: "Visitas, reservas y de dónde vienen.",
+      campaigns: "Cree un enlace para cada lugar donde comparte su página y vea cuáles generan reservas.",
       services: "Lo que sus clientes pueden reservar, con precios y horarios.",
       availability: "Cuándo le pueden reservar.",
       appearance: "Cómo se ve su página pública y en qué idioma habla.",
@@ -549,6 +559,8 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
       return admin.tabCalendar;
     case "analytics":
       return admin.tabAnalytics;
+    case "campaigns":
+      return shell.titles.campaigns;
     case "services":
       return copy.Services;
     case "availability":

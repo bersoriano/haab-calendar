@@ -43,7 +43,6 @@ describe("ProviderAnalyticsSurface", () => {
     const html = renderToStaticMarkup(
       <ProviderAnalyticsSurface
         lang="en"
-        publicUrl="/professionals/ai-automation"
         integratedMode
         entitlements={entitlements("free")}
         checkoutResult="success"
@@ -57,7 +56,6 @@ describe("ProviderAnalyticsSurface", () => {
     const html = renderToStaticMarkup(
       <ProviderAnalyticsSurface
         lang="es"
-        publicUrl="/professionals/ai-automation"
         integratedMode
         entitlements={entitlements("free")}
         checkoutResult="cancelled"
@@ -70,32 +68,39 @@ describe("ProviderAnalyticsSurface", () => {
     const html = renderToStaticMarkup(
       <ProviderAnalyticsSurface
         lang="en"
-        publicUrl="/professionals/ai-automation"
         integratedMode
         entitlements={entitlements("premium")}
       />,
     );
     expect(html).toContain("Booking page analytics");
-    expect(html).toContain("Campaign link builder");
   });
 
   it("explains that a local preview has no analytics", () => {
     const html = renderToStaticMarkup(
-      <ProviderAnalyticsSurface lang="es" publicUrl="/public" integratedMode={false} />,
+      <ProviderAnalyticsSurface lang="es" integratedMode={false} />,
     );
     expect(html).toContain("La analítica necesita una página publicada");
   });
 });
 
 describe("AnalyticsReport", () => {
-  it("renders totals, conversion, campaigns and services", () => {
+  it("renders totals, conversion and services", () => {
     const html = renderToStaticMarkup(<AnalyticsReport summary={SUMMARY} lang="en" />);
     expect(html).toContain(">40<");
     expect(html).toContain("20%");
-    expect(html).toContain("instagram");
-    expect(html).toContain("Direct / untagged");
     expect(html).toContain("Strategy call");
-    expect(html).toContain("l.instagram.com");
+  });
+
+  it("leaves campaigns to their own section", () => {
+    const html = renderToStaticMarkup(<AnalyticsReport summary={SUMMARY} lang="en" />);
+    expect(html).not.toContain("Direct / untagged");
+    expect(html).not.toContain("l.instagram.com");
+
+    const surface = renderToStaticMarkup(
+      <ProviderAnalyticsSurface lang="en" integratedMode />,
+    );
+    expect(surface).not.toContain("utm_");
+    expect(surface).not.toContain("Copy link");
   });
 
   it("shows an empty state before the first visit", () => {
@@ -103,7 +108,11 @@ describe("AnalyticsReport", () => {
       ...SUMMARY,
       totals: { views: 0, visitors: 0, serviceSelected: 0, slotSelected: 0, bookings: 0, bookingVisitors: 0 },
     };
-    expect(renderToStaticMarkup(<AnalyticsReport summary={empty} lang="en" />)).toContain("No visits yet");
+    const html = renderToStaticMarkup(<AnalyticsReport summary={empty} lang="en" />);
+    expect(html).toContain("No visits yet");
+    // The link builder moved; the empty state must not point "below".
+    expect(html).not.toContain("below");
+    expect(html).toContain("Campaigns");
   });
 });
 

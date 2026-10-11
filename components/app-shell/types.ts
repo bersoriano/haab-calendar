@@ -8,6 +8,7 @@ export type ShellIconName =
   | "scan"
   | "calendar"
   | "analytics"
+  | "campaigns"
   | "services"
   | "availability"
   | "appearance"
