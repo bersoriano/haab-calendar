@@ -45,6 +45,13 @@ export async function updateSession(request: NextRequest) {
   const claims = data?.claims;
 
   if (!claims && isProtectedRoute(request.nextUrl.pathname)) {
+    // An API caller is `fetch`, not a person. It would follow a redirect and
+    // receive the login page as a 200, so a lapsed session would read as a
+    // request that failed for no reason and that retrying never fixes.
+    if (request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json({ userMessage: "Sign in to continue." }, { status: 401 });
+    }
+
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
