@@ -43,7 +43,7 @@ const PROVIDER_SELECT =
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
-  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, created_at, updated_at";
+  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, reviewed_at, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
   "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, extension_count, allows_shared_capacity";
 
@@ -131,6 +131,7 @@ type BookingRow = {
   utm_medium: string | null;
   utm_campaign: string | null;
   referrer_host: string | null;
+  reviewed_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -340,7 +341,16 @@ function readClientNote(details: BookingRow["details"]) {
   return typeof value === "string" ? value : "";
 }
 
-function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
+/**
+ * `audience` decides whether the provider's review flag travels with the
+ * record. It defaults to the client, so a new caller cannot leak it by
+ * forgetting to say who is asking.
+ */
+function toBookingRecord(
+  row: BookingRow,
+  manageToken = "",
+  audience: "customer" | "provider" = "customer",
+): BookingRecord {
   return {
     id: row.id,
     serviceId: row.service_id ?? "",
@@ -362,10 +372,16 @@ function toBookingRecord(row: BookingRow, manageToken = ""): BookingRecord {
     location: row.location_snapshot ?? undefined,
     status: row.status,
     campaign: toBookingCampaign(row),
+    reviewedAt: audience === "provider" ? (row.reviewed_at ?? undefined) : undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     manageToken,
   };
+}
+
+/** A write made on the provider's side answers with the provider's view. */
+function audienceFor(actorType: BookingActorType) {
+  return actorType === "provider" ? "provider" : "customer";
 }
 
 /** Undefined for a booking that arrived untagged and without a referrer. */
@@ -1266,7 +1282,7 @@ async function updateBookingStatus(
     eventType: options.status === "cancelled" ? "cancelled" : "rescheduled",
   });
 
-  return toBookingRecord(data, options.manageToken);
+  return toBookingRecord(data, options.manageToken, audienceFor(options.actorType));
 }
 
 export async function getManagedBooking(supabase: SupabaseClient, input: ManageBookingInput) {
@@ -1301,7 +1317,7 @@ export async function getProviderBookingByManageToken(
     );
   }
 
-  return toBookingRecord(data);
+  return toBookingRecord(data, "", "provider");
 }
 
 export async function cancelManagedBooking(supabase: SupabaseClient, input: ManageBookingInput) {
@@ -1377,6 +1393,31 @@ export async function cancelProviderBooking(
       actorType,
     }),
   };
+}
+
+/**
+ * Marks a booking as seen by its provider, or as new again. Not a booking
+ * event: nothing about the booking itself changed, so no history row is
+ * written and no integration is told.
+ */
+export async function setProviderBookingReviewed(
+  supabase: SupabaseClient,
+  bookingId: string,
+  reviewed: boolean,
+) {
+  const booking = await getBookingById(supabase, bookingId);
+  const { data, error } = await supabase
+    .from("bookings")
+    .update({ reviewed_at: reviewed ? new Date().toISOString() : null })
+    .eq("id", booking.id)
+    .select(BOOKING_SELECT)
+    .single<BookingRow>();
+
+  if (error) {
+    throw new PublicBookingWriteError("Could not update that booking.", 500, error);
+  }
+
+  return { booking: toBookingRecord(data, "", "provider") };
 }
 
 async function rescheduleBookingRow(
@@ -1463,7 +1504,7 @@ async function rescheduleBookingRow(
     },
   });
 
-  return toBookingRecord(data, input.manageToken);
+  return toBookingRecord(data, input.manageToken, audienceFor(input.actorType));
 }
 
 /**
@@ -1562,7 +1603,7 @@ export async function getProviderDashboardContext(
       provider: toProviderInfo(provider, true),
       services: (services ?? []).map(toService),
       availability: provider.availability,
-      bookings: (bookings ?? []).map((booking) => toBookingRecord(booking)),
+      bookings: (bookings ?? []).map((booking) => toBookingRecord(booking, "", "provider")),
       bookingHolds: [],
       setupComplete: provider.setup_complete,
       vertical: provider.vertical,

@@ -393,6 +393,7 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       sharedCapacity: booking.sharedCapacity ?? false,
       partySize: booking.partySize,
       dateOfBirth: booking.dateOfBirth,
+      reviewedAt: booking.reviewedAt || undefined,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,
       manageToken: booking.manageToken ?? "",
