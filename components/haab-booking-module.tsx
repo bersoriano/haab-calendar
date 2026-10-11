@@ -6102,6 +6102,7 @@ export function HaabBookingModule({
                             lang={lang}
                             className={publicElevatedPanelClass}
                             insetClass={publicInsetCardClass}
+                            businessName={provider.businessName || provider.fullName}
                             buttonClass={publicPillButtonClass}
                           />
                         ) : null}
@@ -6212,6 +6213,7 @@ export function HaabBookingModule({
                           lang={lang}
                           className={publicElevatedPanelClass}
                           insetClass={publicInsetCardClass}
+                          businessName={provider.businessName || provider.fullName}
                         />
                       ) : null}
 

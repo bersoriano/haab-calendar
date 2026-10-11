@@ -1,7 +1,7 @@
 "use client";
 
 import { ActionButton } from "@/components/ui/ActionButton";
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import type { Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,7 @@ export function BookingNotePanel({
   isSavingNote,
   noteStatus,
   savedNote,
+  businessName,
   lang = "en",
   className,
   insetClass,
@@ -25,6 +26,8 @@ export function BookingNotePanel({
   isSavingNote: boolean;
   noteStatus: BookingNoteStatus;
   savedNote: string;
+  /** Who the note goes to; without it the title names no one. */
+  businessName?: string;
   lang?: Lang;
   className?: string;
   insetClass?: string;
@@ -32,11 +35,14 @@ export function BookingNotePanel({
 }) {
   const t = bookingTranslations[lang];
   const noteUnchanged = noteDraft.trim() === savedNote.trim();
+  const title = businessName?.trim()
+    ? fillTemplate(t.manage.noteTitleFor, { business: businessName.trim() })
+    : t.manage.noteTitle;
 
   return (
     <section className={className}>
       <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--ink)]">
-        {t.manage.noteTitle}
+        {title}
       </h3>
       <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{t.manage.noteBody}</p>
       {savedNote.trim() ? (
@@ -50,7 +56,7 @@ export function BookingNotePanel({
         </div>
       ) : null}
       <label className="mt-4 grid gap-2">
-        <span className="sr-only">{t.manage.noteTitle}</span>
+        <span className="sr-only">{title}</span>
         <textarea
           value={noteDraft}
           onChange={(event) => onNoteDraftChange(event.target.value)}
