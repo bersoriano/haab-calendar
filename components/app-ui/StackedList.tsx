@@ -37,10 +37,12 @@ export function StackedListItem({
 export function StackedListHeading({
   id,
   level = 3,
+  className,
   children,
 }: {
   id?: string;
   level?: 2 | 3;
+  className?: string;
   children: ReactNode;
 }) {
   const Heading = level === 2 ? "h2" : "h3";
@@ -48,7 +50,10 @@ export function StackedListHeading({
   return (
     <Heading
       id={id}
-      className="sticky top-[var(--app-sticky-top,0px)] z-10 border-y border-app-border bg-app-subtle px-4 py-1.5 text-xs font-semibold text-app-fg-secondary sm:px-6"
+      className={cn(
+        "sticky top-[var(--app-sticky-top,0px)] z-10 border-y border-app-border bg-app-subtle px-4 py-1.5 text-xs font-semibold text-app-fg-secondary sm:px-6",
+        className,
+      )}
     >
       {children}
     </Heading>

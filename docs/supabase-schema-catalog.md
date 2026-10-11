@@ -325,7 +325,7 @@ durable object for the provider dashboard.
 | `details_schema_key` | `text` | details schema family | Defaults to `"base"`. |
 | `details_schema_version` | `integer` | details schema version | Must be positive. |
 | `service_snapshot` | `jsonb` | service snapshot | Copy of key service fields at booking time. |
-| `reviewed_at` | `timestamptz` | `BookingRecord.reviewedAt` | When the provider marked the booking as seen; null while it is new. Provider-side only: never returned to the client who booked. Not integration-relevant, so changing it neither bumps `integration_version` nor queues an outbox event. Shown only where `tracksBookingReview(vertical)` is true (professional services). |
+| `reviewed_at` | `timestamptz` | `BookingRecord.reviewedAt` | When the provider marked the booking as seen; null while it is new. Provider-side only: never returned to the client who booked. Not integration-relevant, so changing it neither bumps `integration_version` nor queues an outbox event. Shown only where `tracksBookingReview(vertical)` is true (professional services). Any booking can be marked as seen; only a booking that is not cancelled and is dated today or later (on the provider's clock) can be cleared back to new — `canMarkBookingAsNew`, enforced in `setProviderBookingReviewed`. |
 | `created_at` | `timestamptz` | `BookingRecord.createdAt` | Insert timestamp. |
 | `updated_at` | `timestamptz` | `BookingRecord.updatedAt` | Maintained by trigger. |
 | `integration_version` | `bigint` | not exposed | Server-managed. Rises by one per integration-relevant change; drives the outbox and its deduplication. A client-supplied value is ignored. |

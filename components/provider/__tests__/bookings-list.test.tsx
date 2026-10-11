@@ -183,7 +183,7 @@ describe("BookingsList", () => {
       expect(row).not.toContain("Mark as seen");
     });
 
-    it("keeps the flag editable in the archive and on a cancelled booking", () => {
+    it("lets a new booking be marked as seen even when cancelled, past or archived", () => {
       const archived = rowOf(render({ bookings: mixed, review, view: "archive" }), "Ana Ruiz");
       expect(archived).toContain("Mark as seen");
       expect(archived).not.toContain(en.publicFlow.reschedule);
@@ -193,6 +193,23 @@ describe("BookingsList", () => {
         "Cy Lee",
       );
       expect(cancelled).toContain("Mark as seen");
+
+      const past = rowOf(
+        render({ bookings: [booking({ id: "p", clientName: "Di Mar", dateKey: "2026-10-07" })], review }),
+        "Di Mar",
+      );
+      expect(past).toContain("Mark as seen");
+    });
+
+    it("does not let a cancelled or past booking go back to new", () => {
+      const seen = (overrides: Parameters<typeof booking>[0]) =>
+        rowOf(render({ bookings: [booking({ clientName: "Di Mar", reviewedAt: seenAt, ...overrides })], review }), "Di Mar");
+
+      // Today (the list's todayKey is 2026-10-08) and later can.
+      expect(seen({ dateKey: "2026-10-08" })).toContain("Mark as new");
+      expect(seen({ dateKey: "2026-10-09" })).toContain("Mark as new");
+      expect(seen({ dateKey: "2026-10-07" })).not.toContain("Mark as");
+      expect(seen({ dateKey: "2026-10-09", status: "cancelled" })).not.toContain("Mark as");
     });
 
     it("shows a flag being saved as busy", () => {
@@ -216,6 +233,64 @@ describe("BookingsList", () => {
       expect(html).toContain("Marcar como revisado");
       expect(html).toContain("Sin revisar");
       expect(html).not.toContain("Mark as seen");
+    });
+  });
+
+  describe("row layout", () => {
+    /** The action slots of one row, in order: what each holds, or "" when empty. */
+    const slotsOf = (html: string, name: string) => {
+      const row = html.match(new RegExp(`<li[^>]*>(?:(?!</li>)[\\s\\S])*${name}(?:(?!</li>)[\\s\\S])*</li>`))?.[0] ?? "";
+      return [...row.matchAll(/<div data-slot="([a-z]+)"[^>]*>((?:(?!<\/div>)[\s\S])*)<\/div>/g)].map(
+        ([, slot, content]) => `${slot}:${content.replace(/<[^>]+>/g, "").trim()}`,
+      );
+    };
+    const review = {
+      filter: "all" as const,
+      onFilterChange: () => undefined,
+      pendingIds: new Set<string>(),
+      onToggle: () => undefined,
+    };
+
+    it("gives every row the same action slots, in the same order, whatever it can do", () => {
+      const html = render({
+        review,
+        bookings: [
+          booking({ id: "1", clientName: "Ana Ruiz" }),
+          booking({ id: "2", clientName: "Bo Diaz", status: "cancelled", reviewedAt: "2026-10-08T09:00:00.000Z" }),
+          booking({ id: "3", clientName: "Cy Lee", dateKey: "2026-10-07", reviewedAt: "2026-10-08T09:00:00.000Z" }),
+        ],
+        canReschedule: (candidate) => candidate.id !== "3",
+      });
+
+      expect(slotsOf(html, "Ana Ruiz")).toEqual(["review:Mark as seen", "reschedule:Reschedule", "cancel:Cancel"]);
+      // Nothing to do on a cancelled booking that was already seen: the slots stay, empty.
+      expect(slotsOf(html, "Bo Diaz")).toEqual(["review:", "reschedule:", "cancel:"]);
+      expect(slotsOf(html, "Cy Lee")).toEqual(["review:", "reschedule:", "cancel:Cancel"]);
+    });
+
+    it("keeps the slots where bookings are not reviewed, with the first one empty", () => {
+      expect(slotsOf(render(), "Ana Ruiz")).toEqual(["review:", "reschedule:Reschedule", "cancel:Cancel"]);
+    });
+
+    it("shares one set of columns across every row and date group", () => {
+      const html = render();
+      const table = html.match(/<div class="([^"]*grid-cols-\[8\.5rem[^"]*)"/)?.[1] ?? "";
+
+      // One grid for the whole list; groups, lists and rows only borrow its columns.
+      expect(table).toContain("auto_auto_auto");
+      expect(html.match(/grid-cols-\[8\.5rem/g)).toHaveLength(1);
+      for (const row of html.match(/<li[^>]*>/g) ?? []) {
+        expect(row).toContain("grid-cols-subgrid");
+      }
+    });
+
+    it("hides an empty slot where rows stack, so it leaves no gap", () => {
+      const html = render({ bookings: [booking({ id: "2", clientName: "Bo Diaz", status: "cancelled" })] });
+      const row = html.match(/<li[\s\S]*?<\/li>/)?.[0] ?? "";
+
+      for (const slot of row.match(/<div data-slot="[a-z]+"[^>]*>/g) ?? []) {
+        expect(slot).toMatch(/@max-\[[a-z0-9]+\]:hidden/);
+      }
     });
   });
 
@@ -248,7 +323,7 @@ describe("BookingsList", () => {
   it("labels each day group with a sticky heading", () => {
     const html = render();
     // A group, not a landmark per day: long lists would flood landmark navigation.
-    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"><h2[^>]*id="bookings-2026-10-08"[^>]*sticky/);
+    expect(html).toMatch(/<div role="group" aria-labelledby="bookings-2026-10-08"[^>]*><h2[^>]*id="bookings-2026-10-08"[^>]*sticky/);
   });
 
   it("shows saved history policy and a path to settings", () => {

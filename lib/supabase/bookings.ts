@@ -8,6 +8,7 @@ import {
   isDateAvailable,
   normalizeDailyBookingLimit,
 } from "@/lib/availability";
+import { canMarkBookingAsNew } from "@/lib/booking-review";
 import {
   addDays,
   addMinutes,
@@ -1406,6 +1407,21 @@ export async function setProviderBookingReviewed(
   reviewed: boolean,
 ) {
   const booking = await getBookingById(supabase, bookingId);
+
+  if (!reviewed) {
+    // The dashboard does not offer this; the rule is kept here so no other
+    // caller can put a cancelled or past booking back among the new ones.
+    const provider = await getProviderById(supabase, booking.provider_id);
+    const today = getDateTimeKeysInTimeZone(new Date(), provider.timezone).dateKey;
+
+    if (!canMarkBookingAsNew({ status: booking.status, dateKey: booking.date }, today)) {
+      throw new PublicBookingWriteError(
+        "A cancelled or past booking cannot be marked as new again.",
+        409,
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("bookings")
     .update({ reviewed_at: reviewed ? new Date().toISOString() : null })
