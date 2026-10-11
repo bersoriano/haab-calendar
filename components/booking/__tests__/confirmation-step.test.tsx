@@ -288,6 +288,26 @@ describe("BookingNotePanel", () => {
     expect(html).not.toContain('disabled=""');
   });
 
+  it("addresses the note to the business by name", () => {
+    const named = (lang: "en" | "es") =>
+      renderToStaticMarkup(
+        <BookingNotePanel
+          noteDraft=""
+          onNoteDraftChange={() => undefined}
+          onSaveNote={() => undefined}
+          isSavingNote={false}
+          noteStatus="idle"
+          savedNote=""
+          businessName="Clínica Sol"
+          lang={lang}
+        />,
+      );
+
+    expect(named("en")).toMatch(/<h3[^>]*>Send a note to Clínica Sol<\/h3>/);
+    expect(named("en")).not.toContain("Note for the provider");
+    expect(named("es")).toMatch(/<h3[^>]*>Envíe una nota a Clínica Sol<\/h3>/);
+  });
+
   it("shows saved note after opening the link", () => {
     const html = note("Please use the side entrance.");
     expect(html).toContain("Your note");

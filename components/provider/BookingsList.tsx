@@ -28,6 +28,7 @@ import {
   formatTimeRange,
   getBookingStatusLabel,
   getBookingTypeLabel,
+  formatCost,
 } from "@/lib/format";
 import type { BookingRecord, BookingStatus, BookingType, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -258,9 +259,9 @@ export function BookingsList({
                               {t.publicFlow.capacity}: {booking.capacitySnapshot}
                             </span>
                           ) : null}
-                          {booking.cost ? (
+                          {formatCost(booking.cost, lang) ? (
                             <span>
-                              {t.publicFlow.total}: {booking.cost}
+                              {t.publicFlow.total}: {formatCost(booking.cost, lang)}
                             </span>
                           ) : null}
                         </div>

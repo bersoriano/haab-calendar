@@ -31,6 +31,7 @@ import {
   formatTimeRange,
   getBookingStatusLabel,
   getBookingTypeLabel,
+  formatCost,
 } from "@/lib/format";
 import { shouldInterceptNavClick } from "@/lib/nav-click";
 import type { AdminTab, BookingRecord, Lang } from "@/lib/types";
@@ -202,7 +203,9 @@ export function DashboardOverview({
                           : t.admin.capacityNotSet}
                       </span>
                       <span>
-                        {booking.cost ? `${t.publicFlow.total}: ${booking.cost}` : t.admin.totalNotSet}
+                        {formatCost(booking.cost, lang)
+                          ? `${t.publicFlow.total}: ${formatCost(booking.cost, lang)}`
+                          : t.admin.totalNotSet}
                       </span>
                     </p>
                   </StackedListItem>

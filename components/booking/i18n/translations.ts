@@ -114,6 +114,8 @@ export type BookingDict = {
     keepCurrentTime: string;
     currentlyBooked: string;
     noteTitle: string;
+    /** "{business}" is the business the note goes to. */
+    noteTitleFor: string;
     noteBody: string;
     notePlaceholder: string;
     saveNote: string;
@@ -711,6 +713,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       keepCurrentTime: "Keep current time",
       currentlyBooked: "Booked now",
       noteTitle: "Note for the provider",
+      noteTitleFor: "Send a note to {business}",
       noteBody: "Optional. Anything they should know before your visit — they see it with your booking.",
       notePlaceholder: "Running late, parking questions, anything else…",
       saveNote: "Save note",
@@ -1309,6 +1312,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       keepCurrentTime: "Conservar el horario actual",
       currentlyBooked: "Reservado ahora",
       noteTitle: "Nota para el administrador",
+      noteTitleFor: "Envíe una nota a {business}",
       noteBody: "Opcional. Algo que deba saber antes de su visita: lo verá junto a su reserva.",
       notePlaceholder: "Llegaré tarde, dudas de estacionamiento, lo que sea…",
       saveNote: "Guardar nota",

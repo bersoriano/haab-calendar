@@ -14,6 +14,19 @@ const OCCURRENCE: Record<Lang, Record<OccurrenceMode, string>> = {
   es: { single: "Único", weekly: "Semanal", periodic: "Periódico" },
 };
 
+const NO_COST: Record<Lang, string> = { en: "No cost", es: "Sin costo" };
+
+/**
+ * A price as the page shows it. Prices are free text ("$120", "$40 / hour"),
+ * so zero is any price with digits that are all 0: "0", "$0.00", "0 MXN".
+ * An unset price stays empty, so callers can still leave it out.
+ */
+export function formatCost(cost: string | null | undefined, lang: Lang = "en") {
+  const text = cost?.trim() ?? "";
+  const digits = text.replace(/\D/g, "");
+  return /^0+$/.test(digits) ? NO_COST[lang] : text;
+}
+
 export function formatDateLabel(dateKey: string, lang: Lang = "en") {
   return getLongDateFormatter(lang).format(parseDateKey(dateKey));
 }

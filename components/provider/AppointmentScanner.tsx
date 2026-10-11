@@ -26,7 +26,12 @@ import {
   buttonStyles,
 } from "@/components/app-ui";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { bookingStatusBadgeTone, formatDateLabel, formatTimeRange } from "@/lib/format";
+import {
+  bookingStatusBadgeTone,
+  formatCost,
+  formatDateLabel,
+  formatTimeRange,
+} from "@/lib/format";
 import type { BookingRecord, Lang } from "@/lib/types";
 
 const resultCopy = {
@@ -125,9 +130,9 @@ export function AppointmentScanResult({
             {booking.notes}
           </DescriptionItem>
         ) : null}
-        {booking.cost ? (
+        {formatCost(booking.cost, lang) ? (
           <DescriptionItem flush term={copy.total}>
-            {booking.cost}
+            {formatCost(booking.cost, lang)}
           </DescriptionItem>
         ) : null}
       </DescriptionList>
