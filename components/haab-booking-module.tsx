@@ -96,6 +96,7 @@ import {
   bookingTypeTone,
   bookingTypeBadgeTone,
   formatCountdown,
+  formatCost,
 } from "@/lib/format";
 import {
   createEmptyStore,
@@ -4549,7 +4550,7 @@ export function HaabBookingModule({
         ? [selectedLocation.address]
         : detailsContact.addresses;
     const detailsPhones = detailsContact.phones;
-    const detailsCost = effectiveCost.trim() || null;
+    const detailsCost = formatCost(effectiveCost, lang) || null;
     // "About the appointment" rides inside the summary: open under the client rows
     // on desktop, folded at the foot of the compact card on a phone.
     const detailsAboutProps = selectedService
@@ -5096,7 +5097,9 @@ export function HaabBookingModule({
                     {service.medicalSpecialty ? (
                       <span>{t.publicFlow.specialty}: {service.medicalSpecialty}</span>
                     ) : null}
-                    {service.cost ? <span>{t.publicFlow.total}: {service.cost}</span> : null}
+                    {formatCost(service.cost, lang) ? (
+                      <span>{t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
+                    ) : null}
                     {service.notes ? <span>{t.publicFlow.notes}: {service.notes}</span> : null}
                   </div>
                   {(() => {
@@ -5304,7 +5307,7 @@ export function HaabBookingModule({
                         <span className="text-sm font-medium">{loc.address}</span>
                         {loc.price ? (
                           <span className="text-sm font-semibold text-[var(--accent-strong)]">
-                            {loc.price}
+                            {formatCost(loc.price, lang)}
                           </span>
                         ) : null}
                       </button>
@@ -5512,7 +5515,7 @@ export function HaabBookingModule({
                           {!selectionIsSingle ? (
                             <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                           ) : null}
-                          <SummaryField label={t.publicFlow.total} value={effectiveCost || t.publicFlow.notSet} />
+                          <SummaryField label={t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
                           {selectedService.notes ? (
                             <SummaryField label={t.publicFlow.notes} value={selectedService.notes} />
                           ) : null}
@@ -6069,7 +6072,7 @@ export function HaabBookingModule({
                                   }
                                 : undefined
                             }
-                            costLabel={successfulBooking.cost || effectiveCost}
+                            costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
                             admitLabel={
                               successfulBooking.capacitySnapshot ||
                               formatCapacityLabel(selectedService, lang)
@@ -6099,10 +6102,10 @@ export function HaabBookingModule({
                             isSavingNote={isSavingClientNote}
                             noteStatus={clientNoteStatus}
                             savedNote={successfulBooking.clientNote ?? ""}
+                            businessName={provider.businessName || provider.fullName}
                             lang={lang}
                             className={publicElevatedPanelClass}
                             insetClass={publicInsetCardClass}
-                            businessName={provider.businessName || provider.fullName}
                             buttonClass={publicPillButtonClass}
                           />
                         ) : null}
@@ -6160,7 +6163,7 @@ export function HaabBookingModule({
                         isFullDay={isFullDayBooking}
                         durationLabel={formatDuration(selectedService, lang)}
                         clientFieldLabel={copy.phrases.clientLabel}
-                        costLabel={successfulBooking.cost || effectiveCost}
+                        costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
                         admitLabel={
                           successfulBooking.capacitySnapshot ||
                           formatCapacityLabel(selectedService, lang)
@@ -6210,10 +6213,10 @@ export function HaabBookingModule({
                           isSavingNote={isSavingClientNote}
                           noteStatus={clientNoteStatus}
                           savedNote={successfulBooking.clientNote ?? ""}
+                          businessName={provider.businessName || provider.fullName}
                           lang={lang}
                           className={publicElevatedPanelClass}
                           insetClass={publicInsetCardClass}
-                          businessName={provider.businessName || provider.fullName}
                         />
                       ) : null}
 

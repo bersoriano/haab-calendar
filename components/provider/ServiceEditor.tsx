@@ -11,6 +11,7 @@ import {
   getBookingTypeLabel,
   getOccurrenceModeLabel,
   bookingTypeBadgeTone,
+  formatCost,
 } from "@/lib/format";
 import {
   Alert,
@@ -252,7 +253,9 @@ export function ServiceEditor({
                   {service.medicalSpecialty ? (
                     <span>{t.admin.medicalSpecialtyLabel}: {service.medicalSpecialty}</span>
                   ) : null}
-                  {service.cost ? <span>{t.admin.totalLabel}: {service.cost}</span> : null}
+                  {formatCost(service.cost, lang) ? (
+                    <span>{t.admin.totalLabel}: {formatCost(service.cost, lang)}</span>
+                  ) : null}
                   {service.notes ? <span>{t.admin.notesLabel}: {service.notes}</span> : null}
                   {service.linkedAddress1 && hasAddress1 ? (
                     <span>{t.admin.address1Label}: {provider.address1}</span>

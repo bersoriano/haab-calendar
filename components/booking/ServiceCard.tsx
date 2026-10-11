@@ -17,6 +17,7 @@ import {
   formatTimeRange,
   getBookingTypeLabel,
   getOccurrenceModeLabel,
+  formatCost,
 } from "@/lib/format";
 import {
   formatCapacityChip,
@@ -101,7 +102,7 @@ export function ServiceCard({
   const Icon = (vertical && VERTICAL_ICONS[vertical]) || CalendarBlank;
   const isTeal = index % 2 === 1;
 
-  const cost = service.cost?.trim();
+  const cost = formatCost(service.cost, lang);
   const description = service.description?.trim();
   const notes = service.notes?.trim();
   const specialty = service.medicalSpecialty?.trim();

@@ -3,6 +3,7 @@ import {
   formatTimeLabel,
   formatTimeRange,
   formatCountdown,
+  formatCost,
   formatDuration,
   formatCapacityLabel,
   getBookingTypeLabel,
@@ -327,5 +328,33 @@ describe("badge tones", () => {
   it("tells appointments from full days", () => {
     expect(bookingTypeBadgeTone("appointment")).toBe("accent");
     expect(bookingTypeBadgeTone("full-day")).toBe("neutral");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatCost
+// ---------------------------------------------------------------------------
+
+describe("formatCost", () => {
+  it("says a zero price in words, in the page's language", () => {
+    for (const zero of ["0", "$0", "$0.00", "0,00 €", "0 MXN", "MXN 0", " $0 / visit "]) {
+      expect(formatCost(zero, "en")).toBe("No cost");
+      expect(formatCost(zero, "es")).toBe("Sin costo");
+    }
+  });
+
+  it("leaves every other price as the owner wrote it", () => {
+    expect(formatCost("$120", "en")).toBe("$120");
+    expect(formatCost(" $40 / hour ", "en")).toBe("$40 / hour");
+    expect(formatCost("$0.50", "en")).toBe("$0.50");
+    expect(formatCost("$100", "es")).toBe("$100");
+    expect(formatCost("Full-day package", "en")).toBe("Full-day package");
+  });
+
+  it("keeps an unset price empty, so callers can still hide it", () => {
+    expect(formatCost("", "en")).toBe("");
+    expect(formatCost("   ", "es")).toBe("");
+    expect(formatCost(null, "en")).toBe("");
+    expect(formatCost(undefined, "en")).toBe("");
   });
 });

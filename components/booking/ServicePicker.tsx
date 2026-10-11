@@ -1,6 +1,7 @@
 import { useId } from "react";
 
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
+import { formatCost } from "@/lib/format";
 import type { Lang, Service } from "@/lib/types";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
@@ -59,7 +60,9 @@ export function ServicePicker({
         >
           {services.map((service) => (
             <option key={service.id} value={service.id}>
-              {service.cost?.trim() ? `${service.name} · ${service.cost.trim()}` : service.name}
+              {formatCost(service.cost, lang)
+                ? `${service.name} · ${formatCost(service.cost, lang)}`
+                : service.name}
             </option>
           ))}
         </select>
