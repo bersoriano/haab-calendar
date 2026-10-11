@@ -341,6 +341,14 @@ describe("AppointmentAbout", () => {
     expect(render({}, { addresses: [] })).not.toContain(sideBySide);
   });
 
+  it("keeps the line breaks the owner typed into the notes", () => {
+    const html = render({ notes: "Bring a photo ID.\nArrive 10 minutes early." });
+
+    expect(html).toMatch(
+      /<p class="[^"]*whitespace-pre-line[^"]*">(?:(?!<\/p>)[\s\S])*Bring a photo ID\.\nArrive 10 minutes early\./,
+    );
+  });
+
   it("hides what the service does not have", () => {
     const html = render(
       { notes: undefined, medicalSpecialty: undefined, capacity: undefined },

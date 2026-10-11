@@ -256,7 +256,12 @@ export function ServiceEditor({
                   {formatCost(service.cost, lang) ? (
                     <span>{t.admin.totalLabel}: {formatCost(service.cost, lang)}</span>
                   ) : null}
-                  {service.notes ? <span>{t.admin.notesLabel}: {service.notes}</span> : null}
+                  {service.notes ? (
+                    // Notes typed on several lines take a row of their own.
+                    <span className={cn("whitespace-pre-line", service.notes.includes("\n") && "basis-full")}>
+                      {t.admin.notesLabel}: {service.notes}
+                    </span>
+                  ) : null}
                   {service.linkedAddress1 && hasAddress1 ? (
                     <span>{t.admin.address1Label}: {provider.address1}</span>
                   ) : null}
@@ -584,13 +589,14 @@ export function ServiceEditor({
             />
           </Field>
           <Field label={t.admin.notesLabel}>
-            <Input
+            <Textarea
               disabled={disabled}
               value={serviceDraft.notes}
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, notes: event.target.value }))
               }
               placeholder={t.admin.notesPlaceholder}
+              rows={3}
             />
           </Field>
           <section className="grid gap-3 border-t border-app-border pt-5">
