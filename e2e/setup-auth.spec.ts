@@ -112,8 +112,6 @@ test.describe("guest with a draft that has no business type yet", () => {
 });
 
 test.describe("signed-in account with no page yet", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
   // An account and nothing else: no provider row, so no page, finished or not.
   const account = {
     id: "00000000-0000-4000-8000-0000000e2ef0",
@@ -132,7 +130,40 @@ test.describe("signed-in account with no page yet", () => {
     if (error) throw error;
   });
 
-  test("is offered setup from the menu, not a dashboard it does not have", async ({ page }) => {
+  test("sees on a desktop that the sign-in worked, and can sign back out", async ({ page }) => {
+    await page.goto("/login?lang=en");
+    await page.getByLabel("Email").fill(account.email);
+    await page.getByLabel("Password").fill(E2E_PASSWORD);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+
+    // Signing in lands on the landing page: there is no dashboard to open yet.
+    // The bar used to lose "Log in" there and gain nothing. Its create button
+    // is invisible until the hero scrolls away, so the page looked exactly as
+    // it had before the form, minus the one link that mentioned accounts.
+    const bar = page.getByRole("banner");
+    await expect(bar.getByRole("button", { name: "Sign out" })).toBeVisible({ timeout: 30_000 });
+    expect(new URL(page.url()).pathname).toBe("/");
+    await expect(bar.getByRole("link", { name: "Log in" })).toHaveCount(0);
+    await expect(
+      page.getByRole("main").getByText(`Signed in as ${account.email}`),
+    ).toBeVisible();
+    // The bar is at its tightest here: the narrowest width that shows it whole.
+    await expectNoSidewaysScroll(page);
+
+    // The gallery wears the same bar.
+    await page.goto("/gallery?lang=en");
+    await expect(page.getByRole("banner").getByRole("button", { name: "Sign out" })).toBeVisible();
+
+    await page.getByRole("banner").getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
+
+    await page.goto("/?lang=en");
+    await expect(page.getByRole("banner").getByRole("link", { name: "Log in" })).toBeVisible();
+    await expect(page.getByRole("banner").getByRole("button", { name: "Sign out" })).toHaveCount(0);
+  });
+
+  test("is offered setup from the phone menu, not a dashboard it does not have", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/login?lang=en");
     await page.getByLabel("Email").fill(account.email);
     await page.getByLabel("Password").fill(E2E_PASSWORD);
@@ -149,6 +180,9 @@ test.describe("signed-in account with no page yet", () => {
     const menu = page.getByRole("navigation", { name: "Mobile" });
     await expect(menu.getByRole("button", { name: "Your dashboard" })).toHaveCount(0);
     await expect(menu.getByRole("link", { name: "Log in" })).toHaveCount(0);
+    // Whose session this is, and the way out of it.
+    await expect(menu.getByText(`Signed in as ${account.email}`)).toBeVisible();
+    await expect(menu.getByRole("button", { name: "Sign out" })).toBeVisible();
 
     await menu.getByRole("button", { name: "Create your page" }).click();
     await expect(page.getByRole("heading", { name: "Claim your booking link." })).toBeVisible();
