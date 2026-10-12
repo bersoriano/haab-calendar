@@ -2,6 +2,7 @@ import { expect, test, type Cookie, type Locator, type Page } from "@playwright/
 
 import { localAdminClient } from "./fixtures/local-supabase";
 import { authStatePath, E2E_PASSWORD } from "./fixtures/providers";
+import { DEFAULT_STORAGE_KEY } from "../lib/constants";
 
 /**
  * The rule: whatever a navigation offers, it offers at every width.
@@ -53,7 +54,18 @@ const section = (path: string): Control => ({
   find: (nav) => nav.getByRole("navigation").locator(`a[href="${path}"]`),
 });
 
-type Session = "signed out" | "signed in with no page yet" | "signed in with a page";
+/** A tab of the workspace a draft is built in, by its label. */
+const tab = (name: string): Control => ({
+  label: `the "${name}" tab`,
+  find: (nav) =>
+    nav.getByRole("navigation", { name: "Dashboard" }).getByRole("button", { name, exact: true }),
+});
+
+type Session =
+  | "signed out"
+  | "signed out with a draft"
+  | "signed in with no page yet"
+  | "signed in with a page";
 
 type NavCase = {
   surface: string;
@@ -99,6 +111,39 @@ async function dashboardNav(page: Page) {
   await expect(drawer).toBeVisible();
   return drawer;
 }
+
+/**
+ * The workspace of a draft made before any account: the landing page hands
+ * over to it, and it wears the module's own header and tabs, not the
+ * dashboard's sidebar. The save control sits outside the tabs, at the bottom
+ * of the screen, so the whole page is the navigation here.
+ */
+async function draftWorkspace(page: Page) {
+  await page.getByRole("main").getByRole("button", { name: "Create your page" }).first().click();
+  await expect(page.getByRole("navigation", { name: "Dashboard" })).toBeVisible();
+  return page.locator("body");
+}
+
+/** A finished draft, as the guest builder leaves it in the browser. */
+const draft = {
+  vertical: "healthcare",
+  setupComplete: true,
+  provider: {
+    fullName: "Dr. Nav Draft",
+    businessName: "Nav Draft Clinic",
+    email: "nav-draft@example.invalid",
+    publicSlug: "nav-draft-clinic",
+  },
+  services: [
+    {
+      id: "nav-draft-visit",
+      name: "First visit",
+      bookingType: "appointment",
+      durationMinutes: 30,
+      description: "A first visit.",
+    },
+  ],
+};
 
 // A signed-in owner with a page never sees the landing page: `/` sends them to
 // the dashboard, which is their case below.
@@ -158,6 +203,39 @@ const CASES: NavCase[] = [
     account: button("Sign out"),
     offers: [link("Live examples"), link("How it works"), link("FAQ")],
     hides: [link("Log in")],
+  },
+  {
+    surface: "draft workspace",
+    session: "signed out with a draft",
+    path: "/?lang=en",
+    open: draftWorkspace,
+    // The way in is the save: an account is what keeps the draft and publishes it.
+    account: button("Create account to publish"),
+    offers: [
+      tab("Dashboard"),
+      tab("Medical services"),
+      tab("Availability"),
+      tab("Appearance"),
+      tab("Settings"),
+      {
+        label: "the preview of the page",
+        find: (nav) => nav.getByRole("button", { name: "Preview booking page", exact: true }).first(),
+      },
+    ],
+    // Nothing is published: no bookings to list, no visits to count, no account
+    // to connect, and a link that would be a 404.
+    hides: [
+      tab("Appointments"),
+      tab("Calendar"),
+      tab("Analytics"),
+      tab("Integrations"),
+      {
+        // By its start: the link's name goes on to say it opens a new tab.
+        label: "the link to the page",
+        find: (nav) => nav.getByRole("link", { name: /^View public page/ }),
+      },
+      button("Copy link"),
+    ],
   },
   {
     surface: "dashboard",
@@ -228,7 +306,9 @@ test.beforeAll(async ({ browser }) => {
 
   // Signed in once, through the real form, and the session reused: the local
   // stack limits sign-ins, and one per case would spend the suite's allowance.
-  const context = await browser.newContext();
+  // An empty session, said outright: a context made here otherwise inherits
+  // the signed-in state of whichever case the worker happens to start on.
+  const context = await browser.newContext({ storageState: { cookies: [], origins: [] } });
   const page = await context.newPage();
   await page.goto("/login?lang=en");
   await page.getByLabel("Email").fill(noPageAccount.email);
@@ -252,6 +332,13 @@ for (const navCase of CASES) {
 
         if (navCase.session === "signed in with no page yet") {
           await page.context().addCookies(noPageSession);
+        }
+
+        if (navCase.session === "signed out with a draft") {
+          await page.addInitScript(
+            ([key, value]) => window.localStorage.setItem(key, value),
+            [DEFAULT_STORAGE_KEY, JSON.stringify(draft)],
+          );
         }
 
         await page.goto(navCase.path);
