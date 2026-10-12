@@ -111,6 +111,63 @@ test.describe("guest with a draft that has no business type yet", () => {
   });
 });
 
+/**
+ * A business type picked on the landing page, in a browser that already holds
+ * a finished draft. The type's starter services are for a page that is
+ * starting; the draft's own must survive them.
+ */
+test.describe("guest with a finished draft who picks a business type", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(
+      ([key]) => {
+        if (window.localStorage.getItem(key)) return;
+        window.localStorage.setItem(
+          key,
+          JSON.stringify({
+            vertical: "healthcare",
+            setupComplete: true,
+            provider: {
+              fullName: "Dr. Kept Draft",
+              businessName: "Kept Draft Clinic",
+              email: "kept-draft@example.invalid",
+            },
+            services: [
+              {
+                id: "kept-draft-visit",
+                name: "Sleep study review",
+                bookingType: "appointment",
+                durationMinutes: 45,
+                description: "A visit the owner wrote themselves.",
+              },
+            ],
+          }),
+        );
+      },
+      [DEFAULT_STORAGE_KEY],
+    );
+    await page.goto("/?lang=en");
+  });
+
+  test("keeps the draft's own services when the type is the one it has", async ({ page }) => {
+    await page.getByRole("button", { name: "Start with Healthcare" }).first().click();
+
+    const tabs = page.getByRole("navigation", { name: "Dashboard" });
+    await tabs.getByRole("button", { name: "Medical services", exact: true }).click();
+    await expect(page.getByRole("listitem").filter({ hasText: "Sleep study review" })).toBeVisible();
+  });
+
+  test("goes through setup again when the type is a different one", async ({ page }) => {
+    await page.getByRole("button", { name: "Start with Restaurants" }).first().click();
+
+    // Another type's starter services replace the draft's: its owner sees and
+    // confirms them in setup, not in a workspace that says the page is ready.
+    await expect(page.getByRole("navigation", { name: "Setup progress" })).toContainText("Step 1 of 4");
+    await expect(page.getByRole("navigation", { name: "Dashboard" })).toHaveCount(0);
+    // Who the business is does not change with its type.
+    await expect(page.getByLabel(/Business name/i).first()).toHaveValue("Kept Draft Clinic");
+  });
+});
+
 test.describe("signed-in account with no page yet", () => {
   // An account and nothing else: no provider row, so no page, finished or not.
   const account = {

@@ -236,7 +236,9 @@ import { ServiceStepIntro } from "@/components/booking/ServiceStepIntro";
 import { usePublicPageAnalytics } from "@/lib/analytics/use-public-page-analytics";
 import {
   isGuestDraftMeaningful,
+  landingSelectionSeedsDraft,
   prepareGuestPreviewStore,
+  restartDraftSetup,
 } from "@/lib/guest-builder";
 
 type HaabBookingModuleProps = {
@@ -2466,12 +2468,27 @@ export function HaabBookingModule({
     if (integratedMode || !hydrated) return;
     if (!initialVerticalId) return;
     appliedInitialVerticalRef.current = true;
+    const landingName = initialBusinessName?.trim();
+
+    // The browser already holds a draft of this type: it stays as its owner
+    // built it. The starter setup laid over it would erase their services and
+    // hours. The landing name only fills a draft that has none.
+    if (!landingSelectionSeedsDraft(activeStore, initialVerticalId)) {
+      if (landingName && !provider.businessName.trim()) {
+        updateProvider("businessName", landingName);
+      }
+      return;
+    }
+
+    // A draft of another type takes the new type's starter setup, so it is
+    // set up again, the way the dashboard's business-type switch does it.
+    actions.updateStandaloneStore(restartDraftSetup);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     applyVertical(initialVerticalId);
     // The name chosen on the landing page also seeds the public slug, so the
     // link previewed there is the link setup starts with.
-    if (initialBusinessName?.trim()) {
-      updateProvider("businessName", initialBusinessName.trim());
+    if (landingName) {
+      updateProvider("businessName", landingName);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hydrated, initialBusinessName, initialVerticalId, integratedMode]);
