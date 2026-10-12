@@ -11,7 +11,7 @@ import type { AdminTab, ModuleStore } from "@/lib/types";
  * Signing in does not publish a draft. An account can hold a finished draft
  * and no page: it made one signed out and came back by the ordinary log-in.
  */
-const PUBLISHED_ONLY: readonly AdminTab[] = ["bookings", "calendar", "analytics", "integrations"];
+const PUBLISHED_ONLY: readonly AdminTab[] = ["bookings", "analytics", "integrations"];
 
 export function draftWorkspaceSections<T extends { value: AdminTab }>(
   sections: readonly T[],

@@ -12,7 +12,6 @@ export type AdminTab =
   | "dashboard"
   | "bookings"
   | "scan"
-  | "calendar"
   | "services"
   | "availability"
   | "appearance"

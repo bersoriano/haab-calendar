@@ -41,8 +41,6 @@ export type DashboardShellCopy = {
   viewAll: string;
   /** Label of a dialog's close button. */
   closeDialog: string;
-  /** Read after a calendar day's "+N" overflow count. */
-  moreBookings: string;
   /** "{name}" is the service's name. */
   deleteServiceTitle: string;
   deleteServiceBody: string;
@@ -207,7 +205,6 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       dashboard: "What's coming up and how your page is doing.",
       bookings: "Search, filter and manage everything that's been booked.",
       scan: "Point the camera at a customer's QR code to pull up their appointment.",
-      calendar: "Your month at a glance. Pick an open day to add a booking.",
       analytics: "Visits, bookings and where they come from.",
       campaigns: "Make a link for each place you share your page, and see which ones bring bookings.",
       services: "What clients can book, with prices and times.",
@@ -228,7 +225,6 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     signedOutError: "You've been signed out. Reload the page to sign in again.",
     viewAll: "View all",
     closeDialog: "Close",
-    moreBookings: "more",
     deleteServiceTitle: "Delete “{name}”?",
     deleteServiceBody: "Clients can no longer book it. Bookings already made stay as they are.",
     keep: "Keep",
@@ -411,7 +407,6 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       dashboard: "Lo que viene y cómo va su página.",
       bookings: "Busque, filtre y gestione todo lo que le han reservado.",
       scan: "Apunte la cámara al código QR del cliente para consultar su cita.",
-      calendar: "Su mes de un vistazo. Elija un día abierto para agregar una reserva.",
       analytics: "Visitas, reservas y de dónde vienen.",
       campaigns: "Cree un enlace para cada lugar donde comparte su página y vea cuáles generan reservas.",
       services: "Lo que sus clientes pueden reservar, con precios y horarios.",
@@ -432,7 +427,6 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     signedOutError: "Su sesión terminó. Recargue la página para iniciar sesión de nuevo.",
     viewAll: "Ver todo",
     closeDialog: "Cerrar",
-    moreBookings: "más",
     deleteServiceTitle: "¿Eliminar «{name}»?",
     deleteServiceBody: "Ya no se podrá reservar. Las reservas ya hechas se conservan.",
     keep: "Conservar",
@@ -615,8 +609,6 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
       return copy.Bookings;
     case "scan":
       return admin.scanAppointment;
-    case "calendar":
-      return admin.tabCalendar;
     case "analytics":
       return admin.tabAnalytics;
     case "campaigns":

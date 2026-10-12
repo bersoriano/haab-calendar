@@ -107,17 +107,6 @@ export function createRollingWeekWindow(reference: Date, pastDays: number, weeks
   };
 }
 
-export function createMonthMatrix(anchor: Date) {
-  const firstOfMonth = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-  const gridStart = addDays(firstOfMonth, -firstOfMonth.getDay());
-
-  return Array.from({ length: 6 }, (_, weekIndex) =>
-    Array.from({ length: 7 }, (_, dayIndex) =>
-      addDays(gridStart, weekIndex * 7 + dayIndex),
-    ),
-  );
-}
-
 export function clampDateKey(dateKey: string, minimumDateKey: string, maximumDateKey: string) {
   if (compareDateKeys(dateKey, minimumDateKey) < 0) {
     return minimumDateKey;

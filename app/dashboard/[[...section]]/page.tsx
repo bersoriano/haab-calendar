@@ -17,7 +17,6 @@ const META_TITLES: Record<AdminTab, string> = {
   dashboard: "Overview",
   bookings: "Bookings",
   scan: "Scan appointment",
-  calendar: "Calendar",
   analytics: "Analytics",
   campaigns: "Campaigns",
   services: "Services",

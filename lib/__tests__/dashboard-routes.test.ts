@@ -37,11 +37,13 @@ describe("dashboard sections", () => {
     expect(sectionFromSegments(["bookings", "extra"])).toBeNull();
     expect(sectionFromSegments(["BOOKINGS"])).toBeNull();
     expect(sectionFromSegments(["nope"])).toBeNull();
+    // A section that was removed: an old bookmark is not found.
+    expect(sectionFromSegments(["calendar"])).toBeNull();
   });
 
   it("reads sections from pathnames, ignoring a trailing slash", () => {
     expect(sectionFromPathname("/dashboard/")).toBe("dashboard");
-    expect(sectionFromPathname("/dashboard/calendar/")).toBe("calendar");
+    expect(sectionFromPathname("/dashboard/bookings/")).toBe("bookings");
     expect(sectionFromPathname("/dashboardx")).toBeNull();
     expect(sectionFromPathname("/")).toBeNull();
   });
@@ -67,7 +69,6 @@ describe("dashboard sections", () => {
       "dashboard",
       "bookings",
       "scan",
-      "calendar",
       "analytics",
       "campaigns",
     ]);
