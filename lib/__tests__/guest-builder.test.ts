@@ -6,10 +6,13 @@ import {
   isGuestDraftMeaningful,
   isGuestPublishReturnPath,
   isGuestPublishResume,
+  landingSelectionSeedsDraft,
   prepareGuestPreviewStore,
+  restartDraftSetup,
   shouldSeedBuilderFromLanding,
 } from "@/lib/guest-builder";
 import { createEmptyStore } from "@/lib/store";
+import type { ModuleStore } from "@/lib/types";
 
 describe("guest booking-page builder", () => {
   it("ignores an untouched standalone store", () => {
@@ -93,3 +96,50 @@ describe("guest booking-page builder", () => {
     ).toBe(false);
   });
 });
+
+/**
+ * A business type picked on the landing page reaches a browser that may
+ * already hold a draft. The type's starter services and hours are for a page
+ * that is starting: laid over a draft of the same type they erase the
+ * services and hours its owner entered.
+ */
+describe("a business type picked on the landing page", () => {
+  const finished: ModuleStore = {
+    ...createEmptyStore(),
+    vertical: "healthcare",
+    setupComplete: true,
+  };
+
+  it("starts a browser with no draft on that type", () => {
+    expect(landingSelectionSeedsDraft(createEmptyStore(), "healthcare")).toBe(true);
+  });
+
+  it("leaves a draft of the same type as its owner built it", () => {
+    expect(landingSelectionSeedsDraft(finished, "healthcare")).toBe(false);
+    const unfinished: ModuleStore = { ...finished, setupComplete: false };
+    expect(landingSelectionSeedsDraft(unfinished, "healthcare")).toBe(false);
+  });
+
+  it("starts over when the type is a different one", () => {
+    expect(landingSelectionSeedsDraft(finished, "restaurant")).toBe(true);
+  });
+
+  it("sends a finished draft back through setup for its new type", () => {
+    const draft: ModuleStore = {
+      ...finished,
+      provider: { ...finished.provider, businessName: "Nav Draft Clinic" },
+      bookings: [{ id: "b1" } as ModuleStore["bookings"][number]],
+      bookingHolds: [{ id: "h1" } as ModuleStore["bookingHolds"][number]],
+    };
+
+    const restarted = restartDraftSetup(draft);
+
+    // The starter services replace the ones these were booked against.
+    expect(restarted.setupComplete).toBe(false);
+    expect(restarted.bookings).toEqual([]);
+    expect(restarted.bookingHolds).toEqual([]);
+    // Who the business is does not change with its type.
+    expect(restarted.provider.businessName).toBe("Nav Draft Clinic");
+  });
+});
+

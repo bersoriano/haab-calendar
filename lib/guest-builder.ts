@@ -1,4 +1,4 @@
-import type { Lang, ModuleStore } from "./types";
+import type { Lang, ModuleStore, VerticalId } from "./types";
 import { slugify } from "./utils";
 
 export function isGuestDraftMeaningful(store: ModuleStore) {
@@ -71,3 +71,26 @@ export function shouldSeedBuilderFromLanding({
 }) {
   return Boolean(selectedVertical && !hasSavedDraft && !resumeGuestPublish);
 }
+
+/**
+ * Whether a business type picked on the landing page seeds the draft this
+ * browser holds with the type's starter services and hours. It does when the
+ * draft is not of that type yet. A draft that already is keeps what its owner
+ * entered: the starter setup laid over it would erase their services.
+ */
+export function landingSelectionSeedsDraft(
+  draft: Pick<ModuleStore, "vertical">,
+  selected: VerticalId,
+) {
+  return draft.vertical !== selected;
+}
+
+/**
+ * A draft about to take another type's starter setup: set up again, as the
+ * dashboard's business-type switch does. Bookings made in the preview go,
+ * with the services they were made against.
+ */
+export function restartDraftSetup(draft: ModuleStore): ModuleStore {
+  return { ...draft, bookings: [], bookingHolds: [], setupComplete: false };
+}
+
