@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   Footer,
   getLandingStartMode,
+  Hero,
   LandingActionsProvider,
   StickyNav,
 } from "@/components/landing/landing-ui";
@@ -102,6 +103,84 @@ describe("landing account entry", () => {
     expect(html).not.toContain("Your dashboard");
     expect(html).toContain("Create your page<svg");
     expect(html).not.toContain(">Create your page</button>");
+  });
+
+  it("tells a signed-in visitor with no page that they are in, and how to get out", () => {
+    const html = renderNav({
+      loggedIn: true,
+      hasPage: false,
+      loginHref: "/login?next=%2F&lang=en",
+      onOpenDashboard: () => undefined,
+      accountEmail: "owner@example.com",
+      onSignOut: () => undefined,
+    });
+
+    // Signing in used to empty the slot "Log in" had held. The setup entry
+    // steps aside there for the bar's primary button, and that button is
+    // invisible until the hero has scrolled away, so a new account came back
+    // from the form to a bar that said nothing: no sign the session existed,
+    // and no way to end it.
+    // One in the desktop utility group, one inside the collapsed menu (<xl).
+    expect(html.split(">Sign out</button>").length - 1).toBe(2);
+    expect(html).toContain("Signed in as owner@example.com");
+
+    // The bar's copy has to be seen, so it must not share the primary
+    // button's fade.
+    const bar = html.slice(0, html.indexOf("<details"));
+    const signOut = bar.match(/<button[^>]*>Sign out<\/button>/)?.[0];
+    expect(signOut).toBeDefined();
+    expect(signOut).not.toContain("opacity-0");
+  });
+
+  it("keeps the way out beside the workspace entry for an owner with a page", () => {
+    const html = renderNav({
+      loggedIn: true,
+      hasPage: true,
+      onOpenDashboard: () => undefined,
+      onSignOut: () => undefined,
+    });
+
+    expect(html).toContain("Your dashboard");
+    expect(html.split(">Sign out</button>").length - 1).toBe(2);
+    // No address from the host: the menu still says the session exists.
+    expect(html).toContain("You&#x27;re signed in");
+  });
+
+  it("offers no way out to a visitor without a session", () => {
+    const html = renderNav({
+      loginHref: "/login?next=%2F&lang=en",
+      onSignOut: () => undefined,
+    });
+
+    expect(html).toContain("Log in");
+    expect(html).not.toContain("Sign out");
+    expect(html).not.toContain("signed in");
+  });
+
+  it("names the signed-in account under the hero's primary button", () => {
+    const html = renderToStaticMarkup(
+      <LanguageProvider initialLang="en">
+        <LandingActionsProvider
+          actions={{
+            onStart: () => undefined,
+            onSelectVertical: () => undefined,
+            loggedIn: true,
+            hasPage: false,
+            loginHref: "/login?next=%2F&lang=en",
+            onOpenDashboard: () => undefined,
+            accountEmail: "owner@example.com",
+          }}
+        >
+          <Hero />
+        </LandingActionsProvider>
+      </LanguageProvider>,
+    );
+
+    // "Already have a page? Log in" is wrong for someone who just did. The
+    // line says whose session this is instead of saying nothing.
+    expect(html).toContain("Signed in as");
+    expect(html).toContain("owner@example.com");
+    expect(html).not.toContain("Log in");
   });
 
   it("keeps the log-in entry reachable on phones through the menu", () => {

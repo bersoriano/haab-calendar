@@ -307,6 +307,8 @@ function HomeExperienceInner({
           // configured provider, or the workflow picker for a new one.
           loginHref: loginHref("/", lang),
           onOpenDashboard: () => router.push("/dashboard"),
+          accountEmail: email,
+          onSignOut: loggedIn ? logout : undefined,
         }}
       >
         <LandingPage

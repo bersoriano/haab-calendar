@@ -63,6 +63,13 @@ type LandingActions = {
    * sends anyone without a finished page back to the landing page.
    */
   onOpenDashboard?: () => void;
+  /** The signed-in account's address, shown beside the way out. */
+  accountEmail?: string;
+  /**
+   * Ends the session. A host that passes it gets a signed-in state the visitor
+   * can see: without it the bar has nothing to say about a session at all.
+   */
+  onSignOut?: () => void | Promise<void>;
 };
 
 const LandingActionsContext = createContext<LandingActions>({
@@ -257,6 +264,47 @@ function AccountEntry({ className }: { className: string }) {
   );
 }
 
+/**
+ * The way out. It is also the bar's proof that a sign-in worked: the account
+ * entry says where to go next, and for a new account that is setup, which the
+ * bar's primary button already offers, so the entry steps aside. That button
+ * is invisible until the hero has scrolled away, which left a just-signed-in
+ * visitor a bar that had lost "Log in" and gained nothing.
+ */
+function SignOutEntry({ className }: { className: string }) {
+  const { loggedIn, accountEmail, onSignOut } = useLandingActions();
+  const { t } = useLanguage();
+
+  if (!loggedIn || !onSignOut) {
+    return null;
+  }
+
+  return (
+    // `contents`: the button, not the form around it, is the bar or menu item.
+    <form action={onSignOut} className="contents">
+      <button type="submit" title={accountEmail} className={className}>
+        {t.home.signOut}
+      </button>
+    </form>
+  );
+}
+
+/** Whose session this is, where there is room to say so. */
+function SignedInLine({ className }: { className: string }) {
+  const { loggedIn, accountEmail, onSignOut } = useLandingActions();
+  const { t } = useLanguage();
+
+  if (!loggedIn || !onSignOut) {
+    return null;
+  }
+
+  return (
+    <p className={className} title={accountEmail}>
+      {accountEmail ? `${t.home.signedInAs} ${accountEmail}` : t.home.signedIn}
+    </p>
+  );
+}
+
 function tryBookingPath(lang: "en" | "es") {
   return `/try-booking?lang=${lang}`;
 }
@@ -319,7 +367,9 @@ export function StickyNav({
   const { lang, setLang, t } = useLanguage();
   const { hasPage } = useLandingActions();
   // Setup is the bar's primary button already, under the same words. The
-  // account entry stands in for it only where that button is not shown.
+  // account entry stands in for it only where that button is not shown. The
+  // button fades in once the hero has gone, so until then it is the sign-out
+  // beside it that shows a new account its session.
   const entryStartsSetup = useAccountEntry()?.kind === "setup";
   const anchor = sectionAnchor(anchorsGoHome, lang);
   const heroPassed = useHeroPassed(alwaysShowCta);
@@ -353,6 +403,7 @@ export function StickyNav({
           {entryStartsSetup ? null : (
             <AccountEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
           )}
+          <SignOutEntry className="hidden min-h-11 items-center rounded-md px-2 text-[15.5px] font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] xl:inline-flex" />
           {hasPage ? null : (
             <StartButton
               className={cn(
@@ -395,6 +446,8 @@ export function StickyNav({
                   </StartButton>
                 )}
                 <AccountEntry className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-semibold text-[var(--lp-blue-700)] transition hover:bg-[var(--lp-paper)]" />
+                <SignedInLine className="truncate px-4 pb-0.5 pt-2.5 text-[13px] text-[var(--lp-muted)]" />
+                <SignOutEntry className="block w-full rounded-xl px-4 py-3 text-left text-[15px] font-semibold text-[var(--lp-ink-2)] transition hover:bg-[var(--lp-paper)] hover:text-[var(--lp-teal-700)]" />
               </div>
             </nav>
           </details>
@@ -404,15 +457,33 @@ export function StickyNav({
   );
 }
 
-/** The returning-owner line's tail: "Already have a page? Log in". */
+/**
+ * The fine print's tail: "Already have a page? Log in", or, for someone who
+ * just did, whose session this is.
+ */
 function HeroAccountLine() {
   const entry = useAccountEntry();
-  const { hasPage } = useLandingActions();
+  const { hasPage, loggedIn, accountEmail } = useLandingActions();
   const { t } = useLanguage();
 
-  // The primary button already says this for an owner, and for someone
-  // signed in with no page yet.
-  if (!entry || hasPage || entry.kind === "setup") {
+  // The primary button already says this for an owner.
+  if (hasPage) {
+    return null;
+  }
+
+  // Signed in with no page yet: the primary button offers setup, so what is
+  // left to say is that the sign-in worked, and for which account.
+  if (loggedIn) {
+    return accountEmail ? (
+      <>
+        {" "}
+        {t.home.signedInAs}{" "}
+        <span className="break-all font-semibold text-[var(--lp-ink-2)]">{accountEmail}</span>.
+      </>
+    ) : null;
+  }
+
+  if (!entry) {
     return null;
   }
 
