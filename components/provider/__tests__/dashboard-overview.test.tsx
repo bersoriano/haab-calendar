@@ -91,21 +91,21 @@ describe("DashboardOverview", () => {
   });
 
   describe("new bookings", () => {
-    const sessions = getVerticalCopy("professional", "en");
+    const professional = getVerticalCopy("professional", "en");
 
     it("announces how many are new, with a way to review them", () => {
-      const html = render({ copy: sessions, newBookings: { count: 3, onReview: () => undefined } });
+      const html = render({ copy: professional, newBookings: { count: 3, onReview: () => undefined } });
 
-      expect(html).toContain("3 new sessions");
+      expect(html).toContain("3 new appointments");
       expect(html).toMatch(/<button[^>]*>(?:(?!<\/button>)[\s\S])*Review/);
-      expect(render({ copy: sessions, newBookings: { count: 1, onReview: () => undefined } })).toContain(
-        "1 new session<",
+      expect(render({ copy: professional, newBookings: { count: 1, onReview: () => undefined } })).toContain(
+        "1 new appointment<",
       );
     });
 
     it("says nothing when none are new, or where bookings are not reviewed", () => {
-      expect(render({ copy: sessions, newBookings: { count: 0, onReview: () => undefined } })).not.toContain(
-        "new session",
+      expect(render({ copy: professional, newBookings: { count: 0, onReview: () => undefined } })).not.toContain(
+        "new appointment",
       );
       expect(render()).not.toContain("new appointment");
     });
@@ -128,7 +128,7 @@ describe("DashboardOverview", () => {
         newBookings: { count: 2, onReview: () => undefined },
       });
 
-      expect(html).toContain("2 sesiones sin revisar");
+      expect(html).toContain("2 citas sin revisar");
       expect(html).toContain("Revisar");
     });
   });

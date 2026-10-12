@@ -7,7 +7,7 @@ export type BookingReviewFilter = "all" | "new" | "seen";
  * provider marks it as seen, and can be marked new again.
  */
 
-/** Only professional services work from an inbox of new sessions. */
+/** Only professional services work from an inbox of new appointments. */
 export function tracksBookingReview(vertical: VerticalId | null | undefined) {
   return vertical === "professional";
 }

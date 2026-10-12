@@ -46,9 +46,11 @@ describe("dashboard shell copy", () => {
     }
   });
 
-  it("calls a healthcare practice's bookings appointments, in both languages", () => {
-    expect(sectionTitle("bookings", "en", getVerticalCopy("healthcare", "en"))).toBe("Appointments");
-    expect(sectionTitle("bookings", "es", getVerticalCopy("healthcare", "es"))).toBe("Citas");
+  it("calls the bookings of a practice or a professional appointments, in both languages", () => {
+    for (const vertical of ["healthcare", "professional"] as const) {
+      expect(sectionTitle("bookings", "en", getVerticalCopy(vertical, "en"))).toBe("Appointments");
+      expect(sectionTitle("bookings", "es", getVerticalCopy(vertical, "es"))).toBe("Citas");
+    }
   });
 
   it("names bookings and services with the vertical's own words", () => {

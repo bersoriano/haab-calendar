@@ -151,7 +151,7 @@ function otherLanguage(lang: Lang): Lang {
 
 /**
  * The Spanish vertical nouns are mixed gender — `reserva` (F), `cita` (F),
- * `registro` (M), `sesión` (F) — so a Spanish string that interpolates one and
+ * `registro` (M) — so a Spanish string that interpolates one and
  * then agrees with it is wrong for at least one vertical. Task 4 shipped
  * exactly that ("registro cancelada"). The test that closed it asserted only
  * that the `{booking}` placeholder was still present, which "{booking}
