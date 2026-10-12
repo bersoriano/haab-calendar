@@ -67,6 +67,7 @@ export function DashboardOverview({
   publishingEnabled,
   nextSteps,
   onGoToSection,
+  draft,
 }: {
   lang: Lang;
   copy: VerticalCopy;
@@ -85,6 +86,12 @@ export function DashboardOverview({
   publishingEnabled?: boolean;
   nextSteps: NextStep[];
   onGoToSection: (section: AdminTab) => void;
+  /**
+   * A draft kept in the browser, not published: its link leads nowhere, so the
+   * card offers the in-app preview, and nothing points at the bookings section
+   * a draft does not have.
+   */
+  draft?: { onPreview: () => void };
 }) {
   const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
@@ -134,12 +141,16 @@ export function DashboardOverview({
         </Alert>
       ) : null}
       <StatGroup columns={4}>
-        <Stat
-          label={t.admin.upcoming7Days}
-          value={stats.upcoming}
-          detail={copy.phrases.bookingsSoonDetail}
-          {...sectionLink("bookings")}
-        />
+        {draft ? (
+          <Stat label={t.admin.upcoming7Days} value={stats.upcoming} detail={copy.phrases.bookingsSoonDetail} />
+        ) : (
+          <Stat
+            label={t.admin.upcoming7Days}
+            value={stats.upcoming}
+            detail={copy.phrases.bookingsSoonDetail}
+            {...sectionLink("bookings")}
+          />
+        )}
         <Stat
           label={copy.Services}
           value={stats.services}
@@ -155,15 +166,17 @@ export function DashboardOverview({
           <CardHeader
             title={copy.phrases.upcomingTitle}
             actions={
-              <Button
-                variant="plain"
-                size="sm"
-                onClick={onSeeAllBookings}
-                className="flex-row-reverse"
-                leadingIcon={<ArrowRight aria-hidden="true" size={16} />}
-              >
-                {shell.seeAll}
-              </Button>
+              draft ? undefined : (
+                <Button
+                  variant="plain"
+                  size="sm"
+                  onClick={onSeeAllBookings}
+                  className="flex-row-reverse"
+                  leadingIcon={<ArrowRight aria-hidden="true" size={16} />}
+                >
+                  {shell.seeAll}
+                </Button>
+              )
             }
           />
           {upcomingBookings.length === 0 ? (
@@ -247,9 +260,15 @@ export function DashboardOverview({
             <CardHeader
               title={shell.bookingPageTitle}
               actions={
-                <Badge tone={publishingOff ? "danger" : "success"} dot>
-                  {publishingOff ? shell.publishingOff : shell.pageLive}
-                </Badge>
+                draft ? (
+                  <Badge tone="neutral" dot>
+                    {shell.pageDraft}
+                  </Badge>
+                ) : (
+                  <Badge tone={publishingOff ? "danger" : "success"} dot>
+                    {publishingOff ? shell.publishingOff : shell.pageLive}
+                  </Badge>
+                )
               }
             />
             <CardBody className="grid gap-4">
@@ -259,19 +278,27 @@ export function DashboardOverview({
                 aria-label={shell.bookingPageTitle}
                 className="font-mono"
                 trailingAddon={
-                  <IconButton
-                    label={copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
-                    icon={
-                      copiedLink ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />
-                    }
-                    size="sm"
-                    onClick={onCopyLink}
-                  />
+                  draft ? undefined : (
+                    <IconButton
+                      label={copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
+                      icon={
+                        copiedLink ? <Check aria-hidden="true" size={16} /> : <Copy aria-hidden="true" size={16} />
+                      }
+                      size="sm"
+                      onClick={onCopyLink}
+                    />
+                  )
                 }
               />
-              <ButtonLink href={publicUrl} external newTabLabel={shell.opensInNewTab} variant="secondary">
-                {t.admin.viewPublicPage}
-              </ButtonLink>
+              {draft ? (
+                <Button variant="secondary" onClick={draft.onPreview}>
+                  {t.setup.previewPage}
+                </Button>
+              ) : (
+                <ButtonLink href={publicUrl} external newTabLabel={shell.opensInNewTab} variant="secondary">
+                  {t.admin.viewPublicPage}
+                </ButtonLink>
+              )}
             </CardBody>
           </Card>
 

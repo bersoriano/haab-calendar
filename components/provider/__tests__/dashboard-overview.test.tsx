@@ -172,5 +172,40 @@ describe("DashboardOverview", () => {
     expect(html).toContain('value="/doctors/ana"');
     expect(html).toMatch(/readonly=""/i);
   });
-});
 
+  /**
+   * A draft kept in the browser: nothing is live, its link is a 404, and the
+   * bookings section is not offered, so nothing here may point at either.
+   */
+  describe("for a draft that is not published", () => {
+    const draft = { onPreview: () => undefined };
+
+    it("says the page is not published and offers the preview, not the link", () => {
+      const html = render({ draft });
+
+      expect(html).toContain(dashboardCopy.en.pageDraft);
+      expect(html).not.toContain(dashboardCopy.en.pageLive);
+      expect(html).toContain("/doctors/ana");
+      expect(html).toMatch(/<button[^>]*>Preview booking page<\/button>/);
+      expect(html).not.toContain('href="/doctors/ana"');
+      expect(html).not.toContain(en.publicFlow.copyLink);
+    });
+
+    it("does not lead to the bookings section", () => {
+      const html = render({ draft });
+
+      expect(html).not.toContain('href="/dashboard/bookings"');
+      expect(html).not.toContain(dashboardCopy.en.seeAll);
+      // The sections a draft does offer keep their links.
+      expect(html).toContain('href="/dashboard/services"');
+    });
+
+    it("keeps both for a published page", () => {
+      const html = render();
+
+      expect(html).toContain('href="/dashboard/bookings"');
+      expect(html).toContain(dashboardCopy.en.seeAll);
+      expect(html).toContain('href="/doctors/ana"');
+    });
+  });
+});

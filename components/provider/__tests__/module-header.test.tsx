@@ -63,4 +63,30 @@ describe("ModuleHeader", () => {
     expect(html).toMatch(/<button[^>]*>[^<]*Back to workspace<\/button>/);
     expect(html).not.toContain("<nav");
   });
+
+  /**
+   * A draft kept in the browser has no page behind its link yet: following it
+   * is a 404. The header shows the address the page will have and offers the
+   * in-app preview in its place.
+   */
+  describe("for a draft that is not published", () => {
+    it("offers the preview instead of a link that leads nowhere", () => {
+      const html = render({ draft: { onPreview: () => undefined } });
+
+      expect(html).toContain("https://haab.example/healthcare/riverside");
+      expect(html).toContain("Your link once you publish");
+      expect(html).toMatch(/<button[^>]*>Preview booking page<\/button>/);
+      expect(html).not.toContain("<a ");
+      expect(html).not.toContain("Copy link");
+      expect(html).not.toContain("View public page");
+    });
+
+    it("does not offer the preview from inside the preview", () => {
+      const html = render({ draft: {}, onBackToWorkspace: () => undefined });
+
+      expect(html).not.toContain("Preview booking page");
+      expect(html).not.toContain("<a ");
+      expect(html).toMatch(/<button[^>]*>[^<]*Back to workspace<\/button>/);
+    });
+  });
 });
