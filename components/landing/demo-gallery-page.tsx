@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { logout } from "@/app/login/actions";
 import { DEMO_PAGES } from "@/lib/demo-pages";
 import { cn } from "@/lib/utils";
 import {
@@ -74,6 +75,7 @@ export function DemoGalleryPage({
           },
           loggedIn,
           loginHref,
+          onSignOut: loggedIn ? logout : undefined,
         }}
       >
         <GalleryContent indexes={indexes} />

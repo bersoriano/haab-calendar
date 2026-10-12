@@ -15,6 +15,10 @@ export type LandingAccountEntry = "login" | "dashboard" | "setup" | "none";
  * once there is a finished page, setup until then. An owner whose page could
  * not be read never reaches this function: the home page sends them to the
  * workspace, which explains and retries.
+ *
+ * This answers where to go, not whether a session exists. A "setup" entry is
+ * dropped wherever a create button already stands, so the chrome shows the
+ * session on its own, with the sign-out it renders beside this entry.
  */
 export function resolveLandingAccountEntry({
   loggedIn,
