@@ -86,6 +86,17 @@ export type DashboardShellCopy = {
   activeBookings: string;
   archivedBookings: string;
   archiveHint: string;
+  /** The bookings as a list to work through, or as a month to look over. */
+  bookingsLayoutLabel: string;
+  listLayout: string;
+  monthLayout: string;
+  /** "{count}", "{noun}" (the vertical's word for bookings) and "{month}" are filled in. */
+  monthTotal: string;
+  /** The two ends of the month's shading. */
+  monthLess: string;
+  monthMore: string;
+  /** "{count}" bookings a day has no room to name. */
+  monthMoreBookings: string;
   retentionTitle: string;
   retentionOption: string;
   retentionDefaultOff: string;
@@ -269,6 +280,13 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     activeBookings: "Active",
     archivedBookings: "Archive",
     archiveHint: "Bookings more than 7 days past are kept in Archive.",
+    bookingsLayoutLabel: "Show as",
+    listLayout: "List",
+    monthLayout: "Month",
+    monthTotal: "{count} {noun} in {month}",
+    monthLess: "Quieter",
+    monthMore: "Busier",
+    monthMoreBookings: "+{count} more",
     retentionTitle: "Booking history",
     retentionOption: "Keep booking history for one year",
     retentionDefaultOff: "Premium feature · Off by default. Enable and save to keep one year of history.",
@@ -471,6 +489,13 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     activeBookings: "Activas",
     archivedBookings: "Archivo",
     archiveHint: "Las reservas de hace más de 7 días se conservan en Archivo.",
+    bookingsLayoutLabel: "Mostrar como",
+    listLayout: "Lista",
+    monthLayout: "Mes",
+    monthTotal: "{count} {noun} en {month}",
+    monthLess: "Menos",
+    monthMore: "Más",
+    monthMoreBookings: "+{count} más",
     retentionTitle: "Historial de reservas",
     retentionOption: "Conservar el historial de reservas por un año",
     retentionDefaultOff: "Función Premium · Desactivada por defecto. Actívela y guarde para conservar un año de historial.",

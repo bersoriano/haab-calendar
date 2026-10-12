@@ -38,6 +38,19 @@ describe("dashboard shell copy", () => {
     }
   });
 
+  it("words the bookings month view in both languages", () => {
+    for (const key of ["bookingsLayoutLabel", "listLayout", "monthLayout", "monthTotal", "monthLess", "monthMore", "monthMoreBookings"] as const) {
+      expect(dashboardCopy.en[key]).toBeTruthy();
+      expect(dashboardCopy.es[key]).toBeTruthy();
+      expect(dashboardCopy.es[key]).not.toBe(dashboardCopy.en[key]);
+    }
+  });
+
+  it("calls a healthcare practice's bookings appointments, in both languages", () => {
+    expect(sectionTitle("bookings", "en", getVerticalCopy("healthcare", "en"))).toBe("Appointments");
+    expect(sectionTitle("bookings", "es", getVerticalCopy("healthcare", "es"))).toBe("Citas");
+  });
+
   it("names bookings and services with the vertical's own words", () => {
     const restaurant = getVerticalCopy("restaurant", "en");
 
