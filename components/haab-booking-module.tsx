@@ -166,6 +166,7 @@ import {
   Select,
   ToastProvider,
 } from "@/components/app-ui";
+import { draftWorkspaceSection, draftWorkspaceSections } from "@/lib/draft-workspace";
 import { moduleMountsOwnToasts } from "@/lib/module-toasts";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
@@ -473,7 +474,9 @@ export function HaabBookingModule({
   const [adminTab, setAdminTab] = useState<AdminTab>(initialAdminTab ?? "dashboard");
   // A host that owns routing (the /dashboard shell) controls the section;
   // otherwise the module keeps its own tab state, exactly as before.
-  const currentSection: AdminTab = adminSection ?? adminTab;
+  // A draft made before any account offers only the sections that build the
+  // page; anything that asks for another opens the overview.
+  const currentSection: AdminTab = draftWorkspaceSection(adminSection ?? adminTab, isGuestDraft);
   // The in-app booking flow (opened from the calendar) belongs to the section
   // it was opened from. When the host switches sections — its sidebar stays
   // on screen — the flow closes, so the new section shows its own content.
@@ -2369,6 +2372,13 @@ export function HaabBookingModule({
     startFreshBooking();
   }
 
+  // A guest's draft has no page behind its link: the workspace opens the
+  // in-app preview wherever a published page would open the link.
+  function previewDraftPage() {
+    setSurface("public");
+    startFreshBooking();
+  }
+
   function updateProvider<K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) {
     actions.updateStandaloneStore((current) => ({
       ...current,
@@ -3771,6 +3781,7 @@ export function HaabBookingModule({
           publishingEnabled,
         })}
         onGoToSection={goToSection}
+        draft={isGuestDraft ? { onPreview: previewDraftPage } : undefined}
       />
     );
   }
@@ -7189,21 +7200,29 @@ export function HaabBookingModule({
             publicUrl={publicUrl}
             copiedLink={copiedLink}
             onCopyLink={copyPublicLink}
+            draft={
+              isGuestDraft
+                ? { onPreview: surface === "management" ? previewDraftPage : undefined }
+                : undefined
+            }
             userEmail={userEmail}
             onSignOut={onSignOut}
             sections={
               surface === "management" && surfaceMode === "adaptive"
-                ? ([
-                    { value: "dashboard", label: t.admin.tabDashboard },
-                    { value: "bookings", label: copy.Bookings },
-                    { value: "calendar", label: t.admin.tabCalendar },
-                    { value: "services", label: copy.Services },
-                    { value: "availability", label: dashboardCopy[lang].titles.availability },
-                    { value: "appearance", label: t.admin.tabAppearance },
-                    { value: "analytics", label: t.admin.tabAnalytics },
-                    { value: "integrations", label: dashboardCopy[lang].titles.integrations },
-                    { value: "settings", label: t.admin.tabSettings },
-                  ] satisfies Array<{ value: AdminTab; label: string }>)
+                ? draftWorkspaceSections(
+                    [
+                      { value: "dashboard", label: t.admin.tabDashboard },
+                      { value: "bookings", label: copy.Bookings },
+                      { value: "calendar", label: t.admin.tabCalendar },
+                      { value: "services", label: copy.Services },
+                      { value: "availability", label: dashboardCopy[lang].titles.availability },
+                      { value: "appearance", label: t.admin.tabAppearance },
+                      { value: "analytics", label: t.admin.tabAnalytics },
+                      { value: "integrations", label: dashboardCopy[lang].titles.integrations },
+                      { value: "settings", label: t.admin.tabSettings },
+                    ] satisfies Array<{ value: AdminTab; label: string }>,
+                    isGuestDraft,
+                  )
                 : undefined
             }
             currentSection={currentSection}

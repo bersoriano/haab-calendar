@@ -10,6 +10,9 @@ type Section<T extends string> = { value: T; label: string };
  * (`chrome="module"`: embedded and child projects). Business name and booking
  * link, the account controls the host passes, and either the section tabs or
  * the way back to them from the booking preview.
+ *
+ * A draft has no page behind its link yet, so the header shows the address as
+ * the one it will have and offers the in-app preview instead of the link.
  */
 export function ModuleHeader<T extends string>({
   lang,
@@ -17,6 +20,7 @@ export function ModuleHeader<T extends string>({
   publicUrl,
   copiedLink,
   onCopyLink,
+  draft,
   userEmail,
   onSignOut,
   sections,
@@ -29,6 +33,8 @@ export function ModuleHeader<T extends string>({
   publicUrl: string;
   copiedLink: boolean;
   onCopyLink: () => void;
+  /** Not published: no link to follow. `onPreview` is omitted inside the preview. */
+  draft?: { onPreview?: () => void };
   userEmail?: string;
   onSignOut?: () => void | Promise<void>;
   /** Shown on the management surface. */
@@ -46,15 +52,27 @@ export function ModuleHeader<T extends string>({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-xl font-semibold tracking-tight text-app-fg sm:text-2xl">{title}</h2>
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="break-all font-mono text-sm text-app-fg-muted">{publicUrl}</span>
-            <Button variant="plain" size="sm" onClick={onCopyLink}>
-              {copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
-            </Button>
-            <ButtonLink href={publicUrl} variant="plain" size="sm" external newTabLabel={shell.opensInNewTab}>
-              {t.admin.viewPublicPage}
-            </ButtonLink>
-          </div>
+          {draft ? (
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-sm text-app-fg-muted">{shell.draftLinkNote}</span>
+              <span className="break-all font-mono text-sm text-app-fg-muted">{publicUrl}</span>
+              {draft.onPreview ? (
+                <Button variant="plain" size="sm" onClick={draft.onPreview}>
+                  {t.setup.previewPage}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="break-all font-mono text-sm text-app-fg-muted">{publicUrl}</span>
+              <Button variant="plain" size="sm" onClick={onCopyLink}>
+                {copiedLink ? t.publicFlow.copied : t.publicFlow.copyLink}
+              </Button>
+              <ButtonLink href={publicUrl} variant="plain" size="sm" external newTabLabel={shell.opensInNewTab}>
+                {t.admin.viewPublicPage}
+              </ButtonLink>
+            </div>
+          )}
         </div>
 
         {userEmail || onSignOut ? (

@@ -26,10 +26,10 @@ export const translations = {
       dashboardBody:
         "Administra disponibilidad, servicios y reservas entrantes desde tu panel.",
       goToDashboard: "Ir a tu panel →",
-      guestDraftTitle: "Modo de vista previa",
+      guestDraftTitle: "Borrador guardado en este dispositivo",
       guestDraftBody:
-        "Prueba servicios, horarios y tu página pública. Este borrador está guardado en este navegador.",
-      guestDraftPublish: "Publicar mi página",
+        "Aún no hay nada en línea. Crea una cuenta para publicar tu página y conservarla.",
+      guestDraftPublish: "Crear cuenta y publicar",
       selectedWorkflow: "Flujo de trabajo seleccionado",
       selectedWorkflowHint:
         "La configuración usará los servicios, la disponibilidad y las reglas de reserva predeterminados para este flujo.",
@@ -507,10 +507,10 @@ export const translations = {
       dashboardBody:
         "Manage availability, services, and incoming bookings from your dashboard.",
       goToDashboard: "Go to your dashboard →",
-      guestDraftTitle: "Preview mode",
+      guestDraftTitle: "Draft saved on this device",
       guestDraftBody:
-        "Try services, availability, and your public page. This draft is saved in this browser.",
-      guestDraftPublish: "Publish my page",
+        "Nothing is online yet. Create an account to publish your page and keep it.",
+      guestDraftPublish: "Create account to publish",
       selectedWorkflow: "Selected workflow",
       selectedWorkflowHint:
         "Setup will use this workflow's service, availability, and booking defaults.",

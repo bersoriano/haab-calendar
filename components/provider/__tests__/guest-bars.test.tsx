@@ -14,12 +14,23 @@ const { GuestDraftBar } = await import("@/components/provider/GuestDraftBar");
 const { AccountStatusBar } = await import("@/components/provider/AccountStatusBar");
 
 describe("GuestDraftBar", () => {
-  it("says the page is a preview and offers to publish it", () => {
+  // The draft's one save control: where the draft is kept, and the only way to
+  // keep it anywhere else. A signed-out draft has no "Save changes".
+  it("says where the draft is saved and offers the account that publishes it", () => {
     const html = renderToStaticMarkup(<GuestDraftBar lang="es" onPublish={() => undefined} />);
 
-    expect(html).toContain("Modo de vista previa");
-    expect(html).toMatch(/<button[^>]*>Publicar mi página<\/button>/);
+    expect(html).toMatch(/role="region"[^>]*aria-label="Borrador guardado en este dispositivo"/);
+    expect(html).toContain("Aún no hay nada en línea");
+    expect(html).toMatch(/<button[^>]*>Crear cuenta y publicar<\/button>/);
     expect(html).toContain("bg-app-accent");
+  });
+
+  it("stays in reach at the bottom of the screen, like the dashboard's save bar", () => {
+    const html = renderToStaticMarkup(<GuestDraftBar lang="en" onPublish={() => undefined} />);
+
+    expect(html).toMatch(/class="[^"]*sticky bottom-0/);
+    expect(html).toContain("Draft saved on this device");
+    expect(html).toMatch(/<button[^>]*>Create account to publish<\/button>/);
   });
 });
 

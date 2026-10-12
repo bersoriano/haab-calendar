@@ -69,6 +69,9 @@ export type DashboardShellCopy = {
   superAdmin: string;
   signedInAs: string;
   pageLive: string;
+  /** A draft kept in the browser, before any account: nothing is online yet. */
+  pageDraft: string;
+  draftLinkNote: string;
   publishingOff: string;
   editingDemo: string;
   viewLive: string;
@@ -252,6 +255,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     superAdmin: "Super admin",
     signedInAs: "Signed in as",
     pageLive: "Page is live",
+    pageDraft: "Not published yet",
+    draftLinkNote: "Your link once you publish",
     publishingOff: "Publishing is off",
     editingDemo: "Editing demo page",
     viewLive: "View live",
@@ -454,6 +459,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     superAdmin: "Superadministrador",
     signedInAs: "Sesión iniciada como",
     pageLive: "Página publicada",
+    pageDraft: "Aún sin publicar",
+    draftLinkNote: "Su enlace cuando publique",
     publishingOff: "Publicación desactivada",
     editingDemo: "Editando página de ejemplo",
     viewLive: "Ver publicada",
