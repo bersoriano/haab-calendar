@@ -246,9 +246,6 @@ function HomeExperienceInner({
           isSuperAdmin={isSuperAdmin}
           publicationStatus={publicationStatus}
         />
-        {!loggedIn ? (
-          <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
-        ) : null}
         <SetupHeader
           lang={dashboardLanguage}
           vertical={activeWorkflowVertical}
@@ -286,6 +283,10 @@ function HomeExperienceInner({
             onVerticalChange={handleVerticalChange}
           />
         </main>
+        {/* After the content, so it sticks to the bottom of the screen. */}
+        {!loggedIn ? (
+          <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
+        ) : null}
       </div>
     );
   }

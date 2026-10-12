@@ -42,8 +42,8 @@ describe("landing translations", () => {
   it("covers home integration and authentication copy", () => {
     expect(translations.es.home.verticals.healthcare.label).toBe("Salud");
     expect(translations.es.home.goToDashboard).toBe("Ir a tu panel →");
-    expect(translations.en.home.guestDraftTitle).toContain("Preview");
-    expect(translations.es.home.guestDraftPublish).toContain("Publicar");
+    expect(translations.en.home.guestDraftTitle).toContain("saved on this device");
+    expect(translations.es.home.guestDraftPublish).toContain("publicar");
     expect(translations.es.useCases.title).toContain("Elige qué reservas");
     expect(translations.en.useCases.title).toContain("Pick what you book");
     expect(translations.en.useCases.note).not.toContain("blank");
