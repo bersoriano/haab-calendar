@@ -175,6 +175,7 @@ import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
 import { BookingsMonth } from "@/components/provider/BookingsMonth";
+import { BookingsWeek } from "@/components/provider/BookingsWeek";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { getBookingListView, type BookingListSort, type BookingListView } from "@/lib/booking-list";
 import {
@@ -581,7 +582,7 @@ export function HaabBookingModule({
   const [statusFilter, setStatusFilter] = useState<"all" | BookingStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | BookingType>("all");
   const [bookingListView, setBookingListView] = useState<BookingListView>("active");
-  const [bookingsLayout, setBookingsLayout] = useState<"list" | "month">("list");
+  const [bookingsLayout, setBookingsLayout] = useState<"list" | "week" | "month">("list");
   const [bookingListSort, setBookingListSort] = useState<BookingListSort>("closest");
   const [reviewFilter, setReviewFilter] = useState<BookingReviewFilter>("all");
   const [reviewPendingIds, setReviewPendingIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -3803,12 +3804,15 @@ export function HaabBookingModule({
           onChange={setBookingsLayout}
           options={[
             { value: "list", label: shell.listLayout },
+            { value: "week", label: shell.weekLayout },
             { value: "month", label: shell.monthLayout },
           ]}
           className="justify-self-start"
         />
         {bookingsLayout === "month" ? (
           <BookingsMonth lang={lang} copy={copy} bookings={bookings} todayKey={bookingListTodayKey} />
+        ) : bookingsLayout === "week" ? (
+          <BookingsWeek lang={lang} copy={copy} bookings={bookings} todayKey={bookingListTodayKey} />
         ) : (
           <BookingsList
             lang={lang}

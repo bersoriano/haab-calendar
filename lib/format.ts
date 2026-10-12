@@ -70,6 +70,14 @@ export function formatCompactDate(dateKey: string, lang: Lang = "en") {
   return getCompactDateFormatter(lang).format(parseDateKey(dateKey));
 }
 
+/** "Oct 11 – 17, 2026": the days a period runs between. */
+export function formatDateRangeLabel(startKey: string, endKey: string, lang: Lang = "en") {
+  return new Intl.DateTimeFormat(lang, { month: "short", day: "numeric", year: "numeric" }).formatRange(
+    parseDateKey(startKey),
+    parseDateKey(endKey),
+  );
+}
+
 export function formatMonthLabel(date: Date, lang: Lang = "en") {
   return getMonthFormatter(lang).format(date);
 }
