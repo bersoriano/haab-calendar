@@ -38,8 +38,8 @@ describe("dashboard shell copy", () => {
     }
   });
 
-  it("words the bookings week and month views in both languages", () => {
-    for (const key of ["bookingsLayoutLabel", "listLayout", "weekLayout", "weekTotal", "weekFreeDay", "monthLayout", "monthTotal", "monthLess", "monthMore", "monthMoreBookings"] as const) {
+  it("words the folded history notice and the week and month views in both languages", () => {
+    for (const key of ["retentionKeptMonth", "retentionKeptYear", "retentionKeptUnknown", "bookingsLayoutLabel", "listLayout", "weekLayout", "weekTotal", "weekFreeDay", "monthLayout", "monthTotal", "monthLess", "monthMore", "monthMoreBookings"] as const) {
       expect(dashboardCopy.en[key]).toBeTruthy();
       expect(dashboardCopy.es[key]).toBeTruthy();
       expect(dashboardCopy.es[key]).not.toBe(dashboardCopy.en[key]);

@@ -108,6 +108,10 @@ export type DashboardShellCopy = {
   retentionMonth: string;
   retentionYear: string;
   retentionUnknown: string;
+  /** The policy in a few words, beside the title of the folded notice. */
+  retentionKeptMonth: string;
+  retentionKeptYear: string;
+  retentionKeptUnknown: string;
   retentionDateHint: string;
   retentionDowngrade: string;
   retentionPending: string;
@@ -301,6 +305,9 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     retentionMonth: "Current policy: bookings more than one month past are permanently deleted during daily cleanup.",
     retentionYear: "Current policy: bookings more than one year past are permanently deleted during daily cleanup.",
     retentionUnknown: "History retention could not be verified. Refresh before changing this setting.",
+    retentionKeptMonth: "Kept for one month",
+    retentionKeptYear: "Kept for one year",
+    retentionKeptUnknown: "Could not be verified",
     retentionDateHint: "Age is based on the scheduled date in your business timezone. Exact month or year boundaries are kept; cleanup may run later.",
     retentionDowngrade: "Turning this off or losing Premium access restores one-month retention at the next cleanup. Deleted bookings cannot be recovered.",
     retentionPending: "Save changes to apply this setting. The current policy stays in effect until saved.",
@@ -513,6 +520,9 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     retentionMonth: "Política actual: las reservas de hace más de un mes se eliminan permanentemente durante la limpieza diaria.",
     retentionYear: "Política actual: las reservas de hace más de un año se eliminan permanentemente durante la limpieza diaria.",
     retentionUnknown: "No se pudo verificar la conservación del historial. Actualice la página antes de cambiar esta opción.",
+    retentionKeptMonth: "Se conserva un mes",
+    retentionKeptYear: "Se conserva un año",
+    retentionKeptUnknown: "No se pudo verificar",
     retentionDateHint: "La antigüedad se calcula desde la fecha de la reserva, en la zona horaria de su negocio. Las fechas justo en el límite del mes o año se conservan; la limpieza puede retrasarse.",
     retentionDowngrade: "Desactivar esta opción o perder el acceso Premium restablece la conservación de un mes en la próxima limpieza. Las reservas eliminadas no se pueden recuperar.",
     retentionPending: "Guarde los cambios para aplicar esta opción. La política actual sigue vigente hasta guardarlos.",

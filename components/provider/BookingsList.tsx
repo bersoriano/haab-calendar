@@ -178,7 +178,12 @@ export function BookingsList({
         </div>
 
         {retentionPolicy ? (
-          <BookingRetentionNotice lang={lang} policy={retentionPolicy} onOpenSettings={onOpenRetentionSettings} />
+          <BookingRetentionNotice
+            lang={lang}
+            policy={retentionPolicy}
+            onOpenSettings={onOpenRetentionSettings}
+            collapsible
+          />
         ) : null}
 
         <div
