@@ -160,6 +160,7 @@ import {
   DescriptionItem,
   DescriptionList,
   Field,
+  SegmentedControl,
   Select,
   ToastProvider,
 } from "@/components/app-ui";
@@ -173,6 +174,7 @@ import { translations as landingTranslations } from "@/components/landing/transl
 import { SaveBar } from "@/components/provider/SaveBar";
 import { DashboardOverview } from "@/components/provider/DashboardOverview";
 import { BookingsList } from "@/components/provider/BookingsList";
+import { BookingsMonth } from "@/components/provider/BookingsMonth";
 import { getNextSteps } from "@/lib/dashboard-overview";
 import { getBookingListView, type BookingListSort, type BookingListView } from "@/lib/booking-list";
 import {
@@ -579,6 +581,7 @@ export function HaabBookingModule({
   const [statusFilter, setStatusFilter] = useState<"all" | BookingStatus>("all");
   const [typeFilter, setTypeFilter] = useState<"all" | BookingType>("all");
   const [bookingListView, setBookingListView] = useState<BookingListView>("active");
+  const [bookingsLayout, setBookingsLayout] = useState<"list" | "month">("list");
   const [bookingListSort, setBookingListSort] = useState<BookingListSort>("closest");
   const [reviewFilter, setReviewFilter] = useState<BookingReviewFilter>("all");
   const [reviewPendingIds, setReviewPendingIds] = useState<ReadonlySet<string>>(() => new Set());
@@ -3790,48 +3793,66 @@ export function HaabBookingModule({
   }
 
   function renderBookingsList() {
+    const shell = dashboardCopy[lang];
+
     return (
-      <BookingsList
-        lang={lang}
-        copy={copy}
-        bookings={bookingList.bookings}
-        totalCount={bookingList.totalCount}
-        activeCount={bookingList.activeCount}
-        archiveCount={bookingList.archiveCount}
-        otherViewMatches={bookingList.otherViewMatches}
-        view={bookingListView}
-        onViewChange={setBookingListView}
-        sort={bookingListSort}
-        onSortChange={setBookingListSort}
-        retentionPolicy={integratedMode && persistAdminChanges ? getBookingRetentionPolicy(savedStore.provider.keepBookingHistoryOneYear, providerEntitlements) : undefined}
-        onOpenRetentionSettings={() => goToSection("settings")}
-        todayKey={bookingListTodayKey}
-        search={searchTerm}
-        onSearchChange={setSearchTerm}
-        status={statusFilter}
-        onStatusChange={setStatusFilter}
-        type={typeFilter}
-        onTypeChange={setTypeFilter}
-        onClearFilters={() => {
-          setSearchTerm("");
-          setStatusFilter("all");
-          setTypeFilter("all");
-          setReviewFilter("all");
-        }}
-        canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
-        onReschedule={openReschedule}
-        onCancel={openCancellation}
-        review={
-          reviewsBookings
-            ? {
-                filter: reviewFilter,
-                onFilterChange: setReviewFilter,
-                pendingIds: reviewPendingIds,
-                onToggle: (bookingId) => void toggleBookingReviewed(bookingId),
-              }
-            : undefined
-        }
-      />
+      <div className="grid gap-4">
+        <SegmentedControl
+          ariaLabel={shell.bookingsLayoutLabel}
+          value={bookingsLayout}
+          onChange={setBookingsLayout}
+          options={[
+            { value: "list", label: shell.listLayout },
+            { value: "month", label: shell.monthLayout },
+          ]}
+          className="justify-self-start"
+        />
+        {bookingsLayout === "month" ? (
+          <BookingsMonth lang={lang} copy={copy} bookings={bookings} todayKey={bookingListTodayKey} />
+        ) : (
+          <BookingsList
+            lang={lang}
+            copy={copy}
+            bookings={bookingList.bookings}
+            totalCount={bookingList.totalCount}
+            activeCount={bookingList.activeCount}
+            archiveCount={bookingList.archiveCount}
+            otherViewMatches={bookingList.otherViewMatches}
+            view={bookingListView}
+            onViewChange={setBookingListView}
+            sort={bookingListSort}
+            onSortChange={setBookingListSort}
+            retentionPolicy={integratedMode && persistAdminChanges ? getBookingRetentionPolicy(savedStore.provider.keepBookingHistoryOneYear, providerEntitlements) : undefined}
+            onOpenRetentionSettings={() => goToSection("settings")}
+            todayKey={bookingListTodayKey}
+            search={searchTerm}
+            onSearchChange={setSearchTerm}
+            status={statusFilter}
+            onStatusChange={setStatusFilter}
+            type={typeFilter}
+            onTypeChange={setTypeFilter}
+            onClearFilters={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setTypeFilter("all");
+              setReviewFilter("all");
+            }}
+            canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
+            onReschedule={openReschedule}
+            onCancel={openCancellation}
+            review={
+              reviewsBookings
+                ? {
+                    filter: reviewFilter,
+                    onFilterChange: setReviewFilter,
+                    pendingIds: reviewPendingIds,
+                    onToggle: (bookingId) => void toggleBookingReviewed(bookingId),
+                  }
+                : undefined
+            }
+          />
+        )}
+      </div>
     );
   }
 
