@@ -86,10 +86,15 @@ export type DashboardShellCopy = {
   activeBookings: string;
   archivedBookings: string;
   archiveHint: string;
-  /** The bookings as a list to work through, or as a month to look over. */
+  /** The bookings as a list to work through, or as a week or a month to look over. */
   bookingsLayoutLabel: string;
   listLayout: string;
+  weekLayout: string;
   monthLayout: string;
+  /** "{count}", "{noun}" (the vertical's word for bookings) and "{date}" (the week's first day) are filled in. */
+  weekTotal: string;
+  /** A day of the week with nothing booked. */
+  weekFreeDay: string;
   /** "{count}", "{noun}" (the vertical's word for bookings) and "{month}" are filled in. */
   monthTotal: string;
   /** The two ends of the month's shading. */
@@ -282,7 +287,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     archiveHint: "Bookings more than 7 days past are kept in Archive.",
     bookingsLayoutLabel: "Show as",
     listLayout: "List",
+    weekLayout: "Week",
     monthLayout: "Month",
+    weekTotal: "{count} {noun} in the week of {date}",
+    weekFreeDay: "Nothing booked",
     monthTotal: "{count} {noun} in {month}",
     monthLess: "Quieter",
     monthMore: "Busier",
@@ -491,7 +499,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     archiveHint: "Las reservas de hace más de 7 días se conservan en Archivo.",
     bookingsLayoutLabel: "Mostrar como",
     listLayout: "Lista",
+    weekLayout: "Semana",
     monthLayout: "Mes",
+    weekTotal: "{count} {noun} en la semana del {date}",
+    weekFreeDay: "Sin nada agendado",
     monthTotal: "{count} {noun} en {month}",
     monthLess: "Menos",
     monthMore: "Más",

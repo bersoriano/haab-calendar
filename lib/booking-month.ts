@@ -28,6 +28,30 @@ export type BookingMonth<T> = {
 const FULLEST_AT_LEAST = 4;
 
 /**
+ * The bookings that take time, by day, earliest first; a full-day booking,
+ * having no time, leads its day. Cancelled bookings take none, so they are
+ * left out.
+ */
+export function liveBookingsByDate<T extends Pick<BookingRecord, "dateKey" | "startTime" | "status">>(
+  bookings: readonly T[],
+): Map<string, T[]> {
+  const byDate = new Map<string, T[]>();
+
+  for (const booking of bookings) {
+    if (booking.status === "cancelled") continue;
+    const sameDay = byDate.get(booking.dateKey);
+    if (sameDay) sameDay.push(booking);
+    else byDate.set(booking.dateKey, [booking]);
+  }
+
+  for (const sameDay of byDate.values()) {
+    sameDay.sort((left, right) => (left.startTime ?? "").localeCompare(right.startTime ?? ""));
+  }
+
+  return byDate;
+}
+
+/**
  * One month as whole weeks, Sunday first, with each day's live bookings.
  * Cancelled bookings take no time, so they are left out. Days borrowed from
  * the neighbouring months come empty: the view is of this month.
@@ -42,23 +66,13 @@ export function buildBookingMonth<
   const gridStart = addDays(firstOfMonth, -firstOfMonth.getDay());
   const weekCount = Math.ceil((firstOfMonth.getDay() + daysInMonth) / 7);
 
-  const byDate = new Map<string, T[]>();
-  for (const booking of bookings) {
-    if (booking.status === "cancelled") continue;
-    const sameDay = byDate.get(booking.dateKey);
-    if (sameDay) sameDay.push(booking);
-    else byDate.set(booking.dateKey, [booking]);
-  }
+  const byDate = liveBookingsByDate(bookings);
 
   const days = Array.from({ length: weekCount * 7 }, (_, index) => {
     const date = addDays(gridStart, index);
     const dateKey = getDateKey(date);
     const inMonth = date.getMonth() === month;
-    const dayBookings = inMonth
-      ? [...(byDate.get(dateKey) ?? [])].sort((left, right) =>
-          (left.startTime ?? "").localeCompare(right.startTime ?? ""),
-        )
-      : [];
+    const dayBookings = inMonth ? (byDate.get(dateKey) ?? []) : [];
 
     return { dateKey, dayOfMonth: date.getDate(), inMonth, isToday: dateKey === todayKey, bookings: dayBookings };
   });

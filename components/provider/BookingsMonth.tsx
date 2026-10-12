@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CaretLeft, CaretRight } from "@phosphor-icons/react";
 
-import { Button, Card, IconButton } from "@/components/app-ui";
-import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
+import { Card } from "@/components/app-ui";
+import { fillTemplate } from "@/components/booking/i18n/translations";
+import { BookingsPeriodHeader } from "@/components/provider/BookingsPeriodHeader";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { buildBookingMonth, type BookingMonthLevel } from "@/lib/booking-month";
 import { getWeekdayShortFormatter } from "@/lib/constants";
@@ -44,7 +44,6 @@ export function BookingsMonth({
   bookings: readonly BookingRecord[];
   todayKey: string;
 }) {
-  const t = bookingTranslations[lang];
   const shell = dashboardCopy[lang];
   // Null follows today, so the month turns over with the calendar.
   const [chosenMonth, setChosenMonth] = useState<Date | null>(null);
@@ -56,55 +55,35 @@ export function BookingsMonth({
 
   return (
     <Card as="section">
-      <div className="flex flex-col gap-3 border-b border-app-border px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center rounded-lg ring-1 ring-app-border-strong">
-            <IconButton
-              label={t.publicFlow.previous}
-              icon={<CaretLeft aria-hidden="true" size={16} />}
-              onClick={() => setChosenMonth(shiftMonth(anchor, -1))}
-              className="rounded-r-none"
-            />
-            <Button
-              variant="plain"
-              onClick={() => setChosenMonth(null)}
-              className="rounded-none border-x border-app-border-strong"
-            >
-              {t.publicFlow.today}
-            </Button>
-            <IconButton
-              label={t.publicFlow.next}
-              icon={<CaretRight aria-hidden="true" size={16} />}
-              onClick={() => setChosenMonth(shiftMonth(anchor, 1))}
-              className="rounded-l-none"
-            />
-          </div>
-          <h2 id="bookings-month-label" className="text-base font-semibold capitalize text-app-fg sm:text-lg">
-            {monthLabel}
-          </h2>
-        </div>
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 text-sm text-app-fg-muted">
-          <p aria-live="polite" data-month-total>
-            {fillTemplate(shell.monthTotal, {
-              count: String(month.total),
-              noun: noun(month.total),
-              month: monthLabel,
-            })}
-          </p>
-          <p className="flex items-center gap-1.5 text-xs">
-            {shell.monthLess}
-            <span aria-hidden="true" className="flex gap-0.5">
-              {LEVELS.map((level) => (
-                <span
-                  key={level}
-                  className={cn("size-3 rounded-sm ring-1 ring-inset ring-app-border", LEVEL_SHADE[level])}
-                />
-              ))}
-            </span>
-            {shell.monthMore}
-          </p>
-        </div>
-      </div>
+      <BookingsPeriodHeader
+        lang={lang}
+        label={monthLabel}
+        labelId="bookings-month-label"
+        labelClassName="capitalize"
+        onPrevious={() => setChosenMonth(shiftMonth(anchor, -1))}
+        onToday={() => setChosenMonth(null)}
+        onNext={() => setChosenMonth(shiftMonth(anchor, 1))}
+      >
+        <p aria-live="polite" data-month-total>
+          {fillTemplate(shell.monthTotal, {
+            count: String(month.total),
+            noun: noun(month.total),
+            month: monthLabel,
+          })}
+        </p>
+        <p className="flex items-center gap-1.5 text-xs">
+          {shell.monthLess}
+          <span aria-hidden="true" className="flex gap-0.5">
+            {LEVELS.map((level) => (
+              <span
+                key={level}
+                className={cn("size-3 rounded-sm ring-1 ring-inset ring-app-border", LEVEL_SHADE[level])}
+              />
+            ))}
+          </span>
+          {shell.monthMore}
+        </p>
+      </BookingsPeriodHeader>
 
       <div className="p-2 sm:p-4">
         <div className="overflow-hidden rounded-lg ring-1 ring-app-border">
