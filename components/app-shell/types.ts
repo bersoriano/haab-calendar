@@ -6,7 +6,6 @@ export type ShellIconName =
   | "overview"
   | "bookings"
   | "scan"
-  | "calendar"
   | "analytics"
   | "campaigns"
   | "services"

@@ -7,7 +7,7 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 1. Setup Wizard
    Standalone-first onboarding for provider info, services, weekly availability, and launch.
 2. Provider Workspace
-   Top navigation for `Dashboard`, `Bookings`, `Calendar`, `Services`, and `Settings`.
+   Top navigation for `Dashboard`, `Bookings`, `Services`, and `Settings`.
 3. Public Booking Flow
    Step-by-step client wizard for service selection, date and time, a server-authoritative hold, customer details, confirmation, calendar export, and self-service management.
 4. Public Route

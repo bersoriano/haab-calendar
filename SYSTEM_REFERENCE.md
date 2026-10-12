@@ -157,7 +157,7 @@ In integrated mode, the parent application is the source of truth for provider/s
 
 | Surface mode    | What renders                                                                   | Used by                            |
 |-----------------|--------------------------------------------------------------------------------|------------------------------------|
-| **`adaptive`**  | Toggles between admin (dashboard/bookings/calendar/services/settings) and public booking flow within the same module instance | The root `/` page (developer view) |
+| **`adaptive`**  | Toggles between admin (dashboard/bookings/services/settings) and public booking flow within the same module instance | The root `/` page (developer view) |
 | **`public-only`** | Only the public booking flow + success/manage screen                         | `/{vertical}/{providerSlug}`, service URLs, manage URLs, and standalone demo `/public/[slug]` |
 
 The surface mode never changes after mount.
@@ -177,7 +177,7 @@ The same React component renders two products with different audiences, differen
 | Audience                     | Clients booking with the provider                          | The provider running the business                             |
 | Surface mode (§ 3b)          | `public-only`, or the `public` half of `adaptive`          | The `management` half of `adaptive`                           |
 | Routes (today)               | `/{vertical}/{providerSlug}`, `/{vertical}/{providerSlug}/{serviceSlug}`, `/{vertical}/{providerSlug}/manage/{token}` | `/` (adaptive — admin tabs) |
-| Tabs / screens               | Booking flow (steps 1–4) + success/manage screen           | Setup wizard, Dashboard, Bookings, Calendar, Services, Settings |
+| Tabs / screens               | Booking flow (steps 1–4) + success/manage screen           | Setup wizard, Dashboard, Bookings, Services, Settings |
 | Auth (today)                 | None for browsing; private manage token for editing own booking | Provider login required                                   |
 | Data the user should see     | Provider info, services, availability, own booking         | All bookings, all holds, all services, full availability      |
 | Data the user must NOT see   | Other clients' contact info, internal notes, full booking list | n/a (admin sees everything for this provider)              |

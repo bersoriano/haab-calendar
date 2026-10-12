@@ -51,7 +51,6 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   dashboard: "overview",
   bookings: "bookings",
   scan: "scan",
-  calendar: "calendar",
   analytics: "analytics",
   campaigns: "campaigns",
   services: "services",

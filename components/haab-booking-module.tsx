@@ -9,7 +9,6 @@ import {
 } from "@/lib/booking-tokens";
 import { getAppointmentQrPayload } from "@/lib/booking-scan";
 import {
-  startTransition,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -70,7 +69,6 @@ import {
   getWeekStart,
   createWeekWindow,
   createRollingWeekWindow,
-  createMonthMatrix,
   clampDateKey,
   compareMonthAnchors,
   todayKey,
@@ -112,7 +110,6 @@ import {
   seedSetupLanguage,
 } from "@/lib/store";
 import {
-  getBookingsForDate,
   getAvailableSlots as getAvailableSlotsAtTime,
   getDayAvailability as getDayAvailabilityAtTime,
   isDateAvailable as isDateAvailableAtTime,
@@ -215,7 +212,6 @@ import { BookingPass, RefinedBookingPass, type PassField } from "@/components/bo
 import { BookingSuccessPanel } from "@/components/booking/BookingSuccessPanel";
 import { SuccessActions } from "@/components/booking/SuccessActions";
 import { AppointmentScanner } from "@/components/provider/AppointmentScanner";
-import { AdminCalendar } from "@/components/provider/AdminCalendar";
 import { AppearanceSection } from "@/components/provider/AppearanceSection";
 import { CancelBookingDialog } from "@/components/provider/CancelBookingDialog";
 import { RescheduleBookingDialog } from "@/components/provider/RescheduleBookingDialog";
@@ -485,7 +481,7 @@ export function HaabBookingModule({
   // overview.
   const isDraftWorkspace = isUnpublishedDraft({ integratedMode, isGuestDraft, persistSetup });
   const currentSection: AdminTab = draftWorkspaceSection(adminSection ?? adminTab, isDraftWorkspace);
-  // The in-app booking flow (opened from the calendar) belongs to the section
+  // The in-app booking flow belongs to the section
   // it was opened from. When the host switches sections — its sidebar stays
   // on screen — the flow closes, so the new section shows its own content.
   const [flowSection, setFlowSection] = useState<AdminTab>(currentSection);
@@ -578,8 +574,6 @@ export function HaabBookingModule({
   const [isExtendingHold, setIsExtendingHold] = useState(false);
   const [holdExtensionMessage, setHoldExtensionMessage] = useState<string | null>(null);
   const [publicMonthAnchor, setPublicMonthAnchor] = useState(new Date());
-  const [calendarMonthAnchor, setCalendarMonthAnchor] = useState(new Date());
-  const [calendarServicePreference, setCalendarServicePreference] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const deferredSearch = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState<"all" | BookingStatus>("all");
@@ -1201,11 +1195,6 @@ export function HaabBookingModule({
     !requestedServiceSlug ||
     services.some((service) => getServiceSlug(service) === requestedServiceSlug);
   const hasMultipleServices = services.length > 1;
-  const calendarServiceId =
-    calendarServicePreference &&
-    services.some((service) => service.id === calendarServicePreference)
-      ? calendarServicePreference
-      : (services[0]?.id ?? "");
   const publicShellClass = isDedicatedPublicPage
     ? "min-w-0 w-full"
     : "min-w-0 w-full rounded-[34px] border border-[var(--line)] shadow-[0_40px_100px_rgba(15,23,42,0.08)]";
@@ -1938,13 +1927,6 @@ export function HaabBookingModule({
     window.setTimeout(() => {
       URL.revokeObjectURL(url);
     }, 0);
-  }
-
-  function launchPublicFlow(overrides?: Partial<BookingFlow>) {
-    startFreshBooking(overrides);
-    startTransition(() => {
-      setSurface("public");
-    });
   }
 
   function resetServiceEditor() {
@@ -3596,8 +3578,6 @@ export function HaabBookingModule({
     type: typeFilter,
     review: reviewsBookings ? reviewFilter : "all",
   });
-  const activeCalendarService =
-    services.find((service) => service.id === calendarServiceId) ?? services[0];
   const publicSlotStates =
     selectedService && bookingFlow.dateKey && selectedService.bookingType === "appointment"
       ? getPublicSlotStates(
@@ -3855,65 +3835,6 @@ export function HaabBookingModule({
     );
   }
 
-  function renderAdminCalendar() {
-    const today = todayKey();
-    const weekdayFormatter = getWeekdayShortFormatter(lang);
-
-    return (
-      <AdminCalendar
-        lang={lang}
-        copy={copy}
-        monthLabel={formatMonthLabel(calendarMonthAnchor, lang)}
-        weekdayLabels={WEEKDAY_KEYS.map((day) =>
-          weekdayFormatter.format(parseDateKey(`2024-03-${pad(WEEKDAY_KEYS.indexOf(day) + 3)}`)),
-        )}
-        weeks={createMonthMatrix(calendarMonthAnchor).map((week) =>
-          week.map((date) => {
-            const dateKey = getDateKey(date);
-
-            return {
-              dateKey,
-              dayOfMonth: date.getDate(),
-              inMonth: date.getMonth() === calendarMonthAnchor.getMonth(),
-              isToday: dateKey === today,
-              open: Boolean(
-                activeCalendarService &&
-                  isDateAvailable(
-                    dateKey,
-                    activeCalendarService,
-                    availability,
-                    bookings,
-                    undefined,
-                    activeBookingHolds,
-                  ),
-              ),
-              bookings: getBookingsForDate(bookings, dateKey).map((booking) => ({
-                id: booking.id,
-                type: booking.bookingType,
-                label:
-                  booking.bookingType === "full-day"
-                    ? getBookingTypeLabel("full-day", lang)
-                    : formatTimeLabel(booking.startTime, lang),
-                serviceName: booking.serviceName,
-              })),
-            };
-          }),
-        )}
-        services={services.map((service) => ({ id: service.id, name: service.name }))}
-        selectedServiceId={activeCalendarService?.id ?? ""}
-        onServiceChange={setCalendarServicePreference}
-        onPrevious={() => setCalendarMonthAnchor((current) => shiftMonth(current, -1))}
-        onToday={() => setCalendarMonthAnchor(new Date())}
-        onNext={() => setCalendarMonthAnchor((current) => shiftMonth(current, 1))}
-        onOpenDay={(dateKey) =>
-          activeCalendarService
-            ? launchPublicFlow({ serviceId: activeCalendarService.id, dateKey, step: 2 })
-            : undefined
-        }
-      />
-    );
-  }
-
   /** The wizard shows setup errors itself; the dashboard shows them here. */
   function renderServices({
     showError = false,
@@ -3966,8 +3887,6 @@ export function HaabBookingModule({
       case "scan":
         // Looks appointments up on the server, so only where there is one.
         return integratedMode ? <AppointmentScanner lang={lang} /> : null;
-      case "calendar":
-        return renderAdminCalendar();
       case "services":
         return renderServices({ showError: true });
       case "appearance":
@@ -7236,7 +7155,6 @@ export function HaabBookingModule({
                     [
                       { value: "dashboard", label: t.admin.tabDashboard },
                       { value: "bookings", label: copy.Bookings },
-                      { value: "calendar", label: t.admin.tabCalendar },
                       { value: "services", label: copy.Services },
                       { value: "availability", label: dashboardCopy[lang].titles.availability },
                       { value: "appearance", label: t.admin.tabAppearance },

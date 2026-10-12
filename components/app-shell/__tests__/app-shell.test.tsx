@@ -70,7 +70,7 @@ describe("SidebarNav", () => {
             id: "operate",
             items: [
               { id: "bookings", href: "/dashboard/bookings", label: "Sessions", icon: "bookings", alert: "3 new" },
-              { id: "calendar", href: "/dashboard/calendar", label: "Calendar", icon: "calendar" },
+              { id: "analytics", href: "/dashboard/analytics", label: "Analytics", icon: "analytics" },
             ],
           },
         ]}
@@ -78,11 +78,11 @@ describe("SidebarNav", () => {
         ariaLabel="Dashboard"
       />,
     );
-    const [sessions, calendar] = flagged.match(/<a[\s\S]*?<\/a>/g) ?? [];
+    const [sessions, analytics] = flagged.match(/<a[\s\S]*?<\/a>/g) ?? [];
 
     expect(sessions).toMatch(/<svg[^>]*aria-hidden="true"/);
     expect(sessions).toContain('<span class="sr-only">3 new</span>');
-    expect(calendar).not.toContain("sr-only");
+    expect(analytics).not.toContain("sr-only");
   });
 
   it("shows a badge when an item carries one", () => {

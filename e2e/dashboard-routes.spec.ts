@@ -12,7 +12,6 @@ const SECTIONS: Array<{ path: string; heading: RegExp }> = [
   { path: "/dashboard", heading: /^(Overview|Resumen)$/ },
   { path: "/dashboard/bookings", heading: /^(Appointments|Bookings|Citas|Reservas)$/ },
   { path: "/dashboard/scan", heading: /^(Scan appointment|Escanear cita)$/ },
-  { path: "/dashboard/calendar", heading: /^(Calendar|Calendario)$/ },
   { path: "/dashboard/analytics", heading: /^(Analytics|Analítica|Estadísticas)$/ },
   { path: "/dashboard/campaigns", heading: /^(Campaigns|Campañas)$/ },
   { path: "/dashboard/services", heading: /services|servicios|specialties|especialidades|events|eventos/i },
@@ -64,9 +63,9 @@ test.describe("signed-in provider", () => {
       if (request.resourceType() === "document") documentRequests.push(request.url());
     });
 
-    await sidebarLink(page, "/dashboard/calendar").click();
-    await expect(page).toHaveURL(/\/dashboard\/calendar$/);
-    await expect(heading(page)).toHaveText(/^(Calendar|Calendario)$/);
+    await sidebarLink(page, "/dashboard/bookings").click();
+    await expect(page).toHaveURL(/\/dashboard\/bookings$/);
+    await expect(heading(page)).toHaveText(/^(Appointments|Bookings|Citas|Reservas)$/);
 
     await sidebarLink(page, "/dashboard/settings").click();
     await expect(page).toHaveURL(/\/dashboard\/settings$/);
@@ -100,19 +99,6 @@ test.describe("signed-in provider", () => {
     await context.setOffline(false);
   });
 
-  test("leaves the in-app booking flow when another section is chosen", async ({ page }) => {
-    await page.goto("/dashboard/calendar");
-    const openDay = page.locator("main button:not([disabled])").filter({ hasText: /^\d+/ }).first();
-    await expect(openDay).toBeVisible();
-    await openDay.click();
-    await expect(page.getByRole("button", { name: /Back to workspace|Volver/ })).toBeVisible();
-
-    await sidebarLink(page, "/dashboard/bookings").click();
-    await expect(page).toHaveURL(/\/dashboard\/bookings$/);
-    await expect(page.getByRole("button", { name: /Back to workspace|Volver/ })).toHaveCount(0);
-    await expect(page.locator('main input[type="search"]')).toBeVisible();
-  });
-
   test("keeps the account controls inside the sidebar", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/dashboard");
@@ -136,6 +122,11 @@ test.describe("signed-in provider", () => {
     expect(response?.status()).toBe(404);
   });
 
+  test("answers the removed calendar section with not found", async ({ page }) => {
+    const response = await page.goto("/dashboard/calendar");
+    expect(response?.status()).toBe(404);
+  });
+
   test("opens and closes the navigation drawer on a phone", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard");
@@ -149,8 +140,8 @@ test.describe("signed-in provider", () => {
     await expect(drawer).toBeHidden();
 
     await menu.click();
-    await drawer.locator('a[href="/dashboard/calendar"]').click();
-    await expect(page).toHaveURL(/\/dashboard\/calendar$/);
+    await drawer.locator('a[href="/dashboard/bookings"]').click();
+    await expect(page).toHaveURL(/\/dashboard\/bookings$/);
     await expect(drawer).toBeHidden();
   });
 

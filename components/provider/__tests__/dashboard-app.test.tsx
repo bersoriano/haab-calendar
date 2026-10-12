@@ -117,7 +117,7 @@ describe("DashboardApp", () => {
   });
 
   it("drives the module section from the URL", () => {
-    expect(render({ pathname: "/dashboard/calendar" }).moduleProps.adminSection).toBe("calendar");
+    expect(render({ pathname: "/dashboard/bookings" }).moduleProps.adminSection).toBe("bookings");
     expect(render({ pathname: "/dashboard" }).moduleProps.adminSection).toBe("dashboard");
   });
 
@@ -151,7 +151,6 @@ describe("DashboardApp", () => {
 
     for (const path of [
       "/dashboard/bookings",
-      "/dashboard/calendar",
       "/dashboard/analytics",
       "/dashboard/services",
       "/dashboard/availability",

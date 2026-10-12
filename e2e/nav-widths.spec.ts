@@ -141,7 +141,6 @@ const DRAFT_TABS = [
 // connect, and a link that would be a 404.
 const PUBLISHED_ONLY = [
   tab("Appointments"),
-  tab("Calendar"),
   tab("Analytics"),
   tab("Integrations"),
   {
@@ -261,8 +260,20 @@ const CASES: NavCase[] = [
     path: "/dashboard",
     open: dashboardNav,
     account: button("Sign out"),
-    offers: [section("/dashboard"), section("/dashboard/bookings"), section("/dashboard/settings")],
-    hides: [link("Log in")],
+    offers: [
+      section("/dashboard"),
+      section("/dashboard/bookings"),
+      section("/dashboard/scan"),
+      section("/dashboard/analytics"),
+      section("/dashboard/campaigns"),
+      section("/dashboard/services"),
+      section("/dashboard/availability"),
+      section("/dashboard/appearance"),
+      section("/dashboard/integrations"),
+      section("/dashboard/settings"),
+    ],
+    // The calendar section is gone: a link to it would be a 404.
+    hides: [link("Log in"), section("/dashboard/calendar")],
   },
 ];
 

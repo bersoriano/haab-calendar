@@ -404,7 +404,6 @@ export type BookingDict = {
     weekdays: Record<WeekdayKey, string>;
     // Nav
     tabDashboard: string;
-    tabCalendar: string;
     tabSettings: string;
     tabAnalytics: string;
     tabAppearance: string;
@@ -998,7 +997,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         saturday: "Saturday",
       },
       tabDashboard: "Dashboard",
-      tabCalendar: "Calendar",
       tabSettings: "Settings",
       tabAnalytics: "Analytics",
       tabAppearance: "Appearance",
@@ -1600,7 +1598,6 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         saturday: "Sábado",
       },
       tabDashboard: "Panel",
-      tabCalendar: "Calendario",
       tabSettings: "Ajustes",
       tabAnalytics: "Analítica",
       tabAppearance: "Apariencia",

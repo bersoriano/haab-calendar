@@ -13,7 +13,6 @@ import type { AdminTab, ModuleStore } from "@/lib/types";
 const ALL: Array<{ value: AdminTab; label: string }> = [
   { value: "dashboard", label: "Dashboard" },
   { value: "bookings", label: "Appointments" },
-  { value: "calendar", label: "Calendar" },
   { value: "services", label: "Services" },
   { value: "availability", label: "Availability" },
   { value: "appearance", label: "Appearance" },
@@ -45,7 +44,7 @@ describe("draftWorkspaceSections", () => {
 
 describe("draftWorkspaceSection", () => {
   it("opens the overview in place of a section a draft does not offer", () => {
-    for (const hidden of ["bookings", "calendar", "analytics", "integrations"] as const) {
+    for (const hidden of ["bookings", "analytics", "integrations"] as const) {
       expect(draftWorkspaceSection(hidden, true)).toBe("dashboard");
     }
   });
