@@ -21,3 +21,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - If you encounter a Git merge conflict that fails automated tests, STOP immediately.
 - Do not guess or blindly overwrite code blocks. Present the conflict markers to the human.
+
+## 4. Navigation Changes
+
+- A navigation is separate markup per width: a row of controls on a desktop, a collapsed menu or drawer on a phone. A check made at one width says nothing about the other.
+- When a change alters what a bar, menu, sidebar or drawer shows, record it in `e2e/nav-widths.spec.ts`: add or edit the case for that surface and account state. Every case there runs at phone and desktop widths.
+- Assert what is on screen, not only what is gone. An empty bar passes every "is not shown" check.
