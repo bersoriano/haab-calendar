@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { AccountStatusBar } from "@/components/provider/AccountStatusBar";
-import { GuestDraftBar } from "@/components/provider/GuestDraftBar";
+import { DraftSaveBar } from "@/components/provider/DraftSaveBar";
 import { SetupHeader } from "@/components/provider/SetupHeader";
 import { logout } from "@/app/login/actions";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
@@ -18,10 +18,11 @@ import {
   LanguageProvider,
   useLanguage,
 } from "@/components/landing/language-provider";
-import type { Lang as LandingLang } from "@/components/landing/translations";
+import { translations, type Lang as LandingLang } from "@/components/landing/translations";
 import { withAuthReturnLanguage } from "@/lib/auth-i18n";
 import type { PublicationStatus } from "@/lib/supabase/publication";
 import { DEFAULT_STORAGE_KEY } from "@/lib/constants";
+import { draftSaveMode, publishDraft } from "@/lib/draft-workspace";
 import { normalizeStore } from "@/lib/store";
 import { resolveGuestChromeLanguage } from "@/lib/language/surface";
 import {
@@ -116,10 +117,14 @@ function HomeExperienceInner({
   >();
   const effectiveDashboardStore = persistedDashboardStore ?? dashboardStore;
   const effectiveConfigured = configured || Boolean(effectiveDashboardStore?.setupComplete);
-  const [guestDraftStore, setGuestDraftStore] = useState<ModuleStore>();
+  // The page while it lives only in this browser, as the module last reported
+  // it: a guest's, or a signed-in account's that has not published yet.
+  const [draftStore, setDraftStore] = useState<ModuleStore>();
   const hasGuestDraft = Boolean(
-    !loggedIn && guestDraftStore && isGuestDraftMeaningful(guestDraftStore),
+    !loggedIn && draftStore && isGuestDraftMeaningful(draftStore),
   );
+  const [isPublishingDraft, setIsPublishingDraft] = useState(false);
+  const [draftPublishError, setDraftPublishError] = useState<string | null>(null);
 
   useEffect(() => {
     if (loggedIn) return;
@@ -131,7 +136,7 @@ function HomeExperienceInner({
       const draft = normalizeStore(JSON.parse(raw) as ModuleStore);
       if (isGuestDraftMeaningful(draft)) {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the landing CTA from the existing browser-owned guest draft
-        setGuestDraftStore(draft);
+        setDraftStore(draft);
       }
 
       // A signed-out draft lives only in this browser, so the server had
@@ -213,8 +218,8 @@ function HomeExperienceInner({
 
     if (hasGuestDraft) {
       openApp(
-        guestDraftStore?.vertical,
-        guestDraftStore?.provider.businessName,
+        draftStore?.vertical,
+        draftStore?.provider.businessName,
         false,
       );
       return;
@@ -235,6 +240,40 @@ function HomeExperienceInner({
   function requestGuestPublish() {
     router.push(buildGuestPublishLoginHref(lang));
   }
+
+  // A signed-in account with a finished draft and no page: publishing is one
+  // save away, and the dashboard then loads the page fresh from the server.
+  async function publishAccountDraft() {
+    if (!draftStore || isPublishingDraft) {
+      return;
+    }
+
+    setIsPublishingDraft(true);
+    setDraftPublishError(null);
+    const result = await publishDraft(draftStore);
+
+    if (!result.ok) {
+      setIsPublishingDraft(false);
+      setDraftPublishError(
+        (result.reason === "refused" && result.message) ||
+          translations[dashboardLanguage].home.accountDraftPublishFailed,
+      );
+      return;
+    }
+
+    router.push("/dashboard");
+  }
+
+  // Coming back from sign-up to publish a guest draft, setup's last step does
+  // the publishing and offers its own retry: a second button would race it.
+  const saveMode =
+    loggedIn && resumeGuestPublish
+      ? null
+      : draftSaveMode({
+          loggedIn,
+          configured: effectiveConfigured,
+          draftFinished: Boolean(draftStore?.setupComplete),
+        });
 
   if (view === "app") {
     const activeWorkflowVertical =
@@ -263,8 +302,8 @@ function HomeExperienceInner({
             resumeGuestPublish={loggedIn && resumeGuestPublish}
             onRequestPublish={requestGuestPublish}
             onStoreChange={(store) => {
-              if (!loggedIn) {
-                setGuestDraftStore(store);
+              if (!effectiveConfigured) {
+                setDraftStore(store);
               }
             }}
             // Publishing keeps the Done step on screen; "Go to dashboard" is
@@ -284,8 +323,14 @@ function HomeExperienceInner({
           />
         </main>
         {/* After the content, so it sticks to the bottom of the screen. */}
-        {!loggedIn ? (
-          <GuestDraftBar lang={dashboardLanguage} onPublish={requestGuestPublish} />
+        {saveMode ? (
+          <DraftSaveBar
+            lang={dashboardLanguage}
+            mode={saveMode}
+            onPublish={saveMode === "guest" ? requestGuestPublish : () => void publishAccountDraft()}
+            publishing={isPublishingDraft}
+            error={draftPublishError}
+          />
         ) : null}
       </div>
     );

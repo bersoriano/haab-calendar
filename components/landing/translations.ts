@@ -30,6 +30,12 @@ export const translations = {
       guestDraftBody:
         "Aún no hay nada en línea. Crea una cuenta para publicar tu página y conservarla.",
       guestDraftPublish: "Crear cuenta y publicar",
+      accountDraftBody:
+        "Aún no hay nada en línea. Publica tu página para ponerla en línea y guardarla en tu cuenta.",
+      accountDraftPublish: "Publicar mi página",
+      accountDraftPublishing: "Publicando…",
+      accountDraftPublishFailed: "No se pudo publicar tu página. Inténtalo de nuevo.",
+      setupDraftBody: "Aún no hay nada en línea. Termina la configuración para publicar tu página.",
       selectedWorkflow: "Flujo de trabajo seleccionado",
       selectedWorkflowHint:
         "La configuración usará los servicios, la disponibilidad y las reglas de reserva predeterminados para este flujo.",
@@ -511,6 +517,12 @@ export const translations = {
       guestDraftBody:
         "Nothing is online yet. Create an account to publish your page and keep it.",
       guestDraftPublish: "Create account to publish",
+      accountDraftBody:
+        "Nothing is online yet. Publish your page to put it online and keep it in your account.",
+      accountDraftPublish: "Publish my page",
+      accountDraftPublishing: "Publishing…",
+      accountDraftPublishFailed: "Could not publish your page. Please try again.",
+      setupDraftBody: "Nothing is online yet. Finish setup to publish your page.",
       selectedWorkflow: "Selected workflow",
       selectedWorkflowHint:
         "Setup will use this workflow's service, availability, and booking defaults.",

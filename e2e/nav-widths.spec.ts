@@ -61,16 +61,14 @@ const tab = (name: string): Control => ({
     nav.getByRole("navigation", { name: "Dashboard" }).getByRole("button", { name, exact: true }),
 });
 
-type Session =
-  | "signed out"
-  | "signed out with a draft"
-  | "signed in with no page yet"
-  | "signed in with a page";
+type Session = "signed out" | "signed in with no page yet" | "signed in with a page";
 
 type NavCase = {
   surface: string;
   session: Session;
   path: string;
+  /** A finished draft is waiting in the browser, as the page builder leaves it. */
+  draft?: true;
   /** The navigation, opened first wherever this width collapses it. */
   open: (page: Page) => Promise<Locator>;
   /**
@@ -113,16 +111,46 @@ async function dashboardNav(page: Page) {
 }
 
 /**
- * The workspace of a draft made before any account: the landing page hands
- * over to it, and it wears the module's own header and tabs, not the
- * dashboard's sidebar. The save control sits outside the tabs, at the bottom
- * of the screen, so the whole page is the navigation here.
+ * The workspace of a draft that is not published: the landing page hands over
+ * to it, and it wears the module's own header and tabs, not the dashboard's
+ * sidebar. The save control sits outside the tabs, at the bottom of the
+ * screen, so the whole page is the navigation here.
  */
-async function draftWorkspace(page: Page) {
-  await page.getByRole("main").getByRole("button", { name: "Create your page" }).first().click();
-  await expect(page.getByRole("navigation", { name: "Dashboard" })).toBeVisible();
-  return page.locator("body");
+function draftWorkspace(enter: string) {
+  return async (page: Page) => {
+    await page.getByRole("main").getByRole("button", { name: enter }).first().click();
+    await expect(page.getByRole("navigation", { name: "Dashboard" })).toBeVisible();
+    return page.locator("body");
+  };
 }
+
+const DRAFT_TABS = [
+  tab("Dashboard"),
+  tab("Medical services"),
+  tab("Availability"),
+  tab("Appearance"),
+  tab("Settings"),
+  {
+    label: "the preview of the page",
+    find: (nav: Locator) =>
+      nav.getByRole("button", { name: "Preview booking page", exact: true }).first(),
+  },
+];
+
+// Nothing is published: no bookings to list, no visits to count, nothing to
+// connect, and a link that would be a 404.
+const PUBLISHED_ONLY = [
+  tab("Appointments"),
+  tab("Calendar"),
+  tab("Analytics"),
+  tab("Integrations"),
+  {
+    // By its start: the link's name goes on to say it opens a new tab.
+    label: "the link to the page",
+    find: (nav: Locator) => nav.getByRole("link", { name: /^View public page/ }),
+  },
+  button("Copy link"),
+];
 
 /** A finished draft, as the guest builder leaves it in the browser. */
 const draft = {
@@ -206,36 +234,26 @@ const CASES: NavCase[] = [
   },
   {
     surface: "draft workspace",
-    session: "signed out with a draft",
+    session: "signed out",
+    draft: true,
     path: "/?lang=en",
-    open: draftWorkspace,
+    open: draftWorkspace("Create your page"),
     // The way in is the save: an account is what keeps the draft and publishes it.
     account: button("Create account to publish"),
-    offers: [
-      tab("Dashboard"),
-      tab("Medical services"),
-      tab("Availability"),
-      tab("Appearance"),
-      tab("Settings"),
-      {
-        label: "the preview of the page",
-        find: (nav) => nav.getByRole("button", { name: "Preview booking page", exact: true }).first(),
-      },
-    ],
-    // Nothing is published: no bookings to list, no visits to count, no account
-    // to connect, and a link that would be a 404.
-    hides: [
-      tab("Appointments"),
-      tab("Calendar"),
-      tab("Analytics"),
-      tab("Integrations"),
-      {
-        // By its start: the link's name goes on to say it opens a new tab.
-        label: "the link to the page",
-        find: (nav) => nav.getByRole("link", { name: /^View public page/ }),
-      },
-      button("Copy link"),
-    ],
+    offers: DRAFT_TABS,
+    hides: [...PUBLISHED_ONLY, button("Publish my page")],
+  },
+  {
+    // Signing in does not publish a draft: an account that made one signed out
+    // and came back by the ordinary log-in has a draft and still no page.
+    surface: "draft workspace",
+    session: "signed in with no page yet",
+    draft: true,
+    path: "/?lang=en",
+    open: draftWorkspace("Start with Healthcare"),
+    account: button("Sign out"),
+    offers: [...DRAFT_TABS, button("Publish my page")],
+    hides: [...PUBLISHED_ONLY, button("Create account to publish")],
   },
   {
     surface: "dashboard",
@@ -321,7 +339,7 @@ test.beforeAll(async ({ browser }) => {
 });
 
 for (const navCase of CASES) {
-  test.describe(`${navCase.surface}, ${navCase.session}`, () => {
+  test.describe(`${navCase.surface}, ${navCase.session}${navCase.draft ? ", with a draft" : ""}`, () => {
     if (navCase.session === "signed in with a page") {
       test.use({ storageState: authStatePath("free") });
     }
@@ -334,7 +352,7 @@ for (const navCase of CASES) {
           await page.context().addCookies(noPageSession);
         }
 
-        if (navCase.session === "signed out with a draft") {
+        if (navCase.draft) {
           await page.addInitScript(
             ([key, value]) => window.localStorage.setItem(key, value),
             [DEFAULT_STORAGE_KEY, JSON.stringify(draft)],

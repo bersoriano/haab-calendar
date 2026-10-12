@@ -166,7 +166,11 @@ import {
   Select,
   ToastProvider,
 } from "@/components/app-ui";
-import { draftWorkspaceSection, draftWorkspaceSections } from "@/lib/draft-workspace";
+import {
+  draftWorkspaceSection,
+  draftWorkspaceSections,
+  isUnpublishedDraft,
+} from "@/lib/draft-workspace";
 import { moduleMountsOwnToasts } from "@/lib/module-toasts";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { SaveBar } from "@/components/provider/SaveBar";
@@ -474,9 +478,11 @@ export function HaabBookingModule({
   const [adminTab, setAdminTab] = useState<AdminTab>(initialAdminTab ?? "dashboard");
   // A host that owns routing (the /dashboard shell) controls the section;
   // otherwise the module keeps its own tab state, exactly as before.
-  // A draft made before any account offers only the sections that build the
-  // page; anything that asks for another opens the overview.
-  const currentSection: AdminTab = draftWorkspaceSection(adminSection ?? adminTab, isGuestDraft);
+  // A page that is not published yet, whoever is signed in: it offers only the
+  // sections that build it, and anything that asks for another opens the
+  // overview.
+  const isDraftWorkspace = isUnpublishedDraft({ integratedMode, isGuestDraft, persistSetup });
+  const currentSection: AdminTab = draftWorkspaceSection(adminSection ?? adminTab, isDraftWorkspace);
   // The in-app booking flow (opened from the calendar) belongs to the section
   // it was opened from. When the host switches sections — its sidebar stays
   // on screen — the flow closes, so the new section shows its own content.
@@ -2372,8 +2378,8 @@ export function HaabBookingModule({
     startFreshBooking();
   }
 
-  // A guest's draft has no page behind its link: the workspace opens the
-  // in-app preview wherever a published page would open the link.
+  // A draft has no page behind its link: the workspace opens the in-app
+  // preview wherever a published page would open the link.
   function previewDraftPage() {
     setSurface("public");
     startFreshBooking();
@@ -3781,7 +3787,7 @@ export function HaabBookingModule({
           publishingEnabled,
         })}
         onGoToSection={goToSection}
-        draft={isGuestDraft ? { onPreview: previewDraftPage } : undefined}
+        draft={isDraftWorkspace ? { onPreview: previewDraftPage } : undefined}
       />
     );
   }
@@ -7201,7 +7207,7 @@ export function HaabBookingModule({
             copiedLink={copiedLink}
             onCopyLink={copyPublicLink}
             draft={
-              isGuestDraft
+              isDraftWorkspace
                 ? { onPreview: surface === "management" ? previewDraftPage : undefined }
                 : undefined
             }
@@ -7221,7 +7227,7 @@ export function HaabBookingModule({
                       { value: "integrations", label: dashboardCopy[lang].titles.integrations },
                       { value: "settings", label: t.admin.tabSettings },
                     ] satisfies Array<{ value: AdminTab; label: string }>,
-                    isGuestDraft,
+                    isDraftWorkspace,
                   )
                 : undefined
             }

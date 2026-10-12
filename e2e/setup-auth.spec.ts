@@ -187,4 +187,54 @@ test.describe("signed-in account with no page yet", () => {
     await menu.getByRole("button", { name: "Create your page" }).click();
     await expect(page.getByRole("heading", { name: "Claim your booking link." })).toBeVisible();
   });
+
+  test("publishes a finished draft from the save bar, and the page is then live", async ({ page }) => {
+    // Signing in does not publish a draft. An account that built one signed
+    // out and came back by the ordinary log-in has a finished draft and no
+    // page: the workspace it opens must offer the save that makes one.
+    const businessName = `Draft Publish E2E ${Date.now()}`;
+    await page.addInitScript(
+      ([key, value]) => {
+        if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, value);
+      },
+      [
+        DEFAULT_STORAGE_KEY,
+        JSON.stringify({
+          vertical: "healthcare",
+          setupComplete: true,
+          provider: { fullName: "Dr. Draft Publish", businessName, email: account.email },
+          services: [
+            {
+              id: "draft-publish-visit",
+              name: "First visit",
+              bookingType: "appointment",
+              durationMinutes: 30,
+              description: "A first visit.",
+            },
+          ],
+        }),
+      ],
+    );
+
+    await page.goto("/login?lang=en");
+    await page.getByLabel("Email").fill(account.email);
+    await page.getByLabel("Password").fill(E2E_PASSWORD);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await page.waitForURL((url) => url.pathname === "/", { timeout: 30_000 });
+
+    await page.getByRole("button", { name: "Start with Healthcare" }).first().click();
+    const saveBar = page.getByRole("region", { name: "Draft saved on this device" });
+    await expect(saveBar).toBeVisible();
+    // Not published: the link would be a 404, so the workspace does not offer it.
+    await expect(page.getByRole("link", { name: /^View public page/ })).toHaveCount(0);
+
+    await saveBar.getByRole("button", { name: "Publish my page" }).click();
+    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 30_000 });
+
+    const publicPath = await page.getByRole("link", { name: /View page/ }).first().getAttribute("href");
+    expect(publicPath).toMatch(/^\/doctors\//);
+    const response = await page.request.get(publicPath ?? "");
+    expect(response.status()).toBe(200);
+  });
 });
+
