@@ -1130,10 +1130,10 @@ export const professionalCopy: VerticalCopy = {
   Service: "Service",
   services: "services",
   Services: "Services",
-  booking: "session",
-  Booking: "Session",
-  bookings: "sessions",
-  Bookings: "Sessions",
+  booking: "appointment",
+  Booking: "Appointment",
+  bookings: "appointments",
+  Bookings: "Appointments",
   client: "client",
   Client: "Client",
   clients: "clients",
@@ -1143,19 +1143,19 @@ export const professionalCopy: VerticalCopy = {
   bookingPage: "scheduling page",
   publicBookingUrl: "public scheduling URL",
   bookingWorkspace: "Client workspace",
-  bookingSummary: "Session summary",
-  manageBooking: "Manage session",
-  cancelBooking: "Cancel Session",
-  rescheduleBooking: "Reschedule Session",
+  bookingSummary: "Appointment summary",
+  manageBooking: "Manage appointment",
+  cancelBooking: "Cancel Appointment",
+  rescheduleBooking: "Reschedule Appointment",
   bookFullDay: "Reserve full day",
 
   phrases: {
     setupTitle: "Set up your scheduling page",
     setupDoneTitle: "Your scheduling page is ready",
     providerInfoBody:
-      "These details feed session confirmations, branding, and your public scheduling URL.",
+      "These details feed appointment confirmations, branding, and your public scheduling URL.",
     availabilityBody:
-      "Timed sessions generate real slots from these windows. Full-day engagements simply need the weekday enabled and free of conflicts.",
+      "Timed appointments generate real slots from these windows. Full-day engagements simply need the weekday enabled and free of conflicts.",
 
     addServiceFirstError:
       "Add at least one service before publishing your scheduling page.",
@@ -1164,11 +1164,11 @@ export const professionalCopy: VerticalCopy = {
     keepOneServiceError:
       "Keep at least one service. Add another before removing this one.",
     cancelActiveFirstError:
-      "Cancel active sessions for this service before removing it.",
+      "Cancel active appointments for this service before removing it.",
     enableWeekdayError:
-      "Enable at least one weekday so clients can schedule sessions.",
-    chooseServiceFirstError: "Choose a service before confirming the session.",
-    pickDateFirstError: "Pick a date before confirming the session.",
+      "Enable at least one weekday so clients can schedule appointments.",
+    chooseServiceFirstError: "Choose a service before confirming the appointment.",
+    pickDateFirstError: "Pick a date before confirming the appointment.",
     clientFieldsRequiredError:
       "Client name, email, and phone number are required.",
 
@@ -1179,70 +1179,70 @@ export const professionalCopy: VerticalCopy = {
     selectCapacityCta: "Take a spot",
     beforeVisitLabel: "Before your appointment:",
     bringWithYouLabel: "Bring with you",
-    holdReassurance: "This session is held while you finish.",
+    holdReassurance: "This appointment is held while you finish.",
     whatHappensNext: "Anything you want reviewed beforehand can be sent after you book. Reschedule from your private link whenever you need.",
     chooseServiceBody:
-      "Every card shows whether it schedules a timed session or books an entire day.",
+      "Every card shows whether it schedules a timed appointment or books an entire day.",
     onlyOneServiceBody:
       "Only one service is available, so this step is skipped automatically.",
     serviceUnavailableBody:
       "This slot may be released, but you can still try to schedule it.",
-    notesPlaceholder: "Anything we should know before your session?",
+    notesPlaceholder: "Anything we should know before your appointment?",
     bookingSummaryBodyReview:
-      "Review the live session details here before confirming.",
+      "Review the live appointment details here before confirming.",
     bookingSummaryBodySuccess:
-      "The confirmed session details remain visible here.",
+      "The confirmed appointment details remain visible here.",
     aboutServiceTitle: "About this service",
     serviceDetailsTitle: "Service details",
 
-    upcomingTitle: "Upcoming sessions",
-    upcomingEmptyTitle: "No sessions in the next 7 days",
-    upcomingEmptyBody: "New sessions appear here automatically.",
-    allBookingsTitle: "All sessions",
-    noBookingsMatchTitle: "No sessions match the current filters",
-    bookingsSoonDetail: "Sessions scheduled soon",
-    activeBookingsDetail: "Currently active sessions",
-    totalBookingsLabel: "Total sessions",
+    upcomingTitle: "Upcoming appointments",
+    upcomingEmptyTitle: "No appointments in the next 7 days",
+    upcomingEmptyBody: "New appointments appear here automatically.",
+    allBookingsTitle: "All appointments",
+    noBookingsMatchTitle: "No appointments match the current filters",
+    bookingsSoonDetail: "Appointments scheduled soon",
+    activeBookingsDetail: "Currently active appointments",
+    totalBookingsLabel: "Total appointments",
     servicesStatDetail: "Timed and full-day offerings",
     searchPlaceholder: "Search client, service, email, or phone",
 
-    addBookingHint: "Click an available day to add a session.",
+    addBookingHint: "Click an available day to add an appointment.",
 
     cancelExplain: "Cancelling frees the slot immediately.",
-    keepBookingButton: "Keep session",
-    cancelBookingButton: "Cancel session",
+    keepBookingButton: "Keep appointment",
+    cancelBookingButton: "Cancel appointment",
     tryBookingButton: "Try scheduling",
 
-    loadingBookingTitle: "Loading your session…",
-    bookingNotFoundTitle: "We can't find this session on this device",
+    loadingBookingTitle: "Loading your appointment…",
+    bookingNotFoundTitle: "We can't find this appointment on this device",
     bookingNotFoundBody:
-      "Sessions are stored locally in the browser they were scheduled in. If you scheduled from a different browser or device, please open this link there. If you've cleared your browser data, the session is no longer accessible from this device.",
-    bookNewButton: "Schedule a new session",
+      "Appointments are stored locally in the browser they were scheduled in. If you scheduled from a different browser or device, please open this link there. If you've cleared your browser data, the appointment is no longer accessible from this device.",
+    bookNewButton: "Schedule a new appointment",
 
     serviceEditorBody:
-      "Each service is a timed session or a full-day engagement. Capacity and notes stay visible during scheduling.",
+      "Each service is a timed appointment or a full-day engagement. Capacity and notes stay visible during scheduling.",
     noServicesTitle: "No services yet",
-    noServicesBody: "Add a service so clients can start scheduling sessions.",
+    noServicesBody: "Add a service so clients can start scheduling appointments.",
     serviceDescPlaceholder:
-      "Explain what the session covers in one or two lines.",
+      "Explain what the appointment covers in one or two lines.",
     newServiceEyebrow: "New service",
     editServiceEyebrow: "Edit service",
     newServiceTitle: "Add a service",
     editServiceTitle: "Update this service",
     addServiceButton: "Add service",
     saveServiceButton: "Save service",
-    typeOfServiceLabel: "Type of session",
+    typeOfServiceLabel: "Type of appointment",
 
     clientLabel: "Client",
 
-    scanQrBody: "Scan to open this session, or present the code to the provider.",
-    calendarQrLabel: "Private QR code for this session",
+    scanQrBody: "Scan to open this appointment, or present the code to the provider.",
+    calendarQrLabel: "Private QR code for this appointment",
 
     eventDateLabel: "Date and time",
-    singleOccurrenceHelper: "This session happens on a single fixed date.",
+    singleOccurrenceHelper: "This appointment happens on a single fixed date.",
     spotsLeftSuffix: "spots left",
     fullyBookedLabel: "Fully booked",
-    pickEventDateError: "Pick a date before publishing this session.",
+    pickEventDateError: "Pick a date before publishing this appointment.",
     pickWeekdaysError: "Pick at least one weekday and a start time.",
     maxSpotsRequiredError: "Set the maximum number of spots.",
   },
@@ -1253,10 +1253,10 @@ export const professionalCopyEs: VerticalCopy = {
   Service: "Servicio",
   services: "servicios",
   Services: "Servicios",
-  booking: "sesión",
-  Booking: "Sesión",
-  bookings: "sesiones",
-  Bookings: "Sesiones",
+  booking: "cita",
+  Booking: "Cita",
+  bookings: "citas",
+  Bookings: "Citas",
   client: "cliente",
   Client: "Cliente",
   clients: "clientes",
@@ -1266,19 +1266,19 @@ export const professionalCopyEs: VerticalCopy = {
   bookingPage: "página de agendamiento",
   publicBookingUrl: "URL pública de agendamiento",
   bookingWorkspace: "Espacio de clientes",
-  bookingSummary: "Resumen de la sesión",
-  manageBooking: "Gestionar sesión",
-  cancelBooking: "Cancelar sesión",
-  rescheduleBooking: "Reagendar sesión",
+  bookingSummary: "Resumen de la cita",
+  manageBooking: "Gestionar cita",
+  cancelBooking: "Cancelar cita",
+  rescheduleBooking: "Reagendar cita",
   bookFullDay: "Reservar día completo",
 
   phrases: {
     setupTitle: "Configure su página de agendamiento",
     setupDoneTitle: "Su página de agendamiento está lista",
     providerInfoBody:
-      "Estos datos alimentan las confirmaciones de sesiones, la marca y su URL pública de agendamiento.",
+      "Estos datos alimentan las confirmaciones de citas, la marca y su URL pública de agendamiento.",
     availabilityBody:
-      "Las sesiones con horario generan horarios reales a partir de estas ventanas. Los compromisos de día completo solo necesitan que el día de la semana esté habilitado y libre de conflictos.",
+      "Las citas con horario generan horarios reales a partir de estas ventanas. Los compromisos de día completo solo necesitan que el día de la semana esté habilitado y libre de conflictos.",
 
     addServiceFirstError:
       "Agregue al menos un servicio antes de publicar su página de agendamiento.",
@@ -1287,11 +1287,11 @@ export const professionalCopyEs: VerticalCopy = {
     keepOneServiceError:
       "Conserve al menos un servicio. Agregue otro antes de eliminar este.",
     cancelActiveFirstError:
-      "Cancele las sesiones activas de este servicio antes de eliminarlo.",
+      "Cancele las citas activas de este servicio antes de eliminarlo.",
     enableWeekdayError:
-      "Habilite al menos un día de la semana para que los clientes puedan agendar sesiones.",
-    chooseServiceFirstError: "Elija un servicio antes de confirmar la sesión.",
-    pickDateFirstError: "Elija una fecha antes de confirmar la sesión.",
+      "Habilite al menos un día de la semana para que los clientes puedan agendar citas.",
+    chooseServiceFirstError: "Elija un servicio antes de confirmar la cita.",
+    pickDateFirstError: "Elija una fecha antes de confirmar la cita.",
     clientFieldsRequiredError:
       "El nombre, el correo electrónico y el número de teléfono del cliente son obligatorios.",
 
@@ -1302,71 +1302,71 @@ export const professionalCopyEs: VerticalCopy = {
     selectCapacityCta: "Tomar un lugar",
     beforeVisitLabel: "Antes de su cita:",
     bringWithYouLabel: "Qué llevar",
-    holdReassurance: "Esta sesión queda apartada mientras termina.",
+    holdReassurance: "Esta cita queda apartada mientras termina.",
     whatHappensNext: "Puede enviarnos lo que quiera que revisemos después de reservar. Reagende desde su enlace privado cuando lo necesite.",
     chooseServiceBody:
-      "Cada tarjeta muestra si agenda una sesión con horario o reserva un día completo.",
+      "Cada tarjeta muestra si agenda una cita con horario o reserva un día completo.",
     onlyOneServiceBody:
       "Solo hay un servicio disponible, por lo que este paso se omite automáticamente.",
     serviceUnavailableBody:
       "Este horario podría liberarse, pero aún puede intentar agendarlo.",
-    notesPlaceholder: "¿Algo que debamos saber antes de su sesión?",
+    notesPlaceholder: "¿Algo que debamos saber antes de su cita?",
     bookingSummaryBodyReview:
-      "Revise aquí los detalles de la sesión en tiempo real antes de confirmar.",
+      "Revise aquí los detalles de la cita en tiempo real antes de confirmar.",
     bookingSummaryBodySuccess:
-      "Los detalles de la sesión confirmada permanecen visibles aquí.",
+      "Los detalles de la cita confirmada permanecen visibles aquí.",
     aboutServiceTitle: "Acerca del servicio",
     serviceDetailsTitle: "Detalles del servicio",
 
-    upcomingTitle: "Próximas sesiones",
-    upcomingEmptyTitle: "No hay sesiones en los próximos 7 días",
-    upcomingEmptyBody: "Las nuevas sesiones aparecen aquí automáticamente.",
-    allBookingsTitle: "Todas las sesiones",
-    noBookingsMatchTitle: "Ninguna sesión coincide con los filtros actuales",
-    bookingsSoonDetail: "Sesiones programadas próximamente",
-    activeBookingsDetail: "Sesiones actualmente activas",
-    totalBookingsLabel: "Total de sesiones",
+    upcomingTitle: "Próximas citas",
+    upcomingEmptyTitle: "No hay citas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas citas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las citas",
+    noBookingsMatchTitle: "Ninguna cita coincide con los filtros actuales",
+    bookingsSoonDetail: "Citas programadas próximamente",
+    activeBookingsDetail: "Citas actualmente activas",
+    totalBookingsLabel: "Total de citas",
     servicesStatDetail: "Ofertas con horario y de día completo",
     searchPlaceholder: "Buscar cliente, servicio, correo o teléfono",
 
-    addBookingHint: "Haga clic en un día disponible para agregar una sesión.",
+    addBookingHint: "Haga clic en un día disponible para agregar una cita.",
 
     cancelExplain: "Cancelar libera el horario de inmediato.",
-    keepBookingButton: "Conservar sesión",
-    cancelBookingButton: "Cancelar sesión",
+    keepBookingButton: "Conservar cita",
+    cancelBookingButton: "Cancelar cita",
     tryBookingButton: "Intentar agendar",
 
-    loadingBookingTitle: "Cargando su sesión…",
-    bookingNotFoundTitle: "No encontramos esta sesión en este dispositivo",
+    loadingBookingTitle: "Cargando su cita…",
+    bookingNotFoundTitle: "No encontramos esta cita en este dispositivo",
     bookingNotFoundBody:
-      "Las sesiones se almacenan localmente en el navegador en el que se agendaron. Si agendó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la sesión ya no es accesible desde este dispositivo.",
-    bookNewButton: "Agendar una nueva sesión",
+      "Las citas se almacenan localmente en el navegador en el que se agendaron. Si agendó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la cita ya no es accesible desde este dispositivo.",
+    bookNewButton: "Agendar una nueva cita",
 
     serviceEditorBody:
-      "Cada servicio es una sesión con horario o un compromiso de día completo. La capacidad y las notas permanecen visibles durante el agendamiento.",
+      "Cada servicio es una cita con horario o un compromiso de día completo. La capacidad y las notas permanecen visibles durante el agendamiento.",
     noServicesTitle: "Aún no hay servicios",
     noServicesBody:
-      "Agregue un servicio para que los clientes puedan comenzar a agendar sesiones.",
+      "Agregue un servicio para que los clientes puedan comenzar a agendar citas.",
     serviceDescPlaceholder:
-      "Explique en una o dos líneas qué incluye la sesión.",
+      "Explique en una o dos líneas qué incluye la cita.",
     newServiceEyebrow: "Nuevo servicio",
     editServiceEyebrow: "Editar servicio",
     newServiceTitle: "Agregar un servicio",
     editServiceTitle: "Actualizar este servicio",
     addServiceButton: "Agregar servicio",
     saveServiceButton: "Guardar servicio",
-    typeOfServiceLabel: "Tipo de sesión",
+    typeOfServiceLabel: "Tipo de cita",
 
     clientLabel: "Cliente",
 
-    scanQrBody: "Escanee para abrir esta sesión o presente el código al administrador.",
-    calendarQrLabel: "Código QR privado de esta sesión",
+    scanQrBody: "Escanee para abrir esta cita o presente el código al administrador.",
+    calendarQrLabel: "Código QR privado de esta cita",
 
     eventDateLabel: "Fecha y hora",
-    singleOccurrenceHelper: "Esta sesión ocurre en una sola fecha fija.",
+    singleOccurrenceHelper: "Esta cita ocurre en una sola fecha fija.",
     spotsLeftSuffix: "lugares disponibles",
     fullyBookedLabel: "Cupo lleno",
-    pickEventDateError: "Elija una fecha antes de publicar esta sesión.",
+    pickEventDateError: "Elija una fecha antes de publicar esta cita.",
     pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio.",
     maxSpotsRequiredError: "Establezca el número máximo de lugares.",
   },
