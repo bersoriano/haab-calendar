@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { HomeExperience } from "@/components/home-experience";
+import {
+  buildLandingJsonLd,
+  buildLandingMetadata,
+  serializeJsonLd,
+} from "@/components/landing/seo";
 import { getServerLanguage } from "@/lib/language/server";
 import type { LandingVertical } from "@/components/landing/landing-ui";
 import { isGuestPublishResume } from "@/lib/guest-builder";
@@ -30,6 +36,14 @@ type HomePageProps = {
   }>;
 };
 
+// In the language the page renders in, resolved exactly as the page resolves
+// it, so the title, canonical URL and previews describe the version served.
+export async function generateMetadata({ searchParams }: HomePageProps): Promise<Metadata> {
+  const { lang } = await searchParams;
+
+  return buildLandingMetadata(await getServerLanguage(lang));
+}
+
 export default async function Home({ searchParams }: HomePageProps) {
   const { lang, vertical, name, resumePublish, tab, checkout } = await searchParams;
   const load = await loadDashboard();
@@ -52,19 +66,27 @@ export default async function Home({ searchParams }: HomePageProps) {
   const resolvedLanguage = await getServerLanguage(lang);
 
   return (
-    <HomeExperience
-      loggedIn={load.loggedIn}
-      configured={load.configured}
-      email={load.email}
-      isSuperAdmin={load.isSuperAdmin}
-      initialLanguage={resolvedLanguage}
-      featuredDemos={pickFeaturedDemos()}
-      initialVertical={parseVertical(vertical)}
-      initialPageName={name}
-      dashboardStore={load.dashboardStore}
-      publicationStatus={load.publicationStatus}
-      resumeGuestPublish={isGuestPublishResume(resumePublish)}
-      viewerLanguage={resolvedLanguage}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: serializeJsonLd(buildLandingJsonLd(resolvedLanguage)),
+        }}
+      />
+      <HomeExperience
+        loggedIn={load.loggedIn}
+        configured={load.configured}
+        email={load.email}
+        isSuperAdmin={load.isSuperAdmin}
+        initialLanguage={resolvedLanguage}
+        featuredDemos={pickFeaturedDemos()}
+        initialVertical={parseVertical(vertical)}
+        initialPageName={name}
+        dashboardStore={load.dashboardStore}
+        publicationStatus={load.publicationStatus}
+        resumeGuestPublish={isGuestPublishResume(resumePublish)}
+        viewerLanguage={resolvedLanguage}
+      />
+    </>
   );
 }

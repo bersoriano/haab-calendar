@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { landingAlternateLanguages, landingUrl } from "@/components/landing/seo";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
 import { buildAbsoluteUrl } from "@/lib/site-url";
 
@@ -14,8 +15,16 @@ import { buildAbsoluteUrl } from "@/lib/site-url";
  * silently. Add them here once that flag exists.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
+  // Both language versions of the landing page, each carrying the full
+  // hreflang set: an annotation only counts when every version confirms it.
+  const landing = (["en", "es"] as const).map((lang) => ({
+    url: landingUrl(lang),
+    changeFrequency: "weekly" as const,
+    priority: 1,
+    alternates: { languages: landingAlternateLanguages() },
+  }));
+
   const paths = [
-    "/",
     "/gallery",
     "/login",
     // Reachable by more than readers: Google's OAuth review fetches these while
@@ -25,9 +34,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...DEMO_PAGES.map(getDemoPagePath),
   ];
 
-  return paths.map((path) => ({
-    url: buildAbsoluteUrl(path),
-    changeFrequency: "weekly" as const,
-    priority: path === "/" ? 1 : 0.6,
-  }));
+  return [
+    ...landing,
+    ...paths.map((path) => ({
+      url: buildAbsoluteUrl(path),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
+  ];
 }

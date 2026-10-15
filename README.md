@@ -232,10 +232,17 @@ own.
 in production. Almost nothing reads it: request-time code derives its own origin
 from the request, which is right on every host. It is consulted only where no
 request exists or where a *stable* answer is the point — `metadataBase`,
-`sitemap.xml`, `robots.txt`, and the canonical `<link>` on public booking pages.
+`sitemap.xml`, `robots.txt`, the canonical and hreflang `<link>`s on the landing
+and public booking pages, the landing page's structured data, and the link-preview
+images at `/social-card/en.png` and `/social-card/es.png`, which print the host.
 Unset, it falls back to Vercel's own production domain, then to
-`https://haabcalendar.com`. `robots.txt` and `sitemap.xml` are prerendered, so
-this is read at **build** time: changing it needs a redeploy, not a restart.
+`https://haabcalendar.com`. `robots.txt`, `sitemap.xml` and the preview images
+are prerendered, so this is read at **build** time: changing it needs a redeploy,
+not a restart.
+
+The favicon, the Apple touch icon and the web-manifest icons are PNGs rendered
+from `app/icon.svg`. After editing that file, run `node scripts/generate-icons.mjs`
+and commit what it writes.
 
 ### Moving to a different domain
 
