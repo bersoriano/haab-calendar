@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- The landing logo tile: the H on blue, with the teal status dot cut out of
+       the corner so it reads on any tab colour. favicon.ico, apple-icon.png
+       and the manifest PNGs are rendered from this file by
+       scripts/generate-icons.mjs. -->
+  <defs>
+    <mask id="cut">
+      <rect width="64" height="64" fill="#fff"/>
+      <circle cx="54" cy="10" r="11" fill="#000"/>
+    </mask>
+  </defs>
+  <g mask="url(#cut)">
+    <rect x="2" y="6" width="56" height="56" rx="16" fill="#1a6be0"/>
+    <path fill="#fff" d="M19 21h7v10h8V21h7v26h-7V37h-8v10h-7z"/>
+  </g>
+  <circle cx="54" cy="10" r="7" fill="#1fd1b2"/>
+</svg>
