@@ -332,9 +332,12 @@ export function HeroBookingPreview({ className = "" }: { className?: string }) {
       <div className="space-y-3.5 p-4 sm:space-y-4 sm:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight text-[var(--ink)] sm:text-xl">
+            {/* Not a heading: a sample business's name is not a section of
+                this page, and as the first heading after the H1 it would be
+                what the page outline says comes first. */}
+            <p className="text-lg font-semibold tracking-tight text-[var(--ink)] sm:text-xl">
               {PREVIEW_PROVIDER_NAME}
-            </h2>
+            </p>
             <p className="mt-0.5 truncate text-xs text-[var(--muted)] sm:text-sm">
               {copy.providerMeta}
             </p>
