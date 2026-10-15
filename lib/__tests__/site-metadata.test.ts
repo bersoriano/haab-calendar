@@ -31,12 +31,27 @@ describe("root metadata", () => {
   it("keeps the product name and description", () => {
     const metadata = buildRootMetadata();
 
-    expect(metadata.title).toBe("Haab Calendar");
+    expect(metadata.title).toMatchObject({ default: "Haab Calendar" });
     expect(metadata.description).toContain("booking");
   });
 
-  it("announces the canonical domain to social crawlers", () => {
-    expect(buildRootMetadata().openGraph?.url).toBe("https://haabcalendar.com");
+  it("lets each page name itself, with the brand after it", () => {
+    expect(buildRootMetadata().title).toMatchObject({ template: "%s · Haab Calendar" });
+  });
+
+  it("leaves og:url to each page, so a shared booking page is not previewed as the home page", () => {
+    // Every page inherits the root's openGraph object; Facebook reads og:url
+    // as the page's identity.
+    expect(buildRootMetadata().openGraph).not.toHaveProperty("url");
+  });
+
+  it("gives every page a large link-preview image", () => {
+    const metadata = buildRootMetadata();
+
+    expect(metadata.openGraph?.images).toEqual([
+      expect.objectContaining({ url: "/social-card/en.png", width: 1200, height: 630 }),
+    ]);
+    expect(metadata.twitter).toMatchObject({ card: "summary_large_image" });
   });
 });
 

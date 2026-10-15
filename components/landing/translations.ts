@@ -134,10 +134,21 @@ export const translations = {
       confirmationExpired:
         "El enlace de confirmación venció o ya fue utilizado. Intenta iniciar sesión; si no funciona, crea la cuenta de nuevo.",
     },
+    // What search engines and link previews say about the landing page. The
+    // title also leads the hero's H1 (`hero.kicker`), so the words a search
+    // matched are the first words a visitor reads.
+    seo: {
+      title: "Página de reservas en línea para negocios",
+      description:
+        "Publica tu página de reservas en minutos. Tus clientes reservan con horarios en vivo, sin crear cuenta y sin reservas duplicadas. Gratis en acceso anticipado.",
+      socialImageAlt:
+        "Haab Calendar: un enlace, sin registrarse, sin reservas duplicadas. Una página de reservas con horarios en vivo y un apartado de 10 minutos.",
+    },
     hero: {
       badge: "Acceso anticipado",
       badgeText: "Gratis durante el acceso anticipado · Sin tarjeta",
       badgeTextShort: "Gratis · Sin tarjeta",
+      kicker: "Página de reservas en línea para negocios",
       titleLines: ["Un enlace.", "Sin registrarse.", "Sin reservas duplicadas."],
       title: "Un enlace. Sin registrarse. Sin reservas duplicadas.",
       body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus pacientes y clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
@@ -623,10 +634,21 @@ export const translations = {
       confirmationExpired:
         "That confirmation link is expired or has already been used. Try signing in below; if it does not work, create the account again.",
     },
+    // What search engines and link previews say about the landing page. The
+    // title also leads the hero's H1 (`hero.kicker`), so the words a search
+    // matched are the first words a visitor reads.
+    seo: {
+      title: "Online booking page for small businesses",
+      description:
+        "Publish an online booking page in minutes. Clients book live availability without an account, and no time gets double-booked. Free during early access.",
+      socialImageAlt:
+        "Haab Calendar: one link, no sign-up, no double bookings. A booking page with live times and a 10-minute hold.",
+    },
     hero: {
       badge: "Early access",
       badgeText: "Free while in early access · No card",
       badgeTextShort: "Free · No card",
+      kicker: "Online booking page for small businesses",
       titleLines: ["One link.", "No sign-up.", "No double bookings."],
       title: "One link. No sign-up. No double bookings.",
       body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your patients and clients never make an account — and you never confirm a time by hand.",

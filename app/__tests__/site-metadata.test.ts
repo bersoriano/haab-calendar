@@ -69,6 +69,27 @@ describe("sitemap.xml", () => {
     expect(sitemap().every((entry) => !entry.url.includes("/manage/"))).toBe(true);
   });
 
+  it("lists both language versions of the landing page", () => {
+    const urls = sitemap().map((entry) => entry.url);
+
+    expect(urls).toContain("https://haabcalendar.com/?lang=es");
+  });
+
+  it("annotates both landing versions with the full reciprocal hreflang set", () => {
+    const landing = sitemap().filter((entry) =>
+      ["https://haabcalendar.com/", "https://haabcalendar.com/?lang=es"].includes(entry.url),
+    );
+
+    expect(landing).toHaveLength(2);
+    for (const entry of landing) {
+      expect(entry.alternates?.languages).toEqual({
+        en: "https://haabcalendar.com/",
+        es: "https://haabcalendar.com/?lang=es",
+        "x-default": "https://haabcalendar.com/",
+      });
+    }
+  });
+
   it("lists each URL once, so crawl budget is not spent on duplicates", () => {
     const urls = sitemap().map((entry) => entry.url);
 

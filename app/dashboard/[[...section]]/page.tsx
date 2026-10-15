@@ -37,7 +37,8 @@ export async function generateMetadata({ params }: DashboardPageProps): Promise<
 
   return {
     // The client retitles in the owner's language and words after hydration.
-    title: section ? `${META_TITLES[section]} · Haab Calendar` : "Haab Calendar",
+    // The root template adds " · Haab Calendar".
+    title: section ? META_TITLES[section] : undefined,
     robots: { index: false, follow: false },
   };
 }

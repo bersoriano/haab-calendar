@@ -9,7 +9,8 @@ import { loadOrNotFound } from "./load";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Super admin · Haab Calendar",
+  // The root template adds " · Haab Calendar".
+  title: "Super admin",
   robots: { index: false, follow: false },
 };
 

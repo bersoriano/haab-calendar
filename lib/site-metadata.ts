@@ -7,6 +7,19 @@ import {
   parsePublicVerticalSegment,
 } from "@/lib/public-url";
 import { buildAbsoluteUrl, getSiteOrigin } from "@/lib/site-url";
+import type { Lang } from "@/lib/types";
+
+export const SITE_NAME = "Haab Calendar";
+
+const SITE_DESCRIPTION =
+  "Haab Calendar is booking software for small businesses. Publish a booking page, take appointments without client accounts, and optionally sync confirmed bookings to your own Google Calendar.";
+
+/** The link-preview image, one per language; see app/social-card/[image]/route.tsx. */
+export const SOCIAL_CARD_SIZE = { width: 1200, height: 630 } as const;
+
+export function socialCardPath(lang: Lang): string {
+  return `/social-card/${lang}.png`;
+}
 
 /**
  * Metadata that has to name the site's own domain.
@@ -22,6 +35,14 @@ export function buildRootMetadata(): Metadata {
   // TXT record verifies the whole domain instead and is the better option when
   // subdomains need to be covered too — see README.
   const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined;
+  // Every page that does not choose its own still gets a preview image rather
+  // than a bare link.
+  const socialCard = {
+    url: socialCardPath("en"),
+    ...SOCIAL_CARD_SIZE,
+    type: "image/png",
+    alt: SITE_NAME,
+  };
 
   return {
     ...(googleVerification ? { verification: { google: googleVerification } } : {}),
@@ -29,16 +50,26 @@ export function buildRootMetadata(): Metadata {
     // Graph images — resolves against whatever host served the request, so a
     // preview deployment advertises itself as the canonical site.
     metadataBase: new URL(origin),
-    title: "Haab Calendar",
-    description:
-      "Haab Calendar is booking software for small businesses. Publish a booking page, take appointments without client accounts, and optionally sync confirmed bookings to your own Google Calendar.",
+    // A page names itself and the brand follows. The landing page leads with
+    // what people search for, not with a name they do not know yet.
+    title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
+    applicationName: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    // No `url` here. Every page inherits this object, and Facebook treats
+    // og:url as the page's identity: a site-wide value previews every shared
+    // booking page as the home page. Without one, the fetched URL is used.
     openGraph: {
       type: "website",
-      siteName: "Haab Calendar",
-      url: origin,
-      title: "Haab Calendar",
-      description:
-        "Haab Calendar is booking software for small businesses. Publish a booking page, take appointments without client accounts, and optionally sync confirmed bookings to your own Google Calendar.",
+      siteName: SITE_NAME,
+      title: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      images: [socialCard],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: SITE_NAME,
+      description: SITE_DESCRIPTION,
+      images: [socialCard],
     },
   };
 }

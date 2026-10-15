@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, List, Minus, Plus } from "@phosphor-icons/react";
 import {
+  Fragment,
   createContext,
   useContext,
   useEffect,
@@ -525,8 +526,21 @@ export function Hero() {
               "flex flex-col gap-0.5 text-[38px] font-bold leading-none tracking-[-0.035em] text-[var(--lp-ink)] sm:text-[44px] lg:gap-1 lg:text-[56px] xl:text-[66px]",
             )}
           >
-            <span>{lineOne}</span>
-            <span>{lineTwo}</span>
+            {/* What the product is, in the words people search for. The lines
+                below are the pitch; this is what makes the heading match a
+                query. The spaces between the spans are for text extraction:
+                flex ignores them on screen, but without them search engines
+                and screen readers read "One link.No sign-up." */}
+            <span
+              className={cn(
+                lpBody,
+                "mb-2 text-[15px] font-semibold leading-[1.35] tracking-normal text-[var(--lp-teal-700)] lg:mb-3 lg:text-[18px]",
+              )}
+            >
+              {t.hero.kicker}
+            </span>{" "}
+            <span>{lineOne}</span>{" "}
+            <span>{lineTwo}</span>{" "}
             <span className="relative self-start text-[var(--lp-teal-600)]">
               {lineThree}
               <HeadlineUnderline />
@@ -723,10 +737,11 @@ export function FinalCTA() {
                 "text-[44px] font-bold leading-none tracking-[-0.04em] lg:text-[72px]",
               )}
             >
+              {/* Spaced for text extraction, as in the hero heading. */}
               {t.finalCta.titleLines.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
+                <Fragment key={line}>
+                  <span className="block">{line}</span>{" "}
+                </Fragment>
               ))}
             </h2>
             <p className="text-[17px] leading-[1.5] text-[var(--lp-mint-100)] lg:text-[20px]">
