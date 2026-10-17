@@ -40,7 +40,7 @@ import type {
 } from "@/lib/types";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
 const BOOKING_SELECT =
@@ -59,6 +59,8 @@ type ProviderRow = {
   language: "en" | "es" | null;
   dashboard_language: "en" | "es" | null;
   public_theme: string | null;
+  public_footer_text?: string | null;
+  public_footer_url?: string | null;
   timezone: string;
   booking_window_days: number;
   max_bookings_per_day: number | null;
@@ -277,6 +279,8 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
       : undefined,
     language: row.language === "es" ? "es" : "en",
     publicTheme: normalizePublicTheme(row.public_theme),
+    publicFooterText: row.public_footer_text ?? undefined,
+    publicFooterUrl: row.public_footer_url ?? undefined,
     dashboardLanguage:
       row.dashboard_language === "es" || row.dashboard_language === "en"
         ? row.dashboard_language

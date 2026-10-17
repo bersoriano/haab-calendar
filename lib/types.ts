@@ -76,6 +76,9 @@ export type ProviderInfo = {
    * See lib/public-theme.ts.
    */
   publicTheme?: PublicTheme;
+  /** Public booking attribution. Effective public values are entitlement-filtered by the database view. */
+  publicFooterText?: string;
+  publicFooterUrl?: string;
   /**
    * IANA zone the provider's hours are stated in, e.g. "America/Mexico_City".
    * "" means never chosen; the column defaults to "UTC", which is stored but

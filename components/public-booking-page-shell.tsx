@@ -1,7 +1,10 @@
+"use client";
+
 import { HaabBookingModule } from "@/components/haab-booking-module";
+import { PublicBookingFooter } from "@/components/booking/PublicBookingFooter";
 import { getPublicThemeStyle } from "@/lib/public-theme";
-import type { CSSProperties } from "react";
-import type { InjectedConfig, Lang } from "@/lib/types";
+import { useCallback, useState, type CSSProperties } from "react";
+import type { InjectedConfig, Lang, ModuleStore } from "@/lib/types";
 
 type PublicBookingPageShellProps = {
   injectedConfig?: Partial<InjectedConfig>;
@@ -21,10 +24,19 @@ export function PublicBookingPageShell({
   providerTimeZone,
 }: PublicBookingPageShellProps) {
   const theme = getPublicThemeStyle(injectedConfig?.provider?.publicTheme);
+  const [standaloneFooter, setStandaloneFooter] = useState<{ publicFooterText?: string; publicFooterUrl?: string }>({});
+  const onStoreChange = useCallback((store: ModuleStore) => {
+    setStandaloneFooter((current) =>
+      current.publicFooterText === store.provider.publicFooterText && current.publicFooterUrl === store.provider.publicFooterUrl
+        ? current
+        : { publicFooterText: store.provider.publicFooterText, publicFooterUrl: store.provider.publicFooterUrl },
+    );
+  }, []);
+  const footerProvider = injectedConfig?.provider ?? standaloneFooter;
 
   return (
-    <main
-      className="relative isolate min-h-screen overflow-x-clip"
+    <div
+      className="relative isolate flex min-h-screen flex-col overflow-x-clip"
       // A theme is a set of custom-property overrides on this one element;
       // everything below styles itself from the same tokens either way, so
       // "default" is the page untouched.
@@ -42,7 +54,7 @@ export function PublicBookingPageShell({
             : "linear-gradient(180deg,rgba(255,255,255,0.42),rgba(248,249,250,0))",
         }}
       />
-      <div className="relative mx-auto flex w-full max-w-[1680px] flex-1 px-4 pt-0 pb-2 sm:px-6 lg:px-10">
+      <main className="relative mx-auto flex w-full max-w-[1680px] flex-1 px-4 pt-0 pb-2 sm:px-6 lg:px-10">
         <HaabBookingModule
           injectedConfig={injectedConfig}
           requestedPublicSlug={requestedPublicSlug}
@@ -51,8 +63,10 @@ export function PublicBookingPageShell({
           manageBookingToken={manageBookingToken}
           initialPublicLanguage={initialPublicLanguage}
           providerTimeZone={providerTimeZone}
+          onStoreChange={onStoreChange}
         />
-      </div>
-    </main>
+      </main>
+      <PublicBookingFooter text={footerProvider.publicFooterText} url={footerProvider.publicFooterUrl} />
+    </div>
   );
 }

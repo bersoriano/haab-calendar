@@ -128,7 +128,7 @@ describe("UserPublicationTable", () => {
 
     expect(html).toMatch(/>Features<span class="sr-only"> for new-user@example.com<\/span><\/button>/);
     expect(html).toContain("free plan");
-    expect(html).toContain("0 of 6 features on");
+    expect(html).toContain("0 of 7 features on");
   });
 
   it("says when a search matches nobody", () => {

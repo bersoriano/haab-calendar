@@ -310,6 +310,9 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     // Rebuilt field by field like the booking normalizer, so anything omitted
     // here never reaches the page.
     publicTheme: normalizePublicTheme(source?.publicTheme),
+    // Preserve in-progress typing; trim only when displaying or persisting.
+    publicFooterText: source?.publicFooterText?.slice(0, 200),
+    publicFooterUrl: source?.publicFooterUrl,
     timezone: normalizeTimeZone(source?.timezone),
     maxBookingsPerDay: normalizeDailyBookingLimit(source?.maxBookingsPerDay) ?? undefined,
     keepBookingHistoryOneYear: source?.keepBookingHistoryOneYear === true,
