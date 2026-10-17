@@ -13,6 +13,7 @@ import {
 } from "@/components/app-ui";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
+import { BookingFooterSettings } from "@/components/provider/BookingFooterSettings";
 import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
@@ -105,6 +106,12 @@ export function ProviderSettingsSurface({
           {onDashboardLanguageChange ? (
             <FormSection title={shell.workspaceLanguageTitle}>
               <DashboardLanguageField lang={lang} onChange={onDashboardLanguageChange} />
+            </FormSection>
+          ) : null}
+
+          {integratedMode && canPersist ? (
+            <FormSection title={lang === "es" ? "Pie de página de reservas" : "Booking page footer"}>
+              <BookingFooterSettings provider={provider} entitlements={entitlements} lang={lang} disabled={disabled} onChange={onProviderChange} />
             </FormSection>
           ) : null}
 

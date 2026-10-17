@@ -44,6 +44,21 @@ function render(
 }
 
 describe("ProviderSettingsSurface", () => {
+  it("offers footer text and destination editing to premium accounts", () => {
+    const html = render({ entitlements: resolveEntitlements({ providerId: "p", planTier: "premium", overrides: [] }) });
+    expect(html).toContain('name="publicFooterText"');
+    expect(html).toContain('name="publicFooterUrl"');
+    expect(html).toContain('value="https://haabcalendar.com"');
+    expect(html.match(/<input[^>]*name="publicFooterText"[^>]*>/)?.[0]).not.toContain('disabled=""');
+  });
+
+  it("locks footer customization when premium access is absent", () => {
+    const html = render();
+    expect(html).toContain("Premium");
+    expect(html.match(/<input[^>]*name="publicFooterText"[^>]*>/)?.[0]).toContain('disabled=""');
+    expect(html.match(/<input[^>]*name="publicFooterUrl"[^>]*>/)?.[0]).toContain('disabled=""');
+  });
+
   it("renders the provider information form", () => {
     const html = render();
 

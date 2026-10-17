@@ -6,6 +6,7 @@ import { getProviderDashboardStore } from "@/lib/supabase/bookings";
 import { getServiceSlug } from "@/lib/public-url";
 import { normalizeAvailability, normalizeProvider, normalizeServices } from "@/lib/store";
 import { normalizePublicTheme } from "@/lib/public-theme";
+import { isBookingFooterUrl } from "@/lib/booking-footer";
 import { normalizeDailyBookingLimit } from "@/lib/availability";
 import { normalizeTimeZone, UNSET_TIME_ZONE } from "@/lib/timezone";
 import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from "@/lib/types";
@@ -14,6 +15,11 @@ const PROVIDER_ID_SELECT = "id";
 const SERVICE_SELECT = "id, slug";
 
 function assertRetentionWriteAllowed(error: unknown) {
+  if (error && typeof error === "object" &&
+    (error as { code?: unknown }).code === "42501" &&
+    (error as { message?: unknown }).message === "Custom booking footer requires Premium access.") {
+    throw new ProviderStoreWriteError("Custom booking footer requires Premium access.", 403, error);
+  }
   if (error && typeof error === "object" &&
     (error as { code?: unknown }).code === "42501" &&
     (error as { message?: unknown }).message === "One-year booking history requires Premium access.") {
@@ -201,6 +207,9 @@ async function upsertProvider(options: {
   const profileRole = vertical === "events" ? "organizer" : "provider";
   const profileRoleTitle = profileRole === "organizer" ? "Organizer" : "Provider";
   const existingProviderId = await getProviderByOwner(options.supabase, options.ownerUserId);
+  if (provider.publicFooterUrl?.trim() && !isBookingFooterUrl(provider.publicFooterUrl.trim())) {
+    throw new ProviderStoreWriteError("Enter a valid http:// or https:// footer link without a username or password.", 400);
+  }
   const email = requireText(
     provider.email || options.ownerEmail || "",
     `${profileRoleTitle} email is required.`,
@@ -213,6 +222,8 @@ async function upsertProvider(options: {
     language: provider.language,
     dashboard_language: provider.dashboardLanguage ?? null,
     public_theme: normalizePublicTheme(provider.publicTheme),
+    public_footer_text: trimOptional(provider.publicFooterText),
+    public_footer_url: trimOptional(provider.publicFooterUrl),
     // The column is not null; an unchosen zone stores the default rather than
     // failing the save, and reads back as unset.
     timezone: normalizeTimeZone(provider.timezone) || UNSET_TIME_ZONE,

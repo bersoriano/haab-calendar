@@ -1,7 +1,7 @@
 import { expect, test, type Cookie, type Locator, type Page } from "@playwright/test";
 
 import { localAdminClient } from "./fixtures/local-supabase";
-import { authStatePath, E2E_PASSWORD } from "./fixtures/providers";
+import { authStatePath, E2E_PASSWORD, providerFor } from "./fixtures/providers";
 import { DEFAULT_STORAGE_KEY } from "../lib/constants";
 
 /**
@@ -383,6 +383,73 @@ for (const navCase of CASES) {
           await expect(control.find(nav), `${control.label} should not be offered`).toHaveCount(0);
         }
       });
+    }
+  });
+}
+
+// Footer links are public navigation too: verify visible attribution and its
+// destination on both page widths, including service and manage URLs.
+for (const width of WIDTHS) {
+  test(`public footer links to Haab at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    const seed = providerFor("free");
+    const { data: service, error } = await localAdminClient().from("services")
+      .select("slug").eq("provider_id", seed.providerId).single();
+    if (error) throw error;
+    for (const path of [`/doctors/${seed.slug}`, `/doctors/${seed.slug}/${service.slug}`, `/doctors/${seed.slug}/manage/invalid-token`]) {
+      await page.goto(path);
+      const footer = page.getByRole("contentinfo");
+      await expect(footer).toContainText("This booking was brought to you by haabcalendar.com");
+      const attribution = footer.getByRole("link", { name: "haabcalendar.com", exact: true });
+      await attribution.scrollIntoViewIfNeeded();
+      await expectUsable(attribution, "Haab booking attribution");
+      await expect(attribution).toHaveAttribute("href", "https://haabcalendar.com");
+      await expectNoSidewaysScroll(page);
+    }
+  });
+
+  test(`premium public footer uses saved branding at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    const seed = providerFor("billingPremium");
+    const admin = localAdminClient();
+    const { error } = await admin.from("providers").update({
+      public_footer_text: "Booked with Acme", public_footer_url: "https://acme.example/book",
+    }).eq("id", seed.providerId);
+    if (error) throw error;
+    try {
+      const { data: service, error: serviceError } = await admin.from("services")
+        .select("slug").eq("provider_id", seed.providerId).single();
+      if (serviceError) throw serviceError;
+      for (const path of [`/doctors/${seed.slug}`, `/doctors/${seed.slug}/${service.slug}`, `/doctors/${seed.slug}/manage/invalid-token`]) {
+        await page.goto(path);
+        const footer = page.getByRole("contentinfo");
+        await expect(footer).toContainText("Booked with Acme acme.example");
+        const attribution = footer.getByRole("link", { name: "acme.example", exact: true });
+        await attribution.scrollIntoViewIfNeeded();
+        await expectUsable(attribution, "Premium booking attribution");
+        await expect(attribution).toHaveAttribute("href", "https://acme.example/book");
+        await expectNoSidewaysScroll(page);
+      }
+    } finally {
+      const { error: resetError } = await admin.from("providers").update({ public_footer_text: null, public_footer_url: null }).eq("id", seed.providerId);
+      if (resetError) throw resetError;
+    }
+  });
+
+  test(`standalone footer follows hydrated settings at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    await page.addInitScript(([key, value]) => window.localStorage.setItem(key, value), [DEFAULT_STORAGE_KEY, JSON.stringify({
+      ...draft, provider: { ...draft.provider, publicFooterText: "Booked with Acme", publicFooterUrl: "https://acme.example/book" },
+    })]);
+    for (const path of ["/public/nav-draft-clinic", "/public/nav-draft-clinic/manage/invalid-token"]) {
+      await page.goto(path);
+      const footer = page.getByRole("contentinfo");
+      await expect(footer).toContainText("Booked with Acme acme.example");
+      const attribution = footer.getByRole("link", { name: "acme.example", exact: true });
+      await attribution.scrollIntoViewIfNeeded();
+      await expectUsable(attribution, "Standalone booking attribution");
+      await expect(attribution).toHaveAttribute("href", "https://acme.example/book");
+      await expectNoSidewaysScroll(page);
     }
   });
 }

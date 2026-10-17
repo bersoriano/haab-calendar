@@ -723,6 +723,14 @@ Exposes published provider data where `setup_complete = true`.
 | `header_image_url` | `ProviderInfo.headerImageUrl` |
 | `hero_text` | `ProviderInfo.heroText` |
 | `gallery_image_urls` | `ProviderInfo.galleryImageUrls` |
+| `public_footer_text` | `ProviderInfo.publicFooterText`; null unless custom booking footer access is active |
+| `public_footer_url` | `ProviderInfo.publicFooterUrl`; null unless custom booking footer access is active |
+
+Footer preferences are owner-editable columns on `providers`, guarded by a trigger
+using the `custom_booking_footer` entitlement. Premium includes this feature;
+active overrides take precedence over billing and the legacy plan. Public reads
+recheck access, so a downgrade or expired grant restores Haab attribution without
+erasing the saved preferences. URLs allow HTTP(S) only; blank fields use defaults.
 
 Usage example:
 

@@ -46,7 +46,7 @@ describe("ProviderFeatureOverrides", () => {
     expect(html).toMatch(/^<dialog/);
     expect(html).toMatch(/<h2[^>]*>Premium access<\/h2>/);
     expect(html).toContain("owner@example.com");
-    expect(html).toContain("0 of 6 enabled");
+    expect(html).toContain("0 of 7 enabled");
     expect(html).toContain('aria-label="Close"');
     expect(html).toContain("Custom URL slug");
     expect(html).toContain("Google Calendar sync");
@@ -116,7 +116,7 @@ describe("FeatureAccessSummary", () => {
 
     expect(html).toContain("free plan");
     // Says what is counted: this sits in the accounts row, away from the dialog.
-    expect(html).toContain("1 of 6 features on");
+    expect(html).toContain("1 of 7 features on");
   });
 });
 
