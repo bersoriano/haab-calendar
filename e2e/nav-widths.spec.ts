@@ -399,7 +399,7 @@ for (const width of WIDTHS) {
     for (const path of [`/doctors/${seed.slug}`, `/doctors/${seed.slug}/${service.slug}`, `/doctors/${seed.slug}/manage/invalid-token`]) {
       await page.goto(path);
       const footer = page.getByRole("contentinfo");
-      await expect(footer).toContainText("This booking was brought to you by haabcalendar.com");
+      await expect(footer).toContainText("This booking was brought to you by haabcalendar.com and developed by brilliant.dev");
       const attribution = footer.getByRole("link", { name: "haabcalendar.com", exact: true });
       await attribution.scrollIntoViewIfNeeded();
       await expectUsable(attribution, "Haab booking attribution");
@@ -424,6 +424,7 @@ for (const width of WIDTHS) {
         await page.goto(path);
         const footer = page.getByRole("contentinfo");
         await expect(footer).toContainText("Booked with Acme acme.example");
+        await expect(footer).not.toContainText("and developed by brilliant.dev");
         const attribution = footer.getByRole("link", { name: "acme.example", exact: true });
         await attribution.scrollIntoViewIfNeeded();
         await expectUsable(attribution, "Premium booking attribution");

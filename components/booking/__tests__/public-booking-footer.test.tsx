@@ -10,6 +10,7 @@ describe("public booking footer", () => {
     expect(html).toContain("This booking was brought to you by");
     expect(html).toContain('href="https://haabcalendar.com"');
     expect(html).toContain(">haabcalendar.com</a>");
+    expect(html).toContain("and developed by brilliant.dev");
     expect(html).toContain("<footer");
   });
 
@@ -18,6 +19,7 @@ describe("public booking footer", () => {
     expect(html).toContain("Booked with Acme");
     expect(html).toContain('href="https://acme.example/book"');
     expect(html).toContain(">acme.example</a>");
+    expect(html).not.toContain("and developed by brilliant.dev");
   });
 
   it.each(["javascript:alert(1)", "data:text/html,test", "//example.com", "https://user:pass@example.com"])("rejects unsafe custom URL %s", (url) => {

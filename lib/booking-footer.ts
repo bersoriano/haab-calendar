@@ -15,9 +15,12 @@ export function isBookingFooterUrl(value: string): boolean {
 export function normalizeBookingFooter(provider?: Pick<ProviderInfo, "publicFooterText" | "publicFooterUrl">) {
   const candidate = provider?.publicFooterUrl?.trim() ?? "";
   const url = isBookingFooterUrl(candidate) ? candidate : DEFAULT_BOOKING_FOOTER_URL;
+  const text = provider?.publicFooterText?.trim().slice(0, 200) || DEFAULT_BOOKING_FOOTER_TEXT;
+  const isDefault = text === DEFAULT_BOOKING_FOOTER_TEXT && new URL(url).href === new URL(DEFAULT_BOOKING_FOOTER_URL).href;
   return {
-    text: provider?.publicFooterText?.trim().slice(0, 200) || DEFAULT_BOOKING_FOOTER_TEXT,
+    text,
     url,
     label: new URL(url).hostname,
+    developerCredit: isDefault ? "and developed by brilliant.dev" : undefined,
   };
 }
