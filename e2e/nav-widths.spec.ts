@@ -404,6 +404,9 @@ for (const width of WIDTHS) {
       await attribution.scrollIntoViewIfNeeded();
       await expectUsable(attribution, "Haab booking attribution");
       await expect(attribution).toHaveAttribute("href", "https://haabcalendar.com");
+      const developer = footer.getByRole("link", { name: "brilliant.dev", exact: true });
+      await expectUsable(developer, "Developer attribution");
+      await expect(developer).toHaveAttribute("href", "https://brilliant.dev");
       await expectNoSidewaysScroll(page);
     }
   });
