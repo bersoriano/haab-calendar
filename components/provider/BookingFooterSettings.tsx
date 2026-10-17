@@ -40,7 +40,7 @@ export function BookingFooterSettings({ provider, entitlements, lang, disabled, 
       </Field>
       <div className="rounded-lg bg-app-subtle p-4 text-sm text-app-fg-muted">
         <p className="mb-2 font-semibold">{t.preview}</p>
-        <p className="break-words">{footer.text}{" "}<a className="underline underline-offset-4" href={footer.url}>{footer.label}</a>{footer.developerCredit ? <> {footer.developerCredit}</> : null}</p>
+        <p className="break-words">{footer.text}{" "}<a className="underline underline-offset-4" href={footer.url}>{footer.label}</a>{footer.developerCredit ? <> and developed by <a className="underline underline-offset-4" href="https://brilliant.dev">brilliant.dev</a></> : null}</p>
       </div>
     </div>
   );

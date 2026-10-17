@@ -49,7 +49,7 @@ describe("ProviderSettingsSurface", () => {
     expect(html).toContain('name="publicFooterText"');
     expect(html).toContain('name="publicFooterUrl"');
     expect(html).toContain('value="https://haabcalendar.com"');
-    expect(html).toContain("and developed by brilliant.dev");
+    expect(html).toContain('href="https://brilliant.dev"');
     expect(html.match(/<input[^>]*name="publicFooterText"[^>]*>/)?.[0]).not.toContain('disabled=""');
   });
 
