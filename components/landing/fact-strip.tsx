@@ -28,7 +28,7 @@ export function FactStrip() {
   const { t } = useLanguage();
 
   return (
-    <section className={cn(lpBody, "relative z-10 -mt-14 px-5 sm:px-8 lg:-mt-16")}>
+    <section data-landing-section="facts" className={cn(lpBody, "relative z-10 -mt-14 px-5 sm:px-8 lg:-mt-16")}>
       <div className="mx-auto grid max-w-[1200px] grid-cols-2 rounded-[22px] border border-[#e2ecea] bg-white shadow-[var(--lp-shadow-raised)] md:grid-cols-4 lg:rounded-[24px]">
         {t.facts.map((fact, index) => (
           <StatCell

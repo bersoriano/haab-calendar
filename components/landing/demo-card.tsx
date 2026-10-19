@@ -194,6 +194,8 @@ export function DemoCard({ index, className }: { index: number; className?: stri
   return (
     <Link
       href={localizedExamplePath(liveExamplePaths[index], lang)}
+      data-landing-action="view_example"
+      data-landing-example={index}
       className={cn(
         lpBody,
         "lp-lift group flex flex-col overflow-hidden rounded-[22px] border border-[var(--lp-line)] bg-white shadow-[var(--lp-shadow-card)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] focus-visible:ring-offset-2 sm:rounded-[24px]",

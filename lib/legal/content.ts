@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-10-09";
+export const LEGAL_UPDATED = "2026-10-19";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -88,6 +88,7 @@ const EN_PRIVACY: LegalDocument = {
         "Vercel — application hosting and image storage. Processes requests and serves uploaded images.",
         "Stripe — subscription payments. Handles card data directly; Haab Calendar never receives it.",
         "Google — only for businesses that connect a Google Calendar, and only for the scopes listed above.",
+        "PostHog — when landing analytics are enabled, processes the website usage data described below. This integration uses PostHog's United States region.",
         "These providers process data on our behalf under their own terms. Some of them operate infrastructure outside Mexico, which means personal data may be transferred and stored abroad.",
       ],
     },
@@ -96,8 +97,18 @@ const EN_PRIVACY: LegalDocument = {
       heading: "Cookies",
       body: [
         "Haab Calendar sets only cookies that are strictly necessary for it to work: an authentication cookie that keeps a business signed in, a language preference cookie, short-lived cookies that secure the Google sign-in exchange, and an administrative cookie used when editing example pages.",
-        "There are no advertising cookies, no analytics cookies, and no third-party trackers of any kind on this site.",
+        "There are no advertising cookies or analytics cookies. When configured, the landing page uses the third-party cookieless analytics described below.",
         "Public booking pages count visits without cookies so the business can see how its page and campaign links perform. Each visit is recorded as an anonymous identifier that changes every day and differs on every business's page, together with the campaign tags in the link, the referring website's domain and the device type. A second identifier of the same kind, derived from the network alone, is used only to limit abusive traffic. No IP address, browser fingerprint or personal data is stored, and these records are deleted after 13 months.",
+      ],
+    },
+    {
+      id: "landing-analytics",
+      heading: "Landing page analytics",
+      body: [
+        "When enabled on the production landing page, PostHog measures page views, referring website domains, campaign tags, approximate location, browser and device categories, language, sections viewed, button clicks, FAQ opens, video engagement, and scroll depth. We use these reports to understand traffic sources and improve the landing page.",
+        "The integration uses cookieless server hash mode, without analytics cookies, browser storage, person profiles, session recordings, or automatic capture of form contents and arbitrary interactions. It does not send account emails, customer booking details, URL query strings, or URL fragments. Campaign tags are deliberately included, so campaign links should not contain personal information in those tags.",
+        "Requests go to PostHog's United States endpoint. PostHog receives the network address and browser request information needed to derive temporary visitor identifiers and approximate location, according to the project's settings. This integration does not run on booking pages, account setup, dashboards, or private booking management pages. Browser Do Not Track and Global Privacy Control signals disable collection.",
+        "Landing analytics follow the PostHog project's retention settings; the free plan currently retains analytics for one year. Browser restrictions, analytics blockers, and missing referrers can make reports incomplete. These reports do not identify individual customers.",
       ],
     },
     {
@@ -320,6 +331,7 @@ const ES_PRIVACY: LegalDocument = {
         "Vercel — alojamiento de la aplicación y almacenamiento de imágenes. Procesa las solicitudes y sirve las imágenes subidas.",
         "Stripe — pagos de suscripciones. Trata los datos de tarjeta directamente; Haab Calendar nunca los recibe.",
         "Google — únicamente para los negocios que conectan un Google Calendar, y solo con los permisos listados arriba.",
+        "PostHog — cuando se habilita la analítica de la página principal, procesa los datos de uso del sitio descritos abajo. Esta integración utiliza la región de Estados Unidos de PostHog.",
         "Estos proveedores tratan los datos por nuestra cuenta bajo sus propios términos. Algunos operan infraestructura fuera de México, lo que implica que los datos personales pueden transferirse y almacenarse en el extranjero.",
       ],
     },
@@ -328,8 +340,18 @@ const ES_PRIVACY: LegalDocument = {
       heading: "Cookies",
       body: [
         "Haab Calendar solo utiliza cookies estrictamente necesarias para su funcionamiento: una cookie de autenticación que mantiene la sesión del negocio, una cookie de preferencia de idioma, cookies de corta duración que aseguran el intercambio de inicio de sesión con Google, y una cookie administrativa que se usa al editar páginas de ejemplo.",
-        "No hay cookies publicitarias, ni cookies de analítica, ni rastreadores de terceros de ningún tipo en este sitio.",
+        "No hay cookies publicitarias ni cookies de analítica. Cuando se configura, la página principal utiliza la analítica de terceros sin cookies descrita abajo.",
         "Las páginas públicas de reserva cuentan visitas sin cookies para que el negocio pueda ver el rendimiento de su página y de sus enlaces de campaña. Cada visita se registra con un identificador anónimo que cambia cada día y es distinto en la página de cada negocio, junto con las etiquetas de campaña del enlace, el dominio del sitio de referencia y el tipo de dispositivo. Un segundo identificador del mismo tipo, derivado solo de la red, se usa únicamente para limitar el tráfico abusivo. No se guarda la dirección IP, ninguna huella del navegador ni datos personales, y estos registros se eliminan después de 13 meses.",
+      ],
+    },
+    {
+      id: "landing-analytics",
+      heading: "Analítica de la página principal",
+      body: [
+        "Cuando se habilita en la página principal de producción, PostHog mide vistas, dominios de referencia, etiquetas de campaña, ubicación aproximada, categorías de navegador y dispositivo, idioma, secciones vistas, clics en botones, preguntas frecuentes abiertas, interacción con el video y profundidad de desplazamiento. Usamos estos informes para entender las fuentes de tráfico y mejorar la página principal.",
+        "La integración utiliza el modo de hash del servidor sin cookies, sin cookies de analítica, almacenamiento en el navegador, perfiles de personas, grabaciones de sesiones ni captura automática del contenido de formularios o de interacciones arbitrarias. No envía correos de cuentas, detalles de reservas, parámetros de consulta ni fragmentos de URL. Las etiquetas de campaña sí se incluyen de forma intencional; no deben contener datos personales.",
+        "Las solicitudes se envían al servicio de PostHog en Estados Unidos. PostHog recibe la dirección de red y la información de la solicitud del navegador necesarias para generar identificadores temporales y ubicación aproximada, según la configuración del proyecto. Esta integración no se ejecuta en páginas de reservas, configuración de cuentas, paneles ni páginas privadas de gestión de reservas. Las señales Do Not Track y Global Privacy Control del navegador desactivan la recopilación.",
+        "La analítica de la página principal sigue la configuración de conservación del proyecto de PostHog; el plan gratuito conserva actualmente un año de analítica. Las restricciones del navegador, los bloqueadores y las referencias ausentes pueden producir informes incompletos. Estos informes no identifican a clientes individuales.",
       ],
     },
     {
