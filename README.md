@@ -345,6 +345,20 @@ Recommended (must be set by hand in GitHub settings — this repository's
 configuration is not modified by any script here): require `quality`, `database`,
 and `premium-e2e` as status checks on `main`.
 
+### Landing analytics
+
+The marketing landing page optionally reports traffic sources, section reach,
+CTA clicks, FAQs, video engagement, and scroll depth to PostHog. It uses
+cookieless mode with explicit events; no replay, autocapture, or person profiles.
+Production hostnames must be explicitly allowlisted. Localhost and Vercel
+preview deployments remain excluded.
+
+Set `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, and
+`NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS` before building, and enable **Cookieless server
+hash mode** in the PostHog project. Missing settings disable this integration.
+See [setup, report recipes, and QA](docs/operations/landing-analytics.md).
+Provider booking analytics continue to use Supabase.
+
 ### Background workers
 
 `.github/workflows/scheduled-workers.yml` drives the two cron routes every five

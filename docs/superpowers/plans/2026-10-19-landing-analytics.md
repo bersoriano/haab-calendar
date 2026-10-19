@@ -1,6 +1,6 @@
 # Landing Analytics Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Measure landing acquisition, section reach, calls to action, FAQs, video engagement, and scroll depth with PostHog's free plan.
 
@@ -34,11 +34,11 @@
 
 **Interfaces:** `getLandingAnalyticsConfig` validates host/token/region and privacy signals. `sanitizeLandingEvent` enforces the event/property boundary. `loadLandingCapture` returns a failure-safe capture function.
 
-- [ ] Write failing tests for configuration gating, approved campaign attribution, event allowlisting, URL redaction, and privacy settings.
-- [ ] Run focused tests and verify missing implementation fails.
-- [ ] Add SDK and implement the boundary; read installed SDK types and current official documentation.
-- [ ] Run focused tests and typecheck.
-- [ ] Commit the tested boundary.
+- [x] Write failing tests for configuration gating, approved campaign attribution, event allowlisting, URL redaction, and privacy settings.
+- [x] Run focused tests and verify missing implementation fails.
+- [x] Add SDK and implement the boundary; read installed SDK types and current official documentation.
+- [x] Run focused tests and typecheck.
+- [x] Commit the tested boundary.
 
 ### Task 2: Landing interactions and exposure
 
@@ -46,11 +46,11 @@
 
 **Interfaces:** `observeLanding(root, capture)` returns cleanup. Data attributes identify approved sections/actions; capture receives only bounded metadata. The React bridge reads current language without resetting the visit.
 
-- [ ] Write failing DOM tests for timed exposure, tall sections, hidden-tab resets, deduplication, nested click targets, FAQ defaults, video milestones/seeks, scroll thresholds, and cleanup.
-- [ ] Run focused tests and verify expected failures.
-- [ ] Implement observation and attach it only to `LandingPage`; annotate CTA/section/FAQ/video targets using stable IDs.
-- [ ] Verify real landing markup, privacy filtering, and failure-safe loading with focused tests.
-- [ ] Commit the integration.
+- [x] Write failing DOM tests for timed exposure, tall sections, hidden-tab resets, deduplication, nested click targets, FAQ defaults, video milestones/seeks, scroll thresholds, and cleanup.
+- [x] Run focused tests and verify expected failures.
+- [x] Implement observation and attach it only to `LandingPage`; annotate CTA/section/FAQ/video targets using stable IDs.
+- [x] Verify real landing markup, privacy filtering, and failure-safe loading with focused tests.
+- [x] Commit the integration.
 
 ### Task 3: Setup, disclosure, and verification
 
@@ -58,12 +58,21 @@
 
 **Interfaces:** Deployment uses `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, and `NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS`. Operators enable cookieless collection in PostHog and create reports from documented event names.
 
-- [ ] Document free-project setup, region/token configuration, cookieless project toggle, strict host allowlist, report recipes, QA, limitations, and disabling analytics.
-- [ ] Update English/Spanish privacy disclosures and substantiate them against actual SDK behavior.
-- [ ] Run focused tests, full unit suite, lint, typecheck, and production build; inspect browser behavior where local runtime permits.
-- [ ] Review complete diff, repair material findings, commit, and report activation requirements separately from code completion.
+- [x] Document free-project setup, region/token configuration, cookieless project toggle, strict host allowlist, report recipes, QA, limitations, and disabling analytics.
+- [x] Update English/Spanish privacy disclosures and substantiate them against actual SDK behavior.
+- [x] Run focused tests, full unit suite, lint, typecheck, and production build; inspect browser behavior where local runtime permits.
+- [x] Review complete diff, repair material findings, commit, and report activation requirements separately from code completion.
 
 ## Execution record
 
 - Task branch created. Its remote does not exist yet; attempted required pull, then successfully synchronized with origin/main. User's untracked video-demo directory is outside this change.
 - Approved implementation proceeds inline under the user's instruction to start. No further design approval is needed for the scope above.
+
+- Task 1 complete: c5596dfb adds the privacy boundary and SDK; focused policy/client tests and typecheck passed.
+- Task 2 complete: ea37f2b9 adds DOM observation, component annotations, lifecycle tests, and a real-SDK redaction/storage check.
+- Independent read-only review found two P2 issues: delayed SDK initialization after leaving the landing, and translated FAQ keys producing false opens. Both received failing regressions and fixes. The reviewer established no other material issue.
+- Final verification: 220 unit-test files, 2,355 tests passed; lint and TypeScript passed; production build passed. The first sandboxed build could not fetch existing Google Fonts; rerunning with network permission passed.
+- Local browser verification: landing renders; primary CTA opens the setup dialog; closing it and switching to Spanish work. Localhost intentionally does not emit PostHog events.
+- PostHog public token and US endpoint configured in ignored .env.local. User confirmed cookieless server hash mode enabled in their project. Production environment configuration, deployment, and hosted event ingestion remain unverified. Saved dashboard recipes are documented, not provisioned.
+- Review limits accepted: best-effort page-leave timing and minor media sampling/BFCache semantics are documented limits, not reasons to expand this landing-only scope.
+- Dependency audit reports no advisory for posthog-js or happy-dom; existing repository packages still have advisories outside this change.
