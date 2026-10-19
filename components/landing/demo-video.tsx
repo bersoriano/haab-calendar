@@ -57,6 +57,7 @@ export function DemoVideo() {
           <figure className="flex flex-col gap-3.5">
             <div className="overflow-hidden rounded-[16px] border border-[var(--lp-night-line)] bg-[var(--lp-night-2)] sm:rounded-[24px]">
               <video
+                data-landing-video
                 ref={videoRef}
                 className="block aspect-video h-auto w-full"
                 controls

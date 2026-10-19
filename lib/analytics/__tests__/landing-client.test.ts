@@ -30,6 +30,7 @@ describe("landing SDK boundary", () => {
       disable_external_dependency_loading: true, capture_performance: false,
       capture_exceptions: false, capture_heatmaps: false, capture_dead_clicks: false,
       disable_surveys: true, disable_product_tours: true,
+      disable_conversations: true, disableDeviceModel: true,
       save_campaign_params: false, save_referrer: false, respect_dnt: true,
     });
     expect(sdk.capture).toHaveBeenCalledWith("$pageview", expect.objectContaining({

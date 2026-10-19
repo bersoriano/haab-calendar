@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Check } from "@phosphor-icons/react";
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactNode, Ref } from "react";
 import { cn } from "@/lib/utils";
 import { bricolage, figtree } from "./fonts";
 import "./landing.css";
@@ -13,12 +13,14 @@ import "./landing.css";
 export function LandingScope({
   children,
   className,
+  ref,
 }: {
   children: ReactNode;
   className?: string;
+  ref?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div className={cn("haab-landing", bricolage.variable, figtree.variable, className)}>
+    <div ref={ref} className={cn("haab-landing", bricolage.variable, figtree.variable, className)}>
       {children}
     </div>
   );
@@ -189,6 +191,8 @@ export function lpButtonClass({
 }
 
 type LpButtonProps = {
+  "data-landing-action"?: string;
+  "data-landing-vertical"?: string;
   variant?: LpButtonVariant;
   size?: LpButtonSize;
   /** Right-hand arrow; the spec puts it on primary buttons. */
@@ -216,6 +220,8 @@ export function LpButton({
   href,
   onClick,
   type = "button",
+  "data-landing-action": analyticsAction,
+  "data-landing-vertical": analyticsVertical,
 }: LpButtonProps) {
   const classes = lpButtonClass({ variant, size, className });
   const content = (
@@ -233,14 +239,14 @@ export function LpButton({
 
   if (href !== undefined) {
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} data-landing-action={analyticsAction} data-landing-vertical={analyticsVertical}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button type={type} onClick={onClick} className={classes}>
+    <button type={type} onClick={onClick} className={classes} data-landing-action={analyticsAction} data-landing-vertical={analyticsVertical}>
       {content}
     </button>
   );

@@ -38,6 +38,8 @@ export async function loadLandingCapture(): Promise<LandingCapture | null> {
     disable_session_recording: true,
     disable_surveys: true,
     disable_product_tours: true,
+    disable_conversations: true,
+    disableDeviceModel: true,
     disable_external_dependency_loading: true,
     advanced_disable_flags: true,
     person_profiles: "never",

@@ -7,6 +7,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -41,6 +42,7 @@ import {
   lpMono,
 } from "./primitives";
 import { StartPageDialog } from "./start-page-dialog";
+import { LandingAnalytics } from "./landing-analytics";
 
 // Verticals shown on the landing page, in display order. These map 1:1 to the
 // `VerticalId`s in config/verticals.ts and to the UseCases card variants below.
@@ -175,8 +177,9 @@ function StartButton({
   children: ReactNode;
 }) {
   const { openStart } = useLandingDialogs();
+  const { hasPage, hasDraft } = useLandingActions();
   return (
-    <button type="button" onClick={openStart} className={className}>
+    <button type="button" onClick={openStart} className={className} data-landing-action={hasPage ? "open_dashboard" : hasDraft ? "resume_setup" : "create_page"}>
       {children}
     </button>
   );
@@ -192,7 +195,7 @@ function DemoButton({
 }) {
   const { openDemo } = useLandingDialogs();
   return (
-    <button type="button" onClick={openDemo} className={className}>
+    <button type="button" onClick={openDemo} className={className} data-landing-action="try_demo">
       {children}
     </button>
   );
@@ -256,11 +259,11 @@ function AccountEntry({ className }: { className: string }) {
   }
 
   return entry.kind === "login" ? (
-    <a href={entry.href} className={className}>
+    <a href={entry.href} className={className} data-landing-action="login">
       {entry.label}
     </a>
   ) : (
-    <button type="button" onClick={entry.onClick} className={className}>
+    <button type="button" onClick={entry.onClick} className={className} data-landing-action={entry.kind === "dashboard" ? "open_dashboard" : "create_page"}>
       {entry.label}
     </button>
   );
@@ -386,6 +389,7 @@ export function StickyNav({
 
   return (
     <header
+      data-landing-section="header"
       className={cn(
         lpBody,
         "sticky top-0 z-40 w-full bg-[rgba(243,249,247,0.86)] backdrop-blur-xl",
@@ -505,7 +509,7 @@ export function Hero() {
   const [lineOne, lineTwo, lineThree] = t.hero.titleLines;
 
   return (
-    <section className="relative overflow-hidden bg-[var(--lp-paper)] pb-24 lg:pb-32">
+    <section data-landing-section="hero" className="relative overflow-hidden bg-[var(--lp-paper)] pb-24 lg:pb-32">
       <HeroBackdrop />
       {/* On phones the preview slots between the headline and the supporting
           copy so the running hold is on screen without scrolling. On large
@@ -630,7 +634,7 @@ export function LiveExamples({ featured }: { featured: number[] }) {
           <DemoGrid indexes={featured} carousel />
         </Reveal>
         <div className="flex flex-col items-stretch gap-2.5 text-center sm:items-center sm:gap-3">
-          <LpButton variant="outline-ink" size="card" arrow href={galleryPath(lang)} className="sm:px-[26px]">
+          <LpButton data-landing-action="view_gallery" variant="outline-ink" size="card" arrow href={galleryPath(lang)} className="sm:px-[26px]">
             {formatDemoCount(t.liveExamples.seeAll, DEMO_PAGES.length).replace(/\s*→\s*$/, "")}
           </LpButton>
           <p className="text-[13.5px] text-[var(--lp-muted)] sm:text-[14.5px]">
@@ -673,6 +677,7 @@ export function FAQ() {
         <div className="flex flex-col gap-2.5 lg:gap-3">
           {t.faq.items.map((item, index) => (
             <details
+              data-landing-faq={index + 1}
               key={item.q}
               open={index === 0}
               className="group rounded-[18px] border border-[var(--lp-line-soft)] bg-white p-[18px] open:border-[#d5eae4] open:bg-[var(--lp-paper)] lg:rounded-[20px] lg:px-7 lg:py-6"
@@ -796,7 +801,7 @@ export function Footer({
   const headingClass = cn(lpMono, "text-[11.5px] uppercase tracking-[0.14em] text-[var(--lp-mint-300)] lg:text-[12px]");
 
   return (
-    <footer className={cn(lpBody, "bg-[var(--lp-night)] px-5 pb-10 pt-14 text-[var(--lp-night-ink)] sm:px-8 lg:pb-12 lg:pt-20")}>
+    <footer data-landing-section="footer" className={cn(lpBody, "bg-[var(--lp-night)] px-5 pb-10 pt-14 text-[var(--lp-night-ink)] sm:px-8 lg:pb-12 lg:pt-20")}>
       <div className="mx-auto flex max-w-[1200px] flex-col gap-9 lg:gap-14">
         <div className="grid grid-cols-2 gap-x-6 gap-y-9 lg:grid-cols-[1.6fr_1fr_1fr_1.2fr] lg:gap-12">
           <div className="col-span-2 flex flex-col items-start gap-3.5 lg:col-span-1 lg:gap-4">
@@ -910,9 +915,11 @@ export function LandingPage({
    */
   showUseCases?: boolean;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   return (
     <LandingDialogsProvider>
-      <LandingScope>
+      <LandingScope ref={rootRef}>
+        <LandingAnalytics rootRef={rootRef} />
         <StickyNav showUseCases={showUseCases} />
         <main className="flex-1">
           <Hero />

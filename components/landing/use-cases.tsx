@@ -120,6 +120,7 @@ function HealthcareTile({ onSelect }: { onSelect: () => void }) {
         size="card"
         arrow
         onClick={onSelect}
+        data-landing-vertical="healthcare"
         className="relative w-full sm:w-auto sm:self-start"
       >
         {withoutArrow(copy.start)}
@@ -143,6 +144,7 @@ function IndustryTile({
     <button
       type="button"
       onClick={onSelect}
+      data-landing-vertical={vertical}
       className={cn(
         lpBody,
         "lp-lift group flex min-h-[176px] flex-col justify-between gap-3 rounded-[20px] p-[18px] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] focus-visible:ring-offset-2 sm:rounded-[28px] sm:p-[30px]",

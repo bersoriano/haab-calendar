@@ -48,6 +48,7 @@ export function LangPill({
         return (
           <button
             key={language}
+            data-landing-language={language}
             type="button"
             aria-label={
               language === "en" ? t.language.switchToEnglish : t.language.switchToSpanish
