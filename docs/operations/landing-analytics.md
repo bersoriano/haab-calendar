@@ -23,8 +23,9 @@ without the landing observer.
    NEXT_PUBLIC_POSTHOG_ALLOWED_HOSTS=haabcalendar.com,www.haabcalendar.com
    ```
 
-   The public project token is write-only, not a personal API key. Do not put a
-   personal API key in any `NEXT_PUBLIC_*` variable. Local `.env.local` can hold
+   The public project token starts with `phc_` and is write-only, not a personal
+   API key. Never put a secret from PostHog or another service in any
+   `NEXT_PUBLIC_*` variable. Local `.env.local` can hold
    these same values; it must not be committed.
 4. Rebuild and deploy. Next.js embeds these variables at build time. A runtime
    restart alone does not update the browser bundle.
@@ -75,8 +76,10 @@ Create a dashboard named **Landing performance**. These are report recipes;
 the integration does not automatically provision dashboards or saved insights.
 
 - **Acquisition:** use **Web analytics**, filtered to pathname `/`. Compare
-  channels, referring domains, UTMs, countries, devices, and browsers. Add the
+  channels, referring domains, UTMs, devices, and browsers. Add the
   `language` event-property filter for English/Spanish comparisons.
+  Cookieless server hashing strips IP data before GeoIP enrichment, so country
+  breakdowns are unavailable with this setup.
 - **Section reach:** a total-count trend of `landing_section_view`, broken down
   by `section`. Divide each section's count by total `$pageview` events for the
   same period. Both count page loads; do not mix total views with unique users.
@@ -129,9 +132,10 @@ and section events provide reach, not evidence that a section caused a click.
 No replay, heatmaps, person profiles, automatic form capture, feature flags,
 surveys, or exception capture are enabled. A strict `before_send` allowlist also
 drops unapproved SDK events and properties, including initial URLs and person
-updates. PostHog receives the network request and can derive location/identifiers
-server-side; configure its **Discard IP data** setting if raw IP retention is
-not wanted. Free-plan event retention is currently one year.
+updates. The SDK's `$raw_user_agent` is retained in outgoing events because
+PostHog requires it for the cookieless daily hash. PostHog uses the user agent,
+IP address, day, and host for hashing, then strips the raw user agent and IP
+before further processing. Free-plan event retention is currently one year.
 
 ## Disable or troubleshoot
 
@@ -140,7 +144,10 @@ failures never prevent a landing interaction or booking.
 
 For missing events, check the build-time variables, hostname allowlist, regional
 host, browser privacy signals, blockers, free-tier quota, and cookieless project
-setting. Do not enable broad autocapture to troubleshoot.
+setting. Check **Event ingestion warnings** as well: `cookieless_missing_user_agent`
+means a sanitizer or proxy removed the required `$raw_user_agent` property.
+Live events and HTTP success can precede a dropped event; confirm stored events
+under **Activity → Events**. Do not enable broad autocapture to troubleshoot.
 
 References: [Next.js integration](https://posthog.com/docs/libraries/next-js),
 [cookieless setup](https://posthog.com/tutorials/cookieless-tracking),
