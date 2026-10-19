@@ -8,11 +8,11 @@
 
 The page was redesigned in `feat/landing-redesign`; the design handoff (spec, reference HTML, tokens) is in `docs/landing-redesign/`. The sections below are the original copy and conversion brief; where they disagree with this block, this block describes what ships.
 
-**Section order and anchors:** sticky nav -> hero -> fact strip -> use cases (`#verticals`, or the dashboard panel for an owner with a page) -> how it works (`#how`) -> live examples (`#live-examples`) -> why it feels different (`#features`, the dark band) -> Google Calendar (`#google-calendar`) -> trust (`#trust`) -> FAQ (`#faq`) -> final CTA (`#early-access`) -> footer.
+**Section order and anchors:** sticky nav -> hero -> fact strip -> use cases (`#verticals`, or the dashboard panel for an owner with a page) -> how it works (`#how`) -> demo video (`#demo`, dark band) -> live examples (`#live-examples`) -> why it feels different (`#features`, the dark band) -> Google Calendar (`#google-calendar`) -> trust (`#trust`) -> FAQ (`#faq`) -> final CTA (`#early-access`) -> footer.
 
 **Files (`components/landing/`):**
 - `landing-ui.tsx`: actions/dialog context, `StickyNav`, `Hero`, `LiveExamples`, `FAQ`, `FinalCTA`, `Footer`, `LandingPage`.
-- `primitives.tsx`: `LandingScope`, `LpButton`, `CheckChip`, `IconTile`, `StatCell`, `Eyebrow`, `SectionHeading`. Other sections live in `fact-strip.tsx`, `use-cases.tsx`, `how-it-works.tsx`, `demo-card.tsx`, `night-features.tsx`, `google-integration.tsx`, `trust.tsx`; small pieces in `brand.tsx`, `lang-pill.tsx`, `hero-art.tsx`, `reveal.tsx`, `demo-count.ts`.
+- `primitives.tsx`: `LandingScope`, `LpButton`, `CheckChip`, `IconTile`, `StatCell`, `Eyebrow`, `SectionHeading`. Other sections live in `fact-strip.tsx`, `use-cases.tsx`, `how-it-works.tsx`, `demo-video.tsx`, `demo-card.tsx`, `night-features.tsx`, `google-integration.tsx`, `trust.tsx`; small pieces in `brand.tsx`, `lang-pill.tsx`, `hero-art.tsx`, `reveal.tsx`, `demo-count.ts`.
 - `landing.css` (tokens, atmosphere helpers) and `fonts.ts` (Bricolage Grotesque + Figtree via `next/font/google`).
 - `translations.ts`: all copy, EN and ES in parallel.
 
@@ -23,6 +23,8 @@ The page was redesigned in `feat/landing-redesign`; the design handoff (spec, re
 - `html` is 106.25% of 16px, so rem utilities scale up; the landing uses px arbitrary values.
 
 **Data, not literals:** the demo count is `DEMO_PAGES.length` (copy carries `{n}`); the healthcare tile lists the first two services of the real healthcare preset (`config/verticals.ts`), so its prices can differ from the mock in the hero card; featured demos come from `pickFeaturedDemos` with Dr. Maya Rivera always first and the rest shuffled server-side.
+
+**Demo video section:** the one-minute recorded demo, self-hosted in `public/video/` with English and Spanish captions. It never autoplays, keeps exactly one caption track on, and swaps captions on a language switch; see `docs/landing-demo-video.md` for the iOS rules behind that and how to replace the video.
 
 **Google Calendar section:** the copy in `googleIntegration` (`title`, `purpose`, `items`, `privacyLink`) is what Google's OAuth review reads. Only its layout is designed; `components/landing/__tests__/google-disclosure.test.tsx` pins the parts the review depends on.
 

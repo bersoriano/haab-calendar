@@ -327,6 +327,14 @@ export const translations = {
         added: "Se agrega a tu calendario, sin mensajes de por medio",
       },
     },
+    demoVideo: {
+      eyebrow: "Míralo en acción",
+      title: "Un minuto. Una reserva, de principio a fin.",
+      body: "Tu cliente elige un servicio, escoge un horario libre y reserva sin crear una cuenta. Es el flujo real de Haab en una página de demostración con un paciente ficticio.",
+      videoLabel: "Demo de Haab Calendar: así reserva un cliente",
+      note: "Narrado en inglés, con subtítulos en español e inglés.",
+      download: "Descargar el video (MP4)",
+    },
     features: {
       eyebrow: "Por qué se siente distinto",
       title: "Una sola página que se adapta a tu forma de trabajar.",
@@ -826,6 +834,14 @@ export const translations = {
         eventMeta: "9:00 – 9:30 AM · Booked by the client",
         added: "Added to your calendar — no message needed",
       },
+    },
+    demoVideo: {
+      eyebrow: "See it in action",
+      title: "One minute. One booking, start to finish.",
+      body: "Your client picks a service, chooses an open time, and books without creating an account. It's Haab's real booking flow on a demo page with a fictional patient.",
+      videoLabel: "Haab Calendar demo: how a client books",
+      note: "Narrated in English, with English and Spanish captions.",
+      download: "Download the video (MP4)",
     },
     features: {
       eyebrow: "Why it feels different",

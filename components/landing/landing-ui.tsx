@@ -23,6 +23,7 @@ import { formatDemoCount } from "./demo-count";
 import { FactStrip } from "./fact-strip";
 import { GoogleIntegration } from "./google-integration";
 import { HowItWorks } from "./how-it-works";
+import { DemoVideo } from "./demo-video";
 import { Features } from "./night-features";
 import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
 import { LangPill } from "./lang-pill";
@@ -918,6 +919,7 @@ export function LandingPage({
           <FactStrip />
           {afterHero}
           <HowItWorks />
+          <DemoVideo />
           <LiveExamples featured={featuredDemos} />
           <Features />
           <GoogleIntegration />
