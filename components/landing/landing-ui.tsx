@@ -675,10 +675,12 @@ export function FAQ() {
           </DemoButton>
         </div>
         <div className="flex flex-col gap-2.5 lg:gap-3">
+          {/* Question positions stay stable across languages. Translated keys
+              would remount open details and create false engagement events. */}
           {t.faq.items.map((item, index) => (
             <details
               data-landing-faq={index + 1}
-              key={item.q}
+              key={index}
               open={index === 0}
               className="group rounded-[18px] border border-[var(--lp-line-soft)] bg-white p-[18px] open:border-[#d5eae4] open:bg-[var(--lp-paper)] lg:rounded-[20px] lg:px-7 lg:py-6"
             >

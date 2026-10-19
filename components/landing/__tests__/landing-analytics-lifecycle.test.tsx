@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { LandingAnalytics } from "@/components/landing/landing-analytics";
 import { LanguageProvider, useLanguage } from "@/components/landing/language-provider";
 import type { LandingCapture } from "@/lib/analytics/landing-policy";
+import { FAQ } from "@/components/landing/landing-ui";
 
 const load = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/analytics/landing-client", () => ({ loadLandingCapture: load }));
@@ -15,7 +16,7 @@ const capture = vi.fn();
 function Surface() {
   const rootRef = useRef<HTMLDivElement>(null);
   const { setLang } = useLanguage();
-  return <div ref={rootRef}><LandingAnalytics rootRef={rootRef} /><button onClick={() => setLang("es")}>Español</button></div>;
+  return <div ref={rootRef}><LandingAnalytics rootRef={rootRef} /><button onClick={() => setLang("es")}>Español</button><FAQ /></div>;
 }
 const landing = <StrictMode><LanguageProvider initialLang="en"><Surface /></LanguageProvider></StrictMode>;
 
@@ -57,4 +58,15 @@ it("keeps landing controls functional when analytics is unavailable", async () =
   await act(async () => container.querySelector("button")!.click());
   expect(document.documentElement.lang).toBe("es");
   expect(capture).not.toHaveBeenCalled();
+});
+
+it("preserves FAQ state across language switches without reporting manufactured opens", async () => {
+  await act(async () => root.render(landing));
+  const firstQuestion = container.querySelector("details")!;
+  await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
+  const translatedQuestion = container.querySelector("details")!;
+  // A newly mounted open <details> dispatches toggle in real browsers.
+  await act(async () => translatedQuestion.dispatchEvent(new Event("toggle")));
+  expect(translatedQuestion).toBe(firstQuestion);
+  expect(capture.mock.calls.filter(([event]) => event === "landing_faq_open")).toEqual([]);
 });

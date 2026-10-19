@@ -59,4 +59,29 @@ describe("landing SDK boundary", () => {
     const { loadLandingCapture } = await import("@/lib/analytics/landing-client");
     expect(await loadLandingCapture()).toBeNull();
   });
+
+  it.each(["navigation", "unmount"])("does not initialize after %s while the SDK import is pending", async (reason) => {
+    let release!: () => void;
+    let importing!: () => void;
+    const gate = new Promise<void>((done) => { release = done; });
+    const started = new Promise<void>((done) => { importing = done; });
+    vi.doMock("posthog-js/no-external", async () => {
+      importing();
+      await gate;
+      return { default: { init: sdk.init } };
+    });
+    const { loadLandingCapture } = await import("@/lib/analytics/landing-client");
+    const controller = new AbortController();
+    const pending = loadLandingCapture(controller.signal);
+    await started;
+    if (reason === "navigation") (window as unknown as HappyWindow).happyDOM.setURL("https://haabcalendar.com/dashboard");
+    else controller.abort();
+    release();
+    expect(await pending).toBeNull();
+    expect(sdk.init).not.toHaveBeenCalled();
+    // A cancelled mount must not poison a future landing visit.
+    (window as unknown as HappyWindow).happyDOM.setURL("https://haabcalendar.com/");
+    expect(await loadLandingCapture()).not.toBeNull();
+    expect(sdk.init).toHaveBeenCalledTimes(1);
+  });
 });

@@ -11,13 +11,13 @@ export function LandingAnalytics({ rootRef }: { rootRef: RefObject<HTMLDivElemen
   const language = useEffectEvent(() => lang);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     let cleanup: (() => void) | undefined;
-    void loadLandingCapture().then((capture) => {
-      if (cancelled || !capture || !rootRef.current) return;
+    void loadLandingCapture(controller.signal).then((capture) => {
+      if (controller.signal.aborted || !capture || !rootRef.current) return;
       cleanup = observeLanding(rootRef.current, capture, language);
     }).catch(() => { /* An unavailable SDK must never break the landing page. */ });
-    return () => { cancelled = true; cleanup?.(); };
+    return () => { controller.abort(); cleanup?.(); };
   }, [rootRef]);
 
   return null;
