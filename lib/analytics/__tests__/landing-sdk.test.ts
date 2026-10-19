@@ -24,6 +24,8 @@ it("the real SDK emits cookieless, redacted landing events without persisting id
   vi.stubGlobal("localStorage", storageWindow.localStorage);
   vi.stubGlobal("sessionStorage", storageWindow.sessionStorage);
   (window as unknown as HappyWindow).happyDOM.setURL("https://haabcalendar.com/?utm_source=instagram&email=private@example.com#secret");
+  // The SDK snapshots this value when imported, before the bot-detection stub.
+  const sdkUserAgent = navigator.userAgent;
   vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36");
   vi.spyOn(navigator, "webdriver", "get").mockReturnValue(false);
   const realCapture = vi.spyOn(PostHog.prototype, "capture");
@@ -33,6 +35,8 @@ it("the real SDK emits cookieless, redacted landing events without persisting id
   const payload = realCapture.mock.results.find((result) => result.value?.event === "$pageview")?.value;
   expect(payload).toMatchObject({ event: "$pageview", properties: {
     $cookieless_mode: true, distinct_id: "$posthog_cookieless", $current_url: "https://haabcalendar.com/", utm_source: "instagram",
+    // PostHog drops cookieless events without the SDK's raw user agent.
+    $raw_user_agent: sdkUserAgent,
   } });
   expect(JSON.stringify(payload)).not.toMatch(/private@example|#secret|\$set|\$initial_current_url/);
   expect(window.localStorage.length).toBe(0);

@@ -55,6 +55,8 @@ type WireEvent = { event: string; properties: Record<string, unknown>; uuid?: st
 const SDK_PROPERTIES = new Set([
   "token", "distinct_id", "$device_id", "$session_id", "$window_id", "$lib", "$lib_version",
   "$browser", "$browser_version", "$os", "$os_version", "$device_type", "$screen_height",
+  // Required for PostHog's cookieless hash; removed server-side after hashing.
+  "$raw_user_agent",
   "$screen_width", "$viewport_height", "$viewport_width", "$timezone", "$timezone_offset",
   "$is_identified", "$process_person_profile", "$cookieless_mode", "$config_defaults",
   "$prev_pageview_id", "$pageview_id", "$prev_pageview_duration",
