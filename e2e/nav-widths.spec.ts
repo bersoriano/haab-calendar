@@ -232,6 +232,17 @@ const CASES: NavCase[] = [
     hides: [link("Log in")],
   },
   {
+    // Wears the landing bar with its anchors pointed home. Setup starts on the
+    // landing page, so the bar offers no use cases of its own.
+    surface: "online booking for doctors",
+    session: "signed out",
+    path: "/en/online-booking-for-doctors",
+    open: landingBar,
+    account: link("Log in"),
+    offers: [link("Live examples"), link("How it works"), link("FAQ")],
+    hides: [link("Use cases"), button("Sign out")],
+  },
+  {
     surface: "draft workspace",
     session: "signed out",
     draft: true,

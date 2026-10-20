@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { doctorsAlternateLanguages, doctorsLandingUrl } from "@/components/landing/doctors-seo";
 import { landingAlternateLanguages, landingUrl } from "@/components/landing/seo";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
 import { buildAbsoluteUrl } from "@/lib/site-url";
@@ -24,6 +25,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     alternates: { languages: landingAlternateLanguages() },
   }));
 
+  // The doctors page has one URL per language, each confirming the other.
+  const doctors = (["en", "es"] as const).map((lang) => ({
+    url: doctorsLandingUrl(lang),
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+    alternates: { languages: doctorsAlternateLanguages() },
+  }));
+
   const paths = [
     "/gallery",
     "/login",
@@ -36,6 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...landing,
+    ...doctors,
     ...paths.map((path) => ({
       url: buildAbsoluteUrl(path),
       changeFrequency: "weekly" as const,
