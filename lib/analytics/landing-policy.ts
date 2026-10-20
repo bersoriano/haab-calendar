@@ -1,7 +1,20 @@
+import { DOCTORS_LANDING_PATHS } from "@/lib/language/localized-routes";
+
+/**
+ * The marketing pages measured, and the only paths an event may name: the
+ * landing page and the online booking page for doctors in each language. Never
+ * a business's booking page, a manage link, or the workspace.
+ */
+export const LANDING_PATHS: readonly string[] = ["/", ...Object.values(DOCTORS_LANDING_PATHS)];
+
+const isLandingPath = (pathname: string) => LANDING_PATHS.includes(pathname);
+
 /** The only landing data allowed to leave the browser. No account identity. */
 export const LANDING_SECTIONS = [
   "header", "hero", "facts", "verticals", "how", "demo", "live-examples",
   "features", "google-calendar", "trust", "faq", "early-access", "footer",
+  // The doctors page's own sections.
+  "front-desk", "for-practices",
 ] as const;
 export const LANDING_ACTIONS = [
   "create_page", "resume_setup", "open_dashboard", "try_demo", "view_gallery", "view_example", "login",
@@ -23,7 +36,7 @@ export function getLandingAnalyticsConfig(environment: AnalyticsEnvironment, vis
   const host = environment.host?.trim().replace(/\/$/, "");
   const allowed = environment.allowedHosts?.split(",").map((value) => value.trim().toLowerCase());
   if (!key || !host || !["https://us.i.posthog.com", "https://eu.i.posthog.com"].includes(host)
-    || visitor.pathname !== "/" || visitor.doNotTrack === "1" || visitor.globalPrivacyControl
+    || !isLandingPath(visitor.pathname) || visitor.doNotTrack === "1" || visitor.globalPrivacyControl
     || !allowed?.includes(visitor.hostname.toLowerCase())
     || /^(localhost|127\.|\[?::1\]?)/.test(visitor.hostname)
     || visitor.hostname.endsWith(".vercel.app")) {
@@ -67,15 +80,16 @@ export function sanitizeLandingEvent(input: WireEvent): WireEvent | null {
   let url: URL;
   try {
     url = new URL(String(input.properties.$current_url));
-    if (url.pathname !== "/" || !["http:", "https:"].includes(url.protocol)) return null;
+    if (!isLandingPath(url.pathname) || !["http:", "https:"].includes(url.protocol)) return null;
   } catch { return null; }
 
   const properties: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(input.properties)) {
     if (SDK_PROPERTIES.has(key) && ["string", "number", "boolean"].includes(typeof value)) properties[key] = value;
   }
-  properties.$current_url = `${url.origin}/`;
-  if (input.properties.$pathname === "/") properties.$pathname = "/";
+  // Origin and path only: the query and hash can carry anything.
+  properties.$current_url = `${url.origin}${url.pathname}`;
+  if (input.properties.$pathname === url.pathname) properties.$pathname = url.pathname;
   if (input.properties.$host === url.host) properties.$host = url.host;
   const referrer = input.properties.$referrer;
   if (typeof referrer === "string") {

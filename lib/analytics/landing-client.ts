@@ -28,7 +28,9 @@ export async function loadLandingCapture(signal?: AbortSignal): Promise<LandingC
   const config = currentConfig();
   if (!config || signal?.aborted) return null;
 
-  const page = `${window.location.origin}/`;
+  // Origin and path only, the same shape the policy lets through.
+  const { pathname } = window.location;
+  const page = `${window.location.origin}${pathname}`;
   const attribution = readLandingAttribution(window.location.href, document.referrer);
   loading ??= import("posthog-js/no-external").catch(() => null);
   const sdk = await loading;
@@ -69,7 +71,7 @@ export async function loadLandingCapture(signal?: AbortSignal): Promise<LandingC
   const landingClient = client;
   return (event, properties) => {
     try {
-      landingClient.capture(event, { ...properties, ...attribution, $current_url: page, $pathname: "/", $host: new URL(page).host },
+      landingClient.capture(event, { ...properties, ...attribution, $current_url: page, $pathname: pathname, $host: new URL(page).host },
         event === "$pageleave" ? { send_instantly: true, transport: "sendBeacon" } : undefined);
     } catch { /* A blocked analytics request never interferes with the page. */ }
   };

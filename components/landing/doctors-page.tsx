@@ -17,7 +17,7 @@ import {
   Translate,
   UserList,
 } from "@phosphor-icons/react";
-import { Fragment } from "react";
+import { Fragment, useRef } from "react";
 
 import { logout } from "@/app/login/actions";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { doctorsTranslations } from "./doctors-translations";
 import { HeroBackdrop, HeadlineUnderline } from "./hero-art";
 import { HeroBookingPreview } from "./hero-preview";
+import { LandingAnalytics } from "./landing-analytics";
 import { DemoVideo } from "./demo-video";
 import {
   DemoGrid,
@@ -326,10 +327,12 @@ function FinalCTA() {
 
 function DoctorsContent() {
   const { lang } = useLanguage();
+  const rootRef = useRef<HTMLDivElement>(null);
 
   return (
     <LandingDialogsProvider>
-      <LandingScope>
+      <LandingScope ref={rootRef}>
+        <LandingAnalytics rootRef={rootRef} />
         <StickyNav anchorsGoHome showUseCases={false} />
         <main className="flex-1">
           <Hero />
