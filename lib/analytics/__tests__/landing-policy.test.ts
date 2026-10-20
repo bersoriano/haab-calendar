@@ -18,8 +18,14 @@ describe("landing analytics configuration", () => {
     for (const hostname of ["localhost", "127.0.0.1", "preview.vercel.app", "haabcalendar.com.evil.test"]) {
       expect(getLandingAnalyticsConfig(environment, { ...visitor, hostname })).toBeNull();
     }
-    for (const pathname of ["/dashboard", "/doctors/test", "/login", "/gallery"]) {
+    for (const pathname of ["/dashboard", "/doctors/test", "/login", "/gallery", "/en", "/es/agenda-online-para-medicos/x"]) {
       expect(getLandingAnalyticsConfig(environment, { ...visitor, pathname })).toBeNull();
+    }
+  });
+
+  it("also measures the online booking page for doctors, in each language", () => {
+    for (const pathname of ["/en/online-booking-for-doctors", "/es/agenda-online-para-medicos"]) {
+      expect(getLandingAnalyticsConfig(environment, { ...visitor, pathname })).not.toBeNull();
     }
   });
 
@@ -65,6 +71,21 @@ describe("landing analytics privacy boundary", () => {
     }
     expect(sanitizeLandingEvent({ event: "$pageview", properties: { $current_url: "https://haabcalendar.com/doctors/test/manage/private-token" } })).toBeNull();
     expect(sanitizeLandingEvent({ event: "$pageview", properties: { $current_url: "not-a-url" } })).toBeNull();
+  });
+
+  it("names which measured page an event came from, without its query or hash", () => {
+    const result = sanitizeLandingEvent({ event: "landing_section_view", properties: {
+      $current_url: "https://haabcalendar.com/es/agenda-online-para-medicos?email=private@example.com#secret",
+      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section: "front-desk", language: "es",
+    } });
+    expect(result?.properties).toEqual({
+      $current_url: "https://haabcalendar.com/es/agenda-online-para-medicos",
+      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section: "front-desk", language: "es",
+    });
+    // A path the event does not come from is dropped, never trusted.
+    expect(sanitizeLandingEvent({ event: "$pageview", properties: {
+      $current_url: "https://haabcalendar.com/en/online-booking-for-doctors", $pathname: "/dashboard",
+    } })?.properties).toEqual({ $current_url: "https://haabcalendar.com/en/online-booking-for-doctors" });
   });
 
   it("rejects free-form metadata even when a property name is approved", () => {

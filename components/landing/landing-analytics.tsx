@@ -5,7 +5,10 @@ import { loadLandingCapture } from "@/lib/analytics/landing-client";
 import { observeLanding } from "@/lib/analytics/landing-browser";
 import { useLanguage } from "./language-provider";
 
-/** Mounted only by LandingPage, never by shared navigation or booking pages. */
+/**
+ * Mounted only by the measured marketing pages (LANDING_PATHS: the landing
+ * page and the doctors page), never by shared navigation or booking pages.
+ */
 export function LandingAnalytics({ rootRef }: { rootRef: RefObject<HTMLDivElement | null> }) {
   const { lang } = useLanguage();
   const language = useEffectEvent(() => lang);

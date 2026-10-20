@@ -9,6 +9,7 @@ import {
   DemoGrid,
   Footer,
   LandingActionsProvider,
+  LandingDialogsProvider,
   StickyNav,
   formatDemoCount,
 } from "./landing-ui";
@@ -49,8 +50,10 @@ function GalleryContent({ indexes }: { indexes: number[] }) {
 
 /**
  * The gallery reuses the landing chrome, so it needs the actions context the
- * nav and footer read. Nothing here starts setup in place: both entry points
- * hand the visitor back to the landing page, which owns that flow.
+ * nav and footer read, and the dialogs their create buttons open: without
+ * LandingDialogsProvider those buttons fall back to a no-op and do nothing.
+ * Nothing here starts setup in place: the first step's answers hand the
+ * visitor back to the landing page, which owns that flow.
  */
 export function DemoGalleryPage({
   indexes,
@@ -70,15 +73,19 @@ export function DemoGalleryPage({
           onStart: () => {
             window.location.href = `/?lang=${initialLanguage}`;
           },
-          onSelectVertical: (vertical) => {
-            window.location.href = `/?lang=${initialLanguage}&vertical=${vertical}`;
+          onSelectVertical: (vertical, pageName) => {
+            const params = new URLSearchParams({ lang: initialLanguage, vertical });
+            if (pageName) params.set("name", pageName);
+            window.location.href = `/?${params}`;
           },
           loggedIn,
           loginHref,
           onSignOut: loggedIn ? logout : undefined,
         }}
       >
-        <GalleryContent indexes={indexes} />
+        <LandingDialogsProvider>
+          <GalleryContent indexes={indexes} />
+        </LandingDialogsProvider>
       </LandingActionsProvider>
     </LanguageProvider>
   );

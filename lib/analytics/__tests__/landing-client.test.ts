@@ -44,6 +44,18 @@ describe("landing SDK boundary", () => {
     expect(filtered).toEqual({ uuid: "test-uuid", event: "$pageview", properties: { $current_url: "https://haabcalendar.com/", $cookieless_mode: true, distinct_id: "$posthog_cookieless" } });
   });
 
+  it("tells the doctors page apart from the landing page, without its query or hash", async () => {
+    (window as unknown as HappyWindow).happyDOM.setURL("https://haabcalendar.com/es/agenda-online-para-medicos?token=private#secret");
+    const { loadLandingCapture } = await import("@/lib/analytics/landing-client");
+    const capture = await loadLandingCapture();
+    capture?.("$pageview", { language: "es" });
+    expect(sdk.capture).toHaveBeenCalledWith("$pageview", expect.objectContaining({
+      $current_url: "https://haabcalendar.com/es/agenda-online-para-medicos",
+      $pathname: "/es/agenda-online-para-medicos",
+    }), undefined);
+    expect(JSON.stringify(sdk.capture.mock.calls)).not.toContain("private");
+  });
+
   it("does not initialize on previews or when key is missing", async () => {
     const { loadLandingCapture } = await import("@/lib/analytics/landing-client");
     (window as unknown as HappyWindow).happyDOM.setURL("https://preview.vercel.app/");
