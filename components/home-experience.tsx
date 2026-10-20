@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { AccountStatusBar } from "@/components/provider/AccountStatusBar";
 import { DraftSaveBar } from "@/components/provider/DraftSaveBar";
@@ -191,6 +191,21 @@ function HomeExperienceInner({
     setSeedLandingSelection(seedSelection);
     setView("app");
   }
+
+  // Signed out, a ?vertical= from another page (the gallery's first step, the
+  // online booking page for doctors) is this page's own first step answered
+  // elsewhere: open setup for it, exactly as choosing it here would. The
+  // server cannot do this for a guest the way startInApp does for an account:
+  // a guest's draft lives in this browser, so the builder opens after
+  // hydration, and landingSelectionSeedsDraft keeps an existing draft's work.
+  const openedFromLink = useRef(false);
+  useEffect(() => {
+    if (loggedIn || !initialVertical || openedFromLink.current) return;
+    openedFromLink.current = true;
+    openApp(initialVertical, initialPageName);
+    // Once, on arrival: the link's answer, not a setting to keep re-applying.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function backToHome() {
     setView("home");
