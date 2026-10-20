@@ -364,10 +364,13 @@ function useHeroPassed(alwaysShowCta: boolean) {
 export function StickyNav({
   alwaysShowCta = false,
   showUseCases = true,
+  showDoctors = true,
   anchorsGoHome = false,
 }: {
   alwaysShowCta?: boolean;
   showUseCases?: boolean;
+  /** Off on the doctors page itself, which would only link to itself. */
+  showDoctors?: boolean;
   /** Set on pages that reuse this nav but carry none of its sections. */
   anchorsGoHome?: boolean;
 } = {}) {
@@ -384,6 +387,7 @@ export function StickyNav({
     { href: anchor("live-examples"), label: t.nav.links.examples },
     { href: anchor("how"), label: t.nav.links.how },
     ...(showUseCases ? [{ href: anchor("verticals"), label: t.nav.links.useCases }] : []),
+    ...(showDoctors ? [{ href: DOCTORS_LANDING_PATHS[lang], label: t.nav.links.doctors }] : []),
     { href: anchor("faq"), label: t.nav.links.faq },
   ];
   const navLinkClass =
@@ -399,7 +403,9 @@ export function StickyNav({
     >
       <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
         <BrandLink label={t.nav.brand} hideLabelOnTiny />
-        <nav className="hidden items-center gap-7 xl:flex" aria-label="Primary">
+        {/* Five links in Spanish only fit one line at 1280px with this gap;
+            any wider and every label breaks onto two. */}
+        <nav className="hidden items-center gap-3 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href} className={navLinkClass}>
               {link.label}

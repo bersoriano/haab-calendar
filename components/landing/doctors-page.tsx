@@ -333,7 +333,7 @@ function DoctorsContent() {
     <LandingDialogsProvider>
       <LandingScope ref={rootRef}>
         <LandingAnalytics rootRef={rootRef} />
-        <StickyNav anchorsGoHome showUseCases={false} />
+        <StickyNav anchorsGoHome showUseCases={false} showDoctors={false} />
         <main className="flex-1">
           <Hero />
           <Outcomes />
