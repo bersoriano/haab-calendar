@@ -181,7 +181,13 @@ const CASES: NavCase[] = [
     path: "/?lang=en",
     open: landingBar,
     account: link("Log in"),
-    offers: [link("Live examples"), link("How it works"), link("Use cases"), link("FAQ")],
+    offers: [
+      link("Live examples"),
+      link("How it works"),
+      link("Use cases"),
+      link("For doctors"),
+      link("FAQ"),
+    ],
     hides: [button("Sign out"), button("Your dashboard")],
   },
   {
@@ -190,7 +196,13 @@ const CASES: NavCase[] = [
     path: "/?lang=en",
     open: landingBar,
     account: button("Sign out"),
-    offers: [link("Live examples"), link("How it works"), link("Use cases"), link("FAQ")],
+    offers: [
+      link("Live examples"),
+      link("How it works"),
+      link("Use cases"),
+      link("For doctors"),
+      link("FAQ"),
+    ],
     // The dashboard sends an account with no page straight back here.
     hides: [link("Log in"), button("Your dashboard")],
   },
@@ -203,6 +215,7 @@ const CASES: NavCase[] = [
     offers: [
       link("Live examples"),
       link("How it works"),
+      link("For doctors"),
       link("FAQ"),
       button("Create your page"),
     ],
@@ -217,6 +230,7 @@ const CASES: NavCase[] = [
     offers: [
       link("Live examples"),
       link("How it works"),
+      link("For doctors"),
       link("FAQ"),
       button("Create your page"),
     ],
@@ -228,19 +242,20 @@ const CASES: NavCase[] = [
     path: "/gallery?lang=en",
     open: landingBar,
     account: button("Sign out"),
-    offers: [link("Live examples"), link("How it works"), link("FAQ")],
+    offers: [link("Live examples"), link("How it works"), link("For doctors"), link("FAQ")],
     hides: [link("Log in")],
   },
   {
     // Wears the landing bar with its anchors pointed home. Setup starts on the
-    // landing page, so the bar offers no use cases of its own.
+    // landing page, so the bar offers no use cases of its own, and no link to
+    // the page it is on.
     surface: "online booking for doctors",
     session: "signed out",
     path: "/en/online-booking-for-doctors",
     open: landingBar,
     account: link("Log in"),
     offers: [link("Live examples"), link("How it works"), link("FAQ")],
-    hides: [link("Use cases"), button("Sign out")],
+    hides: [link("Use cases"), link("For doctors"), button("Sign out")],
   },
   {
     surface: "draft workspace",
