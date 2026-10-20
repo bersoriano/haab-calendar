@@ -35,9 +35,15 @@ const LanguageContext = createContext<LanguageContextValue | null>(null);
 export function LanguageProvider({
   children,
   initialLang,
+  languagePaths,
 }: {
   children: ReactNode;
   initialLang: Lang;
+  /**
+   * For a page with one URL per language (lib/language/localized-routes.ts):
+   * switching loads the other language's URL instead of adding `?lang=`.
+   */
+  languagePaths?: Record<Lang, string>;
 }) {
   const [lang, setLangState] = useState<Lang>(initialLang);
 
@@ -48,11 +54,18 @@ export function LanguageProvider({
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const setLang = useCallback((next: Lang) => {
-    setLangState(next);
-    persistLanguage(next);
-    updateLanguageInCurrentUrl(next);
-  }, []);
+  const setLang = useCallback(
+    (next: Lang) => {
+      persistLanguage(next);
+      if (languagePaths) {
+        if (next !== lang) window.location.assign(languagePaths[next]);
+        return;
+      }
+      setLangState(next);
+      updateLanguageInCurrentUrl(next);
+    },
+    [lang, languagePaths],
+  );
 
   const value: LanguageContextValue = {
     lang,
