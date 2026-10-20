@@ -10,7 +10,9 @@ import {
 } from "@phosphor-icons/react";
 import type { ComponentType } from "react";
 import { VERTICALS, getVerticalPreset } from "@/config/verticals";
+import { DOCTORS_LANDING_PATHS } from "@/lib/language/localized-routes";
 import { cn } from "@/lib/utils";
+import { doctorsTranslations } from "./doctors-translations";
 import type { LandingVertical } from "./landing-ui";
 import { useLanguage } from "./language-provider";
 import { IconTile, LpButton, SectionHeading, lpBody, lpDisplay, lpMono } from "./primitives";
@@ -125,6 +127,13 @@ function HealthcareTile({ onSelect }: { onSelect: () => void }) {
       >
         {withoutArrow(copy.start)}
       </LpButton>
+      <a
+        href={DOCTORS_LANDING_PATHS[lang]}
+        className="relative inline-flex min-h-11 items-center gap-2 self-start rounded-md text-[15px] font-semibold text-[var(--lp-mint-100)] underline-offset-4 hover:text-white hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)]"
+      >
+        {doctorsTranslations[lang].link}
+        <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
+      </a>
     </div>
   );
 }

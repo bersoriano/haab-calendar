@@ -12,6 +12,8 @@ import {
   type ReactNode,
 } from "react";
 import { DEMO_PAGES } from "@/lib/demo-pages";
+import { DOCTORS_LANDING_PATHS } from "@/lib/language/localized-routes";
+import { doctorsTranslations } from "./doctors-translations";
 import { resolveLandingAccountEntry } from "@/lib/landing-account-entry";
 import { cn } from "@/lib/utils";
 import type { VerticalId } from "@/lib/types";
@@ -97,7 +99,7 @@ function useLandingDialogs() {
   return useContext(LandingDialogsContext);
 }
 
-function LandingDialogsProvider({ children }: { children: ReactNode }) {
+export function LandingDialogsProvider({ children }: { children: ReactNode }) {
   const { onSelectVertical, onStart, hasPage, hasDraft } = useLandingActions();
   const [startOpen, setStartOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
@@ -646,8 +648,17 @@ export function LiveExamples({ featured }: { featured: number[] }) {
   );
 }
 
-export function FAQ() {
+type FaqCopy = {
+  eyebrow: string;
+  title: string;
+  aside: string;
+  items: readonly { q: string; a: string }[];
+};
+
+/** `copy` lets another page (the doctors page) ask its own questions. */
+export function FAQ({ copy }: { copy?: FaqCopy } = {}) {
   const { t } = useLanguage();
+  const faq = copy ?? t.faq;
 
   return (
     <section
@@ -657,17 +668,17 @@ export function FAQ() {
       {/* No ancestor clips overflow: the left column is sticky. */}
       <div className="mx-auto grid max-w-[1200px] gap-6 lg:grid-cols-[400px_minmax(0,1fr)] lg:items-start lg:gap-20">
         <div className="flex flex-col gap-3.5 lg:sticky lg:top-28 lg:gap-5">
-          <Eyebrow>{t.faq.eyebrow}</Eyebrow>
+          <Eyebrow>{faq.eyebrow}</Eyebrow>
           <h2
             className={cn(
               lpDisplay,
               "text-[36px] font-bold leading-[1.05] tracking-[-0.035em] text-[var(--lp-ink)] lg:text-[54px] lg:leading-[1.04]",
             )}
           >
-            {t.faq.title}
+            {faq.title}
           </h2>
           <p className="hidden text-[17px] leading-[1.6] text-[var(--lp-muted)] lg:block">
-            {t.faq.aside}
+            {faq.aside}
           </p>
           <DemoButton className="hidden min-h-11 items-center gap-2 self-start rounded-md text-[16px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)] lg:inline-flex">
             {t.hero.ctaSecondary}
@@ -677,7 +688,7 @@ export function FAQ() {
         <div className="flex flex-col gap-2.5 lg:gap-3">
           {/* Question positions stay stable across languages. Translated keys
               would remount open details and create false engagement events. */}
-          {t.faq.items.map((item, index) => (
+          {faq.items.map((item, index) => (
             <details
               data-landing-faq={index + 1}
               key={index}
@@ -710,7 +721,7 @@ export function FAQ() {
         {/* Below lg the aside and link follow the accordion instead of
             crowding the heading. */}
         <div className="flex flex-col gap-3 lg:hidden">
-          <p className="text-[15px] leading-[1.55] text-[var(--lp-muted)]">{t.faq.aside}</p>
+          <p className="text-[15px] leading-[1.55] text-[var(--lp-muted)]">{faq.aside}</p>
           <DemoButton className="inline-flex min-h-11 items-center gap-2 self-start rounded-md text-[15.5px] font-bold text-[var(--lp-teal-700)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]">
             {t.hero.ctaSecondary}
             <ArrowRight aria-hidden="true" weight="bold" className="h-4 w-4" />
@@ -843,6 +854,11 @@ export function Footer({
               <li>
                 <a href={tryBookingPath(lang)} className={linkClass}>
                   {t.footer.product.seeLivePage}
+                </a>
+              </li>
+              <li>
+                <a href={DOCTORS_LANDING_PATHS[lang]} className={linkClass}>
+                  {doctorsTranslations[lang].link}
                 </a>
               </li>
               <AccountEntryListItem />
