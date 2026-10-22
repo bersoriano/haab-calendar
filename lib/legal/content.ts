@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-10-19";
+export const LEGAL_UPDATED = "2026-10-21";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -87,7 +87,7 @@ const EN_PRIVACY: LegalDocument = {
         "Supabase — database, authentication, and file storage. Holds account and booking records.",
         "Vercel — application hosting and image storage. Processes requests and serves uploaded images.",
         "Stripe — subscription payments. Handles card data directly; Haab Calendar never receives it.",
-        "Google — only for businesses that connect a Google Calendar, and only for the scopes listed above.",
+        "Google — processes website usage data through Google Analytics as described below. For businesses that connect a Google Calendar, Google also processes calendar data under the scopes listed above.",
         "PostHog — when landing analytics are enabled, processes the website usage data described below. This integration uses PostHog's United States region.",
         "These providers process data on our behalf under their own terms. Some of them operate infrastructure outside Mexico, which means personal data may be transferred and stored abroad.",
       ],
@@ -96,8 +96,8 @@ const EN_PRIVACY: LegalDocument = {
       id: "cookies",
       heading: "Cookies",
       body: [
-        "Haab Calendar sets only cookies that are strictly necessary for it to work: an authentication cookie that keeps a business signed in, a language preference cookie, short-lived cookies that secure the Google sign-in exchange, and an administrative cookie used when editing example pages.",
-        "There are no advertising cookies or analytics cookies. When configured, the landing page uses the third-party cookieless analytics described below.",
+        "Haab Calendar uses essential cookies: an authentication cookie that keeps a business signed in, a language preference cookie, short-lived cookies that secure the Google sign-in exchange, and an administrative cookie used when editing example pages.",
+        "On the production marketing pages, gallery, and legal pages, Google Analytics uses first-party analytics cookies to distinguish visitors and sessions. It measures page views, public page URLs, referring domains, campaign tags, approximate location, and browser and device information. Initial page URLs exclude query strings and fragments; campaign tags are included separately and should not contain personal information. Collection stops when you navigate outside these pages and remains off until a full page load. It does not initialize on booking pages, account setup, dashboards, or private booking management pages. Browser Do Not Track and Global Privacy Control signals disable collection. Reports and retention follow the Google Analytics property's settings. You can block these cookies through your browser or an analytics blocker. When configured, the landing page also uses the separate cookieless PostHog analytics described below.",
         "Public booking pages count visits without cookies so the business can see how its page and campaign links perform. Each visit is recorded as an anonymous identifier that changes every day and differs on every business's page, together with the campaign tags in the link, the referring website's domain and the device type. A second identifier of the same kind, derived from the network alone, is used only to limit abusive traffic. No IP address, browser fingerprint or personal data is stored, and these records are deleted after 13 months.",
       ],
     },
@@ -330,7 +330,7 @@ const ES_PRIVACY: LegalDocument = {
         "Supabase — base de datos, autenticación y almacenamiento de archivos. Conserva los registros de cuentas y reservas.",
         "Vercel — alojamiento de la aplicación y almacenamiento de imágenes. Procesa las solicitudes y sirve las imágenes subidas.",
         "Stripe — pagos de suscripciones. Trata los datos de tarjeta directamente; Haab Calendar nunca los recibe.",
-        "Google — únicamente para los negocios que conectan un Google Calendar, y solo con los permisos listados arriba.",
+        "Google — trata datos de uso del sitio mediante Google Analytics, como se describe abajo. Para los negocios que conectan un Google Calendar, Google también trata datos del calendario con los permisos listados arriba.",
         "PostHog — cuando se habilita la analítica de la página principal, procesa los datos de uso del sitio descritos abajo. Esta integración utiliza la región de Estados Unidos de PostHog.",
         "Estos proveedores tratan los datos por nuestra cuenta bajo sus propios términos. Algunos operan infraestructura fuera de México, lo que implica que los datos personales pueden transferirse y almacenarse en el extranjero.",
       ],
@@ -339,8 +339,8 @@ const ES_PRIVACY: LegalDocument = {
       id: "cookies",
       heading: "Cookies",
       body: [
-        "Haab Calendar solo utiliza cookies estrictamente necesarias para su funcionamiento: una cookie de autenticación que mantiene la sesión del negocio, una cookie de preferencia de idioma, cookies de corta duración que aseguran el intercambio de inicio de sesión con Google, y una cookie administrativa que se usa al editar páginas de ejemplo.",
-        "No hay cookies publicitarias ni cookies de analítica. Cuando se configura, la página principal utiliza la analítica de terceros sin cookies descrita abajo.",
+        "Haab Calendar utiliza cookies esenciales: una cookie de autenticación que mantiene la sesión del negocio, una cookie de preferencia de idioma, cookies de corta duración que aseguran el intercambio de inicio de sesión con Google, y una cookie administrativa que se usa al editar páginas de ejemplo.",
+        "En las páginas de marketing, galería y páginas legales de producción, Google Analytics utiliza cookies de analítica propias para distinguir visitantes y sesiones. Mide vistas, direcciones de páginas públicas, dominios de referencia, etiquetas de campaña, ubicación aproximada e información del navegador y dispositivo. Las direcciones iniciales excluyen parámetros de consulta y fragmentos; las etiquetas de campaña se incluyen por separado y no deben contener datos personales. La recopilación se detiene al salir de estas páginas y permanece desactivada hasta una carga completa de página. No se inicia en páginas de reservas, configuración de cuentas, paneles ni páginas privadas de gestión de reservas. Las señales Do Not Track y Global Privacy Control del navegador desactivan la recopilación. Los informes y la conservación siguen la configuración de la propiedad de Google Analytics. Puedes bloquear estas cookies mediante tu navegador o un bloqueador de analítica. Cuando se configura, la página principal también utiliza la analítica sin cookies de PostHog descrita abajo.",
         "Las páginas públicas de reserva cuentan visitas sin cookies para que el negocio pueda ver el rendimiento de su página y de sus enlaces de campaña. Cada visita se registra con un identificador anónimo que cambia cada día y es distinto en la página de cada negocio, junto con las etiquetas de campaña del enlace, el dominio del sitio de referencia y el tipo de dispositivo. Un segundo identificador del mismo tipo, derivado solo de la red, se usa únicamente para limitar el tráfico abusivo. No se guarda la dirección IP, ninguna huella del navegador ni datos personales, y estos registros se eliminan después de 13 meses.",
       ],
     },
