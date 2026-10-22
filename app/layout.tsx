@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { getServerLanguage } from "@/lib/language/server";
 import { buildRootMetadata } from "@/lib/site-metadata";
+import { GOOGLE_ANALYTICS_SCRIPT } from "@/lib/analytics/google-tag";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -58,7 +60,14 @@ export default async function RootLayout({
       lang={lang}
       className={`${inter.variable} ${plexMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full">{children}</body>
+      <body className="min-h-full">
+        {children}
+        {process.env.NODE_ENV === "production" && (
+          <Script id="google-analytics" strategy="afterInteractive">
+            {GOOGLE_ANALYTICS_SCRIPT}
+          </Script>
+        )}
+      </body>
     </html>
   );
 }
