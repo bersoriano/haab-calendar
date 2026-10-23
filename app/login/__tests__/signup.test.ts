@@ -87,19 +87,34 @@ describe("creating an account", () => {
     });
   });
 
-  it("answers a wrong password on an existing account as it answers a new one, so the form cannot enumerate accounts", async () => {
-    const created = await signup(undefined, credentials("new@example.com"));
-
+  it.each([
+    ["en", "An account already exists for this email address. Sign in, or use “Forgot your password?” to reset your password."],
+    ["es", "Ya existe una cuenta con este correo electrónico. Inicia sesión o usa “¿Olvidaste tu contraseña?” para restablecerla."],
+  ])("guides an existing account with a wrong password to recovery in %s", async (lang, message) => {
     mocks.signUp.mockResolvedValue(EXISTING_ACCOUNT);
     mocks.signInWithPassword.mockResolvedValue({
       error: { message: "Invalid login credentials", code: "invalid_credentials" },
     });
-    const existing = await signup(undefined, credentials("taken@example.com"));
 
-    expect(mocks.signInWithPassword).toHaveBeenCalledTimes(1);
-    expect(existing).toEqual(created);
-    expect(existing.status).toBe("success");
+    const result = await signup(undefined, form({
+      email: "taken@example.com", password: "wrong-password", lang, next: PUBLISH_RETURN,
+    }));
+
+    expect(result).toEqual({ message, status: "error", nextIntent: "login" });
   });
+
+  it.each(["email_exists", "user_already_exists", "user_already_registered"])(
+    "offers recovery when Supabase rejects signup with %s",
+    async (code) => {
+      mocks.signUp.mockResolvedValue({ data: { user: null, session: null }, error: { code } });
+
+      expect(await signup(undefined, credentials())).toEqual({
+        message: "An account already exists for this email address. Sign in, or use “Forgot your password?” to reset your password.",
+        status: "error",
+        nextIntent: "login",
+      });
+    },
+  );
 
   it("does not attempt a sign-in for a new account that has yet to confirm", async () => {
     const result = await signup(undefined, credentials());

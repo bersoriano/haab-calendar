@@ -34,16 +34,12 @@ export function AuthForm({
   const t = translations[lang].auth;
   const [state, formAction, isPending] = useActionState(authenticate, initialState);
   const [intent, setIntent] = useState<AuthIntent>(initialIntent);
-  // The only success this form ever shows is "account created — confirm your
-  // email, then sign in here"; every other success navigates away. So make
-  // "here" true: once that answer arrives, the same button signs in. Left on
-  // "Create account", a second press asks for the account again, which never
-  // signs anyone in. Compared by identity so each answer is acted on once and
-  // the visitor can still switch back by hand.
+  // New accounts and repeat signups both lead to sign-in. Compare answers by
+  // identity so visitors can still switch modes manually after each response.
   const [answeredState, setAnsweredState] = useState(initialState);
   if (state !== answeredState) {
     setAnsweredState(state);
-    if (state.status === "success") setIntent("login");
+    if (state.status === "success" || state.nextIntent === "login") setIntent("login");
   }
   // Controlled: React resets a form's uncontrolled fields after its action
   // runs, which would wipe the address on every refused attempt.

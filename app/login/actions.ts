@@ -11,6 +11,7 @@ import { getAuthCopy, getAuthErrorMessage } from "@/lib/auth-i18n";
 export type AuthFormState = {
   message: string;
   status: "idle" | "error" | "success";
+  nextIntent?: "login";
 };
 
 type CredentialsResult =
@@ -156,6 +157,9 @@ export async function signup(
   });
 
   if (error) {
+    if (["email_exists", "user_already_exists", "user_already_registered"].includes(error.code ?? "")) {
+      return { message: t.userExists, status: "error", nextIntent: "login" };
+    }
     return {
       message: getAuthErrorMessage(error, credentials.lang, "createFailed"),
       status: "error",
@@ -182,8 +186,7 @@ export async function signup(
       revalidatePath("/", "layout");
       redirect(credentials.next);
     }
-    // A refused sign-in falls through to the answer a new account gets.
-    // Anything else would tell a stranger which addresses hold accounts here.
+    return { message: t.userExists, status: "error", nextIntent: "login" };
   }
 
   return {

@@ -44,7 +44,7 @@ describe("auth i18n", () => {
         "es",
         "createFailed",
       ),
-    ).toBe("Ya existe una cuenta con este correo electrónico.");
+    ).toBe("Ya existe una cuenta con este correo electrónico. Inicia sesión o usa “¿Olvidaste tu contraseña?” para restablecerla.");
   });
 
   it("uses a localized fallback for unknown Spanish errors", () => {
@@ -71,7 +71,7 @@ describe("auth i18n", () => {
         "en",
         "createFailed",
       ),
-    ).toBe("An account already exists for this email address.");
+    ).toBe("An account already exists for this email address. Sign in, or use “Forgot your password?” to reset your password.");
   });
 
   it("uses a localized fallback for unknown English errors", () => {

@@ -5,7 +5,7 @@ import type { AuthFormState } from "@/app/login/actions";
 import { translations } from "@/components/landing/translations";
 
 const mocks = vi.hoisted(() => ({
-  state: { message: "", status: "idle" } as { message: string; status: "idle" | "error" | "success" },
+  state: { message: "", status: "idle" } as AuthFormState,
 }));
 
 vi.mock("@/app/login/actions", () => ({
@@ -48,6 +48,21 @@ describe("AuthForm after an account is created", () => {
     expect(html).toContain(">Sign in<");
     expect(html).not.toContain("Create account to publish");
     expect(html).toContain('autoComplete="current-password"');
+  });
+
+  it.each([
+    ["en", "Forgot your password?", "Sign in"],
+    ["es", "¿Olvidaste tu contraseña?", "Iniciar sesión"],
+  ] as const)("shows sign-in and recovery after repeat signup in %s", (lang, recovery, signIn) => {
+    mocks.state = { message: translations[lang].auth.userExists, status: "error", nextIntent: "login" };
+    const html = renderToStaticMarkup(
+      <AuthForm initialIntent="signup" lang={lang} nextPath="/?resumePublish=1" />,
+    );
+
+    expect(html).toContain('name="intent" value="login"');
+    expect(html).toContain(`>${signIn}<`);
+    expect(html).toContain(`href="/login/reset?lang=${lang}"`);
+    expect(html).toContain(recovery);
   });
 
   it("stays on account creation when the attempt was refused", () => {
