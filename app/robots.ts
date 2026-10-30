@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-import { buildAbsoluteUrl } from "@/lib/site-url";
+import { buildAbsoluteUrl, getSiteOrigin } from "@/lib/site-url";
 
 /**
  * What crawlers may index.
@@ -15,23 +15,45 @@ import { buildAbsoluteUrl } from "@/lib/site-url";
  * as the canonical `/{vertical}/{slug}` route, so indexing it would split one
  * page's ranking across two URLs.
  */
+const DISALLOW = [
+  "/api/",
+  "/auth/",
+  "/*/manage/",
+  "/public/",
+  "/reset-password",
+  "/login/reset",
+  "/super-admin",
+  "/try-booking",
+  "/account-deletion-preview",
+];
+
+/**
+ * Search and answer-engine crawlers, named so the invitation is explicit. `*`
+ * already admits them; naming them is the signal.
+ *
+ * Each named group repeats the full disallow list. A crawler obeys only the
+ * most specific group that names it and ignores `*` entirely, so a bare
+ * `Allow: /` here would quietly lift every rule above for that crawler, manage
+ * links included.
+ */
+const NAMED_CRAWLERS = [
+  "OAI-SearchBot",
+  "ChatGPT-User",
+  "PerplexityBot",
+  "Claude-SearchBot",
+  "Claude-User",
+  "Googlebot",
+  "Bingbot",
+];
+
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
+    rules: ["*", ...NAMED_CRAWLERS].map((userAgent) => ({
+      userAgent,
       allow: "/",
-      disallow: [
-        "/api/",
-        "/auth/",
-        "/*/manage/",
-        "/public/",
-        "/reset-password",
-        "/login/reset",
-        "/super-admin",
-        "/try-booking",
-        "/account-deletion-preview",
-      ],
-    },
+      disallow: DISALLOW,
+    })),
     sitemap: buildAbsoluteUrl("/sitemap.xml"),
+    host: getSiteOrigin(),
   };
 }

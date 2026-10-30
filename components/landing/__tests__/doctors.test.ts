@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import sitemap from "@/app/sitemap";
 import { buildDoctorsJsonLd, buildDoctorsMetadata } from "@/components/landing/doctors-seo";
 import { doctorsTranslations } from "@/components/landing/doctors-translations";
+import { buildLandingJsonLd } from "@/components/landing/seo";
 import { DEMO_PAGES } from "@/lib/demo-pages";
 import { DOCTORS_LANDING_PATHS, routeLanguage } from "@/lib/language/localized-routes";
 import { applyLanguageCookie, forwardRouteLanguage } from "@/lib/language/proxy-language";
@@ -141,6 +142,18 @@ describe("online booking for doctors: search metadata", () => {
       expect(faq.mainEntity.map((q) => q.name)).toEqual(doctorsTranslations[lang].faq.items.map((item) => item.q));
       // Same @id as the landing page's app node: one product, two pages.
       expect(graph.find((entry) => entry["@type"] === "WebApplication")?.["@id"]).toBe("https://haabcalendar.com/#app");
+    }
+  });
+
+  it("names the same organisation as the landing page, and the free offer", () => {
+    for (const lang of ["en", "es"] as const) {
+      const graph = buildDoctorsJsonLd(lang)["@graph"] as { "@type": string; [key: string]: unknown }[];
+      const landing = buildLandingJsonLd(lang)["@graph"] as { "@type": string; [key: string]: unknown }[];
+      const organization = (g: typeof graph) => g.find((entry) => entry["@type"] === "Organization");
+      expect(organization(graph)).toEqual(organization(landing));
+      expect(graph.find((entry) => entry["@type"] === "WebApplication")).toMatchObject({
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+      });
     }
   });
 
