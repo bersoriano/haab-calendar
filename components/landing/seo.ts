@@ -89,6 +89,54 @@ export function buildLandingMetadata(lang: Lang): Metadata {
   };
 }
 
+const ORGANIZATION_DESCRIPTION =
+  "Online booking page for small businesses. One link, no client sign-up, no double bookings. Live availability with 10-minute hold and private reschedule link. Optional Google Calendar sync. Free during early access.";
+
+/** The topics answer engines should associate with the brand. */
+const ORGANIZATION_KNOWS_ABOUT = [
+  "online booking",
+  "appointment scheduling",
+  "no-account booking",
+  "Google Calendar integration",
+  "booking for clinics",
+  "booking for small businesses",
+];
+
+/**
+ * The company behind the product. Identical on every page that carries it, in
+ * either language, so an engine that reads two pages meets one entity under
+ * one `@id` rather than two that disagree. No `sameAs` until there is a
+ * profile elsewhere to point at.
+ */
+export function buildOrganizationJsonLd() {
+  const site = `${getSiteOrigin()}/`;
+
+  return {
+    "@type": "Organization",
+    "@id": `${site}#organization`,
+    name: SITE_NAME,
+    url: site,
+    description: ORGANIZATION_DESCRIPTION,
+    logo: {
+      "@type": "ImageObject",
+      url: buildAbsoluteUrl("/icon-512.png"),
+      width: 512,
+      height: 512,
+    },
+    knowsAbout: ORGANIZATION_KNOWS_ABOUT,
+  };
+}
+
+/** The price, in the words every page that states it uses. */
+export function buildAppOffer(lang: Lang) {
+  return {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    description: translations[lang].hero.badgeText,
+  };
+}
+
 /**
  * Schema.org description of the landing page, for search engines and answer
  * engines. It restates what the page shows, never more: the FAQ entries are
@@ -111,18 +159,7 @@ export function buildLandingJsonLd(lang: Lang) {
   return {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization",
-        "@id": ids.organization,
-        name: SITE_NAME,
-        url: site,
-        logo: {
-          "@type": "ImageObject",
-          url: buildAbsoluteUrl("/icon-512.png"),
-          width: 512,
-          height: 512,
-        },
-      },
+      buildOrganizationJsonLd(),
       {
         "@type": "WebSite",
         "@id": ids.website,
@@ -141,14 +178,10 @@ export function buildLandingJsonLd(lang: Lang) {
         applicationSubCategory: t.seo.title,
         operatingSystem: "Web",
         browserRequirements: "Requires JavaScript.",
+        inLanguage: ["en", "es"],
         image: socialCard(lang).url,
         featureList: t.hero.chips,
-        offers: {
-          "@type": "Offer",
-          price: "0",
-          priceCurrency: "USD",
-          description: t.hero.badgeText,
-        },
+        offers: buildAppOffer(lang),
         publisher: { "@id": ids.organization },
       },
       {

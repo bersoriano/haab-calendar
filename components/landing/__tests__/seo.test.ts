@@ -133,6 +133,21 @@ describe("landing page structured data", () => {
       logo: expect.objectContaining({ url: "https://haabcalendar.com/icon-512.png" }),
     });
   });
+
+  it("tells answer engines what the organisation does", () => {
+    expect(node("en", "Organization")).toMatchObject({
+      description: expect.stringContaining("no client sign-up"),
+      knowsAbout: expect.arrayContaining(["online booking", "no-account booking"]),
+    });
+  });
+
+  it("describes one organisation in both languages", () => {
+    expect(node("es", "Organization")).toEqual(node("en", "Organization"));
+  });
+
+  it("states that the product works in English and Spanish", () => {
+    expect(node("es", "WebApplication")).toMatchObject({ inLanguage: ["en", "es"] });
+  });
 });
 
 describe("structured data serialisation", () => {

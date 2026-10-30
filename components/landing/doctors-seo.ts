@@ -4,6 +4,7 @@ import { DOCTORS_LANDING_PATHS } from "@/lib/language/localized-routes";
 import { SITE_NAME, SOCIAL_CARD_SIZE, socialCardPath } from "@/lib/site-metadata";
 import { buildAbsoluteUrl, getSiteOrigin } from "@/lib/site-url";
 import { doctorsTranslations } from "./doctors-translations";
+import { buildAppOffer, buildOrganizationJsonLd } from "./seo";
 import type { Lang } from "./translations";
 
 /**
@@ -67,7 +68,8 @@ export function buildDoctorsMetadata(lang: Lang): Metadata {
 /**
  * Restates what the page shows and nothing more, like the landing's own
  * (components/landing/seo.ts): the FAQ entries are the page's questions, and
- * the app node shares the landing's `@id`, so search engines read one product.
+ * the app and organization nodes share the landing's `@id`s, so search engines
+ * read one product from one company.
  */
 export function buildDoctorsJsonLd(lang: Lang) {
   const t = doctorsTranslations[lang];
@@ -84,15 +86,19 @@ export function buildDoctorsJsonLd(lang: Lang) {
   return {
     "@context": "https://schema.org",
     "@graph": [
+      buildOrganizationJsonLd(),
       {
         "@type": "WebApplication",
         "@id": ids.app,
         name: SITE_NAME,
         url: site,
+        description: t.seo.description,
         applicationCategory: "BusinessApplication",
         applicationSubCategory: t.seo.title,
         operatingSystem: "Web",
+        inLanguage: ["en", "es"],
         featureList: t.hero.chips,
+        offers: buildAppOffer(lang),
         audience: {
           "@type": "Audience",
           audienceType: lang === "es" ? "Médicos, dentistas y clínicas" : "Doctors, dentists, and clinics",
