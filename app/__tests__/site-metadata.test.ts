@@ -37,6 +37,37 @@ describe("robots.txt", () => {
       expect.arrayContaining(["/api/", "/super-admin", "/public/", "/try-booking"]),
     );
   });
+
+  it("names the answer-engine crawlers and lets them in", () => {
+    const rules = [robots().rules].flat();
+    const agents = rules.map((rule) => rule.userAgent);
+
+    expect(agents).toEqual(
+      expect.arrayContaining([
+        "OAI-SearchBot",
+        "ChatGPT-User",
+        "PerplexityBot",
+        "Claude-SearchBot",
+        "Claude-User",
+        "Googlebot",
+        "Bingbot",
+      ]),
+    );
+    for (const rule of rules) expect(rule.allow).toBe("/");
+  });
+
+  it("holds every named crawler to the same disallow list as everyone else", () => {
+    // A crawler reads only the group naming it, never `*` as well. A named
+    // group without the list would let that crawler fetch manage links.
+    const [everyone, ...named] = [robots().rules].flat();
+
+    expect(everyone.userAgent).toBe("*");
+    for (const rule of named) expect(rule.disallow).toEqual(everyone.disallow);
+  });
+
+  it("names the canonical host", () => {
+    expect(robots().host).toBe("https://haabcalendar.com");
+  });
 });
 
 describe("sitemap.xml", () => {
