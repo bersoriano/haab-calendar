@@ -25,7 +25,9 @@ or replace it.
 
 Never put the Remotion render (`video-demo/output/haab-calendar-demo.mp4`,
 1080p, about 24 MB) on a page. If the video changes, re-encode from the new
-render. The VTT timings only hold while the narration is unchanged.
+render. The VTT timings only hold while the narration is unchanged. That render
+is not in git: its source project was removed, so make a new one with
+`docs/video-demo-prompt.md`.
 
 ```sh
 ffmpeg -i video-demo/output/haab-calendar-demo.mp4 -vf scale=-2:720 -c:v libx264 \

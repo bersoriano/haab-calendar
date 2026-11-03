@@ -52,3 +52,6 @@ docs/tutorials/
 
 # Local-only public screenshot baselines (machine-specific fonts)
 e2e/public-visual.spec.ts-snapshots/
+
+# Product film master — lives on an external drive, regenerate with docs/video-demo-prompt.md
+/video-demo/output/haab-calendar-demo.mp4
