@@ -2,8 +2,8 @@
 
 The source project was deleted on purpose. Paste everything below the line into
 a coding agent, from the repository root, to rebuild it. The last export
-(`haab-calendar-demo.mp4`, 1080p, about 24 MB) is kept on an external drive, not
-in git.
+(`haab-calendar-demo.mp4`, 1080p, about 24 MB) is being moved to an external drive, not
+kept in git.
 
 ---
 
@@ -12,6 +12,67 @@ the repository root, using Remotion for composition, Playwright for capturing
 the real app, and FFmpeg for editing and delivery. Update copy, selectors, and
 timings wherever the product has changed since this was written, and inspect the
 current UI before recording. Do not assume any detail below still matches it.
+Preserve the six-scene design and copy unless authentic UI changes require an
+adaptation; report deviations rather than silently redesigning the film. The
+original brief is quoted at the end; the concrete choices below describe the
+October 18, 2026 export, not additional user requirements.
+
+## Thread context and decisions
+
+- The user explicitly requested Remotion and Playwright and autonomous execution.
+  The brief supplied the creative direction: premium Apple/Linear/Stripe/Calendly
+  SaaS commercial for businesses, doctors, consultants, service providers, and
+  entrepreneurs, not a tutorial. No later user instruction changed the creative
+  result. Their only follow-up asked the difference between the two MP4s: use
+  `haab-calendar-demo.mp4` for publishing; `haab-calendar-remotion.mp4` is the
+  intermediate before normalization, with the same scenes and audio.
+- Browser-local standalone mode was an agent choice: it already implemented
+  validation, holds, and confirmation, allowing the genuine success screen
+  without production writes or database seeding. Public weekly hours supplied
+  demo availability; occupied production slots were deliberately excluded. The
+  local confirmation does not demonstrate a backend booking or delivered email.
+  Keep the demo label. If this mode is unavailable, stop at real review and adapt
+  chapter 04/narration so neither promises a completed booking.
+- Use original synthesized music rather than stock footage or sampled music;
+  this avoids unrelated visuals and third-party music samples. Jenny neural TTS
+  succeeded for all six lines; Samantha was only a fallback, never in the export.
+- Rejected default Playwright WebM recording because UI text was soft; use the
+  timestamped quality-95 CDP capture below. Rejected generic cover/center framing
+  because it left a cropped header sliver; use explicit source-pixel offsets.
+- Original delivery also included editable source/assets ZIP, capture script,
+  storyboard, voiceover script, README, and QA evidence. Rebuild these within the
+  local workspace; keep generated media/raw frames/dependencies out of Git. The
+  current repository policy below supersedes the original source commits.
+
+## Problems encountered and fixes
+
+- Sandbox blocked Git writes, network/DNS and local-server startup. Use approved
+  execution permissions when needed; bind the app to loopback. Never bypass a
+  denied approval. The new task branch had no remote ref, so the attempted branch
+  pull failed; syncing from `origin/main` succeeded. Do not create a worktree.
+- Inspection showed time-slot selection automatically advanced to details. Do
+  not always click “Choose a time” afterwards: click it only if still present.
+  Actual field labels were “Full name”, “Phone number”, “Email”; “Email address”
+  was an incorrect assumption. Match observed accessible names.
+- Name the clip-generation command `prepare-scenes`, not `prepare`: npm runs
+  `prepare` during clean installation, before ignored footage exists. Validate a
+  clean install separately, never mutate dependencies during rendering.
+- Speech initially cached by filename, leaving stale audio and wrong engine
+  attribution after edits. Hash text/voice/rate and persist engine metadata;
+  explicit `--keep-recordings` preserves editor-provided speech. Reuse bundled
+  fonts when present so the editable package can rerender without parent assets.
+- FFmpeg rejected fade duration `.8`; write `0.8`. Concurrent render workers
+  repeatedly returned “Visited "http://localhost:3000/index.html" but got no
+  response.” A retry did not fix it; one worker completed the render. This is an
+  observed Chromium 151/Remotion setup issue, not proof of a universal cause.
+- Despite requested yuv420p, intermediate output probed as full-range
+  `yuvj420p`, `pc`, `bt470bg`. Keep the separate normalization pass below and
+  verify actual output rather than trusting render options.
+- Final export passed full decoding and Chrome playback/seek-to-50-seconds checks:
+  1,800 frames, 60.010667 s including AAC padding, 24,840,040 bytes, no detected
+  black interval, −19.3 LUFS integrated / −1.0 dBFS true peak. Thirteen final
+  frames and a contact sheet were visually inspected. No human listening review
+  occurred; do not present automated audio checks as one.
 
 ## Output
 
@@ -61,6 +122,10 @@ current UI before recording. Do not assume any detail below still matches it.
 
 ## Storyboard
 
+Frame ranges are start-inclusive/end-exclusive. Use typographic apostrophes in
+the chapter titles: “A few details. That’s all.” and “You’re booked. Just like
+that.” The calendar narration adds a spoken pause/comma after “real time”.
+
 | Time | Frames | Picture and motion | Narration start | Narration |
 | --- | --- | --- | --- | --- |
 | 00–06 | 0–180 | Wordmark over mint paper. Eyebrow "LESS BACK-AND-FORTH. MORE POSSIBILITY." Headline "Booking appointments," / "simplified." Footer "For every service. For every schedule." and "haabcalendar.com". Fine circular lines, restrained gradient motion. | 00:01.0 | Great scheduling should be effortless. |
@@ -89,6 +154,14 @@ current UI before recording. Do not assume any detail below still matches it.
   inside, scaling 1 to 1.028 over the chapter; subtitle at the bottom left; the
   demo label at the bottom right; a 3px mint progress bar along the bottom edge.
   Fade each chapter in over 24 frames and out over the last 14.
+- Source video stays at width 100%, height auto (no `object-fit: cover`): the
+  823px content viewport clips the original; top offset is
+  `-cropY * 1752 / 1920` CSS pixels, with centered zoom. Service cropY is 0.
+- Intro logo: (100,86), 56px tile. Headline block: (180,315), 1.07 line height;
+  eyebrow 19px, 30px gap; first/second lines ease in at frames 19–53 / 35–70.
+  Exit frames 153–180 with fade and 1.035 scale. Close logo: (100,84), headline
+  (180,322), 115px/1.08; 29px subline; CTA right 150/bottom 174 with 25×34px
+  padding and 18px radius. Close fades in over 23 frames, title 10–38, CTA 27–55.
 - Composition id `HaabCalendarDemo`, with `audio/mix.wav` underneath.
 
 ## Capture
@@ -110,6 +183,18 @@ current UI before recording. Do not assume any detail below still matches it.
   `fps=30`, libx264, CRF 14, yuv420p, faststart, as `public/captures/journey.mp4`.
 - Fail if frames number under 100, a target is invisible, or an expected screen
   never appears.
+- Wait for fonts and provider images to decode before recording. Start CDP only
+  after load; acknowledge frames and finish pending file writes before encoding.
+  Convert epoch timestamps to seconds relative to the first recorded frame, so
+  timeline marks and footage share an origin (not navigation-start time).
+- Original pacing: provider hold 2.2 s; smooth scroll to page y=580, wait 1.7 s;
+  services hold 1.8 s; service click, wait 1 s; calendar hold 1.8 s; pick first
+  enabled “mostly available” day, wait 1.4 s; mark time before slot click;
+  details appear, wait 1 s and mark details, then hold 1 s before typing. Pause
+  350 ms after each required field; fill optional birth date, wait 700 ms; mark
+  review, hold 2.2 s, click Confirm, wait for real success plus 1.2 s, mark
+  confirmed. These dates are dynamic: the original chose October 19, 2026 at
+  10:00 AM; do not freeze this expired date in a new capture.
 - Mark the timeline at provider, services, calendar, date, time, details, review,
   confirmed. Save a PNG and aria snapshot at each key screen. After confirmation,
   hold for about 7 seconds so the receipt can be read.
@@ -136,7 +221,13 @@ slot with `setpts`, `fps=30`, and `tpad` clone padding, at libx264 CRF 17:
 - Original score, synthesized from oscillators with no samples, 60 s, 48 kHz
   stereo. MIDI chords, one per 4-second bar, cycling:
   `[50,57,61,64,69] [47,54,57,62,66] [43,50,54,57,62] [45,52,57,59,64]`. Soft pads,
-  with eight plucked arpeggio notes per bar, one octave up, panned alternately.
+  with eight plucked arpeggio notes per bar at 0.5 s spacing. Chord-note indices
+  `[2,4,3,4,1,4,2,3]`, one octave up, alternate pan −0.4/+0.4. Pads last 5 s,
+  gain 0.025/note, 1.2 s attack × linear decay, fundamental + 0.2 second harmonic;
+  plucks last 1.9 s, gain 0.028, exponential decay 3.2/s, fast attack 80/s,
+  fundamental + 0.12 third harmonic. Score fades in 2 s/out 2.3 s, then gains
+  1.25 at mixing. These synthesis details distinguish this score from a generic
+  ambient replacement.
 - Effects: soft clicks at 16.2, 23.6, 27.7, 31.0, 42.8, 47.0 s (retime them to the
   new cuts), and a gentle confirmation chord (MIDI 81, 85, 88) at 48.4 s.
 - Mix: duck the score about 45% under speech, with fades. Apply `loudnorm=I=-18:TP=-2:LRA=7`
@@ -152,7 +243,12 @@ slot with `setpts`, `fps=30`, and `tpad` clone padding, at libx264 CRF 17:
   1710, 1790.
 - Normalize with FFmpeg to the final file: `scale` to limited range and BT.709,
   `format=yuv420p`, libx264 medium CRF 17, BT.709 color tags, `-c:a copy`, `-t 60`,
-  `+faststart`. This pass is what makes colors correct in browsers.
+  `+faststart`. Probe input range/matrix: the original required full-range
+  BT.601 (`bt470bg`) → limited-range BT.709 conversion, not merely new tags.
+  Use detected values if a newer renderer already emits limited-range BT.709.
+  Support normalization-only reruns to avoid rendering the scenes again.
+  Publish the final `haab-calendar-demo.mp4`; retain the intermediate only as a
+  local diagnostic asset.
 
 ## Verify before calling it done
 
@@ -169,3 +265,224 @@ happened.
 The 1080p render never goes on a page. Follow `docs/landing-demo-video.md` for the
 720p re-encode, poster, and captions. Its caption timings only hold while the
 narration is unchanged, so update both VTT files if the script or timing moves.
+
+
+## Original request (verbatim)
+
+The user's accompanying instruction was “use remotion and playwright for the following”.
+The complete pasted brief follows verbatim; it is historical task context, not
+an instruction to execute a rebuild during a documentation-only update.
+
+````markdown
+# Task: Create a Professional Product Demo Video for Haab Calendar
+
+You are a senior motion designer, video producer, and full-stack engineer specializing in premium SaaS product launch videos.
+
+Your task is to **produce a complete, professional 60-second promotional demo video** for my SaaS platform, Haab Calendar.
+
+## Product information
+
+- Product: Haab Calendar
+- Website: https://haabcalendar.com
+- Demo booking flow: https://haabcalendar.com/doctors/dr-maya-rivera?lang=en
+- Product category: Multipurpose appointment scheduling and booking platform
+- Target audience: Businesses, doctors, consultants, service providers, and entrepreneurs
+
+The video should demonstrate how easy it is for a customer to book an appointment through Haab Calendar.
+
+## 1. Video style
+
+Create a premium SaaS product commercial inspired by the presentation quality of Apple, Linear, Stripe, and Calendly.
+
+Visual characteristics:
+- Modern, elegant, minimalist, and polished
+- Smooth transitions and sophisticated motion graphics
+- Animated UI zooms and cursor movements
+- Subtle shadows and background gradients
+- Professional typography
+- Tasteful sound effects and background music
+- Clean English voiceover
+- No excessive animations or distracting effects
+
+Use Haab Calendar's actual branding, logo, typography, and colors wherever possible. Inspect the live website or project source to determine the correct visual identity.
+
+The finished video must feel like a professionally produced startup product launch.
+
+## 2. Actual booking flow
+
+Use Playwright to interact with and capture the real application.
+
+Navigate to:
+https://haabcalendar.com/doctors/dr-maya-rivera?lang=en
+
+Demonstrate the following journey:
+
+1. Open Dr. Maya Rivera's public booking page.
+2. Show the provider information and available appointment services.
+3. Select a medical consultation.
+4. Open the appointment calendar.
+5. Choose an available date.
+6. Select an available time slot.
+7. Proceed to the patient information form.
+8. Complete the form using fictional demonstration data.
+9. Show the appointment review and confirmation experience.
+10. Finish with Haab Calendar branding and a call to action.
+
+Important:
+- Inspect the actual UI before implementing the recording automation.
+- Do not invent application screens, prices, availability, or features.
+- Never submit a real production appointment unless an explicitly authorized demo/test environment is available.
+- Prefer a locally running development environment with seeded test data for the full confirmation sequence.
+- If safe confirmation is unavailable, show the real flow through the review step without fabricating a successful booking.
+- Ensure that no real personal information is exposed.
+
+## 3. Video storyboard
+
+Target duration: approximately 60 seconds.
+
+**Scene 1 — Introduction (0–6 seconds)**
+
+Display the Haab Calendar logo with an elegant entrance animation.
+
+Headline:
+"Booking appointments, simplified."
+
+Add a subtle animated background and smooth transition into the application.
+
+Voiceover:
+"Great scheduling should be effortless."
+
+**Scene 2 — Select a service (6–18 seconds)**
+
+Show Dr. Maya Rivera's booking page.
+
+Smoothly move the cursor to the consultation service. Highlight the service details and click the booking button.
+
+Voiceover:
+"With Haab Calendar, clients can choose the service they need in just a few clicks."
+
+**Scene 3 — Select date and time (18–32 seconds)**
+
+Show the real booking calendar.
+
+Animate the cursor selecting an available date, then an available time.
+
+Use subtle zoom effects to emphasize important interactions.
+
+Voiceover:
+"Explore available appointments in real time and choose the time that works best."
+
+**Scene 4 — Enter details (32–44 seconds)**
+
+Show the customer information form.
+
+Simulate natural typing using fictional information.
+
+Voiceover:
+"No complicated registration. Just a simple, intuitive booking experience."
+
+**Scene 5 — Confirmation (44–54 seconds)**
+
+Show the actual booking review or confirmation screen, depending on what can be safely recorded.
+
+If the environment permits safe test bookings, demonstrate a successful confirmation.
+
+Voiceover:
+"And just like that, your appointment is ready."
+
+**Scene 6 — Closing (54–60 seconds)**
+
+Transition to the Haab Calendar logo.
+
+Headline:
+"Scheduling made simple."
+
+Subheadline:
+"One platform. Endless possibilities."
+
+Website:
+haabcalendar.com
+
+Voiceover:
+"Haab Calendar. Make every appointment effortless."
+
+## 4. Technical implementation
+
+You are responsible for producing the video using code and available local tools.
+
+Preferred technologies:
+- Playwright for recording real application interactions
+- Remotion and React for video composition, transitions, animations, and typography
+- FFmpeg for media processing and final encoding
+- A suitable text-to-speech service for professional English narration, if available
+- Licensed or royalty-free music and sound effects
+
+You may select alternative tools if they produce better results.
+
+Implementation requirements:
+
+1. Inspect the repository and determine the existing framework and available dependencies.
+2. Create an isolated `video-demo/` workspace without modifying production application behavior.
+3. Implement reusable Playwright automation to capture the booking journey.
+4. Capture application footage at a consistent 1920×1080 resolution.
+5. Use smooth mouse movements, natural click timing, and appropriate pauses.
+6. Create animated text, transitions, branded backgrounds, and a closing screen.
+7. Combine application recordings with narration and sound effects.
+8. Render a complete MP4 video.
+9. If narration or music generation tools are unavailable, use appropriate fallbacks and clearly report the missing components.
+10. Review the rendered output for visual glitches, text clipping, excessive pauses, timing problems, and synchronization issues.
+
+## 5. Export requirements
+
+Primary output:
+`video-demo/output/haab-calendar-demo.mp4`
+
+Specifications:
+- Resolution: 1920×1080
+- Aspect ratio: 16:9
+- Frame rate: 30 FPS
+- Duration: approximately 60 seconds
+- Video codec: H.264
+- Audio codec: AAC, when audio is available
+
+Also provide:
+- Editable video project
+- Playwright recording script
+- Voiceover script
+- Storyboard
+- README with instructions to reproduce or modify the video
+
+## 6. Quality expectations
+
+This is a marketing asset for a commercial SaaS platform, not a tutorial or a developer demonstration.
+
+Prioritize:
+- Authentic product UI
+- Beautiful cinematography and motion design
+- Clear explanation of the booking experience
+- Natural pacing
+- Consistent branding
+- High-quality visual presentation
+- Seamless transitions
+- A convincing final call to action
+
+Avoid:
+- Generic stock video
+- Fake dashboards
+- Distracting effects
+- Long unedited screen recordings
+- Excessive text
+- Technical explanations unrelated to the customer's experience
+
+## 7. Execution
+
+Do not stop after planning or generating a storyboard.
+
+Implement the necessary scripts, capture the real application footage, compose the scenes, and render the final video.
+
+Work autonomously, resolving ordinary implementation decisions without requesting approval.
+
+If a particular step cannot be completed due to missing credentials, restricted production access, or unavailable tooling, implement the best safe alternative, explain the blocker, and still produce the most complete video possible.
+
+**Success criterion:** A professional, playable MP4 demonstrating the Haab Calendar appointment booking experience, ready to publish on a landing page or share with prospective customers.
+````
