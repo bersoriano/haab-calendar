@@ -52,7 +52,9 @@ constraint enforces which kind of service. See
 ## Public Examples
 
 Seed the published examples with `npm run seed:examples`. The command is
-idempotent and gives each example its own non-login owner account.
+idempotent and gives each example its own non-login owner account. It also
+overwrites edits made to the demos, so to publish a single new one use
+`npm run seed:examples -- --only=<key>`, with the key from `lib/demo-pages.ts`.
 
 - Health: `/doctors/dr-maya-rivera`
 - Spaces: `/spaces/riverside-padel-club`
@@ -66,6 +68,7 @@ idempotent and gives each example its own non-login owner account.
 - Car service, one bay: `/professionals/northgate-auto-service`
 - Personal golf coaching: `/professionals/fairway-lab-golf`
 - Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
+- Guided tours, dated departures and weekly day trips: `/events/ruta-cenote-tours`
 
 Casa Mirador is the exception to the rule below: its services sell a fixed
 number of tables at each seating, so a reservation takes one table rather than
@@ -75,9 +78,11 @@ single-resource business — one room, one chair, one bay, one coach — because
 booked appointment slot blocks that time across all of a provider's services. Hotel stays are deliberately absent; see the note at
 the end of this section.
 
-The two race entries are dated relative to the seed run, so re-seeding always
-leaves them in the future. Every example is fictional, including the phone
-numbers and addresses.
+The two race entries and the tour departures are dated relative to the seed
+run, so re-seeding always leaves them in the future. Events have no end date,
+so a multi-day tour is stored as its first day's welcome meeting and states its
+length in the name and description. Every example is fictional, including the
+phone numbers and addresses.
 
 `lib/demo-pages.ts` is the allowlist these pages are resolved from; the seed
 script must stay in sync with it (`lib/__tests__/demo-pages.test.ts` enforces

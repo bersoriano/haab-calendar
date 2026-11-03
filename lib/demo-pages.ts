@@ -116,6 +116,13 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     ownerEmail: "public-examples+restaurants@haab-calendar.invalid",
     label: "Casa Mirador",
   },
+  {
+    key: "tours",
+    vertical: "events",
+    providerSlug: "ruta-cenote-tours",
+    ownerEmail: "public-examples+tours@haab-calendar.invalid",
+    label: "Ruta Cenote Tours",
+  },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {

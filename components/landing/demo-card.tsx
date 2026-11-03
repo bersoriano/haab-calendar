@@ -268,7 +268,7 @@ const CAROUSEL_STEP = 270 + 12;
  * The example cards. With `carousel` they become a swipe row below 640px, with
  * pagination dots; the dots are decorative because every card is already a
  * focusable link. Wider than that (and always, without `carousel`) they are a
- * grid that divides both the landing's four and the gallery's twelve evenly.
+ * grid that holds both the landing's four and the gallery's full set.
  */
 export function DemoGrid({
   indexes,

@@ -1023,6 +1023,146 @@ const examples = [
       },
     ],
   },
+  // Events have one date and one same-day window, so a multi-day tour is stored
+  // as its day-one welcome meeting and says how long it runs in its text. Those
+  // meetings start after the day tours end: a booking on one event closes any
+  // other event whose window overlaps it on that date.
+  {
+    path: "/events/ruta-cenote-tours",
+    ownerKey: "tours",
+    provider: {
+      full_name: "Lucía Canul",
+      business_name: "Ruta Cenote Tours",
+      email: demoOwnerEmail("tours"),
+      vertical: "events",
+      slug: "ruta-cenote-tours",
+      custom_slug: "ruta-cenote-tours",
+      plan_tier: "premium",
+      language: "en",
+      timezone: "America/Mexico_City",
+      booking_window_days: 180,
+      phone_number_1: "+52 55 5555 0176",
+      phone_number_2: "+52 998 555 0176",
+      address_1: "Monumento a la Revolución, Mexico City",
+      address_2: "Parque Las Palapas, Cancún",
+      hero_text: "Small-group tours through the Mexico worth the trip.",
+      gallery_image_urls: [],
+      availability: {
+        sunday: closedDay("07:00", "20:00"),
+        monday: openDay("07:00", "20:00"),
+        tuesday: openDay("07:00", "20:00"),
+        wednesday: openDay("07:00", "20:00"),
+        thursday: openDay("07:00", "20:00"),
+        friday: openDay("07:00", "20:00"),
+        saturday: openDay("07:00", "20:00"),
+      },
+    },
+    services: [
+      {
+        name: "Teotihuacan sunrise day tour",
+        slug: "teotihuacan-sunrise-day-tour",
+        booking_type: "appointment",
+        duration_minutes: 600,
+        description:
+          "Climb the pyramids with an archaeologist guide before the crowds arrive. Includes transport, entry fees, and lunch.",
+        medical_specialty: null,
+        capacity: "14 travelers",
+        cost: "US$95",
+        notes: "Wear comfortable shoes and bring a hat and water. The bus leaves on time. Price is per person.",
+        sort_order: 10,
+        occurrence_mode: "weekly",
+        weekdays: ["saturday"],
+        start_time: "07:00",
+        end_time: "17:00",
+        max_spots: 14,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+      {
+        name: "Tulum and Cobá day tour",
+        slug: "tulum-and-coba-day-tour",
+        booking_type: "appointment",
+        duration_minutes: 600,
+        description:
+          "Seaside ruins in the morning and a cenote swim in the afternoon. Includes transport, entry fees, and lunch.",
+        medical_specialty: null,
+        capacity: "16 travelers",
+        cost: "US$120",
+        notes: "Bring swimwear and a towel. Only biodegradable sunscreen in the cenote. Starts at 7:30 AM Cancún time. Price is per person.",
+        sort_order: 20,
+        occurrence_mode: "weekly",
+        weekdays: ["tuesday"],
+        start_time: "07:30",
+        end_time: "17:30",
+        max_spots: 16,
+        linked_address_2: true,
+        linked_phone_2: true,
+      },
+      {
+        name: "Yucatán and Maya ruins · 8 days",
+        slug: "yucatan-and-maya-ruins-8-days",
+        booking_type: "appointment",
+        duration_minutes: 60,
+        description:
+          "Cancún round trip through Chichén Itzá, Mérida, Uxmal, and Bacalar. Includes 7 hotel nights, transport, a guide, and breakfasts.",
+        medical_specialty: null,
+        capacity: "12 travelers",
+        cost: "US$1,890",
+        notes: "The time shown is the day 1 welcome meeting, 6:00 PM Cancún time. Ends day 8 in Cancún. Priced per person in a double room.",
+        sort_order: 30,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: inWeeks(6, 1),
+        start_time: "18:00",
+        end_time: "19:00",
+        max_spots: 12,
+        linked_address_2: true,
+        linked_phone_2: true,
+      },
+      {
+        name: "Oaxaca food and markets · 6 days",
+        slug: "oaxaca-food-and-markets-6-days",
+        booking_type: "appointment",
+        duration_minutes: 60,
+        description:
+          "Markets, Monte Albán, a mezcal workshop, and a home cooking class with a local family. Includes 5 hotel nights, a guide, and breakfasts.",
+        medical_specialty: null,
+        capacity: "10 travelers",
+        cost: "US$1,240",
+        notes: "The time shown is the day 1 welcome meeting. Ends day 6 in Oaxaca. Flights not included. Price is per person.",
+        sort_order: 40,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: inWeeks(10, 3),
+        start_time: "18:00",
+        end_time: "19:00",
+        max_spots: 10,
+        custom_address: "Santo Domingo de Guzmán, Oaxaca",
+        linked_phone_1: true,
+      },
+      {
+        name: "Mexico City to Cancún · 15 days",
+        slug: "mexico-city-to-cancun-15-days",
+        booking_type: "appointment",
+        duration_minutes: 60,
+        description:
+          "Teotihuacan, Oaxaca, San Cristóbal, Palenque, Mérida, and the Quintana Roo coast. Includes 14 hotel nights, transport, a guide, and breakfasts.",
+        medical_specialty: null,
+        capacity: "16 travelers",
+        cost: "US$3,950",
+        notes: "The time shown is the day 1 welcome meeting. Ends day 15 in Cancún. Priced per person in a double room.",
+        sort_order: 50,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: inWeeks(14, 4),
+        start_time: "18:00",
+        end_time: "19:00",
+        max_spots: 16,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+    ],
+  },
 ];
 
 async function getOrCreateDemoOwner(email) {
@@ -1116,7 +1256,15 @@ async function upsertServices(providerId, services) {
   }
 }
 
-for (const example of examples) {
+// A full run overwrites whatever the super admin has edited on the demos, so
+// `--only=<ownerKey>` publishes one demo and leaves the others alone.
+const only = process.argv.find((arg) => arg.startsWith("--only="))?.slice("--only=".length);
+const selected = only ? examples.filter((example) => example.ownerKey === only) : examples;
+if (selected.length === 0) {
+  throw new Error(`No example with the owner key "${only}".`);
+}
+
+for (const example of selected) {
   // Re-running re-parents an existing demo row to its own owner, which is how
   // demos seeded under a single shared account get migrated.
   const ownerUserId = await getOrCreateDemoOwner(demoOwnerEmail(example.ownerKey));
@@ -1131,6 +1279,6 @@ for (const example of examples) {
 }
 
 console.log("Published example booking pages:");
-for (const example of examples) {
+for (const example of selected) {
   console.log(`  ${example.path}`);
 }
