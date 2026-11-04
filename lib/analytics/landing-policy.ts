@@ -12,12 +12,12 @@ const isLandingPath = (pathname: string) => LANDING_PATHS.includes(pathname);
 /** The only landing data allowed to leave the browser. No account identity. */
 export const LANDING_SECTIONS = [
   "header", "hero", "facts", "verticals", "how", "demo", "live-examples",
-  "features", "google-calendar", "trust", "faq", "early-access", "footer",
+  "features", "google-calendar", "trust", "blog", "faq", "early-access", "footer",
   // The doctors page's own sections.
   "front-desk", "for-practices",
 ] as const;
 export const LANDING_ACTIONS = [
-  "create_page", "resume_setup", "open_dashboard", "try_demo", "view_gallery", "view_example", "login",
+  "create_page", "resume_setup", "open_dashboard", "try_demo", "view_gallery", "view_example", "read_post", "login",
 ] as const;
 export const LANDING_EVENTS = [
   "$pageview", "$pageleave", "landing_section_view", "landing_cta_click",

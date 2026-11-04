@@ -61,11 +61,11 @@ Do not put names, email addresses, or other personal data in campaign labels.
 | `$pageleave` | `duration_seconds`, `active_seconds`, `max_scroll_percent` | Visit ends or browser hides page for navigation; active time means foreground-tab time |
 
 Sections: `header`, `hero`, `facts`, `verticals`, `how`, `demo`, `live-examples`,
-`features`, `google-calendar`, `trust`, `faq`, `early-access`, `footer`.
+`features`, `google-calendar`, `trust`, `blog`, `faq`, `early-access`, `footer`.
 The `verticals` picker is absent for an owner whose page already exists.
 
 CTA actions: `create_page`, `resume_setup`, `open_dashboard`, `try_demo`,
-`view_gallery`, `view_example`, `login`. An existing page or guest draft does
+`view_gallery`, `view_example`, `read_post`, `login`. An existing page or guest draft does
 not count as a new-page CTA. Example numbers are zero-based indices into
 `DEMO_PAGES` in `lib/demo-pages.ts`. FAQ numbers are one-based positions in the
 English/Spanish `faq.items` arrays in `components/landing/translations.ts`.
