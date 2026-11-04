@@ -224,6 +224,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     descriptions: {
       dashboard: "What's coming up and how your page is doing.",
       bookings: "Search, filter and manage everything that's been booked.",
+      clients: "Everyone who has booked with you, ready to download.",
       scan: "Point the camera at a customer's QR code to pull up their appointment.",
       analytics: "Visits, bookings and where they come from.",
       campaigns: "Make a link for each place you share your page, and see which ones bring bookings.",
@@ -439,6 +440,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     descriptions: {
       dashboard: "Lo que viene y cómo va su página.",
       bookings: "Busque, filtre y gestione todo lo que le han reservado.",
+      clients: "Todas las personas que han reservado con usted, listas para descargar.",
       scan: "Apunte la cámara al código QR del cliente para consultar su cita.",
       analytics: "Visitas, reservas y de dónde vienen.",
       campaigns: "Cree un enlace para cada lugar donde comparte su página y vea cuáles generan reservas.",
@@ -653,6 +655,8 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
       return shell.titles.overview;
     case "bookings":
       return copy.Bookings;
+    case "clients":
+      return copy.Clients;
     case "scan":
       return admin.scanAppointment;
     case "analytics":

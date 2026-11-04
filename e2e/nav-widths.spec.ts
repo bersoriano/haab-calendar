@@ -289,6 +289,7 @@ const CASES: NavCase[] = [
     offers: [
       section("/dashboard"),
       section("/dashboard/bookings"),
+      section("/dashboard/clients"),
       section("/dashboard/scan"),
       section("/dashboard/analytics"),
       section("/dashboard/campaigns"),

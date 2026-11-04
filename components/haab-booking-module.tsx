@@ -148,6 +148,7 @@ import {
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
+import { ProviderClientsSurface } from "@/components/provider/ProviderClientsSurface";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
@@ -3938,6 +3939,8 @@ export function HaabBookingModule({
             entitlements={providerEntitlements}
           />
         );
+      case "clients":
+        return <ProviderClientsSurface lang={lang} integratedMode={integratedMode} />;
       case "campaigns":
         return (
           <ProviderCampaignsSurface lang={lang} publicUrl={publicUrl} integratedMode={integratedMode} />

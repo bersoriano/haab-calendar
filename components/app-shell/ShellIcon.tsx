@@ -23,6 +23,7 @@ import type { ShellIconName } from "@/components/app-shell/types";
 const ICONS: Record<ShellIconName, Icon> = {
   overview: SquaresFour,
   bookings: ListChecks,
+  clients: UsersThree,
   scan: QrCode,
   analytics: ChartLineUp,
   campaigns: Megaphone,
