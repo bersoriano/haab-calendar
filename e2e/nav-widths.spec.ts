@@ -530,7 +530,12 @@ for (const width of WIDTHS) {
     await blog.click();
     await expect(page).toHaveURL(/\/blog\?lang=es$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reservas en línea: guías prácticas");
-    await expect(page.getByText("Aún no hay publicaciones.")).toBeVisible();
+    const post = page.getByRole("main").getByRole("link", { name: "Deja de contestar “¿Cuándo tienes un espacio?”" });
+    await expectUsable(post, "the first post's link");
+    await expectNoSidewaysScroll(page);
+    await post.click();
+    await expect(page).toHaveURL(/\/blog\/stop-answering-when-are-you-free\?lang=es$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Deja de contestar “¿Cuándo tienes un espacio?”");
     await expectNoSidewaysScroll(page);
   });
 
