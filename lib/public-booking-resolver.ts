@@ -1,3 +1,5 @@
+import { normalizePhotoUrls } from "@/lib/image-upload";
+import { normalizeTravelerFields } from "@/lib/traveler-details";
 import "server-only";
 
 import { randomUUID } from "node:crypto";
@@ -34,9 +36,9 @@ import type {
 } from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, public_theme, public_footer_text, public_footer_url, timezone, booking_window_days, max_bookings_per_day, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
+  "id, full_name, business_name, slug, vertical, language, public_theme, public_footer_text, public_footer_url, vocabulary, timezone, booking_window_days, max_bookings_per_day, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 export const PUBLIC_SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields";
 
 type PublicProviderRow = {
   id: string;
@@ -60,6 +62,7 @@ type PublicProviderRow = {
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
+  vocabulary?: string | null;
 };
 
 type PublicServiceRow = {
@@ -90,6 +93,10 @@ type PublicServiceRow = {
   linked_phone_2: boolean | null;
   custom_address: string | null;
   custom_phone: string | null;
+  photo_urls?: string[] | null;
+  cancellation_policy?: string | null;
+  min_group_size?: number | null;
+  traveler_fields?: string[] | null;
 };
 
 type ProviderRedirectRow = {
@@ -197,6 +204,10 @@ function toPublicService(row: PublicServiceRow): Service {
     linkedPhone2: row.linked_phone_2 ?? false,
     customAddress: row.custom_address ?? undefined,
     customPhone: row.custom_phone ?? undefined,
+    photoUrls: normalizePhotoUrls(row.photo_urls),
+    cancellationPolicy: row.cancellation_policy ?? undefined,
+    minGroupSize: row.min_group_size ?? undefined,
+    travelerFields: normalizeTravelerFields(row.traveler_fields),
   };
 }
 
@@ -218,6 +229,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
+      vocabulary: provider.vocabulary === "tours" ? "tours" : undefined,
       publicTheme: normalizePublicTheme(provider.public_theme),
       publicFooterText: provider.public_footer_text ?? undefined,
       publicFooterUrl: provider.public_footer_url ?? undefined,

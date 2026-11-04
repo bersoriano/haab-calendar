@@ -153,6 +153,7 @@ export function AppointmentSummary({
   onChangeDateTime,
   about,
   cost,
+  costLabel,
   footer,
   lang,
 }: {
@@ -170,6 +171,8 @@ export function AppointmentSummary({
   about?: ReactNode;
   /** Null hides the Total row entirely. */
   cost: string | null;
+  /** What the price is called on this page. Defaults to "Total". */
+  costLabel?: string;
   footer: SummaryFooter;
   lang: Lang;
 }) {
@@ -225,7 +228,7 @@ export function AppointmentSummary({
 
         {cost ? (
           <div className="flex items-baseline justify-between gap-3 border-t border-dashed border-[var(--line)] pt-4">
-            <span className="text-sm font-semibold text-[var(--ink-secondary)]">{t.publicFlow.total}</span>
+            <span className="text-sm font-semibold text-[var(--ink-secondary)]">{costLabel ?? t.publicFlow.total}</span>
             <span
               className={cn(
                 "break-words text-right font-bold leading-tight tracking-[-0.03em] text-[var(--ink)]",

@@ -1,3 +1,5 @@
+import { normalizePhotoUrls } from "@/lib/image-upload";
+import { normalizeTravelerFields } from "@/lib/traveler-details";
 import { createPublicClient } from "@/lib/supabase/public";
 import {
   isPublicUrlBackendUnavailable,
@@ -36,6 +38,7 @@ type PublicProviderRow = {
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
+  vocabulary?: string | null;
 };
 
 type PublicServiceRow = {
@@ -66,6 +69,10 @@ type PublicServiceRow = {
   linked_phone_2: boolean | null;
   custom_address: string | null;
   custom_phone: string | null;
+  photo_urls?: string[] | null;
+  cancellation_policy?: string | null;
+  min_group_size?: number | null;
+  traveler_fields?: string[] | null;
 };
 
 function toPublicService(row: PublicServiceRow): Service {
@@ -97,6 +104,10 @@ function toPublicService(row: PublicServiceRow): Service {
     linkedPhone2: row.linked_phone_2 ?? false,
     customAddress: row.custom_address ?? undefined,
     customPhone: row.custom_phone ?? undefined,
+    photoUrls: normalizePhotoUrls(row.photo_urls),
+    cancellationPolicy: row.cancellation_policy ?? undefined,
+    minGroupSize: row.min_group_size ?? undefined,
+    travelerFields: normalizeTravelerFields(row.traveler_fields),
   };
 }
 
@@ -118,6 +129,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
+      vocabulary: provider.vocabulary === "tours" ? "tours" : undefined,
       timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),

@@ -1,4 +1,29 @@
-import type { Lang, VerticalId } from "./types";
+import type { Lang, VerticalId, Vocabulary } from "./types";
+
+/**
+ * Words only a dated event or tour needs: its schedule badge, the labels the
+ * other verticals call Total and Notes, and how a booking is announced. Absent
+ * on every other vertical, which keeps its generic labels.
+ */
+export interface EventWording {
+  oneDateBadge: string;
+  everyWeekBadge: string;
+  oneDateHint: string;
+  everyWeekHint: string;
+  priceLabel: string;
+  notesLabel: string;
+  notesHint: string;
+  notesPlaceholder: string;
+  seeOneDateCta: string;
+  chooseDateCta: string;
+  confirmedLabel: string;
+  cancelledLabel: string;
+  updatedLabel: string;
+  // Examples in the editor. Without them it falls back to the vertical's hints.
+  namePlaceholder?: string;
+  descriptionPlaceholder?: string;
+  costPlaceholder?: string;
+}
 
 export interface VerticalCopy {
   // Nouns (case + plural variants)
@@ -128,6 +153,8 @@ export interface VerticalCopy {
     pickWeekdaysError: string;
     maxSpotsRequiredError: string;
   };
+
+  event?: EventWording;
 }
 
 export const defaultCopy: VerticalCopy = {
@@ -656,7 +683,7 @@ export const eventsCopy: VerticalCopy = {
     providerInfoBody:
       "These details feed registration confirmations, branding, and your public registration URL.",
     availabilityBody:
-      "Availability-based events use these weekly hours. One-time and weekly events keep their own schedule.",
+      "Events on your weekly hours use these windows. Events with one date or a weekly schedule keep their own times.",
 
     addServiceFirstError:
       "Add at least one event before publishing your registration page.",
@@ -681,7 +708,7 @@ export const eventsCopy: VerticalCopy = {
     beforeVisitLabel: "Before you arrive:",
     bringWithYouLabel: "Before you arrive",
     holdReassurance: "Your spot is held for ten minutes.",
-    whatHappensNext: "Arrive fifteen minutes before it starts. Cannot make it? Release your spot with your private link so someone else can take it.",
+    whatHappensNext: "You will get a confirmation with everything you need. Cannot make it? Release your spot with your private link so someone else can take it.",
     chooseServiceBody:
       "Compare each event's schedule, location, price, and spots before registering.",
     onlyOneServiceBody:
@@ -704,7 +731,7 @@ export const eventsCopy: VerticalCopy = {
     bookingsSoonDetail: "Registrations starting soon",
     activeBookingsDetail: "Currently active registrations",
     totalBookingsLabel: "Total registrations",
-    servicesStatDetail: "One-time and weekly events",
+    servicesStatDetail: "One-date and weekly events",
     searchPlaceholder: "Search attendee, event, email, or phone",
 
     addBookingHint: "Click an available day to add a registration.",
@@ -721,7 +748,7 @@ export const eventsCopy: VerticalCopy = {
     bookNewButton: "Register for another event",
 
     serviceEditorBody:
-      "Give each event its own schedule, capacity, price, and location. Use one-time for dated events or weekly for recurring registration.",
+      "Give each event its own schedule, spots, price, and location.",
     noServicesTitle: "No events yet",
     noServicesBody: "Add an event so attendees can start registering.",
     serviceDescPlaceholder:
@@ -739,7 +766,7 @@ export const eventsCopy: VerticalCopy = {
     scanQrBody: "Scan to open this registration, or present the code to the organizer.",
     calendarQrLabel: "Private QR code for this registration",
 
-    eventDateLabel: "Event date and time",
+    eventDateLabel: "Date",
     singleOccurrenceHelper:
       "This event happens once, on the date and time below. Reserve your spot to register.",
     spotsLeftSuffix: "spots left",
@@ -748,6 +775,22 @@ export const eventsCopy: VerticalCopy = {
     pickWeekdaysError:
       "Pick at least one weekday and a start time for this recurring event.",
     maxSpotsRequiredError: "Set the maximum number of spots for this event.",
+  },
+
+  event: {
+    oneDateBadge: "One date",
+    everyWeekBadge: "Every week",
+    oneDateHint: "This event happens once, on the date and time below.",
+    everyWeekHint: "This event repeats on the days you pick, at the same time.",
+    priceLabel: "Price",
+    notesLabel: "Before you arrive",
+    notesHint: "Shown on the event and on the attendee's pass. Add when to arrive and what to bring.",
+    notesPlaceholder: "Arrive 15 minutes early and bring a water bottle.",
+    seeOneDateCta: "See date",
+    chooseDateCta: "Choose a date",
+    confirmedLabel: "Registration confirmed",
+    cancelledLabel: "Registration cancelled",
+    updatedLabel: "Registration updated",
   },
 };
 
@@ -781,7 +824,7 @@ export const eventsCopyEs: VerticalCopy = {
     providerInfoBody:
       "Estos datos alimentan las confirmaciones de registro, la marca y su URL pública de registro.",
     availabilityBody:
-      "Los eventos basados en disponibilidad usan este horario semanal. Los eventos únicos y semanales conservan su propia programación.",
+      "Los eventos según su horario semanal usan estas ventanas. Los eventos con una fecha o con horario semanal conservan sus propios horarios.",
 
     addServiceFirstError:
       "Agregue al menos un evento antes de publicar su página de registro.",
@@ -807,7 +850,7 @@ export const eventsCopyEs: VerticalCopy = {
     beforeVisitLabel: "Antes de llegar:",
     bringWithYouLabel: "Antes de llegar",
     holdReassurance: "Su lugar queda apartado durante diez minutos.",
-    whatHappensNext: "Llegue quince minutos antes de que empiece. ¿No puede asistir? Libere su lugar con su enlace privado para que otra persona lo tome.",
+    whatHappensNext: "Recibirá una confirmación con todo lo necesario. ¿No puede asistir? Libere su lugar con su enlace privado para que otra persona lo tome.",
     chooseServiceBody:
       "Compare el horario, la ubicación, el precio y los lugares de cada evento antes de registrarse.",
     onlyOneServiceBody:
@@ -830,7 +873,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookingsSoonDetail: "Registros que comienzan próximamente",
     activeBookingsDetail: "Registros actualmente activos",
     totalBookingsLabel: "Total de registros",
-    servicesStatDetail: "Eventos únicos y semanales",
+    servicesStatDetail: "Eventos con una fecha y semanales",
     searchPlaceholder: "Buscar asistente, evento, correo o teléfono",
 
     addBookingHint: "Haga clic en un día disponible para agregar un registro.",
@@ -847,7 +890,7 @@ export const eventsCopyEs: VerticalCopy = {
     bookNewButton: "Registrarse en otro evento",
 
     serviceEditorBody:
-      "Asigne a cada evento su propio horario, capacidad, precio y ubicación. Use único para eventos con fecha o semanal para registros recurrentes.",
+      "Asigne a cada evento su propio horario, lugares, precio y ubicación.",
     noServicesTitle: "Aún no hay eventos",
     noServicesBody:
       "Agregue un evento para que los asistentes puedan comenzar a registrarse.",
@@ -866,7 +909,7 @@ export const eventsCopyEs: VerticalCopy = {
     scanQrBody: "Escanee para abrir este registro o presente el código al organizador.",
     calendarQrLabel: "Código QR privado de este registro",
 
-    eventDateLabel: "Fecha y hora del evento",
+    eventDateLabel: "Fecha",
     singleOccurrenceHelper:
       "Este evento ocurre una sola vez, en la fecha y hora indicadas abajo. Reserve su lugar para registrarse.",
     spotsLeftSuffix: "lugares disponibles",
@@ -876,6 +919,289 @@ export const eventsCopyEs: VerticalCopy = {
       "Elija al menos un día de la semana y una hora de inicio para este evento recurrente.",
     maxSpotsRequiredError:
       "Establezca el número máximo de lugares para este evento.",
+  },
+
+  event: {
+    oneDateBadge: "Una fecha",
+    everyWeekBadge: "Cada semana",
+    oneDateHint: "Este evento ocurre una vez, en la fecha y hora indicadas abajo.",
+    everyWeekHint: "Este evento se repite los días que elija, a la misma hora.",
+    priceLabel: "Precio",
+    notesLabel: "Antes de llegar",
+    notesHint: "Se muestra en el evento y en el pase del asistente. Agregue cuándo llegar y qué llevar.",
+    notesPlaceholder: "Llegue 15 minutos antes y traiga una botella de agua.",
+    seeOneDateCta: "Ver fecha",
+    chooseDateCta: "Elegir una fecha",
+    confirmedLabel: "Registro confirmado",
+    cancelledLabel: "Registro cancelado",
+    updatedLabel: "Registro actualizado",
+  },
+};
+
+export const toursCopy: VerticalCopy = {
+  service: "tour",
+  Service: "Tour",
+  services: "tours",
+  Services: "Tours",
+  booking: "booking",
+  Booking: "Booking",
+  bookings: "bookings",
+  Bookings: "Bookings",
+  client: "traveler",
+  Client: "Traveler",
+  clients: "travelers",
+  Clients: "Travelers",
+
+  bookVerb: "book",
+  bookingPage: "tour page",
+  publicBookingUrl: "public tour page URL",
+  bookingWorkspace: "Traveler workspace",
+  bookingSummary: "Booking summary",
+  manageBooking: "Manage booking",
+  cancelBooking: "Cancel Booking",
+  rescheduleBooking: "Change Departure",
+  bookFullDay: "Book the day",
+
+  phrases: {
+    setupTitle: "Set up your tour page",
+    setupDoneTitle: "Your tour page is ready",
+    providerInfoBody:
+      "These details feed booking confirmations, branding, and your public tour page URL.",
+    availabilityBody:
+      "Tours on your weekly hours use these windows. Tours with one departure or a weekly schedule keep their own times.",
+
+    addServiceFirstError: "Add at least one tour before publishing your tour page.",
+    serviceNameRequiredError: "Add a tour name and short description before saving it.",
+    keepOneServiceError: "Keep at least one tour. Add another before removing this one.",
+    cancelActiveFirstError: "Cancel active bookings for this tour before removing it.",
+    enableWeekdayError: "Enable at least one day so travelers can book.",
+    chooseServiceFirstError: "Choose a tour before confirming your booking.",
+    pickDateFirstError: "Pick a departure before confirming your booking.",
+    clientFieldsRequiredError: "Traveler name, email, and phone number are required.",
+
+    chooseServiceTitle: "Choose a tour",
+    chooseAnotherService: "Choose another tour",
+    selectAppointmentCta: "Choose a departure",
+    selectFullDayCta: "Book the day",
+    selectCapacityCta: "Save a spot",
+    beforeVisitLabel: "Before you leave:",
+    bringWithYouLabel: "Before you leave",
+    holdReassurance: "Your spot is held for ten minutes.",
+    whatHappensNext:
+      "You will get a confirmation with everything you need. Cannot make it? Release your spot with your private link so another traveler can take it.",
+    chooseServiceBody:
+      "Compare each tour's departures, meeting point, price, and spots before booking.",
+    onlyOneServiceBody: "Only one tour is available, so this step is skipped automatically.",
+    serviceUnavailableBody: "This spot may be released, but you can still try to grab it.",
+    notesPlaceholder: "Anything we should know before the tour?",
+    bookingSummaryBodyReview: "Review your booking details here before confirming.",
+    bookingSummaryBodySuccess: "Your confirmed booking details remain visible here.",
+    aboutServiceTitle: "About this tour",
+    serviceDetailsTitle: "Tour details",
+
+    upcomingTitle: "Upcoming bookings",
+    upcomingEmptyTitle: "No bookings in the next 7 days",
+    upcomingEmptyBody: "New bookings appear here automatically.",
+    allBookingsTitle: "All bookings",
+    noBookingsMatchTitle: "No bookings match the current filters",
+    bookingsSoonDetail: "Departures coming up",
+    activeBookingsDetail: "Currently active bookings",
+    totalBookingsLabel: "Total bookings",
+    servicesStatDetail: "One-departure and weekly tours",
+    searchPlaceholder: "Search traveler, tour, email, or phone",
+
+    addBookingHint: "Click an available day to add a booking.",
+
+    cancelExplain: "Cancelling frees the spot immediately.",
+    keepBookingButton: "Keep my spot",
+    cancelBookingButton: "Cancel my spot",
+    tryBookingButton: "Try booking",
+
+    loadingBookingTitle: "Loading your booking…",
+    bookingNotFoundTitle: "We can't find this booking on this device",
+    bookingNotFoundBody:
+      "Bookings are stored locally in the browser they were created in. If you booked from a different browser or device, please open this link there. If you've cleared your browser data, the booking is no longer accessible from this device.",
+    bookNewButton: "Book another tour",
+
+    serviceEditorBody:
+      "Give each tour its own departures, group size, price, and meeting point.",
+    noServicesTitle: "No tours yet",
+    noServicesBody: "Add a tour so travelers can start booking.",
+    serviceDescPlaceholder: "Explain what the tour covers in one or two lines.",
+    newServiceEyebrow: "New tour",
+    editServiceEyebrow: "Edit tour",
+    newServiceTitle: "Add a tour",
+    editServiceTitle: "Update this tour",
+    addServiceButton: "Add tour",
+    saveServiceButton: "Save tour",
+    typeOfServiceLabel: "Type of tour",
+
+    clientLabel: "Traveler",
+
+    scanQrBody: "Scan to open this booking, or show the code to your guide.",
+    calendarQrLabel: "Private QR code for this booking",
+
+    eventDateLabel: "Departure date",
+    singleOccurrenceHelper:
+      "This tour leaves once, on the date and time below. Save a spot to book.",
+    spotsLeftSuffix: "spots left",
+    fullyBookedLabel: "Fully booked",
+    pickEventDateError: "Pick the departure date before publishing this tour.",
+    pickWeekdaysError: "Pick at least one weekday and a start time for this tour.",
+    maxSpotsRequiredError: "Set the maximum number of spots for this tour.",
+  },
+
+  event: {
+    oneDateBadge: "One departure",
+    everyWeekBadge: "Weekly departures",
+    oneDateHint: "This tour leaves once, on the date and time below.",
+    everyWeekHint: "This tour leaves on the days you pick, at the same time.",
+    priceLabel: "Price",
+    notesLabel: "Before you leave",
+    notesHint: "Shown on the tour and on the traveler's pass. Add the meeting time and what to bring.",
+    notesPlaceholder: "Meet in the hotel lobby at 6:45 a.m. Bring a hat and water.",
+    seeOneDateCta: "See departure",
+    chooseDateCta: "Choose a departure",
+    confirmedLabel: "Booking confirmed",
+    cancelledLabel: "Booking cancelled",
+    updatedLabel: "Booking updated",
+    namePlaceholder: "Tulum and Cobá day tour",
+    descriptionPlaceholder: "Where the tour goes, what is included, and the pace.",
+    costPlaceholder: "US$120 per person",
+  },
+};
+
+export const toursCopyEs: VerticalCopy = {
+  service: "tour",
+  Service: "Tour",
+  services: "tours",
+  Services: "Tours",
+  booking: "reserva",
+  Booking: "Reserva",
+  bookings: "reservas",
+  Bookings: "Reservas",
+  client: "viajero",
+  Client: "Viajero",
+  clients: "viajeros",
+  Clients: "Viajeros",
+
+  bookVerb: "reservar",
+  bookingPage: "página de tours",
+  publicBookingUrl: "URL pública de tours",
+  bookingWorkspace: "Espacio de viajeros",
+  bookingSummary: "Resumen de la reserva",
+  manageBooking: "Gestionar reserva",
+  cancelBooking: "Cancelar reserva",
+  rescheduleBooking: "Cambiar salida",
+  bookFullDay: "Reservar el día",
+
+  phrases: {
+    setupTitle: "Configure su página de tours",
+    setupDoneTitle: "Su página de tours está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones de reserva, la marca y su URL pública de tours.",
+    availabilityBody:
+      "Los tours según su horario semanal usan estas ventanas. Los tours con una salida o con horario semanal conservan sus propios horarios.",
+
+    addServiceFirstError: "Agregue al menos un tour antes de publicar su página de tours.",
+    serviceNameRequiredError: "Agregue un nombre de tour y una breve descripción antes de guardarlo.",
+    keepOneServiceError: "Conserve al menos un tour. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError: "Cancele las reservas activas de este tour antes de eliminarlo.",
+    enableWeekdayError: "Habilite al menos un día para que los viajeros puedan reservar.",
+    chooseServiceFirstError: "Elija un tour antes de confirmar su reserva.",
+    pickDateFirstError: "Elija una salida antes de confirmar su reserva.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del viajero son obligatorios.",
+
+    chooseServiceTitle: "Elija un tour",
+    chooseAnotherService: "Elegir otro tour",
+    selectAppointmentCta: "Elegir una salida",
+    selectFullDayCta: "Reservar el día",
+    selectCapacityCta: "Apartar un lugar",
+    beforeVisitLabel: "Antes de salir:",
+    bringWithYouLabel: "Antes de salir",
+    holdReassurance: "Su lugar queda apartado durante diez minutos.",
+    whatHappensNext:
+      "Recibirá una confirmación con todo lo necesario. ¿No puede viajar? Libere su lugar con su enlace privado para que otro viajero lo tome.",
+    chooseServiceBody:
+      "Compare las salidas, el punto de encuentro, el precio y los lugares de cada tour antes de reservar.",
+    onlyOneServiceBody: "Solo hay un tour disponible, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody: "Este lugar podría liberarse, pero aún puede intentar tomarlo.",
+    notesPlaceholder: "¿Algo que debamos saber antes del tour?",
+    bookingSummaryBodyReview: "Revise aquí los detalles de su reserva antes de confirmar.",
+    bookingSummaryBodySuccess: "Los detalles de su reserva confirmada permanecen visibles aquí.",
+    aboutServiceTitle: "Acerca del tour",
+    serviceDetailsTitle: "Detalles del tour",
+
+    upcomingTitle: "Próximas reservas",
+    upcomingEmptyTitle: "No hay reservas en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas reservas aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las reservas",
+    noBookingsMatchTitle: "Ninguna reserva coincide con los filtros actuales",
+    bookingsSoonDetail: "Salidas próximas",
+    activeBookingsDetail: "Reservas actualmente activas",
+    totalBookingsLabel: "Total de reservas",
+    servicesStatDetail: "Tours con una salida y semanales",
+    searchPlaceholder: "Buscar viajero, tour, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una reserva.",
+
+    cancelExplain: "Cancelar libera el lugar de inmediato.",
+    keepBookingButton: "Conservar mi lugar",
+    cancelBookingButton: "Cancelar mi lugar",
+    tryBookingButton: "Intentar reservar",
+
+    loadingBookingTitle: "Cargando su reserva…",
+    bookingNotFoundTitle: "No encontramos esta reserva en este dispositivo",
+    bookingNotFoundBody:
+      "Las reservas se almacenan localmente en el navegador en el que se crearon. Si reservó desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la reserva ya no es accesible desde este dispositivo.",
+    bookNewButton: "Reservar otro tour",
+
+    serviceEditorBody:
+      "Asigne a cada tour sus propias salidas, tamaño de grupo, precio y punto de encuentro.",
+    noServicesTitle: "Aún no hay tours",
+    noServicesBody: "Agregue un tour para que los viajeros puedan comenzar a reservar.",
+    serviceDescPlaceholder: "Explique en una o dos líneas de qué trata el tour.",
+    newServiceEyebrow: "Nuevo tour",
+    editServiceEyebrow: "Editar tour",
+    newServiceTitle: "Agregar un tour",
+    editServiceTitle: "Actualizar este tour",
+    addServiceButton: "Agregar tour",
+    saveServiceButton: "Guardar tour",
+    typeOfServiceLabel: "Tipo de tour",
+
+    clientLabel: "Viajero",
+
+    scanQrBody: "Escanee para abrir esta reserva o muestre el código a su guía.",
+    calendarQrLabel: "Código QR privado de esta reserva",
+
+    eventDateLabel: "Fecha de salida",
+    singleOccurrenceHelper:
+      "Este tour sale una sola vez, en la fecha y hora indicadas abajo. Aparte su lugar para reservar.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Cupo lleno",
+    pickEventDateError: "Elija la fecha de salida antes de publicar este tour.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio para este tour.",
+    maxSpotsRequiredError: "Establezca el número máximo de lugares para este tour.",
+  },
+
+  event: {
+    oneDateBadge: "Una salida",
+    everyWeekBadge: "Salidas semanales",
+    oneDateHint: "Este tour sale una vez, en la fecha y hora indicadas abajo.",
+    everyWeekHint: "Este tour sale los días que elija, a la misma hora.",
+    priceLabel: "Precio",
+    notesLabel: "Antes de salir",
+    notesHint: "Se muestra en el tour y en el pase del viajero. Agregue la hora de encuentro y qué llevar.",
+    notesPlaceholder: "Encuentro en el lobby del hotel a las 6:45 a. m. Traiga sombrero y agua.",
+    seeOneDateCta: "Ver salida",
+    chooseDateCta: "Elegir una salida",
+    confirmedLabel: "Reserva confirmada",
+    cancelledLabel: "Reserva cancelada",
+    updatedLabel: "Reserva actualizada",
+    namePlaceholder: "Tour de un día a Tulum y Cobá",
+    descriptionPlaceholder: "A dónde va el tour, qué incluye y a qué ritmo.",
+    costPlaceholder: "US$120 por persona",
   },
 };
 
@@ -1640,10 +1966,25 @@ const DEFAULTS: Record<Lang, VerticalCopy> = {
   es: defaultCopyEs,
 };
 
+const TOURS: Record<Lang, VerticalCopy> = {
+  en: toursCopy,
+  es: toursCopyEs,
+};
+
+/**
+ * The words for a page. `vocabulary` swaps them on one provider without changing
+ * what the page is: a tour page is still the events vertical, with its URL and
+ * booking rules. It is ignored anywhere it was not written for.
+ */
 export function getVerticalCopy(
   verticalId?: VerticalId,
   lang: Lang = "en",
+  vocabulary?: Vocabulary,
 ): VerticalCopy {
+  if (verticalId === "events" && vocabulary === "tours") {
+    return TOURS[lang] ?? toursCopy;
+  }
+
   const table = COPY[lang] ?? COPY.en;
   if (!verticalId) {
     return DEFAULTS[lang] ?? defaultCopy;

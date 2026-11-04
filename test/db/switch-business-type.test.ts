@@ -270,3 +270,124 @@ describe("switch_provider_business_type", () => {
     expect(error?.message).toBe("not_found");
   });
 });
+
+describe("optional tour fields and word set", () => {
+  it("lets a visitor read them through the public views", async () => {
+    const { providerId, slug, serviceId } = await seedProvider("public-read");
+    const { error } = await admin
+      .from("services")
+      .update({
+        photo_urls: ["https://example.com/a.jpg"],
+        cancellation_policy: "Free up to 7 days before.",
+        min_group_size: 4,
+        traveler_fields: ["diet"],
+      })
+      .eq("id", serviceId);
+    if (error) throw error;
+
+    const anon = localAnonClient();
+    const provider = await anon
+      .from("public_providers")
+      .select("id, vocabulary")
+      .eq("slug", slug)
+      .single();
+    expect(provider.error).toBeNull();
+    expect(provider.data?.id).toBe(providerId);
+
+    const service = await anon
+      .from("public_services")
+      .select("photo_urls, cancellation_policy, min_group_size, traveler_fields")
+      .eq("id", serviceId)
+      .single();
+    expect(service.error).toBeNull();
+    expect(service.data).toEqual({
+      photo_urls: ["https://example.com/a.jpg"],
+      cancellation_policy: "Free up to 7 days before.",
+      min_group_size: 4,
+      traveler_fields: ["diet"],
+    });
+  });
+
+  it("leaves every existing service with them empty", async () => {
+    const { serviceId } = await seedProvider("defaults");
+    const { data, error } = await admin
+      .from("services")
+      .select("photo_urls, cancellation_policy, min_group_size, traveler_fields")
+      .eq("id", serviceId)
+      .single();
+    if (error) throw error;
+    expect(data).toEqual({
+      photo_urls: [],
+      cancellation_policy: null,
+      min_group_size: null,
+      traveler_fields: [],
+    });
+  });
+
+  it("lets the owner choose a word set, and only a known one", async () => {
+    const { providerId, client } = await seedProvider("owner-writes");
+
+    const chosen = await client.from("providers").update({ vocabulary: "tours" }).eq("id", providerId);
+    expect(chosen.error).toBeNull();
+
+    const unknown = await client.from("providers").update({ vocabulary: "pirates" }).eq("id", providerId);
+    expect(unknown.error).not.toBeNull();
+  });
+
+  it("refuses values the page could not show", async () => {
+    const { serviceId } = await seedProvider("constraints");
+
+    for (const bad of [
+      { traveler_fields: ["shoe_size"] },
+      { min_group_size: 0 },
+      { photo_urls: Array.from({ length: 6 }, (_, i) => `https://example.com/${i}.jpg`) },
+    ]) {
+      const { error } = await admin.from("services").update(bad).eq("id", serviceId);
+      expect(error, JSON.stringify(bad)).not.toBeNull();
+    }
+  });
+
+  it("keeps them through a switch, and drops a word set off the events vertical", async () => {
+    const { providerId, client } = await seedProvider("switch-keeps");
+    const { error: vocabularyError } = await admin
+      .from("providers")
+      .update({ vocabulary: "tours" })
+      .eq("id", providerId);
+    if (vocabularyError) throw vocabularyError;
+
+    const { error } = await client.rpc("switch_provider_business_type", {
+      p_vertical: "healthcare",
+      p_availability: NEW_AVAILABILITY,
+      p_max_bookings_per_day: null,
+      p_services: [
+        {
+          ...NEW_SERVICES[0],
+          photo_urls: ["https://example.com/a.jpg"],
+          cancellation_policy: "Free up to 7 days before.",
+          min_group_size: 2,
+          traveler_fields: ["passport"],
+        },
+      ],
+    });
+    expect(error).toBeNull();
+
+    const { data: provider } = await admin
+      .from("providers")
+      .select("vocabulary")
+      .eq("id", providerId)
+      .single();
+    expect(provider?.vocabulary).toBeNull();
+
+    const { data: service } = await admin
+      .from("services")
+      .select("photo_urls, cancellation_policy, min_group_size, traveler_fields")
+      .eq("provider_id", providerId)
+      .single();
+    expect(service).toEqual({
+      photo_urls: ["https://example.com/a.jpg"],
+      cancellation_policy: "Free up to 7 days before.",
+      min_group_size: 2,
+      traveler_fields: ["passport"],
+    });
+  });
+});

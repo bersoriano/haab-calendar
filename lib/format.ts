@@ -10,8 +10,8 @@ import type { BookingStatus, BookingType, Lang, OccurrenceMode, Service } from "
 const FULL_DAY: Record<Lang, string> = { en: "Full Day", es: "Día completo" };
 const APPOINTMENT: Record<Lang, string> = { en: "Appointment", es: "Cita" };
 const OCCURRENCE: Record<Lang, Record<OccurrenceMode, string>> = {
-  en: { single: "Single", weekly: "Weekly", periodic: "Periodic" },
-  es: { single: "Único", weekly: "Semanal", periodic: "Periódico" },
+  en: { single: "One date", weekly: "Every week", periodic: "On your hours" },
+  es: { single: "Una fecha", weekly: "Cada semana", periodic: "Según su horario" },
 };
 
 const NO_COST: Record<Lang, string> = { en: "No cost", es: "Sin costo" };
@@ -155,8 +155,25 @@ export function getBookingTypeLabel(type: BookingType, lang: Lang = "en") {
 export function getOccurrenceModeLabel(
   mode: OccurrenceMode | undefined,
   lang: Lang = "en",
+  /** The page's own words for the two fixed schedules, such as "One departure". */
+  wording?: { oneDateBadge: string; everyWeekBadge: string },
 ) {
+  if (wording && mode === "single") return wording.oneDateBadge;
+  if (wording && mode === "weekly") return wording.everyWeekBadge;
   return OCCURRENCE[lang][mode ?? "periodic"];
+}
+
+/** "At least 6 travelers": a stated minimum, or null when the service has none. */
+export function formatMinGroupSize(
+  service: Pick<Service, "minGroupSize">,
+  words: { client: string; clients: string },
+  template: string,
+) {
+  const count = service.minGroupSize;
+  if (typeof count !== "number" || !Number.isFinite(count) || count <= 0) return null;
+  return template
+    .replace("{count}", String(count))
+    .replace("{clients}", count === 1 ? words.client : words.clients);
 }
 
 export function statusTone(status: BookingStatus) {

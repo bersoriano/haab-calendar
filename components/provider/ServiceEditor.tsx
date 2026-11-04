@@ -2,7 +2,15 @@
 
 import { Check, MapPin, Phone } from "@phosphor-icons/react";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import type { BookingType, Lang, ProviderInfo, Service, ServiceDraft, VerticalId } from "@/lib/types";
+import {
+  TRAVELER_FIELDS,
+  type BookingType,
+  type Lang,
+  type ProviderInfo,
+  type Service,
+  type ServiceDraft,
+  type VerticalId,
+} from "@/lib/types";
 import { DURATION_OPTIONS, WEEKDAY_KEYS, getWeekdayShortFormatter } from "@/lib/constants";
 import { cn, pad } from "@/lib/utils";
 import {
@@ -31,7 +39,8 @@ import {
   buttonStyles,
   focusRing,
 } from "@/components/app-ui";
-import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { dashboardCopy, fillCopyWords } from "@/components/provider/dashboard-copy";
+import { ServicePhotosField } from "@/components/provider/ServicePhotosField";
 import type { VerticalHints } from "@/config/verticals";
 import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
 import {
@@ -48,6 +57,10 @@ function formatDurationOption(minutes: number, lang: Lang = "en") {
   }
   return lang === "es" ? `${minutes} min` : `${minutes} minutes`;
 }
+
+// Each input takes a share of the row and drops to the next line below its own
+// minimum, so nothing is cut off however narrow the editor card gets.
+const fieldRowClass = "grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10.5rem),1fr))]";
 
 /** A pressed/unpressed choice chip (occurrence mode, weekdays). */
 function toggleChipClass(active: boolean, size: string) {
@@ -150,16 +163,22 @@ export function ServiceEditor({
       : vertical === "events"
         ? t.eventOrganizerRole
         : t.admin;
-  const addressHint = nextAddressSlot === "1"
-    ? profileHints.addressHintSlot1
-    : nextAddressSlot === "2"
-      ? profileHints.addressHintSlot2
-      : profileHints.addressHintFull;
-  const phoneHint = nextPhoneSlot === "1"
-    ? profileHints.phoneHintSlot1
-    : nextPhoneSlot === "2"
-      ? profileHints.phoneHintSlot2
-      : profileHints.phoneHintFull;
+  const addressHint = fillCopyWords(
+    nextAddressSlot === "1"
+      ? profileHints.addressHintSlot1
+      : nextAddressSlot === "2"
+        ? profileHints.addressHintSlot2
+        : profileHints.addressHintFull,
+    copy,
+  );
+  const phoneHint = fillCopyWords(
+    nextPhoneSlot === "1"
+      ? profileHints.phoneHintSlot1
+      : nextPhoneSlot === "2"
+        ? profileHints.phoneHintSlot2
+        : profileHints.phoneHintFull,
+    copy,
+  );
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       {error ? (
@@ -236,7 +255,7 @@ export function ServiceEditor({
                   <SubHeading className="font-semibold text-app-fg">{service.name}</SubHeading>
                   <Badge tone={isEvents ? "neutral" : bookingTypeBadgeTone(service.bookingType)}>
                     {isEvents
-                      ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+                      ? getOccurrenceModeLabel(service.occurrenceMode, lang, copy.event)
                       : getBookingTypeLabel(service.bookingType, lang)}
                   </Badge>
                   <Badge tone="info">{formatDuration(service, lang)}</Badge>
@@ -254,12 +273,12 @@ export function ServiceEditor({
                     <span>{t.admin.medicalSpecialtyLabel}: {service.medicalSpecialty}</span>
                   ) : null}
                   {formatCost(service.cost, lang) ? (
-                    <span>{t.admin.totalLabel}: {formatCost(service.cost, lang)}</span>
+                    <span>{copy.event?.priceLabel ?? t.admin.totalLabel}: {formatCost(service.cost, lang)}</span>
                   ) : null}
                   {service.notes ? (
                     // Notes typed on several lines take a row of their own.
                     <span className={cn("whitespace-pre-line", service.notes.includes("\n") && "basis-full")}>
-                      {t.admin.notesLabel}: {service.notes}
+                      {copy.event?.notesLabel ?? t.admin.notesLabel}: {service.notes}
                     </span>
                   ) : null}
                   {service.linkedAddress1 && hasAddress1 ? (
@@ -295,7 +314,7 @@ export function ServiceEditor({
       <ConfirmDialog
         open={pendingDelete !== null}
         title={fillTemplate(shell.deleteServiceTitle, { name: pendingDelete?.name ?? "" })}
-        body={shell.deleteServiceBody}
+        body={fillCopyWords(shell.deleteServiceBody, copy)}
         confirmLabel={t.admin.deleteButton}
         cancelLabel={shell.keep}
         closeLabel={shell.closeDialog}
@@ -321,7 +340,7 @@ export function ServiceEditor({
           title={editingServiceId ? copy.phrases.editServiceTitle : copy.phrases.newServiceTitle}
           description={editingServiceId ? copy.phrases.editServiceEyebrow : copy.phrases.newServiceEyebrow}
         />
-        <div className="grid gap-5 px-4 py-5 sm:px-6">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-5 px-4 py-5 sm:px-6">
           <Field
             label={fillTemplate(t.admin.serviceNameLabel, {
               service: copy.service,
@@ -335,11 +354,11 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder={hints?.serviceName ?? t.admin.serviceNamePlaceholder}
+              placeholder={copy.event?.namePlaceholder ?? hints?.serviceName ?? t.admin.serviceNamePlaceholder}
             />
           </Field>
           {isEvents ? (
-            <div className="grid gap-2 text-sm font-medium text-app-fg">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-2 text-sm font-medium text-app-fg">
               {t.admin.occurrenceLabel}
               <div className="grid grid-cols-2 gap-2">
                 {(["single", "weekly"] as const).map((mode) => {
@@ -364,9 +383,9 @@ export function ServiceEditor({
               </div>
               <p className="text-sm font-normal text-app-fg-muted">
                 {isSingleOccurrence
-                  ? t.admin.singleOccurrenceHint
+                  ? (copy.event?.oneDateHint ?? t.admin.singleOccurrenceHint)
                   : isWeeklyOccurrence
-                    ? t.admin.weeklyOccurrenceHint
+                    ? (copy.event?.everyWeekHint ?? t.admin.weeklyOccurrenceHint)
                     : t.admin.legacyPeriodicEventHint}
               </p>
             </div>
@@ -391,7 +410,10 @@ export function ServiceEditor({
           </Field>
           ) : null}
           {isEventsSingle ? (
-            <div className="grid gap-4 sm:grid-cols-3">
+            // Wraps by the width it has, not the window's: this card is narrower
+            // on a laptop than on a tablet, and the date and time inputs have a
+            // fixed minimum that cannot shrink.
+            <div className={fieldRowClass}>
               <Field label={copy.phrases.eventDateLabel}>
                 <Input
                   disabled={disabled}
@@ -433,8 +455,8 @@ export function ServiceEditor({
             </div>
           ) : null}
           {isEventsWeekly ? (
-            <div className="grid gap-3">
-              <div className="grid gap-2 text-sm font-medium text-app-fg">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-2 text-sm font-medium text-app-fg">
                 {t.admin.repeatsOn}
                 <div className="flex flex-wrap gap-2">
                   {WEEKDAY_KEYS.map((day) => {
@@ -464,7 +486,7 @@ export function ServiceEditor({
                   })}
                 </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className={fieldRowClass}>
                 <Field label={t.admin.startLabel}>
                   <Input
                     disabled={disabled}
@@ -530,7 +552,11 @@ export function ServiceEditor({
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, description: event.target.value }))
               }
-              placeholder={hints?.description ?? copy.phrases.serviceDescPlaceholder}
+              placeholder={
+                copy.event?.descriptionPlaceholder ??
+                hints?.description ??
+                copy.phrases.serviceDescPlaceholder
+              }
               rows={4}
             />
           </Field>
@@ -578,36 +604,118 @@ export function ServiceEditor({
               />
             </Field>
           ) : null}
-          <Field label={t.admin.totalLabel}>
+          <Field label={copy.event?.priceLabel ?? t.admin.totalLabel}>
             <Input
               disabled={disabled}
               value={serviceDraft.cost}
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, cost: event.target.value }))
               }
-              placeholder={hints?.cost ?? "$80 / session"}
+              placeholder={copy.event?.costPlaceholder ?? hints?.cost ?? "$80 / session"}
             />
           </Field>
-          <Field label={t.admin.notesLabel}>
+          <Field label={copy.event?.notesLabel ?? t.admin.notesLabel} description={copy.event?.notesHint}>
             <Textarea
               disabled={disabled}
               value={serviceDraft.notes}
               onChange={(event) =>
                 onDraftChange((current) => ({ ...current, notes: event.target.value }))
               }
-              placeholder={t.admin.notesPlaceholder}
+              placeholder={copy.event?.notesPlaceholder ?? t.admin.notesPlaceholder}
               rows={3}
             />
           </Field>
-          <section className="grid gap-3 border-t border-app-border pt-5">
+          {isEvents ? (
+            <section className="grid grid-cols-[minmax(0,1fr)] gap-5 border-t border-app-border pt-5">
+              <ServicePhotosField
+                value={serviceDraft.photoUrls ?? []}
+                disabled={disabled}
+                lang={lang}
+                onChange={(photoUrls) =>
+                  onDraftChange((current) => ({ ...current, photoUrls }))
+                }
+              />
+              <Field
+                label={`${t.admin.minGroupSizeLabel} ${t.publicFlow.optionalSuffix}`}
+                description={t.admin.minGroupSizeHint}
+              >
+                <Input
+                  disabled={disabled}
+                  value={serviceDraft.minGroupSize ?? ""}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({
+                      ...current,
+                      minGroupSize: event.target.value.replace(/[^0-9]/g, ""),
+                    }))
+                  }
+                  inputMode="numeric"
+                  placeholder="6"
+                />
+              </Field>
+              <Field
+                label={`${t.publicFlow.cancellationPolicy} ${t.publicFlow.optionalSuffix}`}
+                description={t.admin.cancellationPolicyHint}
+              >
+                <Textarea
+                  disabled={disabled}
+                  value={serviceDraft.cancellationPolicy ?? ""}
+                  onChange={(event) =>
+                    onDraftChange((current) => ({
+                      ...current,
+                      cancellationPolicy: event.target.value,
+                    }))
+                  }
+                  maxLength={2000}
+                  placeholder={t.admin.cancellationPolicyPlaceholder}
+                  rows={3}
+                />
+              </Field>
+              <fieldset className="grid grid-cols-[minmax(0,1fr)] gap-2">
+                <legend className="text-sm font-medium text-app-fg">
+                  {t.admin.travelerFieldsLabel} {t.publicFlow.optionalSuffix}
+                </legend>
+                <p className="text-sm text-app-fg-muted">
+                  {fillTemplate(t.admin.travelerFieldsHint, { booking: copy.booking })}
+                </p>
+                <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
+                  {TRAVELER_FIELDS.map((field) => {
+                    const checked = serviceDraft.travelerFields?.includes(field) ?? false;
+                    return (
+                      <label key={field} className="flex items-center gap-2.5 text-sm text-app-fg">
+                        <input
+                          type="checkbox"
+                          disabled={disabled}
+                          checked={checked}
+                          onChange={() =>
+                            onDraftChange((current) => {
+                              const fields = current.travelerFields ?? [];
+                              return {
+                                ...current,
+                                travelerFields: checked
+                                  ? fields.filter((entry) => entry !== field)
+                                  : [...fields, field],
+                              };
+                            })
+                          }
+                          className="size-4 accent-[var(--app-accent,currentColor)]"
+                        />
+                        {t.publicFlow.travelerFieldLabels[field]}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            </section>
+          ) : null}
+          <section className="grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-app-border pt-5">
             <SubHeading className="flex items-center gap-2 text-sm font-semibold text-app-fg">
               <MapPin aria-hidden="true" size={18} className="text-app-accent" />
               {t.admin.locationSection}
             </SubHeading>
             {hasAddress1 || hasAddress2 ? (
-              <div className="grid gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                 {hasAddress1 ? (
-                  <div className="grid gap-2">
+                  <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                     <LinkToggleCard
                       eyebrow={t.admin.address1Label}
                       value={provider.address1}
@@ -621,7 +729,7 @@ export function ServiceEditor({
                   </div>
                 ) : null}
                 {hasAddress2 ? (
-                  <div className="grid gap-2">
+                  <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                     <LinkToggleCard
                       eyebrow={t.admin.address2Label}
                       value={provider.address2}
@@ -636,7 +744,7 @@ export function ServiceEditor({
                 ) : null}
               </div>
             ) : null}
-            <div className="grid gap-3 rounded-lg border-2 border-dashed border-app-border-strong p-4">
+            <div className="grid grid-cols-[minmax(0,1fr)] gap-3 rounded-lg border-2 border-dashed border-app-border-strong p-4">
               <Field
                 label={hasAddress1 || hasAddress2 ? t.admin.addAnotherAddress : t.admin.addAnAddress}
                 description={serviceDraft.customAddress.trim() ? addressHint : undefined}
@@ -654,13 +762,13 @@ export function ServiceEditor({
               {serviceDraft.customAddress.trim() ? locationPriceField("custom") : null}
             </div>
           </section>
-          <section className="grid gap-3 border-t border-app-border pt-5">
+          <section className="grid grid-cols-[minmax(0,1fr)] gap-3 border-t border-app-border pt-5">
             <SubHeading className="flex items-center gap-2 text-sm font-semibold text-app-fg">
               <Phone aria-hidden="true" size={18} className="text-app-accent" />
               {t.admin.phoneSection}
             </SubHeading>
             {hasPhone1 || hasPhone2 ? (
-              <div className="grid gap-2">
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-2">
                 {hasPhone1 ? (
                   <LinkToggleCard
                     eyebrow={t.admin.phone1Label}
@@ -685,7 +793,7 @@ export function ServiceEditor({
                 ) : null}
               </div>
             ) : null}
-            <div className="rounded-lg border-2 border-dashed border-app-border-strong p-4">
+            <div className="min-w-0 rounded-lg border-2 border-dashed border-app-border-strong p-4">
               <Field
                 label={hasPhone1 || hasPhone2 ? t.admin.addAnotherPhone : t.admin.addAPhone}
                 description={serviceDraft.customPhone.trim() ? phoneHint : undefined}

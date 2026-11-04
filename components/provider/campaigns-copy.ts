@@ -42,7 +42,7 @@ export const campaignsCopy: Record<Lang, CampaignsCopy> = {
     previewBody: "Publish your booking page with an account to make campaign links and see what they bring.",
     builderTitle: "Create a campaign link",
     builderBody:
-      "A campaign link is your booking link with a label on it. Your clients see the same page; the label only tells you where each visit and booking came from.",
+      "A campaign link is your booking link with a label on it. Your visitors see the same page; the label only tells you where each visit and booking came from.",
     stepsTitle: "How to use it",
     steps: [
       {
@@ -104,7 +104,7 @@ export const campaignsCopy: Record<Lang, CampaignsCopy> = {
     previewBody: "Publica tu página de reservas con una cuenta para crear enlaces de campaña y ver qué generan.",
     builderTitle: "Crea un enlace de campaña",
     builderBody:
-      "Un enlace de campaña es tu enlace de reservas con una etiqueta. Tus clientes ven la misma página; la etiqueta solo te dice de dónde vino cada visita y cada reserva.",
+      "Un enlace de campaña es tu enlace de reservas con una etiqueta. Tus visitantes ven la misma página; la etiqueta solo te dice de dónde vino cada visita y cada reserva.",
     stepsTitle: "Cómo usarlo",
     steps: [
       {

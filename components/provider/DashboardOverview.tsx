@@ -21,7 +21,7 @@ import {
 } from "@/components/app-ui";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { CampaignBadge } from "@/components/provider/CampaignBadge";
-import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { dashboardCopy, fillCopyWords } from "@/components/provider/dashboard-copy";
 import { isNewBooking } from "@/lib/booking-review";
 import { getWeekdayShortFormatter } from "@/lib/constants";
 import type { NextStep } from "@/lib/dashboard-overview";
@@ -221,9 +221,11 @@ export function DashboardOverview({
                           {shell.review.newBadge}
                         </Badge>
                       ) : null}
-                      <Badge tone={bookingTypeBadgeTone(booking.bookingType)}>
-                        {getBookingTypeLabel(booking.bookingType, lang)}
-                      </Badge>
+                      {copy.event ? null : (
+                        <Badge tone={bookingTypeBadgeTone(booking.bookingType)}>
+                          {getBookingTypeLabel(booking.bookingType, lang)}
+                        </Badge>
+                      )}
                       <Badge tone={bookingStatusBadgeTone(booking.status)}>
                         {getBookingStatusLabel(booking.status, lang)}
                       </Badge>
@@ -244,7 +246,7 @@ export function DashboardOverview({
                       </span>
                       <span>
                         {formatCost(booking.cost, lang)
-                          ? `${t.publicFlow.total}: ${formatCost(booking.cost, lang)}`
+                          ? `${copy.event?.priceLabel ?? t.publicFlow.total}: ${formatCost(booking.cost, lang)}`
                           : t.admin.totalNotSet}
                       </span>
                     </p>
@@ -312,11 +314,11 @@ export function DashboardOverview({
 
                   return (
                     <StackedListItem key={step.id} className="sm:flex-col sm:items-start">
-                      <p className="text-sm font-semibold text-app-fg">{stepCopy.title}</p>
-                      <p className="mt-1 text-sm text-app-fg-muted">{stepCopy.body}</p>
+                      <p className="text-sm font-semibold text-app-fg">{fillCopyWords(stepCopy.title, copy)}</p>
+                      <p className="mt-1 text-sm text-app-fg-muted">{fillCopyWords(stepCopy.body, copy)}</p>
                       {section && stepCopy.cta ? (
                         <Button variant="soft" size="sm" className="mt-3" onClick={() => onGoToSection(section)}>
-                          {stepCopy.cta}
+                          {step.id === "add-service" ? copy.phrases.newServiceTitle : stepCopy.cta}
                         </Button>
                       ) : null}
                     </StackedListItem>

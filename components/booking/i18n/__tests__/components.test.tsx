@@ -88,8 +88,9 @@ describe("shared booking components", () => {
       />,
     );
 
-    expect(html).toContain(">Single<");
-    expect(html).toContain(">Weekly<");
+    expect(html).toContain("How often?");
+    expect(html).toContain(">One date<");
+    expect(html).toContain(">Every week<");
     expect(html).not.toContain(">Periodic<");
     expect(html).toContain("organizer profile");
     expect(html).not.toMatch(/\bprovider profile\b/i);
@@ -275,13 +276,13 @@ describe("owner language settings copy", () => {
       fillTemplate(bookingTranslations.en.admin.clientsSeeNotice, {
         language: bookingTranslations.en.language.spanish,
       }),
-    ).toBe("Your clients see this page in Español.");
+    ).toBe("Your visitors see this page in Español.");
 
     expect(
       fillTemplate(bookingTranslations.es.admin.clientsSeeNotice, {
         language: bookingTranslations.es.language.english,
       }),
-    ).toBe("Sus clientes ven esta página en English.");
+    ).toBe("Sus visitantes ven esta página en English.");
   });
 });
 

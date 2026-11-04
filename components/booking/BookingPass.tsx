@@ -1,6 +1,6 @@
 "use client";
 
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import type { BookingRecord, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
@@ -155,7 +155,7 @@ export function BookingPass({
 
   return (
     <article
-      aria-label={t.publicFlow.passEyebrow}
+      aria-label={fillTemplate(t.publicFlow.passEyebrow, { Booking: copy.Booking, booking: copy.booking })}
       className="overflow-hidden rounded-[30px] bg-[var(--surface-lowest)] ring-1 ring-[rgba(15,23,42,0.08)] shadow-[0_30px_70px_rgba(15,23,42,0.10)]"
     >
       {/* Livery band. The one place the pass carries colour. */}
@@ -237,7 +237,7 @@ export function BookingPass({
           {/* The fare closes the ticket, the way a total closes a receipt. */}
           {costLabel ? (
             <div className="mt-7 border-t border-dotted border-[rgba(15,23,42,0.2)] pt-6 lg:pt-7">
-              <PassCell label={t.publicFlow.total} value={costLabel} emphasis />
+              <PassCell label={copy.event?.priceLabel ?? t.publicFlow.total} value={costLabel} emphasis />
             </div>
           ) : null}
         </div>
@@ -295,7 +295,7 @@ export function BookingPass({
           ) : null}
 
           <p className={cn("w-full", microLabel)}>
-            {admitLabel || t.publicFlow.passEyebrow}
+            {admitLabel || fillTemplate(t.publicFlow.passEyebrow, { Booking: copy.Booking, booking: copy.booking })}
           </p>
 
           {isCancelled ? (
@@ -409,6 +409,7 @@ export function RefinedBookingPass({
   description,
   bringLabel,
   notes,
+  cancellationPolicy,
   clientNotes,
   costLabel,
   admitLabel,
@@ -442,6 +443,7 @@ export function RefinedBookingPass({
   /** The vertical's heading over the notes: "Bring with you", "Before you arrive". */
   bringLabel: string;
   notes?: string;
+  cancellationPolicy?: string;
   /** What the client wrote on the booking, when they wrote something. */
   clientNotes?: PassField;
   costLabel?: string;
@@ -460,7 +462,7 @@ export function RefinedBookingPass({
   const t = bookingTranslations[lang];
   const isCancelled = booking.status === "cancelled";
   const hasWhere = addresses.length > 0 || providerPhones.length > 0 || Boolean(providerEmail);
-  const hasProse = Boolean(description || notes || clientNotes);
+  const hasProse = Boolean(description || notes || cancellationPolicy || clientNotes);
   const headline = cn(
     "text-[19px] font-semibold leading-[1.15] tracking-[-0.03em] lg:text-[28px] lg:tracking-[-0.035em]",
     isCancelled ? "text-[var(--muted)] line-through" : "text-[var(--ink)]",
@@ -468,7 +470,7 @@ export function RefinedBookingPass({
 
   return (
     <article
-      aria-label={t.publicFlow.passEyebrow}
+      aria-label={fillTemplate(t.publicFlow.passEyebrow, { Booking: copy.Booking, booking: copy.booking })}
       className="overflow-hidden rounded-[26px] bg-[var(--surface-lowest)] shadow-[0_24px_54px_rgba(15,23,42,0.10)] ring-1 ring-[rgba(15,23,42,0.06)] lg:rounded-[30px] lg:shadow-[0_30px_70px_rgba(15,23,42,0.10)]"
     >
       <div
@@ -613,6 +615,13 @@ export function RefinedBookingPass({
                     </p>
                   </RefinedCell>
                 ) : null}
+                {cancellationPolicy ? (
+                  <RefinedCell label={t.publicFlow.cancellationPolicy} className="sm:col-span-2">
+                    <p className="whitespace-pre-line text-sm leading-[1.6] text-[var(--ink-secondary)]">
+                      {cancellationPolicy}
+                    </p>
+                  </RefinedCell>
+                ) : null}
                 {clientNotes ? (
                   <RefinedCell label={clientNotes.label} className="sm:col-span-2">
                     <p className="whitespace-pre-line text-sm leading-[1.6] text-[var(--ink-secondary)]">
@@ -630,7 +639,7 @@ export function RefinedBookingPass({
                   dottedRule,
                 )}
               >
-                <p className={refinedLabel}>{t.publicFlow.total}</p>
+                <p className={refinedLabel}>{copy.event?.priceLabel ?? t.publicFlow.total}</p>
                 <p
                   className={cn(
                     "break-words text-right font-bold tracking-[-0.03em] text-[var(--ink)]",

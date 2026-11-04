@@ -16,7 +16,8 @@ import {
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { BookingRetentionNotice } from "@/components/provider/BookingRetentionSettings";
 import { CampaignBadge } from "@/components/provider/CampaignBadge";
-import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { dashboardCopy, fillCopyWords } from "@/components/provider/dashboard-copy";
+import { TRAVELER_FIELDS } from "@/lib/types";
 import type { BookingRetentionPolicy } from "@/lib/booking-retention";
 import { groupBookingsByDate } from "@/lib/booking-groups";
 import type { BookingListSort, BookingListView } from "@/lib/booking-list";
@@ -155,7 +156,7 @@ export function BookingsList({
       return { title: shell.noArchivedBookingsTitle, body: shell.noArchivedBookingsBody };
     }
     if (activeCount + archiveCount === 0) {
-      return { title: shell.noBookingsYetTitle, body: shell.noBookingsYetBody };
+      return { title: shell.noBookingsYetTitle, body: fillCopyWords(shell.noBookingsYetBody, copy) };
     }
     return { title: shell.noActiveBookingsTitle, body: shell.noActiveBookingsBody };
   }
@@ -212,15 +213,18 @@ export function BookingsList({
             <option value="rescheduled">{t.admin.rescheduled}</option>
             <option value="cancelled">{t.admin.cancelled}</option>
           </Select>
-          <Select
-            value={type}
-            onChange={(event) => onTypeChange(event.target.value as "all" | BookingType)}
-            aria-label={shell.typeFilterLabel}
-          >
-            <option value="all">{t.admin.allTypes}</option>
-            <option value="appointment">{t.admin.appointments}</option>
-            <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
-          </Select>
+          {/* A dated event is one kind of booking, so this would filter nothing. */}
+          {copy.event ? null : (
+            <Select
+              value={type}
+              onChange={(event) => onTypeChange(event.target.value as "all" | BookingType)}
+              aria-label={shell.typeFilterLabel}
+            >
+              <option value="all">{t.admin.allTypes}</option>
+              <option value="appointment">{t.admin.appointments}</option>
+              <option value="full-day">{getBookingTypeLabel("full-day", lang)}</option>
+            </Select>
+          )}
           {review ? (
             <Select
               value={review.filter}
@@ -392,6 +396,13 @@ export function BookingsList({
                                 {t.publicFlow.dateOfBirth}: {formatDateOfBirth(booking.dateOfBirth, lang)}
                               </span>
                             ) : null}
+                            {TRAVELER_FIELDS.map((field) =>
+                              booking.travelerDetails?.[field] ? (
+                                <span key={field} className="break-words">
+                                  {t.publicFlow.travelerFieldLabels[field]}: {booking.travelerDetails[field]}
+                                </span>
+                              ) : null,
+                            )}
                           </div>
                         </div>
                         <div className={cn("min-w-0", table.cell)}>
@@ -409,14 +420,16 @@ export function BookingsList({
                             ) : null}
                             {formatCost(booking.cost, lang) ? (
                               <span>
-                                {t.publicFlow.total}: {formatCost(booking.cost, lang)}
+                                {copy.event?.priceLabel ?? t.publicFlow.total}: {formatCost(booking.cost, lang)}
                               </span>
                             ) : null}
                           </div>
                           <div className="mt-2 flex flex-wrap gap-1.5">
-                            <Badge tone={bookingTypeBadgeTone(booking.bookingType)}>
-                              {getBookingTypeLabel(booking.bookingType, lang)}
-                            </Badge>
+                            {copy.event ? null : (
+                              <Badge tone={bookingTypeBadgeTone(booking.bookingType)}>
+                                {getBookingTypeLabel(booking.bookingType, lang)}
+                              </Badge>
+                            )}
                             <Badge tone={bookingStatusBadgeTone(booking.status)}>
                               {getBookingStatusLabel(booking.status, lang)}
                             </Badge>

@@ -34,8 +34,8 @@ describe("bookingTranslations", () => {
     expect(admin.weekdays.monday).toBe("Lunes");
     expect(admin.blockedTimes).toBe("Horarios bloqueados");
     expect(admin.saveChanges).toBe("Guardar cambios");
-    expect(admin.eventSchedulingTitle).toBe("Programación de eventos");
-    expect(admin.manageEvents).toBe("Gestionar eventos");
+    expect(admin.eventSchedulingTitle).toBe("Programación de {services}");
+    expect(admin.manageEvents).toBe("Gestionar {services}");
     expect(providerForm.uploadImage).toBe("Subir imagen");
     expect(providerForm.logoImage).toBe("Logotipo de la página pública");
     expect(providerForm.logoImageSizeError).toContain("1 MB");

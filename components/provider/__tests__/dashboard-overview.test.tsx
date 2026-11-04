@@ -145,7 +145,8 @@ describe("DashboardOverview", () => {
     const html = render({ nextSteps: steps, publishingEnabled: false });
 
     expect(html).toContain(dashboardCopy.en.nextStepsTitle);
-    expect(html).toContain(dashboardCopy.en.nextSteps["add-service"].cta);
+    expect(html).toContain("Add a medical service");
+    expect(html).toContain("Add what patients can book");
     expect(html).toContain(
       dashboardCopy.en.nextSteps["publishing-off"].title.replaceAll("'", "&#x27;"),
     );

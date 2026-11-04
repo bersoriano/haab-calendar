@@ -3,6 +3,8 @@ import {
   validateImageFile,
   MAX_HEADER_IMAGE_BYTES,
   MAX_LOGO_IMAGE_BYTES,
+  MAX_SERVICE_PHOTOS,
+  normalizePhotoUrls,
 } from "@/lib/image-upload";
 
 describe("validateImageFile", () => {
@@ -45,5 +47,23 @@ describe("validateImageFile", () => {
         MAX_LOGO_IMAGE_BYTES,
       ).ok,
     ).toBe(false);
+  });
+});
+
+describe("normalizePhotoUrls", () => {
+  it("keeps real URLs and app paths, once each, up to the limit", () => {
+    expect(
+      normalizePhotoUrls([" https://a.example/1.jpg ", "https://a.example/1.jpg", "/demo/2.jpg"]),
+    ).toEqual(["https://a.example/1.jpg", "/demo/2.jpg"]);
+    expect(
+      normalizePhotoUrls(Array.from({ length: 9 }, (_, i) => `https://a.example/${i}.jpg`)),
+    ).toHaveLength(MAX_SERVICE_PHOTOS);
+  });
+
+  it("drops what could not be a safe image source", () => {
+    expect(
+      normalizePhotoUrls(["javascript:alert(1)", "//evil.example/a.jpg", "data:image/png;base64,AA", "", 7]),
+    ).toEqual([]);
+    expect(normalizePhotoUrls(undefined)).toEqual([]);
   });
 });

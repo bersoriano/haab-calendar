@@ -403,3 +403,38 @@ describe("AppointmentAbout", () => {
     expect(html).not.toContain("Length");
   });
 });
+
+describe("DetailsForm traveler fields", () => {
+  const form = (extra: Partial<Parameters<typeof DetailsForm>[0]>) =>
+    renderToStaticMarkup(
+      <DetailsForm
+        values={empty}
+        onChange={() => undefined}
+        showPartySize={false}
+        showDateOfBirth={false}
+        invalidRequired
+        complete={false}
+        errorId="e"
+        copy={copy}
+        lang="en"
+        {...extra}
+      />,
+    );
+
+  it("asks nothing extra unless the service opted in", () => {
+    expect(form({})).not.toContain("Passport number");
+  });
+
+  it("asks what the service opted into, and never insists", () => {
+    const html = form({ travelerFields: ["passport", "hotel_pickup"], travelerDetails: { passport: "G1" } });
+
+    expect(html).toContain("Passport number");
+    expect(html).toContain("Hotel pickup");
+    expect(html).not.toContain("Dietary needs");
+    expect(html).toContain('value="G1"');
+    // Even with the form refused for a missing name, these stay valid.
+    const passport = html.slice(html.indexOf('value="G1"') - 200, html.indexOf('value="G1"') + 200);
+    expect(passport).not.toContain("aria-invalid");
+    expect(html.match(/\(optional\)/g)?.length).toBeGreaterThanOrEqual(3);
+  });
+});

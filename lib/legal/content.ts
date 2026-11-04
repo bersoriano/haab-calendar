@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-10-21";
+export const LEGAL_UPDATED = "2026-11-03";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -64,7 +64,7 @@ const EN_PRIVACY: LegalDocument = {
       id: "data-customer",
       heading: "Booking data handled for businesses",
       body: [
-        "When someone books, the booking page collects the name, email address, phone number, and any notes the client chooses to add, together with the service, date, and time.",
+        "When someone books, the booking page collects the name, email address, phone number, and any notes the client chooses to add, together with the service, date, and time. A business can also ask for optional details: a passport number, an emergency contact, dietary needs, or a hotel pickup. Answers are shown only to that business.",
         "This information is used to create and manage the booking and nothing else. It is not sold, not rented, not used to build advertising profiles, and not used to train machine learning models.",
         "Each booking gets a private management link containing an unguessable token. Anyone holding that link can view, reschedule, or cancel that booking, which is why those pages are served with instructions not to index them and are excluded from search engines.",
       ],
@@ -307,7 +307,7 @@ const ES_PRIVACY: LegalDocument = {
       id: "data-customer",
       heading: "Datos de reservas tratados por cuenta de los negocios",
       body: [
-        "Cuando alguien reserva, la página recaba el nombre, correo electrónico, teléfono y las notas que el cliente decida agregar, junto con el servicio, la fecha y la hora.",
+        "Cuando alguien reserva, la página recaba el nombre, correo electrónico, teléfono y las notas que el cliente decida agregar, junto con el servicio, la fecha y la hora. Un negocio también puede pedir datos opcionales: número de pasaporte, contacto de emergencia, necesidades alimentarias o recogida en hotel. Las respuestas solo se muestran a ese negocio.",
         "Esta información se usa para crear y administrar la reserva y para nada más. No se vende, no se renta, no se usa para construir perfiles publicitarios ni para entrenar modelos de aprendizaje automático.",
         "Cada reserva recibe un enlace privado de administración que contiene un token imposible de adivinar. Quien tenga ese enlace puede consultar, reprogramar o cancelar esa reserva, y por eso esas páginas se sirven con instrucciones de no ser indexadas y quedan excluidas de los motores de búsqueda.",
       ],
