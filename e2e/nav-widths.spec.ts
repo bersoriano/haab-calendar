@@ -1,7 +1,7 @@
 import { expect, test, type Cookie, type Locator, type Page } from "@playwright/test";
 
 import { localAdminClient } from "./fixtures/local-supabase";
-import { authStatePath, E2E_PASSWORD, providerFor } from "./fixtures/providers";
+import { authStatePath, E2E_PASSWORD, providerFor, type E2ERole } from "./fixtures/providers";
 import { DEFAULT_STORAGE_KEY } from "../lib/constants";
 
 /**
@@ -54,6 +54,12 @@ const section = (path: string): Control => ({
   find: (nav) => nav.getByRole("navigation").locator(`a[href="${path}"]`),
 });
 
+/** A dashboard section under the words this page uses for it. */
+const sectionNamed = (path: string, name: string): Control => ({
+  label: `the link to ${path} named "${name}"`,
+  find: (nav) => nav.getByRole("navigation").locator(`a[href="${path}"]`).filter({ hasText: name }),
+});
+
 /** A tab of the workspace a draft is built in, by its label. */
 const tab = (name: string): Control => ({
   label: `the "${name}" tab`,
@@ -67,6 +73,8 @@ type NavCase = {
   surface: string;
   session: Session;
   path: string;
+  /** Whose page, where it matters which. Defaults to a clinic on the free plan. */
+  role?: E2ERole;
   /** A finished draft is waiting in the browser, as the page builder leaves it. */
   draft?: true;
   /** The navigation, opened first wherever this width collapses it. */
@@ -302,6 +310,35 @@ const CASES: NavCase[] = [
     // The calendar section is gone: a link to it would be a 404.
     hides: [link("Log in"), section("/dashboard/calendar")],
   },
+  {
+    surface: "dashboard of an events page",
+    session: "signed in with a page",
+    role: "eventsPage",
+    path: "/dashboard",
+    open: dashboardNav,
+    account: button("Sign out"),
+    offers: [
+      sectionNamed("/dashboard/bookings", "Registrations"),
+      sectionNamed("/dashboard/scan", "Scan registration"),
+      sectionNamed("/dashboard/services", "Events"),
+    ],
+    hides: [link("Log in"), link("Scan appointment"), link("Tours")],
+  },
+  {
+    // Still the events vertical: same sections, in a tour operator's words.
+    surface: "dashboard of a tour page",
+    session: "signed in with a page",
+    role: "toursPage",
+    path: "/dashboard",
+    open: dashboardNav,
+    account: button("Sign out"),
+    offers: [
+      sectionNamed("/dashboard/bookings", "Bookings"),
+      sectionNamed("/dashboard/scan", "Scan booking"),
+      sectionNamed("/dashboard/services", "Tours"),
+    ],
+    hides: [link("Log in"), link("Registrations"), link("Events"), link("Scan appointment")],
+  },
 ];
 
 /**
@@ -379,7 +416,7 @@ test.beforeAll(async ({ browser }) => {
 for (const navCase of CASES) {
   test.describe(`${navCase.surface}, ${navCase.session}${navCase.draft ? ", with a draft" : ""}`, () => {
     if (navCase.session === "signed in with a page") {
-      test.use({ storageState: authStatePath("free") });
+      test.use({ storageState: authStatePath(navCase.role ?? "free") });
     }
 
     for (const width of WIDTHS) {

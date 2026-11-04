@@ -3,6 +3,9 @@
 
 export const MAX_HEADER_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_LOGO_IMAGE_BYTES = 1 * 1024 * 1024; // 1 MB
+export const MAX_SERVICE_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
+/** Matches the services_photo_urls_limit constraint. */
+export const MAX_SERVICE_PHOTOS = 5;
 export const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
@@ -27,4 +30,24 @@ export function validateImageFile(
     return { ok: false, error: `Image must be ${mb} MB or smaller.` };
   }
   return { ok: true };
+}
+
+/**
+ * The photos a service keeps: real URLs only, no repeats, at most the limit.
+ * A site-relative path is allowed for images shipped with the app. Anything
+ * else is dropped rather than failing the whole save.
+ */
+export function normalizePhotoUrls(source: unknown): string[] {
+  if (!Array.isArray(source)) return [];
+  const seen = new Set<string>();
+
+  for (const entry of source) {
+    if (typeof entry !== "string") continue;
+    const url = entry.trim();
+    if (/^https?:\/\/\S+$/i.test(url) || /^\/(?!\/)\S*$/.test(url)) {
+      seen.add(url);
+    }
+  }
+
+  return [...seen].slice(0, MAX_SERVICE_PHOTOS);
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import {
   formatDuration,
+  formatMinGroupSize,
   getBookingTypeLabel,
   getOccurrenceModeLabel,
 } from "@/lib/format";
@@ -85,6 +86,9 @@ export function AppointmentAbout({
   const notes = service.notes?.trim();
   const specialty = service.medicalSpecialty?.trim();
   const capacity = formatCapacityChip(service, vertical, copy, lang);
+  const minGroup = formatMinGroupSize(service, copy, t.publicFlow.minGroupValue);
+  const cancellationPolicy = service.cancellationPolicy?.trim();
+  const photos = service.photoUrls ?? [];
 
   // A full-day service's type already says "Full day", and an appointment with
   // no minutes would only say "Appointment" twice: neither earns a Length.
@@ -104,7 +108,7 @@ export function AppointmentAbout({
       value: isSingle
         ? singleDateLabel
         : isEvent
-          ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+          ? getOccurrenceModeLabel(service.occurrenceMode, lang, copy.event)
           : getBookingTypeLabel(service.bookingType, lang),
     },
     ...(length ? [{ label: t.publicFlow.length, value: length }] : []),
@@ -113,6 +117,25 @@ export function AppointmentAbout({
 
   const body = (
     <>
+      {photos.length > 0 ? (
+        <ul className="flex gap-2 overflow-x-auto pb-1">
+          {photos.map((url, index) => (
+            <li key={url} className="shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={fillTemplate(t.publicFlow.photoAlt, {
+                  name: service.name,
+                  n: String(index + 1),
+                })}
+                loading="lazy"
+                className="h-24 w-36 rounded-xl object-cover"
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {description ? (
         <p className="text-[13.5px] leading-[1.55] text-[var(--muted)]">{description}</p>
       ) : null}
@@ -124,6 +147,12 @@ export function AppointmentAbout({
             <dd className="break-words text-[14.5px] font-medium text-[var(--ink)]">{fact.value}</dd>
           </div>
         ))}
+        {minGroup ? (
+          <div className="col-span-full flex min-w-0 flex-col gap-0.5">
+            <dt className={factLabelClass}>{t.publicFlow.minGroupLabel}</dt>
+            <dd className="break-words text-[14.5px] font-medium text-[var(--ink)]">{minGroup}</dd>
+          </div>
+        ) : null}
         {specialty ? (
           <div className="col-span-full flex min-w-0 flex-col gap-0.5">
             <dt className={factLabelClass}>{t.publicFlow.specialty}</dt>
@@ -150,6 +179,15 @@ export function AppointmentAbout({
           </svg>
           <p className="whitespace-pre-line">
             <span className="font-semibold">{copy.phrases.beforeVisitLabel}</span> {notes}
+          </p>
+        </div>
+      ) : null}
+
+      {cancellationPolicy ? (
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className={factLabelClass}>{t.publicFlow.cancellationPolicy}</span>
+          <p className="whitespace-pre-line break-words text-[13.5px] leading-[1.55] text-[var(--ink-secondary)]">
+            {cancellationPolicy}
           </p>
         </div>
       ) : null}

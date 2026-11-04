@@ -134,16 +134,11 @@ function TableDots() {
   );
 }
 
-function CapacityBar({ label }: { label: string }) {
+function CapacityBar() {
   return (
-    <div className="flex flex-col gap-1.5">
-      <span className="h-2 overflow-hidden rounded-full bg-[var(--lp-sun-ink)]/15">
-        <span className="block h-full w-[62%] rounded-full bg-[var(--lp-sun-ink)]" />
-      </span>
-      <span className="truncate text-[12px] font-semibold text-[var(--lp-sun-ink)] sm:text-[12.5px]">
-        {label}
-      </span>
-    </div>
+    <span className="block h-2 overflow-hidden rounded-full bg-[var(--lp-sun-ink)]/15">
+      <span className="block h-full w-[62%] rounded-full bg-[var(--lp-sun-ink)]" />
+    </span>
   );
 }
 
@@ -165,11 +160,7 @@ function HeaderVisual({ vertical }: { vertical: VerticalId }) {
     case "restaurant":
       return <TableDots />;
     case "events":
-      return (
-        <CapacityBar
-          label={getVerticalPreset("events", lang)?.services[0]?.capacity ?? ""}
-        />
-      );
+      return <CapacityBar />;
     default:
       return <TimePills />;
   }

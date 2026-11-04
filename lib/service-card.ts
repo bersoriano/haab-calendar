@@ -1,6 +1,6 @@
 import { formatCapacityLabel } from "@/lib/format";
 import type { Lang, ProviderInfo, Service, VerticalId } from "@/lib/types";
-import type { VerticalCopy } from "@/lib/vertical-copy";
+import type { EventWording, VerticalCopy } from "@/lib/vertical-copy";
 
 /**
  * The decisions behind a service card on step 1, kept apart from the markup so
@@ -126,8 +126,13 @@ export function getServiceCardCta(
   service: Service,
   vertical: VerticalId | undefined,
   labels: { selectADate: string; selectADay: string; selectATime: string },
+  wording?: EventWording,
 ): string {
   if (vertical === "events") {
+    // One fixed date leaves nothing to choose, so the card offers to show it.
+    if (wording) {
+      return service.occurrenceMode === "single" ? wording.seeOneDateCta : wording.chooseDateCta;
+    }
     return labels.selectADate;
   }
 

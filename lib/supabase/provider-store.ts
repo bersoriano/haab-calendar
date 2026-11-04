@@ -9,6 +9,8 @@ import { normalizePublicTheme } from "@/lib/public-theme";
 import { isBookingFooterUrl } from "@/lib/booking-footer";
 import { normalizeDailyBookingLimit } from "@/lib/availability";
 import { normalizeTimeZone, UNSET_TIME_ZONE } from "@/lib/timezone";
+import { normalizePhotoUrls } from "@/lib/image-upload";
+import { normalizeTravelerFields } from "@/lib/traveler-details";
 import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from "@/lib/types";
 
 const PROVIDER_ID_SELECT = "id";
@@ -128,6 +130,15 @@ export function toServicePayload(providerId: string, service: Service, sortOrder
       typeof service.maxPartySize === "number" && Number.isFinite(service.maxPartySize)
         ? Math.floor(service.maxPartySize)
         : null,
+    photo_urls: normalizePhotoUrls(service.photoUrls),
+    cancellation_policy: service.cancellationPolicy?.trim().slice(0, 2000) || null,
+    min_group_size:
+      typeof service.minGroupSize === "number" &&
+      Number.isFinite(service.minGroupSize) &&
+      service.minGroupSize > 0
+        ? Math.floor(service.minGroupSize)
+        : null,
+    traveler_fields: normalizeTravelerFields(service.travelerFields),
     location_prices: toLocationPricesPayload(service.locationPrices),
     linked_address_1: Boolean(service.linkedAddress1),
     linked_address_2: Boolean(service.linkedAddress2),
@@ -220,6 +231,8 @@ async function upsertProvider(options: {
     email,
     vertical,
     language: provider.language,
+    // A word set only means something on the vertical it was written for.
+    vocabulary: vertical === "events" && provider.vocabulary === "tours" ? "tours" : null,
     dashboard_language: provider.dashboardLanguage ?? null,
     public_theme: normalizePublicTheme(provider.publicTheme),
     public_footer_text: trimOptional(provider.publicFooterText),

@@ -40,6 +40,26 @@ export type BookingStep = 1 | 2 | 3 | 4;
  */
 export type CapacityScope = "date" | "slot";
 
+/**
+ * Extra details a booking form can ask for. Each service opts in; the person
+ * booking can always leave them empty. The values are stored as written, in the
+ * `services.traveler_fields` column and as `details.travelerDetails` keys.
+ */
+export const TRAVELER_FIELDS = [
+  "passport",
+  "emergency_contact",
+  "diet",
+  "hotel_pickup",
+] as const;
+export type TravelerField = (typeof TRAVELER_FIELDS)[number];
+export type TravelerDetails = Partial<Record<TravelerField, string>>;
+
+/**
+ * A word set that replaces the vertical's own on one provider's page and
+ * dashboard. Undefined means the vertical's words. See getVerticalCopy.
+ */
+export type Vocabulary = "tours";
+
 export const VERTICAL_IDS = [
   "healthcare",
   "spaces",
@@ -65,6 +85,8 @@ export type ProviderInfo = {
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
   /** UI/content language for this provider. Drives the public booking page. */
   language: Lang;
+  /** Events only: speak of tours and travelers instead of events and attendees. */
+  vocabulary?: Vocabulary;
   /**
    * The owner's own dashboard language. Undefined means "follow the browser",
    * which is what every pre-existing provider does. Deliberately separate from
@@ -114,6 +136,14 @@ export type Service = {
   maxSpots?: number; // units of capacity: spots for events, tables per seating
   capacityScope?: CapacityScope; // undefined === "date"
   maxPartySize?: number; // restaurants: largest party one table takes
+  /** Optional public images. The first is the cover on the service card. */
+  photoUrls?: string[];
+  /** Optional owner-written policy. Shown to the public, never enforced. */
+  cancellationPolicy?: string;
+  /** Optional fewest people this runs with. Shown to the public, never enforced. */
+  minGroupSize?: number;
+  /** Optional extra details the booking form asks for. Empty means none. */
+  travelerFields?: TravelerField[];
   cost?: string;
   // Per-location price overrides (free text). Base price is `cost`.
   locationPrices?: Partial<Record<LocationKey, string>>;
@@ -166,6 +196,12 @@ export type BookingRecord = {
   partySize?: number;
   /** Optional, "YYYY-MM-DD". Stored in the booking details payload. */
   dateOfBirth?: string;
+  /**
+   * Answers to the service's traveler fields, in the booking details payload.
+   * Provider-side only: may hold a passport number, so it is never sent back
+   * through the client's private link.
+   */
+  travelerDetails?: TravelerDetails;
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
@@ -236,6 +272,10 @@ export type ServiceDraft = {
   maxSpots: string;
   capacityScope?: CapacityScope;
   maxPartySize: string;
+  photoUrls?: string[];
+  cancellationPolicy?: string;
+  minGroupSize?: string;
+  travelerFields?: TravelerField[];
   cost: string;
   locationPrices?: { address1: string; address2: string; custom: string };
   notes: string;
@@ -263,6 +303,8 @@ export type BookingFlow = {
    * a flow saved before the field existed still reads.
    */
   dateOfBirth?: string;
+  /** Optional answers to the chosen service's traveler fields. */
+  travelerDetails?: TravelerDetails;
   notes: string;
   successBookingId?: string;
 };

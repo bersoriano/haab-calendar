@@ -1,3 +1,5 @@
+import { normalizePhotoUrls } from "./image-upload";
+import { normalizeTravelerFields } from "./traveler-details";
 import { slugify, currentTimestamp, createId } from "./utils";
 import { getServiceSlug } from "./public-url";
 import { compareDateKeys } from "./date";
@@ -131,6 +133,10 @@ export function materializeVerticalServices(drafts: ServiceDraft[]): Service[] {
     maxSpots: parseMaxSpots(draft.maxSpots),
     capacityScope: draft.capacityScope,
     maxPartySize: parseMaxSpots(draft.maxPartySize),
+    photoUrls: normalizePhotoUrls(draft.photoUrls),
+    cancellationPolicy: draft.cancellationPolicy?.trim() || undefined,
+    minGroupSize: parseMaxSpots(draft.minGroupSize),
+    travelerFields: normalizeTravelerFields(draft.travelerFields),
     cost: draft.cost,
     locationPrices: normalizeLocationPrices(draft.locationPrices),
     notes: draft.notes,
@@ -207,6 +213,10 @@ export function createBlankServiceDraft(vertical?: VerticalId): ServiceDraft {
     // Restaurants sell each seating separately; everything else sells the date.
     capacityScope: vertical === "restaurant" ? "slot" : undefined,
     maxPartySize: "",
+    photoUrls: [],
+    cancellationPolicy: "",
+    minGroupSize: "",
+    travelerFields: [],
     cost: "",
     locationPrices: { address1: "", address2: "", custom: "" },
     notes: "",
@@ -240,6 +250,7 @@ export function createInitialBookingFlow(
     clientPhone: "",
     partySize: "",
     dateOfBirth: "",
+    travelerDetails: {},
     notes: "",
     successBookingId: undefined,
   };
@@ -301,6 +312,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: source?.language === "es" ? "es" : "en",
+    vocabulary: source?.vocabulary === "tours" ? "tours" : undefined,
     dashboardLanguage:
       source?.dashboardLanguage === "en" || source?.dashboardLanguage === "es"
         ? source.dashboardLanguage
@@ -347,6 +359,10 @@ export function normalizeServices(source?: Service[] | null): Service[] {
     maxSpots: parseMaxSpots(service.maxSpots),
     capacityScope: service.capacityScope,
     maxPartySize: parseMaxSpots(service.maxPartySize),
+    photoUrls: normalizePhotoUrls(service.photoUrls),
+    cancellationPolicy: service.cancellationPolicy,
+    minGroupSize: parseMaxSpots(service.minGroupSize),
+    travelerFields: normalizeTravelerFields(service.travelerFields),
     cost: service.cost,
     locationPrices: normalizeLocationPrices(service.locationPrices),
     notes: service.notes,
@@ -396,6 +412,7 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       sharedCapacity: booking.sharedCapacity ?? false,
       partySize: booking.partySize,
       dateOfBirth: booking.dateOfBirth,
+      travelerDetails: booking.travelerDetails,
       reviewedAt: booking.reviewedAt || undefined,
       createdAt: booking.createdAt,
       updatedAt: booking.updatedAt,

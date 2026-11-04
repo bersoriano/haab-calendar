@@ -98,6 +98,41 @@ describe("ServiceCard", () => {
     expect(html).toContain("Choose a day");
   });
 
+  it("offers to show a date that is already fixed, and to choose one that is not", () => {
+    expect(render({ occurrenceMode: "single", maxSpots: 18 }, "events")).toContain("See date");
+    expect(render({ occurrenceMode: "weekly", weekdays: ["monday"], maxSpots: 18 }, "events")).toContain(
+      "Choose a date",
+    );
+  });
+
+  it("shows the optional tour fields only when the owner filled them", () => {
+    const bare = render({ occurrenceMode: "single", maxSpots: 18 }, "events");
+    expect(bare).not.toContain("<img");
+    expect(bare).not.toContain("Cancellation policy");
+    expect(bare).not.toContain("At least");
+
+    const full = render(
+      {
+        occurrenceMode: "single",
+        maxSpots: 18,
+        photoUrls: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+        minGroupSize: 6,
+        cancellationPolicy: "Free up to 7 days before.",
+      },
+      "events",
+    );
+    expect(full).toContain('src="https://example.com/a.jpg"');
+    expect(full).not.toContain("https://example.com/b.jpg");
+    expect(full).toContain("At least 6 attendees");
+    expect(full).toContain("Free up to 7 days before.");
+  });
+
+  it("lets a long price wrap below the name instead of squeezing it", () => {
+    const html = render({ cost: "US$1,890 per person" });
+    expect(html).toContain("flex-wrap items-baseline");
+    expect(html).toContain("flex-[1_1_60%]");
+  });
+
   it("asks events for a date and shows the occurrence", () => {
     const html = render(
       {
@@ -113,7 +148,7 @@ describe("ServiceCard", () => {
       { seatsNote: { text: "3 spots left", tone: "scarce" } },
     );
 
-    expect(html).toContain("Choose a date");
+    expect(html).toContain("See date");
     expect(html).toContain("Up to 18 spots");
     expect(html).toContain("Full Day");
     expect(html).toContain("9:00 AM - 11:00 AM");

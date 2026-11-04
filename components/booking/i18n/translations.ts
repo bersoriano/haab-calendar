@@ -1,3 +1,4 @@
+import type { TravelerField } from "@/lib/types";
 import type { Lang, WeekdayKey } from "@/lib/types";
 
 export type BookingDict = {
@@ -259,6 +260,12 @@ export type BookingDict = {
     detailsComplete: string;
     dateOfBirth: string;
     dateOfBirthInvalidError: string;
+    travelerFieldLabels: Record<TravelerField, string>;
+    travelerFieldPlaceholders: Record<TravelerField, string>;
+    cancellationPolicy: string;
+    minGroupLabel: string;
+    minGroupValue: string;
+    photoAlt: string;
     summaryHeldFor: string;
     confirmBooking: string;
     aboutBooking: string;
@@ -445,6 +452,21 @@ export type BookingDict = {
     descriptionLabel: string;
     capacityLabel: string;
     maxSpotsLabel: string;
+    photosLabel: string;
+    photosHint: string;
+    addPhoto: string;
+    removePhoto: string;
+    minGroupSizeLabel: string;
+    minGroupSizeHint: string;
+    minGroupAboveMaxError: string;
+    cancellationPolicyHint: string;
+    cancellationPolicyPlaceholder: string;
+    travelerFieldsLabel: string;
+    travelerFieldsHint: string;
+    vocabularyTitle: string;
+    vocabularyHint: string;
+    vocabularyEvents: string;
+    vocabularyTours: string;
     tablesPerSeatingLabel: string;
     maxPartySizeLabel: string;
     partySizeLabel: string;
@@ -851,6 +873,22 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       detailsComplete: "Complete",
       dateOfBirth: "Date of birth",
       dateOfBirthInvalidError: "Enter a valid date of birth, or leave it empty.",
+      travelerFieldLabels: {
+        passport: "Passport number",
+        emergency_contact: "Emergency contact",
+        diet: "Dietary needs",
+        hotel_pickup: "Hotel pickup",
+      },
+      travelerFieldPlaceholders: {
+        passport: "As it appears on your passport",
+        emergency_contact: "Name and phone number",
+        diet: "Allergies or food preferences",
+        hotel_pickup: "Hotel name and address",
+      },
+      cancellationPolicy: "Cancellation policy",
+      minGroupLabel: "Group size",
+      minGroupValue: "At least {count} {clients}",
+      photoAlt: "{name}, photo {n}",
       summaryHeldFor: "Held for you · {time} left",
       confirmBooking: "Confirm {booking}",
       aboutBooking: "About the {booking}",
@@ -870,7 +908,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       linkBody: "Reschedule or cancel anytime — no account, no phone call. Anyone with this link can manage the {booking}, so keep it to yourself.",
       linkBodyShort: "Reschedule or cancel anytime — no account, no phone call. Keep it to yourself.",
       actionsNeedChange: "Need to change something?",
-      passEyebrow: "Appointment Receipt",
+      passEyebrow: "{Booking} Receipt",
       passDate: "Date",
       passTime: "Time",
       passContact: "Contact",
@@ -901,7 +939,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       allTypes: "All types",
       appointments: "Appointments",
       tryBroaderSearch: "Try a broader search or clear the filters.",
-      scanAppointment: "Scan appointment",
+      scanAppointment: "Scan {booking}",
       monthlyCalendar: "Monthly calendar",
       newBookingPrefix: "New booking",
       providerInformation: "Provider information",
@@ -965,18 +1003,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       dailyLimitLabel: "Maximum bookings per day",
       dailyLimitHint:
         "After {count} bookings on a day, that day shows as full on your booking page. Holds in progress count toward the limit.",
-      eventSchedulingTitle: "Event scheduling",
-      eventSchedulingBody: "Weekly availability does not apply to events.",
+      eventSchedulingTitle: "{Service} scheduling",
+      eventSchedulingBody: "Weekly availability does not apply to {services}.",
       eventSchedulingHint:
-        "Set each event's date, time, location, pricing, and capacity from the Services tab.",
-      manageEvents: "Manage events",
+        "Set each {service}'s date, time, location, pricing, and capacity from the {Services} tab.",
+      manageEvents: "Manage {services}",
       resetStandaloneSetup: "Reset standalone setup",
       saveChanges: "Save changes",
       couldNotSaveSettings: "Could not save settings.",
-      clientLanguageLabel: "Language your clients see",
+      clientLanguageLabel: "Language your visitors see",
       clientLanguageHint:
         "Applies to your public booking page and the confirmation screen. It does not translate the text you write yourself.",
-      clientsSeeNotice: "Your clients see this page in {language}.",
+      clientsSeeNotice: "Your visitors see this page in {language}.",
       dashboardLanguageLabel: "Your workspace language",
       publicBookingLinkFor: "Public {booking} link:",
       publicSlugLabel: "Edit public URL",
@@ -1014,15 +1052,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Keep at least one {service}. Add another before you can remove this one.",
       serviceNameLabel: "{Service} name",
       clearButton: "Clear",
-      occurrenceLabel: "Occurrence",
-      occurrenceSingle: "Single",
-      occurrenceWeekly: "Weekly",
+      occurrenceLabel: "How often?",
+      occurrenceSingle: "One date",
+      occurrenceWeekly: "Every week",
       occurrencePeriodic: "Periodic",
       singleOccurrenceHint: "This event happens once, on a fixed date and time.",
       weeklyOccurrenceHint: "This event recurs on the weekdays you pick, at a fixed time.",
       periodicOccurrenceHint: "This event repeats on your weekly availability.",
       legacyPeriodicEventHint:
-        "This legacy event uses weekly availability. Choose Single or Weekly to update its schedule.",
+        "This uses your weekly availability. Choose One date or Every week to give it its own schedule.",
       bookingTypeLabel: "Booking type",
       startLabel: "Start",
       endLabel: "End",
@@ -1032,12 +1070,27 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       descriptionLabel: "Description",
       capacityLabel: "Capacity",
       maxSpotsLabel: "Maximum spots",
+      photosLabel: "Photos",
+      photosHint: "Up to {max}. The first one is the cover on your page. JPG, PNG or WEBP, up to 5 MB each.",
+      addPhoto: "Add a photo",
+      removePhoto: "Remove photo {n}",
+      minGroupSizeLabel: "Minimum group size",
+      minGroupSizeHint: "Shown on your page. It doesn't stop anyone from booking.",
+      minGroupAboveMaxError: "The minimum group size can't be more than the maximum spots.",
+      cancellationPolicyHint: "Shown before they confirm and on their pass. You apply it yourself.",
+      cancellationPolicyPlaceholder: "Free cancellation up to 7 days before. No refund after that.",
+      travelerFieldsLabel: "Extra details to ask for",
+      travelerFieldsHint: "Added to the form only if you tick them, and always optional to answer. You see the answers with each {booking}.",
+      vocabularyTitle: "Words on your page",
+      vocabularyHint: "Changes the words on your page and in this dashboard. Your link and booking rules stay the same.",
+      vocabularyEvents: "Events, attendees, registrations",
+      vocabularyTours: "Tours, travelers, bookings",
       tablesPerSeatingLabel: "Tables per seating",
       maxPartySizeLabel: "Max party size",
       partySizeLabel: "Guests",
       publicThemeLabel: "Look of your booking page",
       publicThemeHelper:
-        "Changes the colours your clients see. Your dashboard stays as it is.",
+        "Changes the colours your visitors see. Your dashboard stays as it is.",
       publicThemeNames: {
         default: "Classic",
         dark: "Dark",
@@ -1129,15 +1182,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       informationTitle: "Organizer information",
       contactLabel: "Contact organizer",
       requiredFieldsError: "Organizer name, business name, and email are all required.",
-      addressHintSlot1: "We'll save this as Address 1 in your organizer profile so other events can reuse it.",
-      addressHintSlot2: "We'll save this as Address 2 in your organizer profile so other events can reuse it.",
-      addressHintFull: "Both organizer address slots are already taken — this address will stay with this event only.",
-      phoneHintSlot1: "We'll save this as Phone 1 in your organizer profile so other events can reuse it.",
-      phoneHintSlot2: "We'll save this as Phone 2 in your organizer profile so other events can reuse it.",
-      phoneHintFull: "Both organizer phone slots are already taken — this phone will stay with this event only.",
+      addressHintSlot1: "We'll save this as Address 1 in your organizer profile so other {services} can reuse it.",
+      addressHintSlot2: "We'll save this as Address 2 in your organizer profile so other {services} can reuse it.",
+      addressHintFull: "Both organizer address slots are already taken — this address will stay with this {service} only.",
+      phoneHintSlot1: "We'll save this as Phone 1 in your organizer profile so other {services} can reuse it.",
+      phoneHintSlot2: "We'll save this as Phone 2 in your organizer profile so other {services} can reuse it.",
+      phoneHintFull: "Both organizer phone slots are already taken — this phone will stay with this {service} only.",
       logoAlt: "Organizer logo",
       bookingPageUnavailableBody:
-        "The link may be incorrect, or this organizer's registration page is not available right now.",
+        "The link may be incorrect, or this organizer's page is not available right now.",
     },
     welcome: {
       badge: "Welcome to Haab",
@@ -1169,7 +1222,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       timeZone: "Time zone",
       timeZoneUnset: "Choose your time zone",
       timeZoneHint:
-        "Your opening hours and every booking time are read in this zone. Clients see the city on your public page.",
+        "Your opening hours and every booking time are read in this zone. Visitors see the city on your public page.",
       timeZoneDetect: "Detect my time zone",
       timeZoneCurrentTime: "Right now it's {time} there.",
       timeZonePromptTitle: "Confirm your time zone \u2014 we detected {zone}",
@@ -1455,6 +1508,22 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       detailsComplete: "Completo",
       dateOfBirth: "Fecha de nacimiento",
       dateOfBirthInvalidError: "Ingrese una fecha de nacimiento válida o deje el campo vacío.",
+      travelerFieldLabels: {
+        passport: "Número de pasaporte",
+        emergency_contact: "Contacto de emergencia",
+        diet: "Necesidades alimentarias",
+        hotel_pickup: "Recogida en hotel",
+      },
+      travelerFieldPlaceholders: {
+        passport: "Como aparece en su pasaporte",
+        emergency_contact: "Nombre y número de teléfono",
+        diet: "Alergias o preferencias de comida",
+        hotel_pickup: "Nombre y dirección del hotel",
+      },
+      cancellationPolicy: "Política de cancelación",
+      minGroupLabel: "Tamaño del grupo",
+      minGroupValue: "Al menos {count} {clients}",
+      photoAlt: "{name}, foto {n}",
       summaryHeldFor: "Lugar apartado para usted · quedan {time}",
       confirmBooking: "Confirmar {booking}",
       aboutBooking: "Sobre su {booking}",
@@ -1474,7 +1543,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       linkBody: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Cualquiera con este enlace puede administrar su {booking}, así que guárdelo solo para usted.",
       linkBodyShort: "Reagende o cancele cuando quiera, sin cuenta y sin llamar. Guárdelo solo para usted.",
       actionsNeedChange: "¿Necesita cambiar algo?",
-      passEyebrow: "Confirmación de cita",
+      passEyebrow: "Confirmación de {booking}",
       passDate: "Fecha",
       passTime: "Horario",
       passContact: "Contacto",
@@ -1505,7 +1574,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       allTypes: "Todos los tipos",
       appointments: "Citas",
       tryBroaderSearch: "Intente una búsqueda más amplia o limpie los filtros.",
-      scanAppointment: "Escanear cita",
+      scanAppointment: "Escanear {booking}",
       monthlyCalendar: "Calendario mensual",
       newBookingPrefix: "Nueva reserva",
       providerInformation: "Información del administrador",
@@ -1569,18 +1638,18 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       dailyLimitLabel: "Máximo de reservas por día",
       dailyLimitHint:
         "Después de {count} reservas en un día, ese día aparece como lleno en tu página de reservas. Las reservas en proceso cuentan para el límite.",
-      eventSchedulingTitle: "Programación de eventos",
-      eventSchedulingBody: "La disponibilidad semanal no aplica a los eventos.",
+      eventSchedulingTitle: "Programación de {services}",
+      eventSchedulingBody: "La disponibilidad semanal no aplica a los {services}.",
       eventSchedulingHint:
-        "Configure la fecha, hora, ubicación, precio y capacidad de cada evento en la pestaña Servicios.",
-      manageEvents: "Gestionar eventos",
+        "Configure la fecha, hora, ubicación, precio y capacidad de cada {service} en la pestaña {Services}.",
+      manageEvents: "Gestionar {services}",
       resetStandaloneSetup: "Restablecer configuración independiente",
       saveChanges: "Guardar cambios",
       couldNotSaveSettings: "No se pudieron guardar los ajustes.",
-      clientLanguageLabel: "Idioma que ven sus clientes",
+      clientLanguageLabel: "Idioma que ven sus visitantes",
       clientLanguageHint:
         "Se aplica a su página pública de reservas y a la pantalla de confirmación. No traduce el texto que usted escribe.",
-      clientsSeeNotice: "Sus clientes ven esta página en {language}.",
+      clientsSeeNotice: "Sus visitantes ven esta página en {language}.",
       dashboardLanguageLabel: "Idioma de su espacio de trabajo",
       publicBookingLinkFor: "Enlace público de {booking}:",
       publicSlugLabel: "Editar URL pública",
@@ -1618,15 +1687,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Conserve al menos un {service}. Agregue otro antes de quitar este.",
       serviceNameLabel: "Nombre del {service}",
       clearButton: "Limpiar",
-      occurrenceLabel: "Frecuencia",
-      occurrenceSingle: "Único",
-      occurrenceWeekly: "Semanal",
+      occurrenceLabel: "¿Con qué frecuencia?",
+      occurrenceSingle: "Una fecha",
+      occurrenceWeekly: "Cada semana",
       occurrencePeriodic: "Periódico",
       singleOccurrenceHint: "Este evento ocurre una vez, en una fecha y hora fija.",
       weeklyOccurrenceHint: "Este evento se repite los días que elija, a una hora fija.",
       periodicOccurrenceHint: "Este evento se repite según su disponibilidad semanal.",
       legacyPeriodicEventHint:
-        "Este evento heredado usa la disponibilidad semanal. Elija Único o Semanal para actualizar su programación.",
+        "Usa su disponibilidad semanal. Elija Una fecha o Cada semana para darle su propio horario.",
       bookingTypeLabel: "Tipo de reserva",
       startLabel: "Inicio",
       endLabel: "Fin",
@@ -1636,12 +1705,27 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       descriptionLabel: "Descripción",
       capacityLabel: "Capacidad",
       maxSpotsLabel: "Lugares máximos",
+      photosLabel: "Fotos",
+      photosHint: "Hasta {max}. La primera es la portada en su página. JPG, PNG o WEBP, hasta 5 MB cada una.",
+      addPhoto: "Agregar una foto",
+      removePhoto: "Quitar la foto {n}",
+      minGroupSizeLabel: "Tamaño mínimo del grupo",
+      minGroupSizeHint: "Se muestra en su página. No impide que alguien reserve.",
+      minGroupAboveMaxError: "El tamaño mínimo del grupo no puede ser mayor que los lugares máximos.",
+      cancellationPolicyHint: "Se muestra antes de confirmar y en el pase. Usted la aplica.",
+      cancellationPolicyPlaceholder: "Cancelación gratuita hasta 7 días antes. Sin reembolso después.",
+      travelerFieldsLabel: "Datos adicionales que pedir",
+      travelerFieldsHint: "Se agregan al formulario solo si los marca, y responderlos siempre es opcional. Verá las respuestas en cada {booking}.",
+      vocabularyTitle: "Palabras en su página",
+      vocabularyHint: "Cambia las palabras en su página y en este panel. Su enlace y sus reglas de reserva no cambian.",
+      vocabularyEvents: "Eventos, asistentes, registros",
+      vocabularyTours: "Tours, viajeros, reservas",
       tablesPerSeatingLabel: "Mesas por turno",
       maxPartySizeLabel: "Grupo máximo",
       partySizeLabel: "Comensales",
       publicThemeLabel: "Estilo de tu página de reservas",
       publicThemeHelper:
-        "Cambia los colores que ven tus clientes. Tu panel se queda igual.",
+        "Cambia los colores que ven tus visitantes. Tu panel se queda igual.",
       publicThemeNames: {
         default: "Clásico",
         dark: "Oscuro",
@@ -1733,15 +1817,15 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       informationTitle: "Información del organizador",
       contactLabel: "Contactar al organizador",
       requiredFieldsError: "El nombre del organizador, el nombre del negocio y el correo electrónico son obligatorios.",
-      addressHintSlot1: "Lo guardaremos como Dirección 1 en el perfil del organizador para que otros eventos puedan reutilizarla.",
-      addressHintSlot2: "Lo guardaremos como Dirección 2 en el perfil del organizador para que otros eventos puedan reutilizarla.",
-      addressHintFull: "Ambos campos de dirección del organizador ya están ocupados — esta dirección solo se guardará con este evento.",
-      phoneHintSlot1: "Lo guardaremos como Teléfono 1 en el perfil del organizador para que otros eventos puedan reutilizarlo.",
-      phoneHintSlot2: "Lo guardaremos como Teléfono 2 en el perfil del organizador para que otros eventos puedan reutilizarlo.",
-      phoneHintFull: "Ambos campos de teléfono del organizador ya están ocupados — este teléfono solo se guardará con este evento.",
+      addressHintSlot1: "Lo guardaremos como Dirección 1 en el perfil del organizador para que otros {services} puedan reutilizarla.",
+      addressHintSlot2: "Lo guardaremos como Dirección 2 en el perfil del organizador para que otros {services} puedan reutilizarla.",
+      addressHintFull: "Ambos campos de dirección del organizador ya están ocupados — esta dirección solo se guardará con este {service}.",
+      phoneHintSlot1: "Lo guardaremos como Teléfono 1 en el perfil del organizador para que otros {services} puedan reutilizarlo.",
+      phoneHintSlot2: "Lo guardaremos como Teléfono 2 en el perfil del organizador para que otros {services} puedan reutilizarlo.",
+      phoneHintFull: "Ambos campos de teléfono del organizador ya están ocupados — este teléfono solo se guardará con este {service}.",
       logoAlt: "Logotipo del organizador",
       bookingPageUnavailableBody:
-        "El enlace puede ser incorrecto o la página de registro de este organizador no está disponible en este momento.",
+        "El enlace puede ser incorrecto o la página de este organizador no está disponible en este momento.",
     },
     welcome: {
       badge: "Bienvenido a Haab",
@@ -1762,7 +1846,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       address2: "Dirección 2",
       fullNamePlaceholder: "Dra. Maya Álvarez",
       businessNamePlaceholder: "Centro de Salud Haab",
-      emailPlaceholder: "citas@haabcalendar.com",
+      emailPlaceholder: "hola@haabcalendar.com",
       phone1Placeholder: "+52 55 1234 5678",
       phone2Placeholder: "Número secundario opcional",
       address1Placeholder: "Av. Principal 123, consultorio 4",
@@ -1773,7 +1857,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       timeZone: "Zona horaria",
       timeZoneUnset: "Elija su zona horaria",
       timeZoneHint:
-        "Sus horarios de atenci\u00f3n y cada reserva se leen en esta zona. Sus clientes ven la ciudad en su p\u00e1gina p\u00fablica.",
+        "Sus horarios de atenci\u00f3n y cada reserva se leen en esta zona. Sus visitantes ven la ciudad en su p\u00e1gina p\u00fablica.",
       timeZoneDetect: "Detectar mi zona horaria",
       timeZoneCurrentTime: "All\u00e1 son las {time} en este momento.",
       timeZonePromptTitle: "Confirme su zona horaria: detectamos {zone}",

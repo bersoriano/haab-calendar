@@ -24,7 +24,9 @@ export type E2ERole =
   | "publicManage"
   | "superAdmin"
   | "superAdminTarget"
-  | "longEmail";
+  | "longEmail"
+  | "eventsPage"
+  | "toursPage";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -35,6 +37,9 @@ export type E2EProviderSeed = {
   slug: string;
   /** The legacy column, deliberately wrong in two cases to prove precedence. */
   legacyPlanTier: "free" | "premium";
+  /** Defaults to a clinic. Set where a test is about another vertical's words. */
+  vertical?: "events";
+  vocabulary?: "tours";
   billing?: {
     status: string;
     planTier: "free" | "premium";
@@ -193,6 +198,27 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     businessName: "Long Address E2E",
     slug: "long-address-e2e",
     legacyPlanTier: "free",
+  },
+  {
+    role: "eventsPage",
+    email: "events@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e13",
+    providerId: "00000000-0000-4000-8000-0000000e2ead",
+    businessName: "Events Page E2E",
+    slug: "events-page-e2e",
+    legacyPlanTier: "free",
+    vertical: "events",
+  },
+  {
+    role: "toursPage",
+    email: "tours@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e14",
+    providerId: "00000000-0000-4000-8000-0000000e2eae",
+    businessName: "Tours Page E2E",
+    slug: "tours-page-e2e",
+    legacyPlanTier: "free",
+    vertical: "events",
+    vocabulary: "tours",
   },
 ];
 

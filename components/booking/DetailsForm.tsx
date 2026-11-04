@@ -3,7 +3,8 @@ import { useId } from "react";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { todayKey } from "@/lib/date";
 import { EARLIEST_DATE_OF_BIRTH } from "@/lib/date-of-birth";
-import type { Lang } from "@/lib/types";
+import { MAX_TRAVELER_DETAIL_LENGTH } from "@/lib/traveler-details";
+import type { Lang, TravelerDetails, TravelerField } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
@@ -35,6 +36,9 @@ export function DetailsForm({
   onChange,
   showPartySize,
   showDateOfBirth,
+  travelerFields = [],
+  travelerDetails = {},
+  onTravelerDetailChange,
   invalidRequired,
   complete,
   errorId,
@@ -47,6 +51,10 @@ export function DetailsForm({
   showPartySize: boolean;
   /** Only healthcare asks for a date of birth. */
   showDateOfBirth: boolean;
+  /** Extra details the service asks for. Always optional, so never "invalid". */
+  travelerFields?: TravelerField[];
+  travelerDetails?: TravelerDetails;
+  onTravelerDetailChange?: (field: TravelerField, value: string) => void;
   /** Confirming was refused for empty required fields. */
   invalidRequired: boolean;
   /** Every required field is filled: the card turns green and says so. */
@@ -204,6 +212,25 @@ export function DetailsForm({
           />
         </div>
       ) : null}
+
+      {travelerFields.map((field) => (
+        <div key={field} className="flex flex-col gap-1.5">
+          <label htmlFor={`${id}-${field}`} className={labelClass}>
+            {t.publicFlow.travelerFieldLabels[field]}{" "}
+            <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
+          </label>
+          <input
+            id={`${id}-${field}`}
+            value={travelerDetails[field] ?? ""}
+            onChange={(event) => onTravelerDetailChange?.(field, event.target.value)}
+            placeholder={t.publicFlow.travelerFieldPlaceholders[field]}
+            maxLength={MAX_TRAVELER_DETAIL_LENGTH}
+            autoComplete="off"
+            enterKeyHint="next"
+            className={cn(inputClass, "h-[50px]")}
+          />
+        </div>
+      ))}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor={fieldId("notes")} className={labelClass}>

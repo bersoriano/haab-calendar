@@ -13,6 +13,7 @@ import { ToneBadge } from "@/components/ui/ToneBadge";
 import {
   bookingTypeTone,
   formatDateLabel,
+  formatMinGroupSize,
   formatDuration,
   formatTimeRange,
   getBookingTypeLabel,
@@ -107,6 +108,9 @@ export function ServiceCard({
   const notes = service.notes?.trim();
   const specialty = service.medicalSpecialty?.trim();
   const capacity = formatCapacityChip(service, vertical, copy, lang);
+  const coverUrl = service.photoUrls?.[0];
+  const minGroup = formatMinGroupSize(service, copy, t.publicFlow.minGroupValue);
+  const cancellationPolicy = service.cancellationPolicy?.trim();
 
   // A full-day service's type badge already says "Full day", so the chip only
   // earns its place where the badge says something else (an event's schedule).
@@ -139,22 +143,37 @@ export function ServiceCard({
         className,
       )}
     >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] sm:h-[52px] sm:w-[52px] sm:rounded-2xl",
-          isTeal
-            ? "bg-[var(--tile-teal)] text-[var(--tile-teal-ink)]"
-            : "bg-[var(--tile-blue)] text-[var(--accent)]",
-        )}
-      >
-        <Icon weight="bold" aria-hidden className="h-[22px] w-[22px] sm:h-[26px] sm:w-[26px]" />
-      </span>
+      {coverUrl ? (
+        // The photo stands in for the icon, edge to edge. It is decoration on a
+        // button already named by its title, so it adds nothing for a screen
+        // reader; the photos are described on the details step.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={coverUrl}
+          alt=""
+          loading="lazy"
+          className="-mx-5 -mt-5 aspect-[16/9] max-h-64 w-[calc(100%+2.5rem)] max-w-none rounded-t-[26px] object-cover sm:-mx-7 sm:-mt-7 sm:w-[calc(100%+3.5rem)] sm:rounded-t-[30px]"
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[14px] sm:h-[52px] sm:w-[52px] sm:rounded-2xl",
+            isTeal
+              ? "bg-[var(--tile-teal)] text-[var(--tile-teal-ink)]"
+              : "bg-[var(--tile-blue)] text-[var(--accent)]",
+          )}
+        >
+          <Icon weight="bold" aria-hidden className="h-[22px] w-[22px] sm:h-[26px] sm:w-[26px]" />
+        </span>
+      )}
 
       <span className="flex flex-col gap-2">
-        <span className="flex items-baseline justify-between gap-3 sm:gap-4">
-          <h3 className={cn(titleClass, "min-w-0 break-words")}>{service.name}</h3>
-          {cost ? <span className={cn(titleClass, "shrink-0 text-right")}>{cost}</span> : null}
+        {/* The title keeps at least 60% of the row, so a long price drops to its
+            own line instead of squeezing the name until a word breaks. */}
+        <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 sm:gap-x-4">
+          <h3 className={cn(titleClass, "min-w-0 flex-[1_1_60%] break-words")}>{service.name}</h3>
+          {cost ? <span className={cn(titleClass, "shrink-0")}>{cost}</span> : null}
         </span>
         {description ? (
           <span className="block text-sm leading-[1.5] text-[var(--muted)] sm:text-[15px] sm:leading-[1.55]">
@@ -169,7 +188,7 @@ export function ServiceCard({
           className="!rounded-full !px-2.5 !py-[5px] !text-[11.5px] sm:!px-[11px] sm:!py-1.5 sm:!text-xs"
         >
           {isEvents
-            ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+            ? getOccurrenceModeLabel(service.occurrenceMode, lang, copy.event)
             : getBookingTypeLabel(service.bookingType, lang)}
         </ToneBadge>
         {durationLabel ? (
@@ -202,6 +221,11 @@ export function ServiceCard({
               <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
             </ChipIcon>
             {capacity}
+          </span>
+        ) : null}
+        {minGroup ? (
+          <span className={cn(chipClass, "bg-[var(--neutral-chip)] text-[var(--ink-secondary)]")}>
+            {minGroup}
           </span>
         ) : null}
         {specialty ? (
@@ -247,6 +271,16 @@ export function ServiceCard({
         </span>
       ) : null}
 
+      {cancellationPolicy ? (
+        // Cut short here; the details step shows all of it before anyone confirms.
+        <span className="line-clamp-2 text-[13px] leading-[1.5] text-[var(--muted)] sm:text-[13.5px]">
+          <span className="font-semibold text-[var(--ink-secondary)]">
+            {t.publicFlow.cancellationPolicy}:
+          </span>{" "}
+          {cancellationPolicy}
+        </span>
+      ) : null}
+
       {hasServiceContact(contact) ? (
         <span className="flex flex-col gap-1.5 text-[13px] leading-[1.4] text-[var(--muted)]">
           {contact?.addresses.map((address) => (
@@ -286,7 +320,7 @@ export function ServiceCard({
 
       <span className="mt-auto flex border-t border-[rgba(193,198,214,0.6)] pt-3.5 sm:justify-end sm:pt-[18px]">
         <span className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-[22px] text-[15.5px] font-semibold text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] sm:h-[46px] sm:w-auto sm:text-[15px]">
-          {getServiceCardCta(service, vertical, t.publicFlow)}
+          {getServiceCardCta(service, vertical, t.publicFlow, copy.event)}
           <span aria-hidden="true">→</span>
         </span>
       </span>

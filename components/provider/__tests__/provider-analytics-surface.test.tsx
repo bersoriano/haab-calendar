@@ -175,7 +175,7 @@ describe("booking insights", () => {
 
   it("explains an empty heatmap in Spanish", () => {
     expect(renderToStaticMarkup(<PopularTimesPanel times={[]} lang="es" />)).toContain(
-      "Aún no hay citas con horario",
+      "Aún no hay nada con horario",
     );
   });
 });

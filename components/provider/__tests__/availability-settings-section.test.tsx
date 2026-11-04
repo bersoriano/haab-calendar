@@ -32,8 +32,8 @@ describe("AvailabilitySettingsSection", () => {
     const onManageEvents = vi.fn();
     const html = render({ vertical: "events", onManageEvents });
 
-    expect(html).toContain(en.eventSchedulingTitle);
-    expect(html).toContain(en.manageEvents);
+    expect(html).toContain("Event scheduling");
+    expect(html).toContain("Manage events");
     expect(html).not.toContain(en.weekdays.monday);
     expect(onManageEvents).not.toHaveBeenCalled();
   });
