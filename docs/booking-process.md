@@ -382,7 +382,7 @@ For changes to the booking process, run:
 npx tsc --noEmit
 npm test
 npm run build
-npx supabase db lint --linked
+npx supabase db lint --remote
 ```
 
 Browser smoke-test at least one canonical public route on a mobile viewport:

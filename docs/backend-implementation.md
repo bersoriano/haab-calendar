@@ -252,16 +252,16 @@ through calls made during the request.
 Check migration alignment before deploying application code:
 
 ```bash
-npx supabase migration list --linked
-npx supabase db push --linked --dry-run
-npx supabase db push --linked
+npx supabase migration list --remote
+npx supabase db push --remote --dry-run
+npx supabase db push --remote
 ```
 
 The dry run should list only migrations intentionally pending. After application:
 
 ```bash
-npx supabase migration list --linked
-npx supabase db lint --linked
+npx supabase migration list --remote
+npx supabase db lint --remote
 ```
 
 Application gates:
