@@ -2,7 +2,7 @@ import type { Lang, ProviderInfo, Service } from "./types";
 
 type LocalizedServiceContent = Pick<
   Service,
-  "name" | "description" | "medicalSpecialty" | "capacity" | "cost" | "notes"
+  "name" | "description" | "medicalSpecialty" | "capacity" | "cost" | "notes" | "cancellationPolicy"
 >;
 
 type LocalizedExampleContent = {
@@ -117,40 +117,45 @@ const SPANISH_EXAMPLE_CONTENT: Record<string, LocalizedExampleContent> = {
         description:
           "Suba a las pirámides con un guía arqueólogo antes de que llegue la multitud. Incluye transporte, entradas y comida.",
         capacity: "14 viajeros",
-        cost: "US$95",
-        notes: "Lleve zapatos cómodos, sombrero y agua. La salida es puntual. Precio por persona.",
+        cost: "US$95 por persona",
+        notes: "Lleve zapatos cómodos, sombrero y agua. La salida es puntual.",
+        cancellationPolicy: "Cancelación gratuita hasta 48 horas antes de la salida. Sin reembolso después.",
       },
       "tulum-and-coba-day-tour": {
         name: "Tulum y Cobá, tour de un día",
         description:
           "Ruinas frente al mar por la mañana y nado en un cenote por la tarde. Incluye transporte, entradas y comida.",
         capacity: "16 viajeros",
-        cost: "US$120",
-        notes: "Lleve traje de baño y toalla. Use bloqueador biodegradable en el cenote. Sale a las 7:30 a. m., hora de Cancún. Precio por persona.",
+        cost: "US$120 por persona",
+        notes: "Lleve traje de baño y toalla. Use bloqueador biodegradable en el cenote. Sale a las 7:30 a. m., hora de Cancún.",
+        cancellationPolicy: "Cancelación gratuita hasta 48 horas antes de la salida. Sin reembolso después.",
       },
       "yucatan-and-maya-ruins-8-days": {
         name: "Yucatán y ruinas mayas · 8 días",
         description:
           "Ida y vuelta desde Cancún por Chichén Itzá, Mérida, Uxmal y Bacalar. Incluye 7 noches de hotel, transporte, guía y desayunos.",
         capacity: "12 viajeros",
-        cost: "US$1,890",
-        notes: "La hora indicada es la reunión de bienvenida del día 1, 6:00 p. m., hora de Cancún. Termina el día 8 en Cancún. Precio por persona en habitación doble.",
+        cost: "US$1,890 por persona",
+        notes: "La hora indicada es la reunión de bienvenida del día 1, 6:00 p. m., hora de Cancún. Termina el día 8 en Cancún. Precio en habitación doble.",
+        cancellationPolicy: "Cancelación gratuita hasta 45 días antes de la salida. Reembolso del 50% de 45 a 15 días antes. Sin reembolso después.",
       },
       "oaxaca-food-and-markets-6-days": {
         name: "Oaxaca, cocina y mercados · 6 días",
         description:
           "Mercados, Monte Albán, un taller de mezcal y una clase de cocina en casa de una familia. Incluye 5 noches de hotel, guía y desayunos.",
         capacity: "10 viajeros",
-        cost: "US$1,240",
-        notes: "La hora indicada es la reunión de bienvenida del día 1. Termina el día 6 en Oaxaca. Vuelos no incluidos. Precio por persona.",
+        cost: "US$1,240 por persona",
+        notes: "La hora indicada es la reunión de bienvenida del día 1. Termina el día 6 en Oaxaca. Vuelos no incluidos.",
+        cancellationPolicy: "Cancelación gratuita hasta 45 días antes de la salida. Reembolso del 50% de 45 a 15 días antes. Sin reembolso después.",
       },
       "mexico-city-to-cancun-15-days": {
         name: "De Ciudad de México a Cancún · 15 días",
         description:
           "Teotihuacán, Oaxaca, San Cristóbal, Palenque, Mérida y la costa de Quintana Roo. Incluye 14 noches de hotel, transporte, guía y desayunos.",
         capacity: "16 viajeros",
-        cost: "US$3,950",
-        notes: "La hora indicada es la reunión de bienvenida del día 1. Termina el día 15 en Cancún. Precio por persona en habitación doble.",
+        cost: "US$3,950 por persona",
+        notes: "La hora indicada es la reunión de bienvenida del día 1. Termina el día 15 en Cancún. Precio en habitación doble.",
+        cancellationPolicy: "Cancelación gratuita hasta 45 días antes de la salida. Reembolso del 50% de 45 a 15 días antes. Sin reembolso después.",
       },
     },
   },

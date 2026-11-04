@@ -69,6 +69,8 @@ overwrites edits made to the demos, so to publish a single new one use
 - Personal golf coaching: `/professionals/fairway-lab-golf`
 - Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
 - Guided tours, dated departures and weekly day trips: `/events/ruta-cenote-tours`
+  (the events vertical in the `tours` word set, with photos, a cancellation
+  policy, a minimum group size and traveler details)
 
 Casa Mirador is the exception to the rule below: its services sell a fixed
 number of tables at each seating, so a reservation takes one table rather than
