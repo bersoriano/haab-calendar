@@ -32,6 +32,7 @@ import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
 import { LangPill } from "./lang-pill";
 import { Reveal } from "./reveal";
 import { Trust } from "./trust";
+import { FeaturedPost } from "./featured-post";
 import {
   CheckChip,
   LandingScope,
@@ -963,6 +964,7 @@ export function LandingPage({
           <Features />
           <GoogleIntegration />
           <Trust />
+          <FeaturedPost />
           <FAQ />
           <FinalCTA />
         </main>

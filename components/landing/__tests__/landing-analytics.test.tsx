@@ -36,6 +36,8 @@ describe("real landing analytics wiring", () => {
     expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "live-examples", action: "view_gallery", language: "en" });
     root.querySelector<HTMLAnchorElement>("#live-examples a[href^='/doctors']")!.click();
     expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "live-examples", action: "view_example", example: 0, language: "en" });
+    root.querySelector<HTMLAnchorElement>("#blog a")!.click();
+    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "blog", action: "read_post", language: "en" });
   });
 
   it.each([[true, false, "open_dashboard"], [false, true, "resume_setup"]] as const)("distinguishes existing-page and draft CTAs (%s, %s)", (hasPage, hasDraft, action) => {

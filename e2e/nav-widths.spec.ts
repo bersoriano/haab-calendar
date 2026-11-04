@@ -539,6 +539,20 @@ for (const width of WIDTHS) {
     await expectNoSidewaysScroll(page);
   });
 
+  test(`landing section links to the first post at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    await page.goto("/?lang=es");
+    const section = page.locator("section#blog");
+    await expect(section.getByRole("heading", { level: 2 })).toHaveText("Deja de contestar “¿Cuándo tienes un espacio?”");
+    const read = section.getByRole("link", { name: "Leer el artículo", exact: true });
+    await read.scrollIntoViewIfNeeded();
+    await expectUsable(read, "the landing section's link to the post");
+    await expectNoSidewaysScroll(page);
+    await read.click();
+    await expect(page).toHaveURL(/\/blog\/stop-answering-when-are-you-free\?lang=es$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Deja de contestar “¿Cuándo tienes un espacio?”");
+  });
+
   test(`public footer links to Haab at ${width.name} width`, async ({ page }) => {
     await page.setViewportSize({ width: width.width, height: width.height });
     const seed = providerFor("free");

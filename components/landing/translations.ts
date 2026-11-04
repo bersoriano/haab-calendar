@@ -459,6 +459,18 @@ export const translations = {
         },
       ],
     },
+    featuredPost: {
+      eyebrow: "Del blog",
+      title: "Deja de contestar “¿Cuándo tienes un espacio?”",
+      body: "Una cita puede llevar cuatro o cinco mensajes, y te siguen hasta la casa. Esto es lo que de verdad cuesta ese ir y venir, y cómo lo reemplaza un solo enlace con un apartado de 10 minutos en cada horario.",
+      cta: "Leer el artículo",
+      chat: {
+        time: "9:40 de la noche",
+        asks: "¡Hola! ¿Tienes algo para el jueves?",
+        offer: "Puedo a las 3:00.",
+        counter: "A las 3 no puedo. ¿Algo en la mañana?",
+      },
+    },
     faq: {
       eyebrow: "Preguntas",
       title: "Preguntas, respondidas.",
@@ -975,6 +987,18 @@ export const translations = {
           body: "Nothing is public until you publish it, and you can take it down again from your dashboard without deleting your work.",
         },
       ],
+    },
+    featuredPost: {
+      eyebrow: "From the blog",
+      title: "Stop answering “When are you free?”",
+      body: "One appointment can take four or five messages, and they follow you home. Here's what that back-and-forth really costs, and how one link with a 10-minute hold on every slot replaces it.",
+      cta: "Read the article",
+      chat: {
+        time: "9:40 at night",
+        asks: "Hi! Do you have anything Thursday?",
+        offer: "I can do 3:00.",
+        counter: "Can't do 3. Anything in the morning?",
+      },
     },
     faq: {
       eyebrow: "FAQ",
