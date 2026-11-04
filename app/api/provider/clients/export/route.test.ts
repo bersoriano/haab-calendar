@@ -5,12 +5,15 @@ const mocks = vi.hoisted(() => ({
   getUser: vi.fn(),
   getOwnerProvider: vi.fn(),
   listProviderClients: vi.fn(),
+  hasEntitlement: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser: mocks.getUser } }),
 }));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({}) }));
+vi.mock("@/lib/entitlements/server", () => ({ hasEntitlement: mocks.hasEntitlement }));
 vi.mock("@/lib/supabase/provider-clients", () => ({
   getOwnerProvider: mocks.getOwnerProvider,
   listProviderClients: mocks.listProviderClients,
@@ -26,6 +29,7 @@ describe("GET /api/provider/clients/export", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getUser.mockResolvedValue({ data: { user: { id: "owner-1" } }, error: null });
+    mocks.hasEntitlement.mockResolvedValue(true);
     mocks.getOwnerProvider.mockResolvedValue({ id: "provider-1", timezone: "UTC" });
     mocks.listProviderClients.mockResolvedValue([
       {
@@ -50,6 +54,15 @@ describe("GET /api/provider/clients/export", () => {
     expect(response.headers.get("Content-Disposition")).toMatch(/^attachment; filename="clientes-\d{4}-\d{2}-\d{2}\.csv"$/);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(await response.text()).toContain("Ana,ana@example.com,,2026-01-15,2026-03-02,1");
+  });
+
+  it("refuses a provider without Premium and reads no client data", async () => {
+    mocks.hasEntitlement.mockResolvedValue(false);
+    const response = await GET(request());
+
+    expect(response.status).toBe(403);
+    expect(mocks.hasEntitlement).toHaveBeenCalledWith("provider-1", "client_export", expect.anything());
+    expect(mocks.listProviderClients).not.toHaveBeenCalled();
   });
 
   it("requires a session", async () => {

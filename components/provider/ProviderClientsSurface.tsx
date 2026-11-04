@@ -21,8 +21,11 @@ import {
   Tr,
   useToast,
 } from "@/components/app-ui";
+import { analyticsCopy } from "@/components/provider/analytics-copy";
 import { clientsCopy, type ClientsCopy } from "@/components/provider/clients-copy";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
+import { UpgradeCard } from "@/components/provider/ProviderAnalyticsSurface";
+import { hasResolvedEntitlement, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { filterClients, type ProviderClient } from "@/lib/provider-clients";
 import type { Lang } from "@/lib/types";
 
@@ -46,15 +49,18 @@ function saveFile(blob: Blob, fileName: string) {
 
 /**
  * The Clients section: everyone who has booked, kept after their bookings are
- * purged. A provider can download the list, and can delete a record, which is
- * how they honour someone asking to be removed.
+ * purged. Every plan can see the list and delete a record, which is how a
+ * provider honours someone asking to be removed; downloading it is Premium, and
+ * /api/provider/clients/export is what enforces that.
  */
 export function ProviderClientsSurface({
   lang,
   integratedMode,
+  entitlements,
 }: {
   lang: Lang;
   integratedMode: boolean;
+  entitlements?: ProviderEntitlements;
 }) {
   const t = clientsCopy[lang];
 
@@ -69,10 +75,12 @@ export function ProviderClientsSurface({
     );
   }
 
-  return <ClientsPanel t={t} lang={lang} />;
+  const canDownload = Boolean(entitlements && hasResolvedEntitlement(entitlements, "client_export"));
+
+  return <ClientsPanel t={t} lang={lang} canDownload={canDownload} />;
 }
 
-function ClientsPanel({ t, lang }: { t: ClientsCopy; lang: Lang }) {
+function ClientsPanel({ t, lang, canDownload }: { t: ClientsCopy; lang: Lang; canDownload: boolean }) {
   const { notify } = useToast();
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
@@ -181,13 +189,15 @@ function ClientsPanel({ t, lang }: { t: ClientsCopy; lang: Lang }) {
         title={t.listTitle}
         description={t.listBody}
         actions={
-          <Button
-            leadingIcon={<DownloadSimple aria-hidden="true" size={16} />}
-            loading={downloading}
-            onClick={download}
-          >
-            {t.download}
-          </Button>
+          canDownload ? (
+            <Button
+              leadingIcon={<DownloadSimple aria-hidden="true" size={16} />}
+              loading={downloading}
+              onClick={download}
+            >
+              {t.download}
+            </Button>
+          ) : undefined
         }
       />
       <CardBody className="space-y-4">
@@ -256,6 +266,17 @@ function ClientsPanel({ t, lang }: { t: ClientsCopy; lang: Lang }) {
               ))}
             </TBody>
           </Table>
+        )}
+
+        {canDownload ? null : (
+          <div className="flex justify-center pt-2">
+            <UpgradeCard
+              t={analyticsCopy[lang]}
+              body={t.downloadLocked}
+              benefits={t.downloadBenefits}
+              returnTab="clients"
+            />
+          </div>
         )}
       </CardBody>
 

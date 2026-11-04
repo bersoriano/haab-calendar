@@ -14,6 +14,7 @@ export const FEATURE_KEYS = [
   "analytics",
   "booking_history_retention",
   "custom_booking_footer",
+  "client_export",
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
@@ -51,7 +52,7 @@ const PLAN_FEATURES: Record<ProviderPlanTier, readonly FeatureKey[]> = {
   // on a provider's wider calendar, and until pricing intent is settled they
   // are reachable only through a manual override. Adding a key here is the one
   // change that turns them on for every premium provider at once.
-  premium: ["custom_slug", "google_calendar_sync", "analytics", "booking_history_retention", "custom_booking_footer"],
+  premium: ["custom_slug", "google_calendar_sync", "analytics", "booking_history_retention", "custom_booking_footer", "client_export"],
 };
 
 /**
@@ -88,4 +89,5 @@ export const FEATURE_LABELS: Record<FeatureKey, string> = {
   analytics: "Booking page analytics",
   booking_history_retention: "One-year booking history",
   custom_booking_footer: "Custom booking footer",
+  client_export: "Client list CSV export",
 };

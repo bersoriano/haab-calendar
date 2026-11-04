@@ -13,6 +13,8 @@ export type ClientsCopy = {
   download: string;
   downloaded: string;
   downloadFailed: string;
+  downloadLocked: string;
+  downloadBenefits: string[];
   search: string;
   searchPlaceholder: string;
   loading: string;
@@ -41,6 +43,12 @@ export const clientsCopy: Record<Lang, ClientsCopy> = {
     download: "Download CSV",
     downloaded: "List downloaded",
     downloadFailed: "Could not download your list. Check your connection and try again.",
+    downloadLocked: "Download this list as a CSV file with Premium.",
+    downloadBenefits: [
+      "Opens in Excel and Google Sheets",
+      "Name, email, phone and booking dates",
+      "Ready for your email or CRM tool",
+    ],
     search: "Search",
     searchPlaceholder: "Name, email or phone",
     loading: "Loading…",
@@ -68,6 +76,12 @@ export const clientsCopy: Record<Lang, ClientsCopy> = {
     download: "Descargar CSV",
     downloaded: "Lista descargada",
     downloadFailed: "No se pudo descargar su lista. Revise su conexión e inténtelo de nuevo.",
+    downloadLocked: "Descargue esta lista como archivo CSV con Premium.",
+    downloadBenefits: [
+      "Se abre en Excel y Google Sheets",
+      "Nombre, correo, teléfono y fechas de reserva",
+      "Lista para su herramienta de correo o CRM",
+    ],
     search: "Buscar",
     searchPlaceholder: "Nombre, correo o teléfono",
     loading: "Cargando…",

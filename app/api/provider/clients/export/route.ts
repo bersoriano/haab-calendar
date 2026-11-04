@@ -1,14 +1,19 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { describeError } from "@/lib/describe-error";
+import { hasEntitlement } from "@/lib/entitlements/server";
 import { clientsCsvFileName, toClientsCsv } from "@/lib/provider-clients";
 import { getOwnerProvider, listProviderClients } from "@/lib/supabase/provider-clients";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-/** The signed-in provider's clients as a CSV file. */
+/**
+ * The signed-in provider's clients as a CSV file. A Premium feature, decided
+ * here rather than in the dashboard, where hiding a button would stop no one.
+ */
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -22,6 +27,13 @@ export async function GET(request: NextRequest) {
     const provider = await getOwnerProvider(supabase, user.id);
     if (!provider) {
       return NextResponse.json({ userMessage: "Booking profile not found." }, { status: 404 });
+    }
+
+    if (!(await hasEntitlement(provider.id, "client_export", createAdminClient()))) {
+      return NextResponse.json(
+        { userMessage: "Downloading your client list requires Premium." },
+        { status: 403 },
+      );
     }
 
     const timeZone = provider.timezone ?? undefined;

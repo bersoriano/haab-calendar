@@ -3940,7 +3940,13 @@ export function HaabBookingModule({
           />
         );
       case "clients":
-        return <ProviderClientsSurface lang={lang} integratedMode={integratedMode} />;
+        return (
+          <ProviderClientsSurface
+            lang={lang}
+            integratedMode={integratedMode}
+            entitlements={providerEntitlements}
+          />
+        );
       case "campaigns":
         return (
           <ProviderCampaignsSurface lang={lang} publicUrl={publicUrl} integratedMode={integratedMode} />

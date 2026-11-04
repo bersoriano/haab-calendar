@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 type ProviderRow = { id: string };
 
 /** Where Checkout sends the provider back; a tab the dashboard understands. */
-const RETURN_PATHS = new Set(["analytics"]);
+const RETURN_PATHS = new Set(["analytics", "clients"]);
 
 /**
  * Starts a Stripe Checkout for Premium and returns its URL.

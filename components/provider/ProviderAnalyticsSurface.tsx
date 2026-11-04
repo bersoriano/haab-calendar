@@ -210,7 +210,18 @@ export function AnalyticsTeaserReport({ teaser, lang }: { teaser: AnalyticsTease
 }
 
 /** The Premium offer and its checkout; `body` rewords it for another section. */
-export function UpgradeCard({ t, body }: { t: AnalyticsCopy; body?: string }) {
+export function UpgradeCard({
+  t,
+  body,
+  benefits,
+  returnTab = "analytics",
+}: {
+  t: AnalyticsCopy;
+  body?: string;
+  benefits?: string[];
+  /** The dashboard section checkout returns to. */
+  returnTab?: string;
+}) {
   const [status, setStatus] = useState<"idle" | "pending" | "unavailable" | "error">("idle");
 
   const startCheckout = useCallback(async () => {
@@ -219,7 +230,7 @@ export function UpgradeCard({ t, body }: { t: AnalyticsCopy; body?: string }) {
       const response = await fetch("/api/provider/billing/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ returnTab: "analytics" }),
+        body: JSON.stringify({ returnTab }),
       });
       if (response.status === 503) {
         setStatus("unavailable");
@@ -234,14 +245,14 @@ export function UpgradeCard({ t, body }: { t: AnalyticsCopy; body?: string }) {
       console.error("billing_checkout_start_failed", error);
       setStatus("error");
     }
-  }, []);
+  }, [returnTab]);
 
   return (
     <Card className="w-full max-w-md p-6 text-center shadow-lg">
       <h3 className="text-lg font-semibold text-app-fg">{t.premiumTitle}</h3>
       <p className="mt-2 text-sm text-app-fg-muted">{body ?? t.premiumBody}</p>
       <ul className="mt-4 space-y-1.5 text-left text-sm text-app-fg">
-        {t.premiumBenefits.map((benefit) => (
+        {(benefits ?? t.premiumBenefits).map((benefit) => (
           <li key={benefit} className="flex gap-2">
             <Check aria-hidden="true" size={16} weight="bold" className="mt-0.5 shrink-0 text-app-accent" />
             {benefit}
