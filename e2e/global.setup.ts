@@ -51,7 +51,8 @@ async function resetProvider(admin: SupabaseClient, seed: E2EProviderSeed) {
     full_name: "E2E Owner",
     business_name: seed.businessName,
     email: seed.email,
-    vertical: "healthcare",
+    vertical: seed.vertical ?? "healthcare",
+    vocabulary: seed.vocabulary ?? null,
     timezone: "UTC",
     // Business-type flows assert English labels; do not inherit runner locale.
     dashboard_language: "en",
