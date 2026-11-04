@@ -38,11 +38,14 @@ import type {
   WeekdayKey,
   WeeklyAvailability,
 } from "@/lib/types";
+import { TRAVELER_FIELDS } from "@/lib/types";
+import { normalizePhotoUrls } from "@/lib/image-upload";
+import { normalizeTravelerFields, parseTravelerDetails } from "@/lib/traveler-details";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, vocabulary, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields";
 const BOOKING_SELECT =
   "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, reviewed_at, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
@@ -75,6 +78,7 @@ type ProviderRow = {
   header_image_url: string | null;
   hero_text: string | null;
   gallery_image_urls: string[] | null;
+  vocabulary: string | null;
 };
 
 type ServiceRow = {
@@ -105,6 +109,10 @@ type ServiceRow = {
   linked_phone_2: boolean | null;
   custom_address: string | null;
   custom_phone: string | null;
+  photo_urls: string[] | null;
+  cancellation_policy: string | null;
+  min_group_size: number | null;
+  traveler_fields: string[] | null;
 };
 
 type BookingRow = {
@@ -166,6 +174,8 @@ export type ConfirmPublicBookingInput = {
   partySize?: number;
   /** Already validated by the caller ("YYYY-MM-DD"); rides in `details`. */
   dateOfBirth?: string;
+  /** Unchecked input; only the fields the service asks for are kept. */
+  travelerDetails?: unknown;
   notes?: string;
   location?: string;
   locationKey?: LocationKey;
@@ -278,6 +288,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
       ? row.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: row.language === "es" ? "es" : "en",
+    vocabulary: row.vocabulary === "tours" ? "tours" : undefined,
     publicTheme: normalizePublicTheme(row.public_theme),
     publicFooterText: row.public_footer_text ?? undefined,
     publicFooterUrl: row.public_footer_url ?? undefined,
@@ -322,6 +333,10 @@ function toService(row: ServiceRow): Service {
     linkedPhone2: row.linked_phone_2 ?? false,
     customAddress: row.custom_address ?? undefined,
     customPhone: row.custom_phone ?? undefined,
+    photoUrls: normalizePhotoUrls(row.photo_urls),
+    cancellationPolicy: row.cancellation_policy ?? undefined,
+    minGroupSize: row.min_group_size ?? undefined,
+    travelerFields: normalizeTravelerFields(row.traveler_fields),
   };
 }
 
@@ -338,6 +353,14 @@ function readPartySize(details: BookingRow["details"]) {
 function readDateOfBirth(details: BookingRow["details"]) {
   const value = isPlainRecord(details) ? details.dateOfBirth : undefined;
   return typeof value === "string" && value ? value : undefined;
+}
+
+/** The traveler answers live in `details`, so they need no column. */
+function readTravelerDetails(details: BookingRow["details"]) {
+  const answers = isPlainRecord(details)
+    ? parseTravelerDetails(details.travelerDetails, TRAVELER_FIELDS)
+    : {};
+  return Object.keys(answers).length > 0 ? answers : undefined;
 }
 
 /** The client's post-booking note lives in `details`, so it needs no column. */
@@ -373,6 +396,8 @@ function toBookingRecord(
     sharedCapacity: row.allows_shared_capacity ?? false,
     partySize: readPartySize(row.details),
     dateOfBirth: readDateOfBirth(row.details),
+    travelerDetails:
+      audience === "provider" ? readTravelerDetails(row.details) : undefined,
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
     status: row.status,
@@ -495,7 +520,7 @@ function assertSlotAvailable(options: {
 
   if (service.bookingType === "appointment") {
     if (!time || !/^\d{2}:\d{2}$/.test(time)) {
-      throw new PublicBookingWriteError("Choose a valid appointment time.", 400);
+      throw new PublicBookingWriteError("Choose a valid time.", 400);
     }
 
     if (
@@ -1091,10 +1116,13 @@ export async function confirmPublicBooking(
   // the validated field does.
   const payload = { ...safeDetails(input.details) };
   delete payload.dateOfBirth;
+  delete payload.travelerDetails;
+  const travelerDetails = parseTravelerDetails(input.travelerDetails, service.travelerFields);
   const details = {
     ...payload,
     ...(input.partySize === undefined ? {} : { partySize: input.partySize }),
     ...(input.dateOfBirth ? { dateOfBirth: input.dateOfBirth } : {}),
+    ...(Object.keys(travelerDetails).length > 0 ? { travelerDetails } : {}),
   };
 
   const detailsSchemaKey =

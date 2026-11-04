@@ -19,7 +19,7 @@ import type { ShellIconName, ShellNavGroup } from "@/components/app-shell/types"
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { BusinessTypeSwitch, type DraftStorage } from "@/components/provider/BusinessTypeSwitch";
 import { ChangeBusinessTypeDialog } from "@/components/provider/ChangeBusinessTypeDialog";
-import { dashboardCopy, sectionTitle } from "@/components/provider/dashboard-copy";
+import { dashboardCopy, sectionDescription, sectionTitle } from "@/components/provider/dashboard-copy";
 import { translations as landingTranslations } from "@/components/landing/translations";
 import { fillTemplate } from "@/components/booking/i18n/translations";
 import { Alert, Button, ButtonLink, Skeleton, ToastProvider, useToast } from "@/components/app-ui";
@@ -153,7 +153,7 @@ export function DashboardApp({
 
   const lang: Lang = snapshot.provider.dashboardLanguage ?? viewerLanguage;
   const shell = dashboardCopy[lang];
-  const verticalCopy = getVerticalCopy(snapshot.vertical, lang);
+  const verticalCopy = getVerticalCopy(snapshot.vertical, lang, snapshot.provider.vocabulary);
   const title = sectionTitle(section, lang, verticalCopy);
   const businessName =
     snapshot.provider.businessName || snapshot.provider.fullName || "Haab Calendar";
@@ -330,7 +330,7 @@ export function DashboardApp({
       <AppShell
         sidebar={sidebar}
         title={title}
-        description={shell.descriptions[section]}
+        description={sectionDescription(section, lang, verticalCopy)}
         topBarActions={topBarActions}
         banners={banners}
         navigationKey={section}

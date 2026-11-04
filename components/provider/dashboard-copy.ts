@@ -1,4 +1,4 @@
-import { bookingTranslations } from "@/components/booking/i18n/translations";
+import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import type { NextStepId } from "@/lib/dashboard-overview";
 import type { GoogleOutcome } from "@/lib/dashboard-routes";
 import type { AdminTab, Lang } from "@/lib/types";
@@ -224,10 +224,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     descriptions: {
       dashboard: "What's coming up and how your page is doing.",
       bookings: "Search, filter and manage everything that's been booked.",
-      scan: "Point the camera at a customer's QR code to pull up their appointment.",
+      scan: "Point the camera at a {client}'s QR code to pull up their {booking}.",
       analytics: "Visits, bookings and where they come from.",
       campaigns: "Make a link for each place you share your page, and see which ones bring bookings.",
-      services: "What clients can book, with prices and times.",
+      services: "What {clients} can book, with prices and times.",
       availability: "When you can be booked.",
       appearance: "How your public page looks and which language it speaks.",
       integrations: "Connect the tools you already use.",
@@ -246,7 +246,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     viewAll: "View all",
     closeDialog: "Close",
     deleteServiceTitle: "Delete “{name}”?",
-    deleteServiceBody: "Clients can no longer book it. Bookings already made stay as they are.",
+    deleteServiceBody: "{Clients} can no longer book it. {Bookings} already made stay as they are.",
     keep: "Keep",
     disconnectGoogleTitle: "Disconnect Google Calendar?",
     disconnectGoogleBody:
@@ -340,7 +340,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       navAlert: "{count} new",
     },
     noBookingsYetTitle: "Nothing booked yet",
-    noBookingsYetBody: "When clients book from your page, it shows up here.",
+    noBookingsYetBody: "When {clients} book from your page, it shows up here.",
     bookingPageTitle: "Your booking page",
     bookingLinkTitle: "Booking link",
     workspaceLanguageTitle: "Workspace language",
@@ -349,8 +349,8 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     nextStepsTitle: "Finish setting up",
     nextSteps: {
       "add-service": {
-        title: "Add what clients can book",
-        body: "Your page needs at least one service before anyone can book.",
+        title: "Add what {clients} can book",
+        body: "Your page needs at least one {service} before anyone can book.",
         cta: "Add a service",
       },
       "set-availability": {
@@ -367,7 +367,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       servicesCount: { one: "1 service", other: "{count} services" },
       bookingsCount: { one: "1 upcoming booking", other: "{count} upcoming bookings" },
       cardTitle: "Business type",
-      cardBody: "Decides your page's services, wording and booking rules.",
+      cardBody: "Decides what your page offers, its wording and booking rules.",
       change: "Change business type",
       pickTitle: "Choose your new business type",
       pickBody: "You'll set it up before anything on your live page changes.",
@@ -439,10 +439,10 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     descriptions: {
       dashboard: "Lo que viene y cómo va su página.",
       bookings: "Busque, filtre y gestione todo lo que le han reservado.",
-      scan: "Apunte la cámara al código QR del cliente para consultar su cita.",
+      scan: "Apunte la cámara al código QR del {client} para consultar su {booking}.",
       analytics: "Visitas, reservas y de dónde vienen.",
       campaigns: "Cree un enlace para cada lugar donde comparte su página y vea cuáles generan reservas.",
-      services: "Lo que sus clientes pueden reservar, con precios y horarios.",
+      services: "Lo que sus {clients} pueden reservar, con precios y horarios.",
       availability: "Cuándo le pueden reservar.",
       appearance: "Cómo se ve su página pública y en qué idioma habla.",
       integrations: "Conecte las herramientas que ya usa.",
@@ -555,7 +555,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       navAlert: "{count} sin revisar",
     },
     noBookingsYetTitle: "Todavía no hay nada reservado",
-    noBookingsYetBody: "Cuando sus clientes reserven desde su página, aparecerá aquí.",
+    noBookingsYetBody: "Cuando sus {clients} reserven desde su página, aparecerá aquí.",
     bookingPageTitle: "Su página de reservas",
     bookingLinkTitle: "Enlace de reservas",
     workspaceLanguageTitle: "Idioma de su espacio",
@@ -565,7 +565,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
     nextSteps: {
       "add-service": {
         title: "Agregue lo que pueden reservar",
-        body: "Su página necesita al menos un servicio para recibir reservas.",
+        body: "Su página necesita al menos un {service} para recibir reservas.",
         cta: "Agregar servicio",
       },
       "set-availability": {
@@ -582,7 +582,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       servicesCount: { one: "1 servicio", other: "{count} servicios" },
       bookingsCount: { one: "1 reserva próxima", other: "{count} reservas próximas" },
       cardTitle: "Tipo de negocio",
-      cardBody: "Define los servicios, el vocabulario y las reglas de reserva de su página.",
+      cardBody: "Define lo que ofrece su página, el vocabulario y las reglas de reserva.",
       change: "Cambiar tipo de negocio",
       pickTitle: "Elija su nuevo tipo de negocio",
       pickBody: "Lo configurará antes de que cambie algo en su página publicada.",
@@ -643,6 +643,26 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
   },
 };
 
+/** Fills a line of this file with the words the owner's page uses. */
+export function fillCopyWords(template: string, copy: VerticalCopy): string {
+  return fillTemplate(template, {
+    client: copy.client,
+    clients: copy.clients,
+    Clients: copy.Clients,
+    service: copy.service,
+    Service: copy.Service,
+    services: copy.services,
+    Services: copy.Services,
+    booking: copy.booking,
+    Bookings: copy.Bookings,
+  });
+}
+
+/** The line under a section's title, in the same words as the title. */
+export function sectionDescription(section: AdminTab, lang: Lang, copy: VerticalCopy): string {
+  return fillCopyWords(dashboardCopy[lang].descriptions[section], copy);
+}
+
 /** The page title for a section, in the owner's words for what they sell. */
 export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy): string {
   const shell = dashboardCopy[lang];
@@ -654,7 +674,7 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
     case "bookings":
       return copy.Bookings;
     case "scan":
-      return admin.scanAppointment;
+      return fillTemplate(admin.scanAppointment, { booking: copy.booking });
     case "analytics":
       return admin.tabAnalytics;
     case "campaigns":

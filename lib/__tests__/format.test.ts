@@ -9,6 +9,7 @@ import {
   getBookingTypeLabel,
   formatDateLabel,
   getBookingStatusLabel,
+  formatMinGroupSize,
   getOccurrenceModeLabel,
   bookingStatusBadgeTone,
   bookingTypeBadgeTone,
@@ -172,13 +173,36 @@ describe("formatDuration", () => {
 
 describe("getOccurrenceModeLabel", () => {
   it("formats event recurrence labels in English and Spanish", () => {
-    expect(getOccurrenceModeLabel("single")).toBe("Single");
-    expect(getOccurrenceModeLabel("weekly", "es")).toBe("Semanal");
-    expect(getOccurrenceModeLabel("periodic", "es")).toBe("Periódico");
+    expect(getOccurrenceModeLabel("single")).toBe("One date");
+    expect(getOccurrenceModeLabel("weekly", "es")).toBe("Cada semana");
+    expect(getOccurrenceModeLabel("periodic", "es")).toBe("Según su horario");
+  });
+
+  it("uses the page's own words for the fixed schedules", () => {
+    const wording = { oneDateBadge: "One departure", everyWeekBadge: "Weekly departures" };
+
+    expect(getOccurrenceModeLabel("single", "en", wording)).toBe("One departure");
+    expect(getOccurrenceModeLabel("weekly", "en", wording)).toBe("Weekly departures");
+    expect(getOccurrenceModeLabel("periodic", "en", wording)).toBe("On your hours");
   });
 
   it("treats a legacy missing mode as periodic", () => {
-    expect(getOccurrenceModeLabel(undefined)).toBe("Periodic");
+    expect(getOccurrenceModeLabel(undefined)).toBe("On your hours");
+  });
+});
+
+describe("formatMinGroupSize", () => {
+  const words = { client: "traveler", clients: "travelers" };
+  const template = "At least {count} {clients}";
+
+  it("says the minimum in the page's word", () => {
+    expect(formatMinGroupSize({ minGroupSize: 6 }, words, template)).toBe("At least 6 travelers");
+    expect(formatMinGroupSize({ minGroupSize: 1 }, words, template)).toBe("At least 1 traveler");
+  });
+
+  it("says nothing when the owner set no minimum", () => {
+    expect(formatMinGroupSize({}, words, template)).toBeNull();
+    expect(formatMinGroupSize({ minGroupSize: 0 }, words, template)).toBeNull();
   });
 });
 

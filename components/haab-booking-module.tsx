@@ -195,6 +195,7 @@ import { SetupWizardFrame } from "@/components/provider/setup/SetupWizardFrame";
 import { WelcomeStep } from "@/components/provider/setup/WelcomeStep";
 import { getVerticalPreset } from "@/config/verticals";
 import { getVerticalCopy } from "@/lib/vertical-copy";
+import { parseTravelerDetails } from "@/lib/traveler-details";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { resolveSurfaceLanguage } from "@/lib/language/surface";
@@ -686,7 +687,7 @@ export function HaabBookingModule({
   const activeBookingHolds = pruneBookingHolds(bookingHolds, bookingHoldNow);
   const availability = activeStore.availability;
   const vertical = activeStore.vertical;
-  const copy = getVerticalCopy(vertical, lang);
+  const copy = getVerticalCopy(vertical, lang, activeStore.provider.vocabulary);
   const reviewsBookings = tracksBookingReview(vertical);
   const newBookingCount = reviewsBookings ? countNewBookings(bookings) : 0;
 
@@ -2034,6 +2035,11 @@ export function HaabBookingModule({
         service.capacityScope ?? (vertical === "restaurant" ? "slot" : undefined),
       maxPartySize:
         typeof service.maxPartySize === "number" ? String(service.maxPartySize) : "",
+      photoUrls: service.photoUrls ?? [],
+      cancellationPolicy: service.cancellationPolicy ?? "",
+      minGroupSize:
+        typeof service.minGroupSize === "number" ? String(service.minGroupSize) : "",
+      travelerFields: service.travelerFields ?? [],
       cost: service.cost ?? "",
       locationPrices: {
         address1: service.locationPrices?.address1 ?? "",
@@ -2088,6 +2094,13 @@ export function HaabBookingModule({
       serviceDraft.weekdays.length === 0
     ) {
       setSetupError(copy.phrases.pickWeekdaysError);
+      return;
+    }
+
+    const draftMinGroup = parseMaxSpots(serviceDraft.minGroupSize);
+    const draftMaxSpots = parseMaxSpots(serviceDraft.maxSpots);
+    if (draftMinGroup && draftMaxSpots && draftMinGroup > draftMaxSpots) {
+      setSetupError(t.admin.minGroupAboveMaxError);
       return;
     }
 
@@ -2173,6 +2186,10 @@ export function HaabBookingModule({
         startTime: hasFixedWindow ? serviceDraft.startTime || undefined : undefined,
         endTime: hasFixedWindow ? serviceDraft.endTime || undefined : undefined,
         maxSpots: parseMaxSpots(serviceDraft.maxSpots),
+        photoUrls: serviceDraft.photoUrls ?? [],
+        cancellationPolicy: serviceDraft.cancellationPolicy?.trim() || undefined,
+        minGroupSize: parseMaxSpots(serviceDraft.minGroupSize),
+        travelerFields: serviceDraft.travelerFields ?? [],
         cost: serviceDraft.cost.trim() || undefined,
         locationPrices: (() => {
           const lp = serviceDraft.locationPrices;
@@ -3009,6 +3026,11 @@ export function HaabBookingModule({
       return;
     }
     const dateOfBirthForBooking = parsedDateOfBirth.value;
+    // Answers left over from a service the visitor switched away from stay behind.
+    const travelerDetailsForBooking = parseTravelerDetails(
+      bookingFlow.travelerDetails,
+      validationService.travelerFields,
+    );
     const nextBooking: BookingRecord = {
       id: createId("booking"),
       serviceId: validationService.id,
@@ -3026,6 +3048,7 @@ export function HaabBookingModule({
       sharedCapacity: hasSlotCapacity(validationService) || undefined,
       partySize: partySizeForBooking,
       dateOfBirth: dateOfBirthForBooking,
+      travelerDetails: travelerDetailsForBooking,
       capacitySnapshot:
         typeof validationService.maxSpots === "number"
           ? formatCapacityLabel(validationService)
@@ -3060,6 +3083,7 @@ export function HaabBookingModule({
               clientPhone: bookingFlow.clientPhone.trim(),
               partySize: partySizeForBooking,
               dateOfBirth: dateOfBirthForBooking,
+              travelerDetails: travelerDetailsForBooking,
               notes: bookingFlow.notes.trim(),
               location: bookingLocationAddress,
               locationKey: bookingFlow.locationKey,
@@ -3693,9 +3717,11 @@ export function HaabBookingModule({
                   {services.map((service) => (
                     <li key={service.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <span className="font-semibold text-app-fg">{service.name}</span>
-                      <Badge tone={bookingTypeBadgeTone(service.bookingType)}>
-                        {getBookingTypeLabel(service.bookingType, lang)}
-                      </Badge>
+                      {copy.event ? null : (
+                        <Badge tone={bookingTypeBadgeTone(service.bookingType)}>
+                          {getBookingTypeLabel(service.bookingType, lang)}
+                        </Badge>
+                      )}
                       <span className="tabular-nums text-app-fg-muted">{formatDuration(service, lang)}</span>
                       {service.medicalSpecialty ? (
                         <span className="text-app-fg-muted">{service.medicalSpecialty}</span>
@@ -3923,6 +3949,7 @@ export function HaabBookingModule({
             availability={availability}
             onChange={updateAvailabilityDay}
             onManageEvents={() => goToSection("services")}
+            copy={copy}
             maxBookingsPerDay={provider.maxBookingsPerDay}
             onMaxBookingsPerDayChange={(value) => updateProvider("maxBookingsPerDay", value)}
             disabled={isSavingAdmin}
@@ -3971,6 +3998,7 @@ export function HaabBookingModule({
             onProviderChange={updateProvider}
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
+            offersVocabulary={vertical === "events"}
             onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
             businessType={
               onChangeBusinessType && vertical
@@ -4392,12 +4420,12 @@ export function HaabBookingModule({
       : selectionIsSingle
         ? singleIsFull
           ? copy.phrases.fullyBookedLabel
-          : copy.bookVerb === "register"
+          : vertical === "events"
             ? t.publicFlow.reserveMySpot
             : t.publicFlow.continueToMyDetails
         : step2IsAppointment
           ? !step2DateChosen
-            ? t.publicFlow.selectADate
+            ? (copy.event?.chooseDateCta ?? t.publicFlow.selectADate)
             : !step2TimeChosen
               ? t.publicFlow.selectATime
               : t.publicFlow.continueToMyDetails
@@ -5168,7 +5196,7 @@ export function HaabBookingModule({
                     <h4 className="text-lg font-semibold text-[var(--ink)]">{service.name}</h4>
                     <ToneBadge tone={vertical === "events" ? "secondary" : bookingTypeTone(service.bookingType)}>
                       {vertical === "events"
-                        ? getOccurrenceModeLabel(service.occurrenceMode, lang)
+                        ? getOccurrenceModeLabel(service.occurrenceMode, lang, copy.event)
                         : getBookingTypeLabel(service.bookingType, lang)}
                     </ToneBadge>
                     <ToneBadge tone="neutral">{formatDuration(service, lang)}</ToneBadge>
@@ -5194,7 +5222,7 @@ export function HaabBookingModule({
                       <span>{t.publicFlow.specialty}: {service.medicalSpecialty}</span>
                     ) : null}
                     {formatCost(service.cost, lang) ? (
-                      <span>{t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
+                      <span>{copy.event?.priceLabel ?? t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
                     ) : null}
                     {service.notes ? (
                       <span className="whitespace-pre-line">{t.publicFlow.notes}: {service.notes}</span>
@@ -5308,6 +5336,14 @@ export function HaabBookingModule({
                   onChange={updateBookingFlow}
                   showPartySize={hasSlotCapacity(selectedService)}
                   showDateOfBirth={collectsDateOfBirth(vertical)}
+                  travelerFields={selectedService.travelerFields}
+                  travelerDetails={bookingFlow.travelerDetails}
+                  onTravelerDetailChange={(field, value) =>
+                    updateBookingFlow("travelerDetails", {
+                      ...bookingFlow.travelerDetails,
+                      [field]: value,
+                    })
+                  }
                   invalidRequired={detailsFieldsRefused}
                   complete={detailsComplete}
                   errorId={detailsErrorId}
@@ -5351,6 +5387,7 @@ export function HaabBookingModule({
                   onChangeDateTime={selectionIsSingle ? null : goBackToSelectionStep}
                   about={detailsAboutProps && <AppointmentAbout {...detailsAboutProps} />}
                   cost={detailsCost}
+                  costLabel={copy.event?.priceLabel}
                   footer={{ ...detailsFooter, error: isDesktopColumns ? bookingError : null }}
                   lang={lang}
                 />
@@ -5358,7 +5395,7 @@ export function HaabBookingModule({
             </div>
             <MobileConfirmBar
               total={detailsCost}
-              totalLabel={t.publicFlow.total}
+              totalLabel={copy.event?.priceLabel ?? t.publicFlow.total}
               footer={{ ...detailsFooter, error: isDesktopColumns ? null : bookingError }}
             />
           </>
@@ -5613,7 +5650,7 @@ export function HaabBookingModule({
                           {!selectionIsSingle ? (
                             <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                           ) : null}
-                          <SummaryField label={t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
+                          <SummaryField label={copy.event?.priceLabel ?? t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
                           {selectedService.notes ? (
                             <SummaryField
                               label={t.publicFlow.notes}
@@ -6085,10 +6122,10 @@ export function HaabBookingModule({
                     const rise =
                       "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.35s_both]";
                     const statusLabel = isSuccessfulBookingCancelled
-                      ? t.publicFlow.bookingCancelled
+                      ? (copy.event?.cancelledLabel ?? t.publicFlow.bookingCancelled)
                       : successfulBooking.status === "rescheduled"
-                        ? t.publicFlow.bookingUpdated
-                        : t.publicFlow.bookingConfirmed;
+                        ? (copy.event?.updatedLabel ?? t.publicFlow.bookingUpdated)
+                        : (copy.event?.confirmedLabel ?? t.publicFlow.bookingConfirmed);
                     const hasLink = Boolean(
                       successfulBooking.manageToken && successfulManageUrl,
                     );
@@ -6128,6 +6165,7 @@ export function HaabBookingModule({
                                     label: getOccurrenceModeLabel(
                                       selectedService.occurrenceMode,
                                       lang,
+                                      copy.event,
                                     ),
                                     tone: "secondary",
                                   }
@@ -6162,6 +6200,7 @@ export function HaabBookingModule({
                             description={selectedService.description?.trim() || undefined}
                             bringLabel={copy.phrases.bringWithYouLabel}
                             notes={selectedService.notes?.trim() || undefined}
+                            cancellationPolicy={selectedService.cancellationPolicy?.trim() || undefined}
                             clientNotes={
                               successfulBooking.notes.trim()
                                 ? {
@@ -6249,10 +6288,10 @@ export function HaabBookingModule({
                       <BookingPass
                         confirmationLabel={
                           isSuccessfulBookingCancelled
-                            ? t.publicFlow.bookingCancelled
+                            ? (copy.event?.cancelledLabel ?? t.publicFlow.bookingCancelled)
                             : successfulBooking.status === "rescheduled"
-                              ? t.publicFlow.bookingUpdated
-                              : t.publicFlow.bookingConfirmed
+                              ? (copy.event?.updatedLabel ?? t.publicFlow.bookingUpdated)
+                              : (copy.event?.confirmedLabel ?? t.publicFlow.bookingConfirmed)
                         }
                         booking={successfulBooking}
                         providerName={

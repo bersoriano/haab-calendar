@@ -91,3 +91,42 @@ describe("beforeVisitLabel", () => {
     }
   });
 });
+
+describe("tour vocabulary", () => {
+  function strings(value: unknown): string[] {
+    if (typeof value === "string") return [value];
+    if (value && typeof value === "object") return Object.values(value).flatMap(strings);
+    return [];
+  }
+
+  it("applies only to the events vertical", () => {
+    expect(getVerticalCopy("events", "en", "tours").service).toBe("tour");
+    expect(getVerticalCopy("events", "es", "tours").client).toBe("viajero");
+    expect(getVerticalCopy("events", "en").service).toBe("event");
+    expect(getVerticalCopy("healthcare", "en", "tours").client).toBe("patient");
+  });
+
+  it("never falls back to event words, in either language", () => {
+    for (const text of strings(getVerticalCopy("events", "en", "tours"))) {
+      expect(text).not.toMatch(/\bevents?\b|attendee|registr/i);
+    }
+    for (const text of strings(getVerticalCopy("events", "es", "tours"))) {
+      expect(text).not.toMatch(/\beventos?\b|asistente|registr/i);
+    }
+  });
+
+  it("states no arrival time the owner did not write", () => {
+    for (const lang of ["en", "es"] as const) {
+      for (const copy of [getVerticalCopy("events", lang), getVerticalCopy("events", lang, "tours")]) {
+        expect(copy.phrases.whatHappensNext).not.toMatch(/fifteen|quince/i);
+      }
+    }
+  });
+
+  it("uses one word for a booking from confirming to confirmed", () => {
+    const events = getVerticalCopy("events", "en");
+    const tours = getVerticalCopy("events", "en", "tours");
+    expect(events.event?.confirmedLabel).toMatch(new RegExp(events.Booking));
+    expect(tours.event?.confirmedLabel).toMatch(new RegExp(tours.Booking));
+  });
+});

@@ -10,6 +10,7 @@ import {
   ConfirmDialog,
   FormSection,
   Input,
+  Select,
 } from "@/components/app-ui";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
@@ -43,6 +44,8 @@ export type ProviderSettingsSurfaceProps = {
   onProviderChange: <K extends keyof ProviderInfo>(key: K, value: ProviderInfo[K]) => void;
   onSavePublicSlug?: (slug: string) => Promise<void>;
   onResetStandaloneSetup?: () => void;
+  /** Events can speak of tours and travelers instead. See getVerticalCopy. */
+  offersVocabulary?: boolean;
   /** Present where the owner can change their own workspace language here. */
   onDashboardLanguageChange?: (language: Lang) => void;
   /**
@@ -74,6 +77,7 @@ export function ProviderSettingsSurface({
   onProviderChange,
   onSavePublicSlug,
   onResetStandaloneSetup,
+  offersVocabulary = false,
   onDashboardLanguageChange,
   businessType,
 }: ProviderSettingsSurfaceProps) {
@@ -102,6 +106,22 @@ export function ProviderSettingsSurface({
               />
             ) : null}
           </FormSection>
+
+          {offersVocabulary ? (
+            <FormSection title={t.admin.vocabularyTitle} description={t.admin.vocabularyHint}>
+              <Select
+                aria-label={t.admin.vocabularyTitle}
+                disabled={disabled}
+                value={provider.vocabulary ?? ""}
+                onChange={(event) =>
+                  onProviderChange("vocabulary", event.target.value === "tours" ? "tours" : undefined)
+                }
+              >
+                <option value="">{t.admin.vocabularyEvents}</option>
+                <option value="tours">{t.admin.vocabularyTours}</option>
+              </Select>
+            </FormSection>
+          ) : null}
 
           {onDashboardLanguageChange ? (
             <FormSection title={shell.workspaceLanguageTitle}>

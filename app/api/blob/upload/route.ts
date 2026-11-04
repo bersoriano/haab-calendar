@@ -4,6 +4,7 @@ import {
   ACCEPTED_IMAGE_TYPES,
   MAX_HEADER_IMAGE_BYTES,
   MAX_LOGO_IMAGE_BYTES,
+  MAX_SERVICE_PHOTO_BYTES,
 } from "@/lib/image-upload";
 import { createClient } from "@/lib/supabase/server";
 
@@ -46,7 +47,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       body,
       request,
       onBeforeGenerateToken: async (_pathname, clientPayload) => {
-        if (clientPayload !== "header" && clientPayload !== "logo") {
+        if (
+          clientPayload !== "header" &&
+          clientPayload !== "logo" &&
+          clientPayload !== "service-photo"
+        ) {
           throw new Error("Choose a supported branding image type.");
         }
 
@@ -55,7 +60,9 @@ export async function POST(request: Request): Promise<NextResponse> {
           maximumSizeInBytes:
             clientPayload === "logo"
               ? MAX_LOGO_IMAGE_BYTES
-              : MAX_HEADER_IMAGE_BYTES,
+              : clientPayload === "service-photo"
+                ? MAX_SERVICE_PHOTO_BYTES
+                : MAX_HEADER_IMAGE_BYTES,
           addRandomSuffix: true,
         };
       },

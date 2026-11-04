@@ -5,6 +5,8 @@ import { bookingTranslations } from "@/components/booking/i18n/translations";
 import { AvailabilityEditor } from "@/components/provider/AvailabilityEditor";
 import { DailyBookingLimitField } from "@/components/provider/DailyBookingLimitField";
 import { Button, Card, CardBody, CardHeader } from "@/components/app-ui";
+import { fillCopyWords } from "@/components/provider/dashboard-copy";
+import { eventsCopy, type VerticalCopy } from "@/lib/vertical-copy";
 
 export function AvailabilitySettingsSection({
   vertical,
@@ -15,6 +17,7 @@ export function AvailabilitySettingsSection({
   onMaxBookingsPerDayChange,
   disabled = false,
   lang = "en",
+  copy = eventsCopy,
 }: {
   vertical?: VerticalId;
   availability: WeeklyAvailability;
@@ -25,18 +28,22 @@ export function AvailabilitySettingsSection({
   onManageEvents: () => void;
   disabled?: boolean;
   lang?: Lang;
+  copy?: VerticalCopy;
 }) {
   const t = bookingTranslations[lang].admin;
 
   if (vertical === "events") {
     return (
       <Card as="section">
-        <CardHeader title={t.eventSchedulingTitle} description={t.eventSchedulingBody} />
+        <CardHeader
+          title={fillCopyWords(t.eventSchedulingTitle, copy)}
+          description={fillCopyWords(t.eventSchedulingBody, copy)}
+        />
         <CardBody className="grid gap-4">
-          <p className="text-sm text-app-fg-muted">{t.eventSchedulingHint}</p>
+          <p className="text-sm text-app-fg-muted">{fillCopyWords(t.eventSchedulingHint, copy)}</p>
           <div>
             <Button disabled={disabled} onClick={onManageEvents}>
-              {t.manageEvents}
+              {fillCopyWords(t.manageEvents, copy)}
             </Button>
           </div>
         </CardBody>
