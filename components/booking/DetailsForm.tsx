@@ -219,6 +219,19 @@ export function DetailsForm({
           className={cn(inputClass, "resize-y py-3.5")}
         />
       </div>
+
+      {/* Told before they book, because the record outlives the booking. */}
+      <p data-contact-notice className="text-[13px] leading-5 text-[var(--muted)]">
+        {t.publicFlow.contactNotice}{" "}
+        <a
+          href={`/privacy?lang=${lang}#data-customer`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="underline underline-offset-2"
+        >
+          {t.publicFlow.contactNoticeLink}
+        </a>
+      </p>
     </section>
   );
 }

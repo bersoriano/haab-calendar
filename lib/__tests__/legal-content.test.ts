@@ -78,6 +78,24 @@ describe("privacy policy compliance content", () => {
   });
 });
 
+describe("client records", () => {
+  it.each([
+    ["en", "client record", "are not removed by this cleanup"],
+    ["es", "registro de cliente", "esta limpieza no los elimina"],
+  ] as const)("says records outlive the booking purge, in %s", (lang, record, survives) => {
+    const body = text(legalContent[lang].privacy);
+
+    expect(body).toContain(record);
+    expect(body).toContain(survives);
+  });
+
+  it.each(["en", "es"] as const)("makes the business answerable for contacting clients, in %s", (lang) => {
+    const obligations = legalContent[lang].terms.sections.find((s) => s.id === "provider-obligations");
+
+    expect(obligations?.body.join(" ").toLowerCase()).toContain(lang === "en" ? "client list" : "lista de clientes");
+  });
+});
+
 describe("terms content", () => {
   it.each(LANGS)("publishes a contact in %s", (lang) => {
     expect(text(legalContent[lang].terms)).toContain(LEGAL_CONTACT_EMAIL.toLowerCase());
