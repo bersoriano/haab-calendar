@@ -27,4 +27,4 @@ Optional frontmatter: `seoTitle` (a shorter title for search results) and `updat
 - **Slugs** are lowercase words joined by hyphens, and become `/blog/<slug>`.
 - **Prose:** raw `<` and `{` are read as MDX, so put them in backticks.
 - **Images** go in `public/blog/<slug>/` and are referenced as `/blog/<slug>/image.jpg`. Remote images are rejected by the tests.
-- **`<Takeaway>…</Takeaway>`** renders a boxed key takeaway. GFM tables and footnotes work too.
+- **`<Takeaway>…</Takeaway>`** renders a boxed key takeaway. **`<CreatePageCta />`** renders the "Create your page" button. GFM tables and footnotes work too.

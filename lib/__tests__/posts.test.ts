@@ -127,6 +127,12 @@ describe("rendering a post", () => {
   it("renders the takeaway box in the post's language", async () => {
     expect(await render("es", "<Takeaway>Algo.</Takeaway>")).toContain("Idea clave");
   });
+
+  it("renders the create button in the post's language, pointing at the landing page", async () => {
+    const html = await render("es", "<CreatePageCta />");
+    expect(html).toContain('href="/?lang=es"');
+    expect(html).toContain("Crear mi página");
+  });
 });
 
 // Holds for every post anyone adds. With no posts yet there is nothing to check.

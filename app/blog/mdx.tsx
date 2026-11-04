@@ -2,6 +2,8 @@ import type { MDXComponents } from "mdx/types";
 import type { ComponentProps, ReactNode } from "react";
 
 import { blogCopy } from "@/components/blog/copy";
+import { lpButtonClass } from "@/components/landing/primitives";
+import { translations } from "@/components/landing/translations";
 import { localizePostHref } from "@/lib/posts";
 import type { Lang } from "@/lib/types";
 import styles from "./Blog.module.css";
@@ -11,7 +13,9 @@ import styles from "./Blog.module.css";
  * language (`/gallery` becomes `/gallery?lang=es` in a Spanish post), external
  * links open safely, and images are local files under `public/` (the tests
  * reject remote images: a post makes no third-party image requests).
- * `<Takeaway>` is the boxed summary that can open a post.
+ * `<Takeaway>` is the boxed summary that can open a post. `<CreatePageCta />`
+ * is the button to the landing page, which owns setup, under the words the
+ * rest of the site uses for that action.
  */
 export function postComponents(lang: Lang): MDXComponents {
   return {
@@ -32,6 +36,17 @@ export function postComponents(lang: Lang): MDXComponents {
         <p className={styles.label}>{blogCopy[lang].keyTakeaway}</p>
         {children}
       </div>
+    ),
+    CreatePageCta: () => (
+      <p className={styles.cta}>
+        <a
+          href={`/?lang=${lang}`}
+          className={lpButtonClass({ variant: "primary", size: "card" })}
+          data-landing-action="create_page"
+        >
+          {translations[lang].nav.createPageLong} →
+        </a>
+      </p>
     ),
     table: (props: ComponentProps<"table">) => (
       <div className={styles.tableWrap}>

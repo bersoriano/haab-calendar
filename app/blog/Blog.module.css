@@ -284,6 +284,16 @@
   text-decoration: underline;
 }
 
+/* <CreatePageCta />: a button inside .prose, so undo the prose link styles. */
+.prose .cta {
+  margin-block: 1.6em;
+}
+.prose .cta a,
+.prose .cta a:hover {
+  color: var(--lp-white);
+  text-decoration: none;
+}
+
 .tableWrap {
   overflow-x: auto;
 }
