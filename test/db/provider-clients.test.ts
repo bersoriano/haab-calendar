@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
 import { describe, it } from "vitest";
 import { assertLocalSupabase } from "@/test/db/local-client";
 
@@ -118,6 +119,30 @@ describe("provider client records", () => {
     select pg_temp.book('${provider}', 'Ana', 'ana@example.com', '', '2030-01-01');
     delete from auth.users where id = '${owner}';
     select pg_temp.assert_eq((select count(*)::text from public.provider_clients where provider_id = '${provider}'), '0');
+  `));
+
+  it("backfills from the bookings already held when the migration runs", () => check(`
+    select pg_temp.book('${provider}', 'Old Name', 'ana@example.com', '555', '2030-01-01');
+    select pg_temp.book('${provider}', 'Ana Peña', ' ANA@example.com', '', '2030-01-02');
+    select pg_temp.book('${provider}', 'Leo', 'leo@example.com', '', '2030-01-03');
+    select pg_temp.book('${otherProvider}', 'Ana Elsewhere', 'ana@example.com', '777', '2030-01-04');
+    -- Back to the state before this migration, then the real file.
+    update public.bookings set created_at = now() - interval '2 days' where client_name = 'Old Name';
+    drop trigger bookings_record_provider_client on public.bookings;
+    drop function private.record_provider_client();
+    drop table public.provider_clients;
+    \\i ${resolve(process.cwd(), "supabase/migrations/20261103200000_add_provider_clients.sql")}
+    select pg_temp.assert_eq((select count(*)::text from public.provider_clients where provider_id = '${provider}'), '2');
+    select pg_temp.assert_eq(
+      (select client_name || '|' || client_email || '|' || client_phone || '|' || booking_count
+        from public.provider_clients where provider_id = '${provider}' and email_key = 'ana@example.com'),
+      'Ana Peña|ANA@example.com|555|2');
+    select pg_temp.assert_eq(
+      (select (first_booked_at < last_booked_at)::text
+        from public.provider_clients where provider_id = '${provider}' and email_key = 'ana@example.com'),
+      'true');
+    select pg_temp.assert_eq(
+      (select client_phone from public.provider_clients where provider_id = '${otherProvider}'), '777');
   `));
 
   it("leaves no record when the booking is rolled back", () => check(`

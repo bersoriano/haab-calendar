@@ -9,9 +9,9 @@
 -- with it, as is the service name: for a clinic, keeping what someone came in
 -- for would be keeping health information for as long as this list lives.
 --
--- Nothing is backfilled. People who already booked were told their booking would
--- be deleted and were not shown the notice on the booking form, so the list
--- starts with the first booking made after this migration.
+-- Bookings still held when this runs are backfilled at the end of this file, so
+-- a provider's list does not start empty. The privacy notice says so, because
+-- those people booked before the form told them about this list.
 
 create table public.provider_clients (
   id uuid primary key default gen_random_uuid(),
@@ -94,3 +94,26 @@ create trigger bookings_record_provider_client
   after insert on public.bookings
   for each row
   execute function private.record_provider_client();
+
+-- After the trigger, so a booking arriving during this statement is not missed.
+-- One row per person, in the same shape the trigger keeps: the latest name and
+-- email, and the latest phone anyone actually gave.
+insert into public.provider_clients (
+  provider_id, client_name, client_email, client_phone,
+  first_booked_at, last_booked_at, booking_count
+)
+select
+  b.provider_id,
+  (array_agg(btrim(b.client_name) order by b.created_at desc, b.id desc))[1],
+  (array_agg(btrim(b.client_email) order by b.created_at desc, b.id desc))[1],
+  coalesce(
+    (array_agg(btrim(b.client_phone) order by b.created_at desc, b.id desc)
+      filter (where btrim(b.client_phone) <> ''))[1],
+    ''
+  ),
+  min(b.created_at),
+  max(b.created_at),
+  count(*)::integer
+from public.bookings b
+group by b.provider_id, lower(btrim(b.client_email))
+on conflict (provider_id, email_key) do nothing;
