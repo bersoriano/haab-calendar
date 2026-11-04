@@ -199,7 +199,7 @@ Needs a Docker-compatible runtime. Without one you can still run
 `npm run ci` (typecheck, lint, unit tests, build) but not the app itself.
 
 To point at a hosted project instead: `npx supabase link --project-ref <ref>`
-then `npx supabase db push`. Never run `test:db` or `test:e2e` against it —
+then `npx supabase db push --remote`. Never run `test:db` or `test:e2e` against it —
 both are destructive and both refuse a non-local host by design.
 
 ### 4. Environment
