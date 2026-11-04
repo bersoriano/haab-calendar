@@ -405,8 +405,9 @@ export function StickyNav({
       <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
         <BrandLink label={t.nav.brand} hideLabelOnTiny />
         {/* Six links in Spanish only fit one line at 1280px with this gap and
-            these labels; any wider and every label breaks onto two. A check
-            in e2e/nav-widths.spec.ts holds this. */}
+            these short labels. Text renders wider on Linux than on a Mac, so
+            leave room to spare: when it runs out, labels break onto two lines.
+            A check in e2e/nav-widths.spec.ts holds this. */}
         <nav className="hidden items-center gap-3 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href} className={navLinkClass}>

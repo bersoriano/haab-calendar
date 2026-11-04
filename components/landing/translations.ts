@@ -8,7 +8,7 @@ export const translations = {
         examples: "Ejemplos",
         how: "Cómo funciona",
         features: "Funciones",
-        useCases: "Casos de uso",
+        useCases: "Usos",
         doctors: "Médicos",
         faq: "Preguntas",
         blog: "Blog",
