@@ -1,0 +1,319 @@
+/* /blog and /blog/[slug]: a single reading column. Tokens come from .haab-landing,
+   which BlogShell puts around the page. */
+.page {
+  --blog-gutter: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 22px;
+  width: 100%;
+  max-width: calc(760px + 2 * var(--blog-gutter));
+  margin-inline: auto;
+  padding: 48px var(--blog-gutter) 72px;
+}
+@media (min-width: 640px) {
+  .page {
+    --blog-gutter: 32px;
+  }
+}
+@media (min-width: 1024px) {
+  .page {
+    padding-bottom: 120px;
+  }
+}
+
+.title {
+  font-family: var(--lp-font-display);
+  font-size: clamp(36px, 5vw, 44px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+.lead {
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.55;
+  color: var(--lp-body);
+}
+.label {
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-teal-600);
+}
+.back {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--lp-teal-700);
+}
+.back:hover {
+  color: var(--lp-teal-700-hover);
+}
+.empty {
+  width: 100%;
+  margin-top: 16px;
+  padding-block: 28px;
+  border-top: 1px solid var(--lp-line);
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--lp-muted);
+}
+
+/* ---------- Index ---------- */
+.list {
+  display: grid;
+  width: 100%;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.list li {
+  display: grid;
+  gap: 10px;
+  padding-block: 28px;
+  border-top: 1px solid var(--lp-line);
+}
+.list h2 {
+  font-family: var(--lp-font-display);
+  font-size: clamp(24px, 2.4vw, 30px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+.list h2 a:hover {
+  color: var(--lp-teal-700);
+}
+.list li > p:not(.label) {
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--lp-muted);
+}
+
+/* ---------- Post ---------- */
+.article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  gap: 40px;
+  width: 100%;
+}
+.header {
+  display: grid;
+  gap: 18px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--lp-line);
+}
+
+.breadcrumbs,
+.byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  color: var(--lp-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.breadcrumbs a,
+.byline a {
+  color: var(--lp-teal-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.date {
+  color: var(--lp-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.prose {
+  font-size: 18px;
+  line-height: 1.7;
+  color: var(--lp-body);
+  overflow-wrap: break-word;
+}
+.prose > * + * {
+  margin-top: 1.1em;
+}
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: var(--lp-font-display);
+  font-weight: 600;
+  color: var(--lp-ink);
+  text-wrap: balance;
+}
+.prose h2 {
+  margin-top: 1.9em;
+  font-size: clamp(26px, 2.6vw, 32px);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+}
+.prose h3 {
+  margin-top: 1.6em;
+  font-size: 22px;
+  line-height: 1.25;
+}
+.prose h4 {
+  margin-top: 1.4em;
+  font-size: 19px;
+  line-height: 1.3;
+}
+.prose :is(h2, h3, h4) + * {
+  margin-top: 0.6em;
+}
+.prose a {
+  color: var(--lp-teal-700);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose a:hover {
+  color: var(--lp-teal-700-hover);
+}
+.prose strong {
+  font-weight: 600;
+  color: var(--lp-ink);
+}
+/* Tailwind's preflight strips list markers; posts need them back. */
+.prose ul {
+  list-style: disc;
+  padding-left: 1.3em;
+}
+.prose ol {
+  list-style: decimal;
+  padding-left: 1.3em;
+}
+.prose li + li {
+  margin-top: 0.4em;
+}
+.prose li::marker {
+  color: var(--lp-subtle);
+}
+.prose blockquote {
+  padding-left: 20px;
+  border-left: 4px solid var(--lp-teal-700);
+  font-family: var(--lp-font-display);
+  font-size: 22px;
+  font-style: italic;
+  line-height: 1.45;
+  color: var(--lp-ink);
+}
+/* The boxed summary that can open a post. */
+.takeaway {
+  display: grid;
+  gap: 10px;
+  padding: 20px 24px;
+  border: 1px solid var(--lp-line);
+  border-left: 4px solid var(--lp-teal-700);
+  background: var(--lp-paper);
+  color: var(--lp-ink);
+}
+.takeaway > * {
+  margin: 0;
+}
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--lp-line);
+  margin-block: 2em;
+}
+.prose code {
+  font-family: var(--lp-font-mono);
+  font-size: 0.88em;
+  padding: 0.1em 0.35em;
+  background: var(--lp-paper);
+}
+.prose pre {
+  padding: 18px 20px;
+  overflow-x: auto;
+  background: var(--lp-paper);
+  border: 1px solid var(--lp-line);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
+}
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.prose figure {
+  display: grid;
+  gap: 10px;
+}
+.prose figcaption {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--lp-subtle);
+}
+/* GFM footnotes: superscript markers and the closing "Sources" list. */
+.prose sup {
+  font-size: 0.7em;
+  line-height: 0;
+}
+.prose [data-footnote-ref] {
+  text-decoration: none;
+}
+.prose :global(.footnotes) {
+  margin-top: 3em;
+  padding-top: 24px;
+  border-top: 1px solid var(--lp-line);
+  font-size: 15px;
+  line-height: 1.6;
+}
+.prose :global(.footnotes) h2 {
+  margin-top: 0;
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-subtle);
+}
+.prose :global(.footnotes) ol {
+  margin-top: 12px;
+}
+.prose [data-footnote-backref] {
+  text-decoration: underline;
+}
+
+/* <CreatePageCta />: a button inside .prose, so undo the prose link styles. */
+.prose .cta {
+  margin-block: 1.6em;
+}
+.prose .cta a,
+.prose .cta a:hover {
+  color: var(--lp-white);
+  text-decoration: none;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+  line-height: 1.5;
+}
+.prose :is(th, td) {
+  padding: 10px 14px 10px 0;
+  border-bottom: 1px solid var(--lp-line);
+  text-align: left;
+  vertical-align: top;
+}
+.prose th {
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-subtle);
+}

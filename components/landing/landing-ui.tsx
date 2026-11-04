@@ -389,6 +389,7 @@ export function StickyNav({
     ...(showUseCases ? [{ href: anchor("verticals"), label: t.nav.links.useCases }] : []),
     ...(showDoctors ? [{ href: DOCTORS_LANDING_PATHS[lang], label: t.nav.links.doctors }] : []),
     { href: anchor("faq"), label: t.nav.links.faq },
+    { href: `/blog?lang=${lang}`, label: t.nav.links.blog },
   ];
   const navLinkClass =
     "inline-flex min-h-11 items-center rounded-md px-1 text-[15.5px] font-semibold text-[var(--lp-ink-2)] transition hover:text-[var(--lp-teal-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-teal-600)]";
@@ -403,8 +404,10 @@ export function StickyNav({
     >
       <div className="mx-auto flex h-[68px] w-full max-w-[1264px] items-center justify-between gap-4 px-5 sm:px-8 xl:h-[88px]">
         <BrandLink label={t.nav.brand} hideLabelOnTiny />
-        {/* Five links in Spanish only fit one line at 1280px with this gap;
-            any wider and every label breaks onto two. */}
+        {/* Six links in Spanish only fit one line at 1280px with this gap and
+            these short labels. Text renders wider on Linux than on a Mac, so
+            leave room to spare: when it runs out, labels break onto two lines.
+            A check in e2e/nav-widths.spec.ts holds this. */}
         <nav className="hidden items-center gap-3 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <a key={link.href} href={link.href} className={navLinkClass}>
@@ -877,6 +880,11 @@ export function Footer({
                 <a href={anchor("early-access")} className={linkClass}>
                   {t.footer.company.pricing}
                 </a>
+              </li>
+              <li>
+                <Link href={`/blog?lang=${lang}`} className={linkClass}>
+                  {t.footer.company.blog}
+                </Link>
               </li>
               {/* Google's OAuth consent screen links to both, and its reviewer
                   checks they are reachable from the app itself, not only by

@@ -5,12 +5,13 @@ export const translations = {
     nav: {
       brand: "Haab Calendar",
       links: {
-        examples: "Ejemplos reales",
+        examples: "Ejemplos",
         how: "Cómo funciona",
         features: "Funciones",
-        useCases: "Casos de uso",
+        useCases: "Usos",
         doctors: "Médicos",
         faq: "Preguntas",
+        blog: "Blog",
       },
       seeLivePage: "Verlo en vivo",
       createPageShort: "Crear página",
@@ -506,6 +507,7 @@ export const translations = {
       companyHeading: "Empresa",
       company: {
         pricing: "Acceso anticipado",
+        blog: "Blog",
         privacy: "Aviso de privacidad",
         terms: "Términos de servicio",
       },
@@ -524,6 +526,7 @@ export const translations = {
         useCases: "Use cases",
         doctors: "For doctors",
         faq: "FAQ",
+        blog: "Blog",
       },
       seeLivePage: "See it live",
       createPageShort: "Create page",
@@ -1021,6 +1024,7 @@ export const translations = {
       companyHeading: "Company",
       company: {
         pricing: "Early access",
+        blog: "Blog",
         privacy: "Privacy notice",
         terms: "Terms of service",
       },

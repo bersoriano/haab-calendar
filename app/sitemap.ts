@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 
+import { BLOG_PATH, blogAlternateLanguages, localizedUrl, postPath } from "@/components/blog/seo";
 import { doctorsAlternateLanguages, doctorsLandingUrl } from "@/components/landing/doctors-seo";
 import { landingAlternateLanguages, landingUrl } from "@/components/landing/seo";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { getPosts } from "@/lib/posts.server";
 import { buildAbsoluteUrl } from "@/lib/site-url";
 
 /**
@@ -14,8 +16,11 @@ import { buildAbsoluteUrl } from "@/lib/site-url";
  * business's decision, not this deployment's, and there is no published-to-search
  * flag to read yet — so listing every published provider would opt them all in
  * silently. Add them here once that flag exists.
+ *
+ * The blog joins the list with its first published post: until then it is a page
+ * with nothing to read, which also asks not to be indexed (components/blog/seo.ts).
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Both language versions of the landing page, each carrying the full
   // hreflang set: an annotation only counts when every version confirms it.
   const landing = (["en", "es"] as const).map((lang) => ({
@@ -43,9 +48,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...DEMO_PAGES.map(getDemoPagePath),
   ];
 
+  // A post is listed once it is published in English; a test keeps the Spanish
+  // version alongside it, so both hreflang targets resolve.
+  const posts = (await getPosts("en")).filter((post) => !post.draft);
+  const blog = (path: string, priority: number, lastModified?: string) =>
+    (["en", "es"] as const).map((lang) => ({
+      url: localizedUrl(path, lang),
+      ...(lastModified ? { lastModified } : {}),
+      changeFrequency: "weekly" as const,
+      priority,
+      alternates: { languages: blogAlternateLanguages(path) },
+    }));
+
   return [
     ...landing,
     ...doctors,
+    ...(posts.length ? blog(BLOG_PATH, 0.7) : []),
+    ...posts.flatMap((post) => blog(postPath(post.slug), 0.6, post.updated ?? post.date)),
     ...paths.map((path) => ({
       url: buildAbsoluteUrl(path),
       changeFrequency: "weekly" as const,

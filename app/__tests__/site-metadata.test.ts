@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -71,43 +73,43 @@ describe("robots.txt", () => {
 });
 
 describe("sitemap.xml", () => {
-  it("lists every URL as an absolute URL on the canonical domain", () => {
-    for (const entry of sitemap()) {
+  it("lists every URL as an absolute URL on the canonical domain", async () => {
+    for (const entry of await sitemap()) {
       expect(entry.url.startsWith("https://haabcalendar.com/")).toBe(true);
     }
   });
 
-  it("offers the landing page as the site root", () => {
-    expect(sitemap().map((entry) => entry.url)).toContain("https://haabcalendar.com/");
+  it("offers the landing page as the site root", async () => {
+    expect((await sitemap()).map((entry) => entry.url)).toContain("https://haabcalendar.com/");
   });
 
-  it("lists every demo booking page, so the examples are discoverable", () => {
-    const urls = sitemap().map((entry) => entry.url);
+  it("lists every demo booking page, so the examples are discoverable", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
 
     for (const page of DEMO_PAGES) {
       expect(urls).toContain(`https://haabcalendar.com${getDemoPagePath(page)}`);
     }
   });
 
-  it("lists the legal pages, which Google's OAuth reviewer has to reach", () => {
-    const urls = sitemap().map((entry) => entry.url);
+  it("lists the legal pages, which Google's OAuth reviewer has to reach", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls).toContain("https://haabcalendar.com/privacy");
     expect(urls).toContain("https://haabcalendar.com/terms");
   });
 
-  it("never lists a private manage link", () => {
-    expect(sitemap().every((entry) => !entry.url.includes("/manage/"))).toBe(true);
+  it("never lists a private manage link", async () => {
+    expect((await sitemap()).every((entry) => !entry.url.includes("/manage/"))).toBe(true);
   });
 
-  it("lists both language versions of the landing page", () => {
-    const urls = sitemap().map((entry) => entry.url);
+  it("lists both language versions of the landing page", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls).toContain("https://haabcalendar.com/?lang=es");
   });
 
-  it("annotates both landing versions with the full reciprocal hreflang set", () => {
-    const landing = sitemap().filter((entry) =>
+  it("annotates both landing versions with the full reciprocal hreflang set", async () => {
+    const landing = (await sitemap()).filter((entry) =>
       ["https://haabcalendar.com/", "https://haabcalendar.com/?lang=es"].includes(entry.url),
     );
 
@@ -121,8 +123,8 @@ describe("sitemap.xml", () => {
     }
   });
 
-  it("lists each URL once, so crawl budget is not spent on duplicates", () => {
-    const urls = sitemap().map((entry) => entry.url);
+  it("lists each URL once, so crawl budget is not spent on duplicates", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(new Set(urls).size).toBe(urls.length);
   });

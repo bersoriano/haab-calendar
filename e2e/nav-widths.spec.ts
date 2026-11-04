@@ -195,6 +195,7 @@ const CASES: NavCase[] = [
       link("Use cases"),
       link("For doctors"),
       link("FAQ"),
+      link("Blog"),
     ],
     hides: [button("Sign out"), button("Your dashboard")],
   },
@@ -210,6 +211,7 @@ const CASES: NavCase[] = [
       link("Use cases"),
       link("For doctors"),
       link("FAQ"),
+      link("Blog"),
     ],
     // The dashboard sends an account with no page straight back here.
     hides: [link("Log in"), button("Your dashboard")],
@@ -225,6 +227,7 @@ const CASES: NavCase[] = [
       link("How it works"),
       link("For doctors"),
       link("FAQ"),
+      link("Blog"),
       button("Create your page"),
     ],
     hides: [button("Sign out")],
@@ -240,6 +243,7 @@ const CASES: NavCase[] = [
       link("How it works"),
       link("For doctors"),
       link("FAQ"),
+      link("Blog"),
       button("Create your page"),
     ],
     hides: [link("Log in")],
@@ -250,7 +254,7 @@ const CASES: NavCase[] = [
     path: "/gallery?lang=en",
     open: landingBar,
     account: button("Sign out"),
-    offers: [link("Live examples"), link("How it works"), link("For doctors"), link("FAQ")],
+    offers: [link("Live examples"), link("How it works"), link("For doctors"), link("FAQ"), link("Blog")],
     hides: [link("Log in")],
   },
   {
@@ -262,8 +266,50 @@ const CASES: NavCase[] = [
     path: "/en/online-booking-for-doctors",
     open: landingBar,
     account: link("Log in"),
-    offers: [link("Live examples"), link("How it works"), link("FAQ")],
+    offers: [link("Live examples"), link("How it works"), link("FAQ"), link("Blog")],
     hides: [link("Use cases"), link("For doctors"), button("Sign out")],
+  },
+  {
+    // The gallery's bar: anchors point home, and setup starts on the landing page.
+    surface: "blog",
+    session: "signed out",
+    path: "/blog?lang=en",
+    open: landingBar,
+    account: link("Log in"),
+    offers: [
+      link("Live examples"),
+      link("How it works"),
+      link("For doctors"),
+      link("FAQ"),
+      link("Blog"),
+      button("Create your page"),
+    ],
+    hides: [link("Use cases"), button("Sign out")],
+  },
+  {
+    surface: "blog",
+    session: "signed in with no page yet",
+    path: "/blog?lang=en",
+    open: landingBar,
+    account: button("Sign out"),
+    offers: [
+      link("Live examples"),
+      link("How it works"),
+      link("For doctors"),
+      link("FAQ"),
+      link("Blog"),
+      button("Create your page"),
+    ],
+    hides: [link("Log in")],
+  },
+  {
+    surface: "blog",
+    session: "signed in with a page",
+    path: "/blog?lang=en",
+    open: landingBar,
+    account: button("Sign out"),
+    offers: [link("Live examples"), link("How it works"), link("For doctors"), link("FAQ"), link("Blog")],
+    hides: [link("Log in")],
   },
   {
     surface: "draft workspace",
@@ -451,9 +497,48 @@ for (const navCase of CASES) {
   });
 }
 
+// The landing bar has room for its labels and no more. One link too many doesn't
+// overflow: the labels break onto two lines, which no check above would notice.
+for (const lang of ["en", "es"]) {
+  test(`landing bar keeps every label on one line in ${lang} at desktop width`, async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto(`/?lang=${lang}`);
+    const links = page.getByRole("navigation", { name: "Primary" }).getByRole("link");
+    await expect(links).toHaveCount(6);
+
+    const lines = await links.evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const tops = [...range.getClientRects()].map((rect) => Math.round(rect.top));
+        return [node.textContent, new Set(tops).size];
+      }),
+    );
+    expect(lines.filter(([, count]) => count !== 1)).toEqual([]);
+  });
+}
+
 // Footer links are public navigation too: verify visible attribution and its
 // destination on both page widths, including service and manage URLs.
 for (const width of WIDTHS) {
+  test(`landing footer links to the blog at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    await page.goto("/?lang=es");
+    const blog = page.getByRole("contentinfo").getByRole("link", { name: "Blog", exact: true });
+    await blog.scrollIntoViewIfNeeded();
+    await expectUsable(blog, "the footer's blog link");
+    await blog.click();
+    await expect(page).toHaveURL(/\/blog\?lang=es$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Reservas en línea: guías prácticas");
+    const post = page.getByRole("main").getByRole("link", { name: "Deja de contestar “¿Cuándo tienes un espacio?”" });
+    await expectUsable(post, "the first post's link");
+    await expectNoSidewaysScroll(page);
+    await post.click();
+    await expect(page).toHaveURL(/\/blog\/stop-answering-when-are-you-free\?lang=es$/);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Deja de contestar “¿Cuándo tienes un espacio?”");
+    await expectNoSidewaysScroll(page);
+  });
+
   test(`public footer links to Haab at ${width.name} width`, async ({ page }) => {
     await page.setViewportSize({ width: width.width, height: width.height });
     const seed = providerFor("free");
