@@ -254,6 +254,8 @@ export type BookingDict = {
     whereShared: string;
     detailsReassurance: string;
     optionalSuffix: string;
+    contactNotice: string;
+    contactNoticeLink: string;
     summaryLive: string;
     detailsComplete: string;
     dateOfBirth: string;
@@ -864,6 +866,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       whereShared: "Same for every {service}",
       detailsReassurance: "No account, no password.",
       optionalSuffix: "(optional)",
+      contactNotice:
+        "This business keeps your name, email and phone after this booking so it can contact you later. You can ask it to delete them at any time.",
+      contactNoticeLink: "Privacy notice",
       summaryLive: "Live",
       detailsComplete: "Complete",
       dateOfBirth: "Date of birth",
@@ -1496,6 +1501,9 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       whereShared: "Aplica a cada {service}",
       detailsReassurance: "Sin cuenta ni contraseña.",
       optionalSuffix: "(opcional)",
+      contactNotice:
+        "Este negocio conserva su nombre, correo y teléfono después de esta reserva para poder contactarle más adelante. Puede pedirle que los elimine en cualquier momento.",
+      contactNoticeLink: "Aviso de privacidad",
       summaryLive: "En vivo",
       detailsComplete: "Completo",
       dateOfBirth: "Fecha de nacimiento",

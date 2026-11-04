@@ -16,6 +16,7 @@ import type { AdminTab } from "@/lib/types";
 const META_TITLES: Record<AdminTab, string> = {
   dashboard: "Overview",
   bookings: "Bookings",
+  clients: "Clients",
   scan: "Scan appointment",
   analytics: "Analytics",
   campaigns: "Campaigns",

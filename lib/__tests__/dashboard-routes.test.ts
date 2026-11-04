@@ -68,6 +68,7 @@ describe("dashboard sections", () => {
     expect(operate).toEqual([
       "dashboard",
       "bookings",
+      "clients",
       "scan",
       "analytics",
       "campaigns",

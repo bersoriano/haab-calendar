@@ -11,6 +11,7 @@ export type { PublicTheme };
 export type AdminTab =
   | "dashboard"
   | "bookings"
+  | "clients"
   | "scan"
   | "services"
   | "availability"

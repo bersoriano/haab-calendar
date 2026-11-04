@@ -65,7 +65,8 @@ const EN_PRIVACY: LegalDocument = {
       heading: "Booking data handled for businesses",
       body: [
         "When someone books, the booking page collects the name, email address, phone number, and any notes the client chooses to add, together with the service, date, and time. A business can also ask for optional details: a passport number, an emergency contact, dietary needs, or a hotel pickup. Answers are shown only to that business.",
-        "This information is used to create and manage the booking and nothing else. It is not sold, not rented, not used to build advertising profiles, and not used to train machine learning models.",
+        "This information is used to create and manage the booking, and to keep the client record described next. It is not sold, not rented, not used to build advertising profiles, and not used to train machine learning models.",
+        "Each business also keeps a client record for everyone who books with it: name, email address, phone number, the dates of their first and last booking, and how many bookings they have made. The business can view and delete these records, and can use them to contact its clients later, including about its services; Premium businesses can also download them. Notes, dates of birth, and other answers given while booking are not part of this record. The booking form tells clients this before they book. People who booked before this was introduced also have a client record, created from the bookings held at that time, and can ask the business to delete it.",
         "Each booking gets a private management link containing an unguessable token. Anyone holding that link can view, reschedule, or cancel that booking, which is why those pages are served with instructions not to index them and are excluded from search engines.",
       ],
     },
@@ -117,8 +118,9 @@ const EN_PRIVACY: LegalDocument = {
       body: [
         "Account data is kept while the account is active. Booking records are permanently deleted during daily cleanup once their scheduled date is more than one calendar month in the past, using the business timezone. Future bookings are kept regardless of when they were created. Records exactly at the cutoff are kept; cleanup may run later.",
         "Premium businesses can enable one calendar year of booking history in Settings. This option is off by default and takes effect after saving. Turning it off or losing Premium access restores one-month retention at the next cleanup. Deleted bookings cannot be recovered. Related booking history and internal integration records are removed with the booking; anonymous page analytics retain their separate 13-month policy. Cleanup does not delete events already held in an external Google Calendar.",
-        "Deleting an account is permanent. It removes the account, the booking page and its configuration, the bookings held under it, and the uploaded images, and it revokes any connected Google account. There is no recovery afterwards.",
-        "If you booked through a business's page and want that booking removed, contact the business. They control it, and deletion on their side removes it from our systems too.",
+        "Client records are separate from bookings and are not removed by this cleanup. A client record is kept until the business deletes it or its account is deleted. If the same email address books again after that, a new record is created.",
+        "Deleting an account is permanent. It removes the account, the booking page and its configuration, the bookings and client records held under it, and the uploaded images, and it revokes any connected Google account. There is no recovery afterwards.",
+        "If you booked through a business's page and want that booking or your client record removed, or no longer want to be contacted, contact the business. They control both, and deletion on their side removes them from our systems too. Copies a business has already downloaded are outside our systems and remain its responsibility.",
       ],
     },
     {
@@ -199,6 +201,7 @@ const EN_TERMS: LegalDocument = {
       body: [
         "When your clients book through your page, you are the data controller for what they submit. Haab Calendar stores and transmits it on your behalf as your service provider.",
         "This means you are responsible for having a lawful basis to collect it, for telling your clients how you will use it, and for answering their privacy requests. We will assist you in responding, and we will not use your clients' data for our own purposes.",
+        "Your client list keeps each client's contact details after their booking is deleted, until you delete the record. You decide how to use it and you are responsible for that use: contact clients only where the law allows it, which for promotional messages can require their consent; stop when someone asks you to; delete their record when they ask; and protect any file you download.",
         "You must not collect, through the notes field or anywhere else on your page, categories of data you are not lawfully entitled to hold.",
       ],
     },
@@ -251,7 +254,7 @@ const EN_TERMS: LegalDocument = {
       id: "termination",
       heading: "Ending the agreement",
       body: [
-        "You may stop using the service and delete your account at any time from the dashboard. Deletion is permanent and removes your page, bookings, and uploaded images.",
+        "You may stop using the service and delete your account at any time from the dashboard. Deletion is permanent and removes your page, bookings, client records, and uploaded images.",
         "We may suspend or end an account that breaches these terms, and will give notice where it is reasonable to do so.",
       ],
     },
@@ -308,7 +311,8 @@ const ES_PRIVACY: LegalDocument = {
       heading: "Datos de reservas tratados por cuenta de los negocios",
       body: [
         "Cuando alguien reserva, la página recaba el nombre, correo electrónico, teléfono y las notas que el cliente decida agregar, junto con el servicio, la fecha y la hora. Un negocio también puede pedir datos opcionales: número de pasaporte, contacto de emergencia, necesidades alimentarias o recogida en hotel. Las respuestas solo se muestran a ese negocio.",
-        "Esta información se usa para crear y administrar la reserva y para nada más. No se vende, no se renta, no se usa para construir perfiles publicitarios ni para entrenar modelos de aprendizaje automático.",
+        "Esta información se usa para crear y administrar la reserva, y para llevar el registro de cliente que se describe a continuación. No se vende, no se renta, no se usa para construir perfiles publicitarios ni para entrenar modelos de aprendizaje automático.",
+        "Cada negocio también conserva un registro de cliente de cada persona que reserva con él: nombre, correo electrónico, teléfono, las fechas de su primera y última reserva, y cuántas reservas ha hecho. El negocio puede consultar y eliminar estos registros, y puede usarlos para contactar a sus clientes más adelante, incluso sobre sus servicios; los negocios Premium también pueden descargarlos. Las notas, las fechas de nacimiento y otras respuestas dadas al reservar no forman parte de este registro. El formulario de reserva informa de esto a los clientes antes de reservar. Las personas que reservaron antes de que esto se introdujera también tienen un registro de cliente, creado a partir de las reservas existentes en ese momento, y pueden pedir al negocio que lo elimine.",
         "Cada reserva recibe un enlace privado de administración que contiene un token imposible de adivinar. Quien tenga ese enlace puede consultar, reprogramar o cancelar esa reserva, y por eso esas páginas se sirven con instrucciones de no ser indexadas y quedan excluidas de los motores de búsqueda.",
       ],
     },
@@ -360,8 +364,9 @@ const ES_PRIVACY: LegalDocument = {
       body: [
         "Los datos de la cuenta se conservan mientras esté activa. Las reservas se eliminan permanentemente durante la limpieza diaria cuando su fecha programada tiene más de un mes calendario de antigüedad, según la zona horaria del negocio. Las reservas futuras se conservan sin importar cuándo se crearon. Las reservas justo en el límite se conservan; la limpieza puede ejecutarse después.",
         "Los negocios Premium pueden activar un año calendario de historial de reservas en Ajustes. Esta opción está desactivada por defecto y se aplica al guardar. Desactivarla o perder el acceso Premium restablece la conservación de un mes en la siguiente limpieza. Las reservas eliminadas no se pueden recuperar. El historial asociado y los registros internos de integración se eliminan con la reserva; la analítica anónima mantiene su política independiente de 13 meses. La limpieza no elimina eventos ya guardados en un calendario externo de Google.",
-        "Eliminar una cuenta es permanente. Se eliminan la cuenta, la página de reservas y su configuración, las reservas asociadas y las imágenes subidas, y se revoca cualquier cuenta de Google conectada. Después no hay recuperación posible.",
-        "Si usted reservó a través de la página de un negocio y desea que se elimine esa reserva, contacte al negocio. Ellos la controlan, y su eliminación también la retira de nuestros sistemas.",
+        "Los registros de cliente son independientes de las reservas y esta limpieza no los elimina. Un registro de cliente se conserva hasta que el negocio lo elimina o se elimina su cuenta. Si el mismo correo electrónico vuelve a reservar después de eso, se crea un registro nuevo.",
+        "Eliminar una cuenta es permanente. Se eliminan la cuenta, la página de reservas y su configuración, las reservas y los registros de cliente asociados y las imágenes subidas, y se revoca cualquier cuenta de Google conectada. Después no hay recuperación posible.",
+        "Si usted reservó a través de la página de un negocio y desea que se elimine esa reserva o su registro de cliente, o ya no desea que le contacten, comuníquese con el negocio. Ellos controlan ambos, y su eliminación también los retira de nuestros sistemas. Las copias que un negocio ya haya descargado quedan fuera de nuestros sistemas y son su responsabilidad.",
       ],
     },
     {
@@ -442,6 +447,7 @@ const ES_TERMS: LegalDocument = {
       body: [
         "Cuando sus clientes reservan a través de su página, usted es el responsable del tratamiento de lo que ellos envían. Haab Calendar lo almacena y transmite por su cuenta, en calidad de encargado.",
         "Esto significa que usted responde por contar con una base legal para recabarlos, por informar a sus clientes cómo los usará, y por atender sus solicitudes de privacidad. Le asistiremos en responder, y no usaremos los datos de sus clientes para fines propios.",
+        "Su lista de clientes conserva los datos de contacto de cada cliente después de eliminarse su reserva, hasta que usted elimine el registro. Usted decide cómo usarla y responde por ese uso: contacte a sus clientes solo donde la ley lo permita, lo que para mensajes promocionales puede requerir su consentimiento; deje de hacerlo cuando alguien se lo pida; elimine su registro cuando lo solicite; y proteja cualquier archivo que descargue.",
         "No debe recabar, mediante el campo de notas ni en ninguna otra parte de su página, categorías de datos que no esté legalmente facultado para conservar.",
       ],
     },
@@ -494,7 +500,7 @@ const ES_TERMS: LegalDocument = {
       id: "termination",
       heading: "Terminación del acuerdo",
       body: [
-        "Puede dejar de usar el servicio y eliminar su cuenta en cualquier momento desde el panel. La eliminación es permanente y retira su página, sus reservas y sus imágenes.",
+        "Puede dejar de usar el servicio y eliminar su cuenta en cualquier momento desde el panel. La eliminación es permanente y retira su página, sus reservas, sus registros de cliente y sus imágenes.",
         "Podemos suspender o terminar una cuenta que incumpla estos términos, y daremos aviso cuando sea razonable hacerlo.",
       ],
     },
