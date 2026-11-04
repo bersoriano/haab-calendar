@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
 
 import sitemap from "@/app/sitemap";
 import { buildDoctorsJsonLd, buildDoctorsMetadata } from "@/components/landing/doctors-seo";
@@ -157,8 +159,8 @@ describe("online booking for doctors: search metadata", () => {
     }
   });
 
-  it("lists both URLs in the sitemap, each with the full hreflang set", () => {
-    const entries = sitemap().filter((entry) => entry.url.includes("doctors") || entry.url.includes("medicos"));
+  it("lists both URLs in the sitemap, each with the full hreflang set", async () => {
+    const entries = (await sitemap()).filter((entry) => entry.url.includes("doctors") || entry.url.includes("medicos"));
     const urls = entries.map((entry) => entry.url);
     expect(urls).toContain("https://haabcalendar.com/en/online-booking-for-doctors");
     expect(urls).toContain("https://haabcalendar.com/es/agenda-online-para-medicos");
