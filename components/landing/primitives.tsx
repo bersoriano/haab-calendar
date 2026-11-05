@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check } from "@phosphor-icons/react";
+import { ArrowRight, Check } from "@phosphor-icons/react/dist/ssr";
 import type { ComponentType, ReactNode, Ref } from "react";
 import { cn } from "@/lib/utils";
 import { bricolage, figtree } from "./fonts";
