@@ -5,7 +5,7 @@ import {
   ForkKnife,
   Stethoscope,
   Ticket,
-} from "@phosphor-icons/react";
+} from "@phosphor-icons/react/dist/ssr";
 import type { ComponentType, ReactNode } from "react";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
