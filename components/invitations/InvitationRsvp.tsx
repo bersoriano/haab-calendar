@@ -1,7 +1,7 @@
 "use client";
 
 import { CheckCircle, Trash } from "@phosphor-icons/react";
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 
 import { eventWhen, publicCardClass } from "@/components/invitations/EventSchedule";
 import { fillCopy, invitationCopy } from "@/components/invitations/invitation-copy";
@@ -133,6 +133,24 @@ export function InvitationRsvp({
   const [contactPhone, setContactPhone] = useState(initialInvitation.contactPhone);
   const [contactEmail, setContactEmail] = useState(initialInvitation.contactEmail);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const attendsSomething = invitation.guests.some((guest) => Object.values(guest.attending).some(Boolean));
+
+  // The household's door pass: a QR of this page's own link, made on the device.
+  useEffect(() => {
+    if (!invitation.submittedAt || !attendsSomething) return;
+    let cancelled = false;
+    const link = `${window.location.origin}${window.location.pathname}`;
+    import("qrcode")
+      .then((QRCode) => QRCode.toDataURL(link, { margin: 1, width: 240 }))
+      .then((url) => {
+        if (!cancelled) setQrDataUrl(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [invitation.submittedAt, attendsSomething]);
 
   const events = services.filter((service) => invitation.eventIds.includes(service.id));
   const atLimit = guests.length >= invitation.seatLimit;
@@ -321,6 +339,13 @@ export function InvitationRsvp({
             );
           })}
         </ul>
+        {qrDataUrl && attendsSomething ? (
+          <figure className="grid justify-items-center gap-2 rounded-2xl bg-[var(--surface-lowest)] px-4 py-4">
+            {/* eslint-disable-next-line @next/next/no-img-element -- generated data URL */}
+            <img src={qrDataUrl} alt={t.qrAlt} width={200} height={200} className="h-[200px] w-[200px]" />
+            <figcaption className="text-center text-[14px] text-[var(--ink-secondary)]">{t.showAtDoor}</figcaption>
+          </figure>
+        ) : null}
         {open ? (
           <div>
             <button type="button" className={secondaryButtonClass} onClick={() => startEditing(invitation)}>

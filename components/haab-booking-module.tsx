@@ -151,6 +151,7 @@ import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
 import { ProviderClientsSurface } from "@/components/provider/ProviderClientsSurface";
+import { DoorCheckIn } from "@/components/provider/guests/DoorCheckIn";
 import { GuestListSurface } from "@/components/provider/guests/GuestListSurface";
 import { guestsCopy } from "@/components/provider/guests/guests-copy";
 import { isInvitationMode } from "@/lib/rsvp-mode";
@@ -3942,6 +3943,17 @@ export function HaabBookingModule({
       case "bookings":
         return renderBookingsList();
       case "scan":
+        // An invitation-only page scans invitations at the door, offline-ready.
+        if (integratedMode && isInvitationMode(provider, vertical)) {
+          return (
+            <DoorCheckIn
+              lang={lang}
+              services={services}
+              pageKey={provider.publicSlug || "page"}
+              timeZone={provider.timezone}
+            />
+          );
+        }
         // Looks appointments up on the server, so only where there is one.
         return integratedMode ? <AppointmentScanner lang={lang} /> : null;
       case "services":

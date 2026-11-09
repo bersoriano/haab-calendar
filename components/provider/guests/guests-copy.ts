@@ -55,6 +55,37 @@ export type GuestsCopy = {
   downloadCsvLabel: string;
   downloadFailed: string;
   views: { guests: string; seating: string };
+  door: {
+    eventLabel: string;
+    arrived: string;
+    savedAt: string;
+    offline: string;
+    waiting: string;
+    waitingOne: string;
+    synced: string;
+    noStorage: string;
+    loadFailed: string;
+    noList: string;
+    scanTitle: string;
+    starting: string;
+    scanning: string;
+    cameraUnavailable: string;
+    upload: string;
+    notInvitation: string;
+    notOnList: string;
+    imageUnreadable: string;
+    scanNext: string;
+    checkIn: string;
+    checkInAll: string;
+    checkedInAt: string;
+    undo: string;
+    undoOffline: string;
+    table: string;
+    noTable: string;
+    searchLabel: string;
+    searchPlaceholder: string;
+    noMatches: string;
+  };
   seating: {
     eventLabel: string;
     publishLabel: string;
@@ -229,6 +260,37 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     downloadCsvLabel: "Download the list for {event} (CSV)",
     downloadFailed: "Couldn't download the list. Try again.",
     views: { guests: "Guests", seating: "Seating" },
+    door: {
+      eventLabel: "Event",
+      arrived: "{arrived} of {expected} arrived",
+      savedAt: "List saved on this phone {time}. Scans work without a connection.",
+      offline: "Offline. Check-ins are kept on this phone.",
+      waiting: "{count} check-ins waiting to send",
+      waitingOne: "1 check-in waiting to send",
+      synced: "Everything sent",
+      noStorage: "This browser won't keep the list. It works until you close this tab; stay connected to be safe.",
+      loadFailed: "The door list didn't load, and none is saved on this phone. Connect once to download it.",
+      noList: "Nobody has confirmed for this event yet.",
+      scanTitle: "Scan an invitation",
+      starting: "Starting camera…",
+      scanning: "Point the camera at the guest's invitation QR.",
+      cameraUnavailable: "Camera unavailable. Upload a photo of the QR, or find the guest by name below.",
+      upload: "Upload QR image",
+      notInvitation: "That isn't an invitation for this page.",
+      notOnList: "This invitation isn't on the door list for this event. If they answered just now, refresh the list when you're online.",
+      imageUnreadable: "No QR was found in that image.",
+      scanNext: "Scan next",
+      checkIn: "Check in",
+      checkInAll: "Check in all ({count})",
+      checkedInAt: "In at {time}",
+      undo: "Undo",
+      undoOffline: "Undo needs a connection",
+      table: "{table}",
+      noTable: "No table",
+      searchLabel: "Find a guest",
+      searchPlaceholder: "Name or household",
+      noMatches: "Nobody by that name on the list.",
+    },
     seating: {
       eventLabel: "Event",
       publishLabel: "Show guests their table",
@@ -405,6 +467,37 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     downloadCsvLabel: "Descargar la lista de {event} (CSV)",
     downloadFailed: "No se pudo descargar la lista. Intente de nuevo.",
     views: { guests: "Invitados", seating: "Mesas" },
+    door: {
+      eventLabel: "Evento",
+      arrived: "{arrived} de {expected} llegaron",
+      savedAt: "Lista guardada en este teléfono {time}. Los escaneos funcionan sin conexión.",
+      offline: "Sin conexión. Las llegadas se guardan en este teléfono.",
+      waiting: "{count} llegadas por enviar",
+      waitingOne: "1 llegada por enviar",
+      synced: "Todo enviado",
+      noStorage: "Este navegador no guarda la lista. Funciona hasta que cierre esta pestaña; mejor mantenga la conexión.",
+      loadFailed: "No se cargó la lista de la entrada y no hay una guardada en este teléfono. Conéctese una vez para descargarla.",
+      noList: "Nadie ha confirmado para este evento todavía.",
+      scanTitle: "Escanear una invitación",
+      starting: "Iniciando cámara…",
+      scanning: "Apunte la cámara al QR de la invitación.",
+      cameraUnavailable: "La cámara no está disponible. Suba una foto del QR o busque al invitado por nombre abajo.",
+      upload: "Subir imagen QR",
+      notInvitation: "Eso no es una invitación de esta página.",
+      notOnList: "Esta invitación no está en la lista de este evento. Si respondieron hace un momento, actualice la lista cuando tenga conexión.",
+      imageUnreadable: "No se encontró un QR en esa imagen.",
+      scanNext: "Escanear otra",
+      checkIn: "Registrar llegada",
+      checkInAll: "Registrar a todos ({count})",
+      checkedInAt: "Llegó a las {time}",
+      undo: "Deshacer",
+      undoOffline: "Deshacer requiere conexión",
+      table: "{table}",
+      noTable: "Sin mesa",
+      searchLabel: "Buscar un invitado",
+      searchPlaceholder: "Nombre o familia",
+      noMatches: "Nadie con ese nombre en la lista.",
+    },
     seating: {
       eventLabel: "Evento",
       publishLabel: "Mostrar su mesa a los invitados",
