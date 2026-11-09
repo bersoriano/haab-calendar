@@ -4,6 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { InvitationRsvp } from "@/components/invitations/InvitationRsvp";
+import type { RsvpQuestion } from "@/lib/rsvp-questions";
 import type { PublicInvitation } from "@/lib/supabase/invitations";
 import type { Service } from "@/lib/types";
 
@@ -54,7 +55,7 @@ function invitation(overrides: Partial<PublicInvitation> = {}): PublicInvitation
 
 async function render(
   target: PublicInvitation,
-  extra: { deadline?: string; open?: boolean; organizerPhone?: string } = {},
+  extra: { deadline?: string; open?: boolean; organizerPhone?: string; questions?: RsvpQuestion[] } = {},
 ) {
   await act(async () =>
     root.render(<InvitationRsvp invitation={target} services={SERVICES} apiPath="/api/x" lang="es" {...extra} />),
@@ -215,5 +216,54 @@ describe("InvitationRsvp", () => {
     expect(container.textContent).toContain("Familia Ortiz, guardamos 2 lugares para ustedes.");
     expect(container.textContent).toContain("Las respuestas cerraron el 20 de diciembre de 2026.");
     expect(container.textContent).toContain("Para cambiar su respuesta, contacte a los organizadores.");
+  });
+
+  it("asks the menu of each guest at the reception and the shuttle once, then sends the answers", async () => {
+    const questions: RsvpQuestion[] = [
+      {
+        id: "menu",
+        kind: "choice",
+        label: "Menú",
+        options: [
+          { id: "res", label: "Res" },
+          { id: "veg", label: "Vegetariano" },
+        ],
+        per: "guest",
+        eventIds: ["svc-ceremony"],
+      },
+      { id: "shuttle", kind: "text", label: "", options: [], per: "invitation", eventIds: [] },
+    ];
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ invitation: invitation({ submittedAt: "2026-11-09T00:00:00.000Z" }) })),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await render(
+      invitation({ guests: [{ id: "g1", name: "Ana", attending: {} }, { id: "g2", name: "Luis", attending: {} }] }),
+      { questions },
+    );
+
+    // Nobody attends anything yet: nothing to ask.
+    expect(container.textContent).not.toContain("Unos detalles");
+
+    await act(async () => checkbox(1, "Ana").click());
+    await act(async () => checkbox(2, "Luis").click());
+
+    const selects = container.querySelectorAll("select");
+    expect(selects).toHaveLength(1);
+    expect(container.textContent).toContain("Hotel para el transporte");
+
+    await act(async () => {
+      selects[0].value = "veg";
+      selects[0].dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    const shuttle = Array.from(container.querySelectorAll("label")).find((label) =>
+      label.textContent?.includes("Hotel para el transporte"),
+    )!.querySelector("input")!;
+    await type(shuttle, "Hotel Sol");
+    await act(async () => button("Enviar confirmación").click());
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.guestAnswers).toEqual([{ menu: "veg" }, {}]);
+    expect(body.answers).toEqual({ shuttle: "Hotel Sol" });
   });
 });

@@ -23,9 +23,12 @@ import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSe
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { canUseCustomProviderSlug } from "@/lib/public-url";
-import type { Lang, ProviderInfo } from "@/lib/types";
+import type { Lang, ProviderInfo, Service } from "@/lib/types";
+import { RsvpQuestionsSettings } from "@/components/provider/guests/RsvpQuestionsSettings";
 
 export type ProviderSettingsSurfaceProps = {
+  /** The page's events, for questions asked at some of them only. */
+  services?: Pick<Service, "id" | "name">[];
   /** Already resolved by the caller, which owns the vertical's role wording. */
   title: string;
   /** Same reason: "Public booking link for" reads differently per vertical. */
@@ -82,6 +85,7 @@ export function ProviderSettingsSurface({
   onSavePublicSlug,
   onResetStandaloneSetup,
   offersVocabulary = false,
+  services = [],
   onDashboardLanguageChange,
   businessType,
 }: ProviderSettingsSurfaceProps) {
@@ -131,6 +135,7 @@ export function ProviderSettingsSurface({
           {offersVocabulary ? (
             <InvitationModeSettings
               provider={provider}
+              services={services}
               lang={lang}
               disabled={disabled}
               onProviderChange={onProviderChange}
@@ -275,6 +280,7 @@ const INVITATION_MODE_COPY = {
     switchLabel: "Take answers by invitation only",
     seatsLabel: "Seats per new invitation",
     seatsHint: "You can change each invitation's seats in the guest list.",
+    questionsTitle: "Questions with the RSVP",
     deadlineLabel: "Answer by",
     deadlineHint: "Optional. Households can answer through the end of this day; after it their link shows their answer and your phone number.",
     offTitle: "Turn off invitation-only RSVPs?",
@@ -289,6 +295,7 @@ const INVITATION_MODE_COPY = {
     switchLabel: "Recibir respuestas solo por invitación",
     seatsLabel: "Lugares por invitación nueva",
     seatsHint: "Puede cambiar los lugares de cada invitación en la lista de invitados.",
+    questionsTitle: "Preguntas con la confirmación",
     deadlineLabel: "Responder a más tardar el",
     deadlineHint: "Opcional. Las familias pueden responder hasta el final de este día; después, su enlace muestra su respuesta y su teléfono.",
     offTitle: "¿Desactivar las confirmaciones solo por invitación?",
@@ -301,10 +308,11 @@ const INVITATION_MODE_COPY = {
 /** Events only: the mode switch and the seats a new invitation starts with. */
 function InvitationModeSettings({
   provider,
+  services = [],
   lang,
   disabled,
   onProviderChange,
-}: Pick<ProviderSettingsSurfaceProps, "provider" | "lang" | "disabled" | "onProviderChange">) {
+}: Pick<ProviderSettingsSurfaceProps, "provider" | "services" | "lang" | "disabled" | "onProviderChange">) {
   const copy = INVITATION_MODE_COPY[lang];
   const shell = dashboardCopy[lang];
   const [confirmOff, setConfirmOff] = useState(false);
@@ -349,6 +357,18 @@ function InvitationModeSettings({
           </Field>
         ) : null}
       </div>
+      {on ? (
+        <div className="mt-6 grid gap-3 border-t border-app-border pt-6">
+          <p className="text-sm font-semibold text-app-fg">{copy.questionsTitle}</p>
+          <RsvpQuestionsSettings
+            questions={provider.rsvpQuestions ?? []}
+            services={services}
+            lang={lang}
+            disabled={disabled}
+            onChange={(next) => onProviderChange("rsvpQuestions", next)}
+          />
+        </div>
+      ) : null}
       <ConfirmDialog
         open={confirmOff}
         title={copy.offTitle}

@@ -1,4 +1,5 @@
 import { buildProviderPath } from "./public-url";
+import { cleanAnswers, type RsvpQuestion } from "./rsvp-questions";
 import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX } from "./rsvp-mode";
 import type { Lang, VerticalId } from "./types";
 
@@ -15,6 +16,8 @@ export type InvitationGuest = {
   position: number;
   /** service id → attending. Missing means not attending. */
   attending: Record<string, boolean>;
+  /** question id → option id or text. See lib/rsvp-questions.ts. */
+  answers?: Record<string, string>;
 };
 
 export type Invitation = {
@@ -31,6 +34,8 @@ export type Invitation = {
   lastContactedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Answers to per-invitation questions (the shuttle hotel, say). */
+  answers?: Record<string, string>;
 };
 
 export type ResponseState = "no_answer" | "attending" | "declined";
@@ -279,6 +284,10 @@ export type RsvpSubmission = {
   attendance: Record<string, boolean[]>;
   contactPhone?: string;
   contactEmail?: string;
+  /** Answers to per-guest questions, aligned with `guests`. Absent leaves them as they are. */
+  guestAnswers?: Record<string, string>[];
+  /** Answers to per-invitation questions. Absent leaves them as they are. */
+  answers?: Record<string, string>;
 };
 
 export type RsvpRejection =
@@ -304,6 +313,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function validateRsvpSubmission(
   input: unknown,
   invitation: { seatLimit: number; eventIds: string[]; guests: { id: string }[] },
+  questions: RsvpQuestion[] = [],
 ): RsvpValidation {
   if (!isRecord(input) || !Array.isArray(input.guests) || (input.attendance !== undefined && !isRecord(input.attendance))) {
     return { ok: false, reason: "bad_attendance" };
@@ -358,5 +368,23 @@ export function validateRsvpSubmission(
     return { ok: false, reason: "bad_contact" };
   }
 
-  return { ok: true, value: { guests, attendance, contactPhone, contactEmail } };
+  const value: RsvpSubmission = { guests, attendance, contactPhone, contactEmail };
+
+  // Answers are kept only for questions that apply to what each person attends.
+  const attendedBy = guests.map((_, index) =>
+    invitation.eventIds.filter((serviceId) => attendance[serviceId][index]),
+  );
+  if (input.guestAnswers !== undefined) {
+    if (!Array.isArray(input.guestAnswers) || input.guestAnswers.length !== guests.length) {
+      return { ok: false, reason: "bad_attendance" };
+    }
+    value.guestAnswers = input.guestAnswers.map((raw, index) =>
+      cleanAnswers(raw, questions, "guest", attendedBy[index]),
+    );
+  }
+  if (input.answers !== undefined) {
+    value.answers = cleanAnswers(input.answers, questions, "invitation", [...new Set(attendedBy.flat())]);
+  }
+
+  return { ok: true, value };
 }

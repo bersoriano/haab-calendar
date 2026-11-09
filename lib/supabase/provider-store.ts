@@ -11,6 +11,7 @@ import { normalizeDailyBookingLimit } from "@/lib/availability";
 import { normalizeTimeZone, UNSET_TIME_ZONE } from "@/lib/timezone";
 import { normalizePhotoUrls } from "@/lib/image-upload";
 import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
+import { parseRsvpQuestions } from "@/lib/rsvp-questions";
 import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { normalizeTravelerFields } from "@/lib/traveler-details";
 import type { BookingType, LocationKey, ModuleStore, Service, VerticalId } from "@/lib/types";
@@ -239,6 +240,7 @@ async function upsertProvider(options: {
     rsvp_mode: vertical === "events" ? parseRsvpMode(provider.rsvpMode) : "open",
     default_invitation_seats: clampInvitationSeats(provider.defaultInvitationSeats),
     rsvp_deadline: vertical === "events" ? (parseRsvpDeadline(provider.rsvpDeadline) ?? null) : null,
+    rsvp_questions: vertical === "events" ? parseRsvpQuestions(provider.rsvpQuestions) : [],
     dashboard_language: provider.dashboardLanguage ?? null,
     public_theme: normalizePublicTheme(provider.publicTheme),
     public_footer_text: trimOptional(provider.publicFooterText),

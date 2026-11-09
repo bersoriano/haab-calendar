@@ -102,6 +102,8 @@ export type ProviderInfo = {
   defaultInvitationSeats?: number;
   /** Invitation-only pages: last day answers are taken (YYYY-MM-DD, page time zone). */
   rsvpDeadline?: string;
+  /** Invitation-only pages: questions asked with the RSVP. See lib/rsvp-questions.ts. */
+  rsvpQuestions?: import("./rsvp-questions").RsvpQuestion[];
   /**
    * The owner's own dashboard language. Undefined means "follow the browser",
    * which is what every pre-existing provider does. Deliberately separate from

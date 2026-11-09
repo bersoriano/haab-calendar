@@ -12,6 +12,7 @@ import {
   Field,
   IconButton,
   Input,
+  Select,
   Switch,
   Textarea,
 } from "@/components/app-ui";
@@ -19,6 +20,7 @@ import { fillCopy } from "@/components/invitations/invitation-copy";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { guestsCopy } from "@/components/provider/guests/guests-copy";
 import { guestLabel, type Invitation } from "@/lib/invitations";
+import { appliesTo, questionLabel, type RsvpQuestion } from "@/lib/rsvp-questions";
 import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX } from "@/lib/rsvp-mode";
 import type { Lang, Service } from "@/lib/types";
 
@@ -33,6 +35,8 @@ export type InvitationEditorSave = {
   notes: string;
   guests: DraftGuest[];
   attendance: Record<string, boolean[]>;
+  guestAnswers: Record<string, string>[];
+  answers: Record<string, string>;
   markAnswered: boolean;
 };
 
@@ -46,6 +50,7 @@ export function InvitationEditor({
   lang,
   services,
   invitation,
+  questions = [],
   defaultSeats,
   invitationUrl,
   pending,
@@ -59,6 +64,7 @@ export function InvitationEditor({
   services: Service[];
   /** Absent for a new invitation. */
   invitation?: Invitation;
+  questions?: RsvpQuestion[];
   defaultSeats: number;
   invitationUrl?: string;
   pending: boolean;
@@ -84,6 +90,7 @@ export function InvitationEditor({
           lang={lang}
           services={services}
           invitation={invitation}
+          questions={questions}
           defaultSeats={defaultSeats}
           invitationUrl={invitationUrl}
           pending={pending}
@@ -101,6 +108,7 @@ function EditorForm({
   lang,
   services,
   invitation,
+  questions = [],
   defaultSeats,
   invitationUrl,
   pending,
@@ -130,15 +138,28 @@ function EditorForm({
     ),
   );
   const [answered, setAnswered] = useState(Boolean(invitation?.submittedAt));
+  const [guestAnswers, setGuestAnswers] = useState<Record<string, string>[]>(
+    () => invitation?.guests.map((guest) => ({ ...(guest.answers ?? {}) })) ?? [],
+  );
+  const [answers, setAnswers] = useState<Record<string, string>>(invitation?.answers ?? {});
   const [nameError, setNameError] = useState<string | null>(null);
 
   const seatLimit = clampInvitationSeats(seats, invitation?.seatLimit ?? defaultSeats);
   const atLimit = guests.length >= seatLimit;
   const invitedServices = services.filter((service) => eventIds.includes(service.id));
+  // Questions are asked only of people at their events, as on the household's form.
+  const attendedBy = guests.map((_, index) => eventIds.filter((id) => attendance[id]?.[index] === true));
+  const askedOf = attendedBy.map((attended) =>
+    questions.filter((question) => question.per === "guest" && appliesTo(question, attended)),
+  );
+  const householdQuestions = questions.filter(
+    (question) => question.per === "invitation" && appliesTo(question, [...new Set(attendedBy.flat())]),
+  );
 
   function addGuest() {
     if (atLimit) return;
     setGuests((current) => [...current, { name: "" }]);
+    setGuestAnswers((current) => [...current, {}]);
     setAttendance((current) =>
       Object.fromEntries(Object.entries(current).map(([id, answers]) => [id, [...answers, false]])),
     );
@@ -146,6 +167,7 @@ function EditorForm({
 
   function removeGuest(index: number) {
     setGuests((current) => current.filter((_, position) => position !== index));
+    setGuestAnswers((current) => current.filter((_, position) => position !== index));
     setAttendance((current) =>
       Object.fromEntries(
         Object.entries(current).map(([id, answers]) => [id, answers.filter((_, position) => position !== index)]),
@@ -170,6 +192,8 @@ function EditorForm({
       attendance: Object.fromEntries(
         eventIds.map((id) => [id, guests.map((_, index) => attendance[id]?.[index] === true)]),
       ),
+      guestAnswers,
+      answers,
       markAnswered: answered,
     });
   }
@@ -281,6 +305,41 @@ function EditorForm({
               </div>
             </div>
           ))}
+          {askedOf.some((asked) => asked.length > 0) || householdQuestions.length > 0 ? (
+            <div className="grid gap-3 rounded-lg bg-app-subtle px-3 py-2">
+              <p className="text-sm font-medium text-app-fg">{t.detailsLabel}</p>
+              {guests.map((guest, index) =>
+                askedOf[index].length > 0 ? (
+                  <div key={guest.id ?? `new-${index}`} className="grid gap-2 sm:grid-cols-2">
+                    {askedOf[index].map((question) => (
+                      <AnswerField
+                        key={question.id}
+                        question={question}
+                        label={`${guestLabel(guest, index, guests, lang)} · ${questionLabel(question, lang)}`}
+                        chooseLabel={t.choose}
+                        value={guestAnswers[index]?.[question.id] ?? ""}
+                        onChange={(value) =>
+                          setGuestAnswers((current) =>
+                            current.map((entry, position) => (position === index ? { ...entry, [question.id]: value } : entry)),
+                          )
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null,
+              )}
+              {householdQuestions.map((question) => (
+                <AnswerField
+                  key={question.id}
+                  question={question}
+                  label={`${t.household} · ${questionLabel(question, lang)}`}
+                  chooseLabel={t.choose}
+                  value={answers[question.id] ?? ""}
+                  onChange={(value) => setAnswers((current) => ({ ...current, [question.id]: value }))}
+                />
+              ))}
+            </div>
+          ) : null}
           <Field label={t.answered} description={t.answeredHint} inline>
             <Switch checked={answered} onChange={(event) => setAnswered(event.target.checked)} />
           </Field>
@@ -322,5 +381,37 @@ function EditorForm({
         </Button>
       </DialogActions>
     </form>
+  );
+}
+
+/** One answer the planner records for a household: a list of options or a line of text. */
+function AnswerField({
+  question,
+  label,
+  chooseLabel,
+  value,
+  onChange,
+}: {
+  question: RsvpQuestion;
+  label: string;
+  chooseLabel: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      {question.kind === "choice" ? (
+        <Select value={value} onChange={(event) => onChange(event.target.value)}>
+          <option value="">{chooseLabel}</option>
+          {question.options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      ) : (
+        <Input value={value} maxLength={200} onChange={(event) => onChange(event.target.value)} />
+      )}
+    </Field>
   );
 }

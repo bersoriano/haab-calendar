@@ -25,6 +25,7 @@ import type {
   Lang,
 } from "./types";
 import { parseRsvpDeadline } from "./rsvp-deadline";
+import { parseRsvpQuestions } from "./rsvp-questions";
 import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "./rsvp-mode";
 import type { Vertical } from "../config/verticals";
 
@@ -321,6 +322,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
         ? undefined
         : clampInvitationSeats(source.defaultInvitationSeats),
     rsvpDeadline: parseRsvpDeadline(source?.rsvpDeadline),
+    rsvpQuestions: source?.rsvpQuestions === undefined ? undefined : parseRsvpQuestions(source.rsvpQuestions),
     dashboardLanguage:
       source?.dashboardLanguage === "en" || source?.dashboardLanguage === "es"
         ? source.dashboardLanguage
