@@ -1,6 +1,20 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 
+// The data layer is server-only in the app; here it runs in plain Node.
+vi.mock("server-only", () => ({}));
+
+import { isWellFormedInvitationToken } from "@/lib/invitations";
+import {
+  createInvitations,
+  deleteAllInvitations,
+  deleteInvitation,
+  getPublicInvitation,
+  listInvitations,
+  regenerateInvitationToken,
+  submitPublicRsvp,
+  updateInvitation,
+} from "@/lib/supabase/invitations";
 import { localAdminClient, localAnonClient } from "@/test/db/local-client";
 
 /**
@@ -295,5 +309,133 @@ describe("invitation tables", () => {
       .eq("id", wedding.providerId)
       .single<{ rsvp_mode: string; vocabulary: string | null }>();
     expect(data).toEqual({ rsvp_mode: "open", vocabulary: null });
+  });
+});
+
+describe("invitation data layer", () => {
+  it("creates, lists, edits and answers an invitation", async () => {
+    const wedding = await seedWedding("layer");
+    const [ceremony, brunch] = wedding.serviceIds;
+
+    const created = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Ortiz", seatLimit: 3, eventIds: [ceremony, brunch], guestNames: ["Ana", "Luis"] },
+      { displayName: "Sofía Ruiz", seatLimit: 1, eventIds: [ceremony] },
+    ]);
+    expect(created.map((invitation) => invitation.displayName)).toEqual(["Familia Ortiz", "Sofía Ruiz"]);
+    expect(created[0].guests.map((guest) => guest.name)).toEqual(["Ana", "Luis"]);
+    expect(isWellFormedInvitationToken(created[0].token)).toBe(true);
+
+    const listed = await listInvitations(wedding.client, wedding.providerId);
+    expect(listed).toHaveLength(2);
+    expect(listed[0].eventIds.sort()).toEqual([ceremony, brunch].sort());
+
+    const [ana, luis] = listed[0].guests;
+    const edited = await updateInvitation(wedding.client, wedding.providerId, listed[0].id, {
+      guests: [{ id: luis.id, name: "Luis Ortiz" }, { name: "" }],
+      attendance: { [ceremony]: [true, true], [brunch]: [false, true] },
+      markAnswered: true,
+    });
+    expect(edited.guests.map((guest) => guest.name)).toEqual(["Luis Ortiz", ""]);
+    expect(edited.guests.some((guest) => guest.id === ana.id)).toBe(false);
+    expect(edited.guests[0].attending).toEqual({ [ceremony]: true, [brunch]: false });
+    expect(edited.submittedAt).not.toBeNull();
+
+    const fewer = await updateInvitation(wedding.client, wedding.providerId, listed[0].id, {
+      eventIds: [ceremony],
+    });
+    expect(fewer.eventIds).toEqual([ceremony]);
+    expect(fewer.guests[1].attending).toEqual({ [ceremony]: true });
+  });
+
+  it("refuses to lower seats below the named guests without removing one", async () => {
+    const wedding = await seedWedding("lower-layer");
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Ruiz", seatLimit: 3, eventIds: wedding.serviceIds, guestNames: ["A", "B", "C"] },
+    ]);
+
+    await expect(
+      updateInvitation(wedding.client, wedding.providerId, invitation.id, { seatLimit: 2 }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    const lowered = await updateInvitation(wedding.client, wedding.providerId, invitation.id, {
+      seatLimit: 2,
+      guests: invitation.guests.slice(0, 2).map((guest) => ({ id: guest.id, name: guest.name })),
+    });
+    expect(lowered.seatLimit).toBe(2);
+    expect(lowered.guests).toHaveLength(2);
+  });
+
+  it("lets a household answer through its link, and only through its link", async () => {
+    const wedding = await seedWedding("public");
+    const [ceremony, brunch] = wedding.serviceIds;
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Paz", seatLimit: 2, eventIds: [ceremony, brunch], guestNames: ["Marta"] },
+    ]);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+
+    const found = await getPublicInvitation(admin, route);
+    expect(found?.invitation.displayName).toBe("Familia Paz");
+    expect(found?.invitation.submittedAt).toBeNull();
+
+    const saved = await submitPublicRsvp(admin, route, {
+      guests: [{ id: invitation.guests[0].id, name: "Marta Paz" }, { name: "" }],
+      attendance: { [ceremony]: [true, true], [brunch]: [false, false] },
+      contactEmail: "marta@example.invalid",
+    });
+    expect(saved.submittedAt).not.toBeNull();
+    expect(saved.guests.map((guest) => guest.attending[ceremony])).toEqual([true, true]);
+    expect(saved.contactEmail).toBe("marta@example.invalid");
+
+    await expect(submitPublicRsvp(admin, route, { guests: [], attendance: {} })).rejects.toMatchObject({
+      status: 429,
+    });
+
+    await expect(
+      submitPublicRsvp(admin, { ...route, token: invitation.token.replace(/.$/, "x") }, { guests: [] }),
+    ).rejects.toMatchObject({ status: 404 });
+
+    const renewed = await regenerateInvitationToken(wedding.client, wedding.providerId, invitation.id);
+    expect(renewed.token).not.toBe(invitation.token);
+    expect(await getPublicInvitation(admin, route)).toBeNull();
+    expect(await getPublicInvitation(admin, { ...route, token: renewed.token })).not.toBeNull();
+  });
+
+  it("refuses too many guests from a household", async () => {
+    const wedding = await seedWedding("public-limit");
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Sol", seatLimit: 1, eventIds: wedding.serviceIds },
+    ]);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+
+    await expect(
+      submitPublicRsvp(admin, route, { guests: [{ name: "A" }, { name: "B" }], attendance: {} }),
+    ).rejects.toMatchObject({ status: 400 });
+    expect((await getPublicInvitation(admin, route))?.invitation.guests).toEqual([]);
+  });
+
+  it("hides invitations of a page that is not in invitation mode", async () => {
+    const wedding = await seedWedding("open-mode");
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Luna", seatLimit: 2, eventIds: wedding.serviceIds },
+    ]);
+    await admin.from("providers").update({ rsvp_mode: "open" }).eq("id", wedding.providerId);
+
+    expect(
+      await getPublicInvitation(admin, { vertical: "events", providerSlug: wedding.slug, token: invitation.token }),
+    ).toBeNull();
+  });
+
+  it("deletes one invitation or the whole list", async () => {
+    const wedding = await seedWedding("delete");
+    const created = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Uno", seatLimit: 1, eventIds: [] },
+      { displayName: "Dos", seatLimit: 1, eventIds: [] },
+      { displayName: "Tres", seatLimit: 1, eventIds: [] },
+    ]);
+
+    expect(await deleteInvitation(wedding.client, wedding.providerId, created[0].id)).toBe(true);
+    expect(await deleteInvitation(wedding.client, wedding.providerId, created[0].id)).toBe(false);
+    expect(await deleteAllInvitations(wedding.client, wedding.providerId)).toBe(2);
+    expect(await listInvitations(wedding.client, wedding.providerId)).toEqual([]);
   });
 });
