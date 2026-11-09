@@ -9,6 +9,7 @@ import {
 } from "@/lib/public-booking-resolver";
 import { buildProviderPath, normalizeUrlSlugSegment, validateProviderSlug } from "@/lib/public-url";
 import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
+import { parseRsvpQuestions } from "@/lib/rsvp-questions";
 import { parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { isUnsetTimeZone } from "@/lib/timezone";
 import type {
@@ -43,6 +44,7 @@ type PublicProviderRow = {
   vocabulary?: string | null;
   rsvp_mode?: string | null;
   rsvp_deadline?: string | null;
+  rsvp_questions?: unknown;
 };
 
 type PublicServiceRow = {
@@ -136,6 +138,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
       vocabulary: parseVocabulary(provider.vocabulary),
       rsvpMode: parseRsvpMode(provider.rsvp_mode),
       rsvpDeadline: parseRsvpDeadline(provider.rsvp_deadline),
+      rsvpQuestions: parseRsvpQuestions(provider.rsvp_questions),
       timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),

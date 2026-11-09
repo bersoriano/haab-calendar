@@ -14,6 +14,7 @@ import {
   type RsvpRejection,
 } from "@/lib/invitations";
 import { isRsvpOpen, parseRsvpDeadline } from "@/lib/rsvp-deadline";
+import { parseRsvpQuestions, type RsvpQuestion } from "@/lib/rsvp-questions";
 import { INVITATION_SEAT_LIMIT_MAX } from "@/lib/rsvp-mode";
 import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { getPublishedProvider, PublicBookingWriteError } from "@/lib/supabase/bookings";
@@ -42,7 +43,7 @@ export const MAX_INVITATIONS_PER_REQUEST = 500;
 const RESUBMIT_COOLDOWN_MS = 2_000;
 
 const INVITATION_SELECT =
-  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, invitation_events(service_id), invitation_guests(id, name, position, guest_attendance(service_id, attending))";
+  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, answers, invitation_events(service_id), invitation_guests(id, name, position, answers, guest_attendance(service_id, attending))";
 
 type InvitationRow = {
   id: string;
@@ -57,9 +58,16 @@ type InvitationRow = {
   last_contacted_at: string | null;
   created_at: string;
   updated_at: string;
+  answers: Record<string, string> | null;
   invitation_events: { service_id: string }[] | null;
   invitation_guests:
-    | { id: string; name: string; position: number; guest_attendance: { service_id: string; attending: boolean }[] | null }[]
+    | {
+        id: string;
+        name: string;
+        position: number;
+        answers: Record<string, string> | null;
+        guest_attendance: { service_id: string; attending: boolean }[] | null;
+      }[]
     | null;
 };
 
@@ -74,6 +82,7 @@ function toInvitation(row: InvitationRow): Invitation {
       attending: Object.fromEntries(
         (guest.guest_attendance ?? []).map((answer) => [answer.service_id, answer.attending]),
       ),
+      answers: guest.answers ?? {},
     }));
 
   return {
@@ -90,6 +99,7 @@ function toInvitation(row: InvitationRow): Invitation {
     lastContactedAt: row.last_contacted_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    answers: row.answers ?? {},
   };
 }
 
@@ -267,6 +277,10 @@ export type InvitationPatch = {
   guests?: { id?: string; name: string }[];
   /** service id → attending, aligned with `guests` (or the current guests). */
   attendance?: Record<string, boolean[]>;
+  /** Answers to per-guest questions, aligned with `guests` (or the current guests). */
+  guestAnswers?: unknown[];
+  /** Answers to per-invitation questions. */
+  answers?: unknown;
   /** true records an answer given on the household's behalf; false clears it. */
   markAnswered?: boolean;
   /** Set when the planner sent the link by WhatsApp or email. */
@@ -287,6 +301,9 @@ async function applyGuestsAndAnswers(
     eventIds: string[];
     guests?: { id?: string; name: string }[];
     attendance?: Record<string, boolean[]>;
+    /** Per-guest answers aligned with `guests` (or the current guests). */
+    guestAnswers?: Record<string, string>[];
+    answers?: Record<string, string>;
   },
 ) {
   const removedEvents = current.eventIds.filter((id) => !next.eventIds.includes(id));
@@ -318,8 +335,9 @@ async function applyGuestsAndAnswers(
     if (error) rethrow(error, "Could not update that invitation.");
   }
 
-  if (Object.keys(next.fields).length > 0) {
-    const { error } = await supabase.from("invitations").update(next.fields).eq("id", current.id);
+  const fields = next.answers === undefined ? next.fields : { ...next.fields, answers: next.answers };
+  if (Object.keys(fields).length > 0) {
+    const { error } = await supabase.from("invitations").update(fields).eq("id", current.id);
     if (error) rethrow(error, "Could not update that invitation.");
   }
 
@@ -353,6 +371,17 @@ async function applyGuestsAndAnswers(
     }
   } else {
     guestIds.push(...current.guests.map((guest) => guest.id));
+  }
+
+  if (next.guestAnswers) {
+    for (const [index, guestId] of guestIds.entries()) {
+      const { error } = await supabase
+        .from("invitation_guests")
+        .update({ answers: next.guestAnswers[index] ?? {} })
+        .eq("id", guestId)
+        .eq("invitation_id", current.id);
+      if (error) rethrow(error, "Could not save those answers.");
+    }
   }
 
   if (next.attendance) {
@@ -393,18 +422,31 @@ export async function updateInvitation(
 
   let guests: { id?: string; name: string }[] | undefined;
   let attendance: Record<string, boolean[]> | undefined;
+  let guestAnswers: Record<string, string>[] | undefined;
+  let answers: Record<string, string> | undefined;
 
-  if (patch.guests !== undefined || patch.attendance !== undefined) {
+  const touchesAnswers = patch.guestAnswers !== undefined || patch.answers !== undefined;
+  if (patch.guests !== undefined || patch.attendance !== undefined || touchesAnswers) {
+    const currentAttendance = Object.fromEntries(
+      merged.eventIds.map((serviceId) => [serviceId, current.guests.map((guest) => guest.attending[serviceId] === true)]),
+    );
     const validation = validateRsvpSubmission(
       {
         guests: patch.guests ?? current.guests.map((guest) => ({ id: guest.id, name: guest.name })),
-        attendance: patch.attendance ?? {},
+        // Answers are checked against what each person attends, so an answer-only
+        // edit is judged against the attendance already saved.
+        attendance: patch.attendance ?? (patch.guests === undefined ? currentAttendance : {}),
+        guestAnswers: patch.guestAnswers,
+        answers: patch.answers,
       },
       { seatLimit: merged.seatLimit, eventIds: merged.eventIds, guests: current.guests },
+      touchesAnswers ? await readQuestions(supabase, providerId) : [],
     );
     if (!validation.ok) throw new InvitationWriteError(rejectionMessage(validation.reason, merged.seatLimit), 400);
     guests = patch.guests === undefined ? undefined : validation.value.guests;
     attendance = patch.attendance === undefined ? undefined : validation.value.attendance;
+    guestAnswers = validation.value.guestAnswers;
+    answers = validation.value.answers;
   } else if (merged.seatLimit < current.guests.length) {
     throw new InvitationWriteError(
       `This invitation already names ${current.guests.length} guests. Remove one before lowering its seats.`,
@@ -423,11 +465,29 @@ export async function updateInvitation(
   if (patch.markAnswered === false) fields.submitted_at = null;
   if (patch.markContacted === true) fields.last_contacted_at = new Date().toISOString();
 
-  await applyGuestsAndAnswers(supabase, current, { fields, eventIds: merged.eventIds, guests, attendance });
+  await applyGuestsAndAnswers(supabase, current, {
+    fields,
+    eventIds: merged.eventIds,
+    guests,
+    attendance,
+    guestAnswers,
+    answers,
+  });
 
   const updated = await readInvitation(supabase, providerId, invitationId);
   if (!updated) throw new InvitationWriteError("That invitation was not found.", 404);
   return updated;
+}
+
+/** The page's RSVP questions, for checking answers against them. */
+async function readQuestions(supabase: SupabaseClient, providerId: string): Promise<RsvpQuestion[]> {
+  const { data, error } = await supabase
+    .from("providers")
+    .select("rsvp_questions")
+    .eq("id", providerId)
+    .maybeSingle<{ rsvp_questions: unknown }>();
+  if (error) rethrow(error, "Could not load this page's questions.");
+  return parseRsvpQuestions(data?.rsvp_questions);
 }
 
 /** One invitation of the owner's page, or null. */
@@ -496,7 +556,8 @@ export async function regenerateInvitationToken(
 export type PublicInvitation = {
   displayName: string;
   seatLimit: number;
-  guests: { id: string; name: string; attending: Record<string, boolean> }[];
+  guests: { id: string; name: string; attending: Record<string, boolean>; answers?: Record<string, string> }[];
+  answers?: Record<string, string>;
   eventIds: string[];
   contactPhone: string;
   contactEmail: string;
@@ -509,7 +570,13 @@ function toPublicInvitation(invitation: Invitation): PublicInvitation {
   return {
     displayName: invitation.displayName,
     seatLimit: invitation.seatLimit,
-    guests: invitation.guests.map((guest) => ({ id: guest.id, name: guest.name, attending: guest.attending })),
+    guests: invitation.guests.map((guest) => ({
+      id: guest.id,
+      name: guest.name,
+      attending: guest.attending,
+      answers: guest.answers ?? {},
+    })),
+    answers: invitation.answers ?? {},
     eventIds: invitation.eventIds,
     contactPhone: invitation.contactPhone,
     contactEmail: invitation.contactEmail,
@@ -536,6 +603,7 @@ async function findByToken(admin: SupabaseClient, route: PublicRoute) {
   const deadline = parseRsvpDeadline(provider.rsvp_deadline);
   // An unchosen zone is stored as a placeholder; judge the deadline in UTC then.
   const timeZone = isUnsetTimeZone(provider.timezone) ? "UTC" : normalizeTimeZone(provider.timezone) || "UTC";
+  const questions = parseRsvpQuestions(provider.rsvp_questions);
 
   const { data, error } = await admin
     .from("invitations")
@@ -545,7 +613,7 @@ async function findByToken(admin: SupabaseClient, route: PublicRoute) {
     .maybeSingle<InvitationRow>();
 
   if (error) rethrow(error, "Could not load this invitation.");
-  return data ? { providerId: provider.id, deadline, timeZone, invitation: toInvitation(data) } : null;
+  return data ? { providerId: provider.id, deadline, timeZone, questions, invitation: toInvitation(data) } : null;
 }
 
 export async function getPublicInvitation(
@@ -589,7 +657,7 @@ export async function submitPublicRsvp(
     throw new InvitationWriteError("We just saved your answer. Wait a moment before sending it again.", 429);
   }
 
-  const validation = validateRsvpSubmission(input, invitation);
+  const validation = validateRsvpSubmission(input, invitation, found.questions);
   if (!validation.ok) {
     throw new InvitationWriteError(rejectionMessage(validation.reason, invitation.seatLimit), 400);
   }
@@ -604,6 +672,8 @@ export async function submitPublicRsvp(
     eventIds: invitation.eventIds,
     guests: value.guests,
     attendance: value.attendance,
+    guestAnswers: value.guestAnswers,
+    answers: value.answers,
   });
 
   const saved = await findByToken(admin, route);

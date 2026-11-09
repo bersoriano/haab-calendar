@@ -488,3 +488,91 @@ describe("invitation data layer", () => {
     expect(await listInvitations(wedding.client, wedding.providerId)).toEqual([]);
   });
 });
+
+describe("RSVP questions", () => {
+  const MENU = {
+    id: "menu",
+    kind: "choice",
+    label: "Menú",
+    options: [
+      { id: "res", label: "Res" },
+      { id: "veg", label: "Vegetariano" },
+    ],
+    per: "guest",
+    eventIds: [] as string[],
+  };
+  const SHUTTLE = { id: "shuttle", kind: "text", label: "", options: [], per: "invitation", eventIds: [] };
+
+  it("keeps a household's answers to the page's questions, and only those", async () => {
+    const wedding = await seedWedding("questions");
+    const [ceremony, brunch] = wedding.serviceIds;
+    await admin.from("providers").update({ rsvp_questions: [MENU, SHUTTLE] }).eq("id", wedding.providerId);
+
+    const publicRow = await localAnonClient()
+      .from("public_providers")
+      .select("rsvp_questions")
+      .eq("id", wedding.providerId)
+      .single<{ rsvp_questions: unknown[] }>();
+    expect(publicRow.data?.rsvp_questions).toHaveLength(2);
+
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Menú", seatLimit: 2, eventIds: [ceremony, brunch] },
+    ]);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+
+    const saved = await submitPublicRsvp(admin, route, {
+      guests: [{ name: "Ana" }, { name: "Luis" }],
+      attendance: { [ceremony]: [true, false], [brunch]: [false, false] },
+      guestAnswers: [{ menu: "veg", sneaky: "x" }, { menu: "res" }],
+      answers: { shuttle: "Hotel Sol" },
+    });
+    expect(saved.guests.map((guest) => guest.answers)).toEqual([{ menu: "veg" }, {}]);
+    expect(saved.answers).toEqual({ shuttle: "Hotel Sol" });
+
+    const [listed] = await listInvitations(wedding.client, wedding.providerId);
+    const edited = await updateInvitation(wedding.client, wedding.providerId, listed.id, {
+      guestAnswers: [{ menu: "res" }, {}],
+    });
+    expect(edited.guests[0].answers).toEqual({ menu: "res" });
+    expect(edited.answers).toEqual({ shuttle: "Hotel Sol" });
+  });
+
+  it("clears answers a month after the page's last dated event, and nothing else", async () => {
+    const finished = await seedWedding("purge-finished");
+    const recent = await seedWedding("purge-recent");
+    const weekly = await seedWedding("purge-weekly");
+    const daysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+
+    await admin.from("services").update({ occurrence_mode: "single", occurrence_date: daysAgo(31) }).in("id", finished.serviceIds);
+    await admin.from("services").update({ occurrence_mode: "single", occurrence_date: daysAgo(29) }).in("id", recent.serviceIds);
+
+    for (const wedding of [finished, recent, weekly]) {
+      const { invitationId, guestIds } = await addInvitation(wedding.providerId, { guests: ["Ana"] });
+      await admin.from("invitations").update({ answers: { shuttle: "Hotel" } }).eq("id", invitationId);
+      await admin.from("invitation_guests").update({ answers: { diet: "sin gluten" } }).eq("id", guestIds[0]);
+    }
+
+    const { error } = await admin.rpc("purge_invitation_answers");
+    expect(error).toBeNull();
+
+    const answersOf = async (providerId: string) => {
+      const { data } = await admin
+        .from("invitations")
+        .select("display_name, answers, invitation_guests(name, answers)")
+        .eq("provider_id", providerId)
+        .single<{ display_name: string; answers: object; invitation_guests: { name: string; answers: object }[] }>();
+      return data;
+    };
+
+    expect(await answersOf(finished.providerId)).toMatchObject({
+      display_name: "Familia Ortiz",
+      answers: {},
+      invitation_guests: [{ name: "Ana", answers: {} }],
+    });
+    expect((await answersOf(recent.providerId))?.answers).toEqual({ shuttle: "Hotel" });
+    expect((await answersOf(weekly.providerId))?.invitation_guests[0].answers).toEqual({ diet: "sin gluten" });
+
+    const anon = await localAnonClient().rpc("purge_invitation_answers");
+    expect(anon.error).not.toBeNull();
+  });
+});

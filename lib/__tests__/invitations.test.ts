@@ -223,6 +223,43 @@ describe("validateRsvpSubmission", () => {
   });
 });
 
+describe("validateRsvpSubmission with questions", () => {
+  const menu = {
+    id: "menu",
+    kind: "choice" as const,
+    label: "Menú",
+    options: [{ id: "res", label: "Res" }],
+    per: "guest" as const,
+    eventIds: [CEREMONY],
+  };
+  const shuttle = { id: "shuttle", kind: "text" as const, label: "", options: [], per: "invitation" as const, eventIds: [] };
+  const target = { seatLimit: 2, eventIds: [CEREMONY, BRUNCH], guests: [] };
+
+  it("keeps each guest's answers for the events they attend, and the household's once", () => {
+    const result = validateRsvpSubmission(
+      {
+        guests: [{ name: "Ana" }, { name: "Luis" }],
+        attendance: { [CEREMONY]: [true, false], [BRUNCH]: [false, true] },
+        guestAnswers: [{ menu: "res" }, { menu: "res" }],
+        answers: { shuttle: "Hotel Sol", menu: "res" },
+      },
+      target,
+      [menu, shuttle],
+    );
+    expect(result.ok && result.value.guestAnswers).toEqual([{ menu: "res" }, {}]);
+    expect(result.ok && result.value.answers).toEqual({ shuttle: "Hotel Sol" });
+  });
+
+  it("leaves answers alone when the request does not send them, and refuses misaligned ones", () => {
+    const untouched = validateRsvpSubmission({ guests: [{ name: "Ana" }], attendance: {} }, target, [menu]);
+    expect(untouched.ok && "guestAnswers" in untouched.value).toBe(false);
+
+    expect(
+      validateRsvpSubmission({ guests: [{ name: "Ana" }], attendance: {}, guestAnswers: [{}, {}] }, target, [menu]),
+    ).toEqual({ ok: false, reason: "bad_attendance" });
+  });
+});
+
 describe("tokens and links", () => {
   it("makes a 43-character token whose hash matches", () => {
     const { token, tokenHash } = generateInvitationToken();
