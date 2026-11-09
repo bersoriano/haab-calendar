@@ -41,6 +41,10 @@ export type InvitationCopy = {
   closedContactPhone: string;
   closedContact: string;
   rsvpBy: string;
+  questionsTitle: string;
+  questionsHint: string;
+  choose: string;
+  forHousehold: string;
   goodToKnow: string;
 };
 
@@ -82,6 +86,10 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     closedContactPhone: "To change your answer, contact the organizers at {phone}.",
     closedContact: "To change your answer, contact the organizers.",
     rsvpBy: "Please RSVP by {date}.",
+    questionsTitle: "A few details",
+    questionsHint: "For the people coming.",
+    choose: "Choose…",
+    forHousehold: "For your household",
     goodToKnow: "Good to know",
   },
   es: {
@@ -121,6 +129,10 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     closedContactPhone: "Para cambiar su respuesta, contacte a los organizadores al {phone}.",
     closedContact: "Para cambiar su respuesta, contacte a los organizadores.",
     rsvpBy: "Por favor confirme a más tardar el {date}.",
+    questionsTitle: "Unos detalles",
+    questionsHint: "Para quienes vienen.",
+    choose: "Elija…",
+    forHousehold: "Para su familia",
     goodToKnow: "Para tener en cuenta",
   },
 };

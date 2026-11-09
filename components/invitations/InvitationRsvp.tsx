@@ -7,6 +7,7 @@ import { eventWhen, publicCardClass } from "@/components/invitations/EventSchedu
 import { fillCopy, invitationCopy } from "@/components/invitations/invitation-copy";
 import { guestLabel } from "@/lib/invitations";
 import { formatRsvpDeadline } from "@/lib/rsvp-deadline";
+import { appliesTo, questionLabel, type RsvpQuestion } from "@/lib/rsvp-questions";
 import type { PublicInvitation } from "@/lib/supabase/invitations";
 import type { Lang, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,43 @@ function initialAttendance(invitation: PublicInvitation, guests: DraftGuest[]) {
   );
 }
 
+function initialGuestAnswers(invitation: PublicInvitation, guests: DraftGuest[]) {
+  return guests.map((guest) => ({ ...(invitation.guests.find((saved) => saved.id === guest.id)?.answers ?? {}) }));
+}
+
+/** One question: a list of options, or a line of text. */
+function QuestionField({
+  question,
+  lang,
+  label,
+  value,
+  onChange,
+}: {
+  question: RsvpQuestion;
+  lang: Lang;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-1.5">
+      <span className={labelClass}>{label}</span>
+      {question.kind === "choice" ? (
+        <select className={inputClass} value={value} onChange={(event) => onChange(event.target.value)}>
+          <option value="">{invitationCopy[lang].choose}</option>
+          {question.options.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <input className={inputClass} value={value} maxLength={200} onChange={(event) => onChange(event.target.value)} />
+      )}
+    </label>
+  );
+}
+
 /** An event already answered: someone ticked, or the household said no. */
 function initialDeclined(invitation: PublicInvitation, attendance: Record<string, boolean[]>) {
   return Object.fromEntries(
@@ -62,6 +100,7 @@ export function InvitationRsvp({
   deadline,
   open = true,
   organizerPhone,
+  questions = [],
 }: {
   invitation: PublicInvitation;
   /** The page's events, in page order. Only the invitation's are asked about. */
@@ -73,6 +112,8 @@ export function InvitationRsvp({
   /** False once the deadline has passed: the answer is shown, not editable. */
   open?: boolean;
   organizerPhone?: string;
+  /** The page's RSVP questions; each is asked only of people at its events. */
+  questions?: RsvpQuestion[];
 }) {
   const t = invitationCopy[lang];
   const id = useId();
@@ -85,12 +126,27 @@ export function InvitationRsvp({
   const [declined, setDeclined] = useState<Record<string, boolean>>(() =>
     initialDeclined(initialInvitation, initialAttendance(initialInvitation, initialGuests(initialInvitation))),
   );
+  const [guestAnswers, setGuestAnswers] = useState<Record<string, string>[]>(() =>
+    initialGuestAnswers(initialInvitation, initialGuests(initialInvitation)),
+  );
+  const [answers, setAnswers] = useState<Record<string, string>>(initialInvitation.answers ?? {});
   const [contactPhone, setContactPhone] = useState(initialInvitation.contactPhone);
   const [contactEmail, setContactEmail] = useState(initialInvitation.contactEmail);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   const events = services.filter((service) => invitation.eventIds.includes(service.id));
   const atLimit = guests.length >= invitation.seatLimit;
+  const attendedBy = guests.map((_, index) =>
+    invitation.eventIds.filter((serviceId) => attendance[serviceId]?.[index] === true),
+  );
+  const guestQuestions = questions.filter((question) => question.per === "guest");
+  const householdQuestions = questions.filter(
+    (question) => question.per === "invitation" && appliesTo(question, [...new Set(attendedBy.flat())]),
+  );
+  const askedQuestions = [
+    ...guestQuestions.filter((question) => attendedBy.some((attended) => appliesTo(question, attended))),
+    ...householdQuestions,
+  ];
   const unanswered = events.filter(
     (service) => !declined[service.id] && !(attendance[service.id] ?? []).some(Boolean),
   );
@@ -101,6 +157,8 @@ export function InvitationRsvp({
     setGuests(nextGuests);
     setAttendance(nextAttendance);
     setDeclined(initialDeclined(from, nextAttendance));
+    setGuestAnswers(initialGuestAnswers(from, nextGuests));
+    setAnswers(from.answers ?? {});
     setContactPhone(from.contactPhone);
     setContactEmail(from.contactEmail);
     setStatus({ kind: "idle" });
@@ -110,6 +168,7 @@ export function InvitationRsvp({
   function addGuest() {
     if (atLimit) return;
     setGuests((current) => [...current, { name: "" }]);
+    setGuestAnswers((current) => [...current, {}]);
     setAttendance((current) =>
       Object.fromEntries(Object.entries(current).map(([serviceId, answers]) => [serviceId, [...answers, false]])),
     );
@@ -117,6 +176,7 @@ export function InvitationRsvp({
 
   function removeGuest(index: number) {
     setGuests((current) => current.filter((_, position) => position !== index));
+    setGuestAnswers((current) => current.filter((_, position) => position !== index));
     setAttendance((current) =>
       Object.fromEntries(
         Object.entries(current).map(([serviceId, answers]) => [
@@ -158,6 +218,8 @@ export function InvitationRsvp({
       ),
       contactPhone,
       contactEmail,
+      // Only pages with questions send answers; the server keeps those that apply.
+      ...(questions.length > 0 ? { guestAnswers, answers } : {}),
     };
 
     let response: Response;
@@ -341,6 +403,56 @@ export function InvitationRsvp({
           </label>
         </fieldset>
       ))}
+
+      {askedQuestions.length > 0 ? (
+        <fieldset className={cn(publicCardClass, "grid gap-5")}>
+          <legend className="sr-only">{t.questionsTitle}</legend>
+          <div aria-hidden="true">
+            <p className="text-[17px] font-semibold text-[var(--ink)]">{t.questionsTitle}</p>
+            <p className="mt-1 text-[14px] text-[var(--ink-secondary)]">{t.questionsHint}</p>
+          </div>
+          {guests.map((guest, index) => {
+            const asked = guestQuestions.filter((question) => appliesTo(question, attendedBy[index]));
+            if (asked.length === 0) return null;
+            return (
+              <div key={guest.id ?? `new-${index}`} className="grid gap-3">
+                <p className="text-[15px] font-semibold text-[var(--ink)]">{guestLabel(guest, index, guests, lang)}</p>
+                {asked.map((question) => (
+                  <QuestionField
+                    key={question.id}
+                    question={question}
+                    lang={lang}
+                    label={questionLabel(question, lang)}
+                    value={guestAnswers[index]?.[question.id] ?? ""}
+                    onChange={(value) =>
+                      setGuestAnswers((current) =>
+                        current.map((entry, position) =>
+                          position === index ? { ...entry, [question.id]: value } : entry,
+                        ),
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            );
+          })}
+          {householdQuestions.length > 0 ? (
+            <div className="grid gap-3">
+              <p className="text-[15px] font-semibold text-[var(--ink)]">{t.forHousehold}</p>
+              {householdQuestions.map((question) => (
+                <QuestionField
+                  key={question.id}
+                  question={question}
+                  lang={lang}
+                  label={questionLabel(question, lang)}
+                  value={answers[question.id] ?? ""}
+                  onChange={(value) => setAnswers((current) => ({ ...current, [question.id]: value }))}
+                />
+              ))}
+            </div>
+          ) : null}
+        </fieldset>
+      ) : null}
 
       <fieldset className={cn(publicCardClass, "grid gap-4 sm:grid-cols-2")}>
         <legend className="sr-only">{t.contactTitle}</legend>

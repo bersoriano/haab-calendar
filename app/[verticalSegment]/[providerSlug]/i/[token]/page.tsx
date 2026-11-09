@@ -73,6 +73,7 @@ export default async function InvitationPage({
         deadline={store.provider.rsvpDeadline}
         open={isRsvpOpen(store.provider.rsvpDeadline, meta.timezone)}
         organizerPhone={store.provider.phoneNumber1}
+        questions={store.provider.rsvpQuestions ?? []}
       />
     </InvitationPageShell>
   );
