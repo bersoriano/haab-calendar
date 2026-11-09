@@ -28,6 +28,12 @@ export type DemoPage = {
  */
 export const DEMO_SAMPLE_INVITATION_TOKEN = "DemoBodaValeriaYDiego-sample-invitation-001";
 
+/**
+ * A second sample that has already answered and has a table, so the confirmed
+ * view (answers, table, door QR) can be seen without filling in the form.
+ */
+export const DEMO_ANSWERED_INVITATION_TOKEN = "DemoBodaValeriaYDiego-answered-invitation-1";
+
 export const DEMO_OWNER_EMAIL_PREFIX = "public-examples+";
 export const DEMO_OWNER_EMAIL_DOMAIN = "haab-calendar.invalid";
 
