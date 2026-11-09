@@ -38,6 +38,7 @@ export type GuestsCopy = {
   columns: { invitation: string; seats: string; answers: string; actions: string };
   states: { no_answer: string; attending: string; declined: string; partial: string };
   seatsValue: string;
+  seatsValueOne: string;
   attendingValue: string;
   copyLink: string;
   linkCopied: string;
@@ -72,6 +73,7 @@ export type GuestsCopy = {
     guestsLabel: string;
     guestsHint: string;
     guestPlaceholder: string;
+    guestNumber: string;
     addGuest: string;
     removeGuest: string;
     answersLabel: string;
@@ -96,12 +98,16 @@ export type GuestsCopy = {
     seatsLabel: string;
     eventsLabel: string;
     previewTitle: string;
+    previewTitleOne: string;
     previewEmpty: string;
     errorsTitle: string;
+    errorsTitleOne: string;
     reasons: { missing_name: string; bad_seats: string; bad_email: string };
     lineLabel: string;
     importLabel: string;
+    importLabelOne: string;
     imported: string;
+    importedOne: string;
     importFailed: string;
     cancel: string;
   };
@@ -142,6 +148,7 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     columns: { invitation: "Invitation", seats: "Seats", answers: "Answers", actions: "Actions" },
     states: { no_answer: "No answer", attending: "Attending", declined: "Declined", partial: "Some events" },
     seatsValue: "{count} seats",
+    seatsValueOne: "1 seat",
     attendingValue: "{count} of {seats} coming",
     copyLink: "Copy link",
     linkCopied: "Invitation link copied",
@@ -176,6 +183,7 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       guestsLabel: "Guests",
       guestsHint: "Optional. The household can fill in or correct names when they answer.",
       guestPlaceholder: "Full name",
+      guestNumber: "Guest {n}",
       addGuest: "+ Add guest",
       removeGuest: "Remove {name}",
       answersLabel: "Who's coming",
@@ -200,8 +208,10 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       seatsLabel: "Seats when a line doesn't say",
       eventsLabel: "Invite them to",
       previewTitle: "{count} invitations ready",
+      previewTitleOne: "1 invitation ready",
       previewEmpty: "Nothing to add yet.",
       errorsTitle: "{count} lines need a fix",
+      errorsTitleOne: "1 line needs a fix",
       reasons: {
         missing_name: "no name",
         bad_seats: "seats must be a whole number from 1 to 20",
@@ -209,7 +219,9 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       },
       lineLabel: "Line {line}",
       importLabel: "Add {count} invitations",
+      importLabelOne: "Add 1 invitation",
       imported: "{count} invitations added",
+      importedOne: "1 invitation added",
       importFailed: "Couldn't add those invitations. Nothing was saved; try again.",
       cancel: "Cancel",
     },
@@ -254,6 +266,7 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     columns: { invitation: "Invitación", seats: "Lugares", answers: "Respuestas", actions: "Acciones" },
     states: { no_answer: "Sin respuesta", attending: "Asistirán", declined: "No asistirán", partial: "Algunos eventos" },
     seatsValue: "{count} lugares",
+    seatsValueOne: "1 lugar",
     attendingValue: "{count} de {seats} vienen",
     copyLink: "Copiar enlace",
     linkCopied: "Enlace de invitación copiado",
@@ -288,6 +301,7 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       guestsLabel: "Invitados",
       guestsHint: "Opcional. La familia puede completar o corregir los nombres al responder.",
       guestPlaceholder: "Nombre completo",
+      guestNumber: "Invitado {n}",
       addGuest: "+ Agregar invitado",
       removeGuest: "Quitar a {name}",
       answersLabel: "Quién viene",
@@ -312,8 +326,10 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       seatsLabel: "Lugares cuando una línea no lo dice",
       eventsLabel: "Invitarlos a",
       previewTitle: "{count} invitaciones listas",
+      previewTitleOne: "1 invitación lista",
       previewEmpty: "Aún no hay nada que agregar.",
       errorsTitle: "{count} líneas necesitan corrección",
+      errorsTitleOne: "1 línea necesita corrección",
       reasons: {
         missing_name: "sin nombre",
         bad_seats: "los lugares deben ser un número entero del 1 al 20",
@@ -321,9 +337,16 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       },
       lineLabel: "Línea {line}",
       importLabel: "Agregar {count} invitaciones",
+      importLabelOne: "Agregar 1 invitación",
       imported: "{count} invitaciones agregadas",
+      importedOne: "1 invitación agregada",
       importFailed: "No se pudieron agregar las invitaciones. No se guardó nada; intente de nuevo.",
       cancel: "Cancelar",
     },
   },
 };
+
+/** "1 seat" or "{count} seats": the singular is its own string in each language. */
+export function countCopy(count: number, one: string, many: string): string {
+  return count === 1 ? one : many.replace("{count}", String(count));
+}

@@ -232,7 +232,7 @@ function EditorForm({
         {guests.map((guest, index) => (
           <div key={guest.id ?? `new-${index}`} className="flex items-center gap-2">
             <Input
-              aria-label={guestLabel(guest, index, guests, lang)}
+              aria-label={fillCopy(t.guestNumber, { n: index + 1 })}
               value={guest.name}
               maxLength={120}
               placeholder={t.guestPlaceholder}

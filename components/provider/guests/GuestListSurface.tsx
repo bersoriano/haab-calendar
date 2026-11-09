@@ -30,7 +30,7 @@ import {
 } from "@/components/app-ui";
 import { fillCopy } from "@/components/invitations/invitation-copy";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
-import { guestsCopy, type GuestsCopy } from "@/components/provider/guests/guests-copy";
+import { countCopy, guestsCopy, type GuestsCopy } from "@/components/provider/guests/guests-copy";
 import { InvitationEditor, type InvitationEditorSave } from "@/components/provider/guests/InvitationEditor";
 import { PasteImportDialog } from "@/components/provider/guests/PasteImportDialog";
 import { readGuestListCache, writeGuestListCache } from "@/lib/guest-list-cache";
@@ -312,7 +312,7 @@ function GuestListPanel({
         body: JSON.stringify({ drafts: rows.map((row) => ({ ...row, eventIds })) }),
       });
       showList([...invitations, ...body.invitations]);
-      notify({ tone: "success", message: fillCopy(t.paste.imported, { count: body.invitations.length }) });
+      notify({ tone: "success", message: countCopy(body.invitations.length, t.paste.importedOne, t.paste.imported) });
       setPasting(false);
     } catch (error) {
       setActionError(error instanceof Error && !error.message.startsWith("status") ? error.message : t.paste.importFailed);
@@ -531,7 +531,7 @@ function GuestListPanel({
                             </span>
                           </Td>
                           <Td className="hidden whitespace-nowrap sm:table-cell">
-                            {fillCopy(t.seatsValue, { count: invitation.seatLimit })}
+                            {countCopy(invitation.seatLimit, t.seatsValueOne, t.seatsValue)}
                           </Td>
                           <Td className="hidden whitespace-normal md:table-cell">
                             <ul className="grid gap-1">

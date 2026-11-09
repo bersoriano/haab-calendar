@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { Alert, Button, Checkbox, Dialog, DialogActions, Field, Input, Textarea } from "@/components/app-ui";
 import { fillCopy } from "@/components/invitations/invitation-copy";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
-import { guestsCopy } from "@/components/provider/guests/guests-copy";
+import { countCopy, guestsCopy } from "@/components/provider/guests/guests-copy";
 import { parseGuestPaste, type PastedRow } from "@/lib/invitations";
 import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX } from "@/lib/rsvp-mode";
 import type { Lang, Service } from "@/lib/types";
@@ -116,7 +116,7 @@ function PasteForm({
 
       <section aria-live="polite" className="grid gap-3">
         <h3 className="text-sm font-semibold text-app-fg">
-          {result.rows.length > 0 ? fillCopy(t.previewTitle, { count: result.rows.length }) : t.previewEmpty}
+          {result.rows.length > 0 ? countCopy(result.rows.length, t.previewTitleOne, t.previewTitle) : t.previewEmpty}
         </h3>
         {result.rows.length > 0 ? (
           <ul className="max-h-48 divide-y divide-app-border overflow-y-auto rounded-lg ring-1 ring-app-border">
@@ -124,7 +124,7 @@ function PasteForm({
               <li key={`${row.displayName}-${index}`} className="flex flex-wrap justify-between gap-x-4 px-3 py-2 text-sm">
                 <span className="font-medium text-app-fg">{row.displayName}</span>
                 <span className="text-app-fg-muted">
-                  {[row.contactPhone, row.contactEmail, fillCopy(guestsCopy[lang].seatsValue, { count: row.seatLimit })]
+                  {[row.contactPhone, row.contactEmail, countCopy(row.seatLimit, guestsCopy[lang].seatsValueOne, guestsCopy[lang].seatsValue)]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
@@ -133,7 +133,7 @@ function PasteForm({
           </ul>
         ) : null}
         {result.errors.length > 0 ? (
-          <Alert tone="warning" title={fillCopy(t.errorsTitle, { count: result.errors.length })}>
+          <Alert tone="warning" title={countCopy(result.errors.length, t.errorsTitleOne, t.errorsTitle)}>
             <ul className="list-disc pl-5">
               {result.errors.map((problem) => (
                 <li key={problem.line}>
@@ -154,7 +154,7 @@ function PasteForm({
           disabled={result.rows.length === 0}
           onClick={() => onImport(result.rows, eventIds)}
         >
-          {fillCopy(t.importLabel, { count: result.rows.length })}
+          {countCopy(result.rows.length, t.importLabelOne, t.importLabel)}
         </Button>
       </DialogActions>
     </div>
