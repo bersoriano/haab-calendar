@@ -60,6 +60,7 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   integrations: "integrations",
   settings: "settings",
   "business-type": "settings",
+  guests: "clients",
 };
 
 function googleOutcomeTone(outcome: GoogleOutcome) {

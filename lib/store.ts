@@ -24,6 +24,7 @@ import type {
   BookingFlow,
   Lang,
 } from "./types";
+import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "./rsvp-mode";
 import type { Vertical } from "../config/verticals";
 
 export function createDefaultAvailability(): WeeklyAvailability {
@@ -312,7 +313,12 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: source?.language === "es" ? "es" : "en",
-    vocabulary: source?.vocabulary === "tours" ? "tours" : undefined,
+    vocabulary: parseVocabulary(source?.vocabulary),
+    rsvpMode: source?.rsvpMode === undefined ? undefined : parseRsvpMode(source.rsvpMode),
+    defaultInvitationSeats:
+      source?.defaultInvitationSeats === undefined
+        ? undefined
+        : clampInvitationSeats(source.defaultInvitationSeats),
     dashboardLanguage:
       source?.dashboardLanguage === "en" || source?.dashboardLanguage === "es"
         ? source.dashboardLanguage
