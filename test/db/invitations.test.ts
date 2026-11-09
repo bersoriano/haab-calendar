@@ -1,0 +1,299 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { afterAll, describe, expect, it } from "vitest";
+
+import { localAdminClient, localAnonClient } from "@/test/db/local-client";
+
+/**
+ * The guest list's rules that only the database can promise: who may read a
+ * list, how many people an invitation holds, and which events its answers may
+ * name. The API checks the same things first; these are what still hold when a
+ * request skips it.
+ */
+
+const admin = localAdminClient();
+const PASSWORD = "local-test-password";
+const createdUsers: string[] = [];
+
+async function signedInClient(email: string): Promise<SupabaseClient> {
+  const client = localAnonClient();
+  const { error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+  if (error) throw error;
+  return client;
+}
+
+function randomSuffix() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+async function seedWedding(label: string) {
+  const suffix = `${label}-${randomSuffix()}`;
+  const email = `invitations-${suffix}@example.invalid`;
+  const { data: created, error: userError } = await admin.auth.admin.createUser({
+    email,
+    password: PASSWORD,
+    email_confirm: true,
+  });
+  if (userError) throw userError;
+  createdUsers.push(created.user.id);
+
+  const { data: provider, error: providerError } = await admin
+    .from("providers")
+    .insert({
+      owner_user_id: created.user.id,
+      full_name: "Wedding Planner",
+      business_name: `Wedding ${suffix}`,
+      email,
+      vertical: "events",
+      vocabulary: "weddings",
+      rsvp_mode: "invitations",
+      timezone: "UTC",
+      availability: { saturday: { enabled: true, startTime: "10:00", endTime: "23:00" } },
+      setup_complete: true,
+    })
+    .select("id, slug")
+    .single<{ id: string; slug: string }>();
+  if (providerError) throw providerError;
+
+  const serviceIds: string[] = [];
+  for (const name of ["Ceremony", "Brunch"]) {
+    const { data: service, error: serviceError } = await admin
+      .from("services")
+      .insert({
+        provider_id: provider.id,
+        name,
+        booking_type: "appointment",
+        duration_minutes: 120,
+        description: name,
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (serviceError) throw serviceError;
+    serviceIds.push(service.id);
+  }
+
+  return {
+    providerId: provider.id,
+    slug: provider.slug,
+    serviceIds,
+    client: await signedInClient(email),
+  };
+}
+
+async function addInvitation(
+  providerId: string,
+  options: { seatLimit?: number; eventIds?: string[]; guests?: string[] } = {},
+) {
+  const token = `test-token-${randomSuffix()}-${randomSuffix()}-${randomSuffix()}`;
+  const { data, error } = await admin
+    .from("invitations")
+    .insert({
+      provider_id: providerId,
+      display_name: "Familia Ortiz",
+      seat_limit: options.seatLimit ?? 2,
+      token,
+      token_hash: Buffer.from(token).toString("hex").padEnd(64, "0").slice(0, 64),
+    })
+    .select("id")
+    .single<{ id: string }>();
+  if (error) throw error;
+
+  for (const serviceId of options.eventIds ?? []) {
+    const { error: eventError } = await admin
+      .from("invitation_events")
+      .insert({ invitation_id: data.id, service_id: serviceId });
+    if (eventError) throw eventError;
+  }
+
+  const guestIds: string[] = [];
+  for (const [position, name] of (options.guests ?? []).entries()) {
+    const { data: guest, error: guestError } = await admin
+      .from("invitation_guests")
+      .insert({ invitation_id: data.id, position, name })
+      .select("id")
+      .single<{ id: string }>();
+    if (guestError) throw guestError;
+    guestIds.push(guest.id);
+  }
+
+  return { invitationId: data.id, guestIds };
+}
+
+afterAll(async () => {
+  for (const userId of createdUsers) {
+    await admin.from("providers").delete().eq("owner_user_id", userId);
+    await admin.auth.admin.deleteUser(userId);
+  }
+});
+
+describe("invitation tables", () => {
+  it("keeps a stranger out of another owner's guest list", async () => {
+    const owner = await seedWedding("owner");
+    const stranger = await seedWedding("stranger");
+    await addInvitation(owner.providerId, { eventIds: owner.serviceIds, guests: ["Ana"] });
+
+    const ownRead = await owner.client.from("invitations").select("id");
+    expect(ownRead.error).toBeNull();
+    expect(ownRead.data).toHaveLength(1);
+
+    const strangerRead = await stranger.client
+      .from("invitations")
+      .select("id")
+      .eq("provider_id", owner.providerId);
+    expect(strangerRead.error).toBeNull();
+    expect(strangerRead.data).toEqual([]);
+
+    const guestsRead = await stranger.client.from("invitation_guests").select("id");
+    expect(guestsRead.data).toEqual([]);
+
+    const strangerInsert = await stranger.client.from("invitations").insert({
+      provider_id: owner.providerId,
+      display_name: "Intruder",
+      seat_limit: 1,
+      token: `intruder-${randomSuffix()}`,
+      token_hash: "f".repeat(64),
+    });
+    expect(strangerInsert.error).not.toBeNull();
+
+    const anonRead = await localAnonClient().from("invitations").select("id");
+    expect(anonRead.data ?? []).toEqual([]);
+  });
+
+  it("refuses more guests than the seat limit", async () => {
+    const wedding = await seedWedding("limit");
+    const { invitationId } = await addInvitation(wedding.providerId, {
+      seatLimit: 2,
+      guests: ["Ana", "Luis"],
+    });
+
+    const third = await wedding.client
+      .from("invitation_guests")
+      .insert({ invitation_id: invitationId, position: 2, name: "Extra" });
+    expect(third.error?.message).toContain("seat_limit_exceeded");
+  });
+
+  it("refuses a seat limit below the named guests", async () => {
+    const wedding = await seedWedding("lower");
+    const { invitationId } = await addInvitation(wedding.providerId, {
+      seatLimit: 3,
+      guests: ["Ana", "Luis", "Sofía"],
+    });
+
+    const lowered = await wedding.client
+      .from("invitations")
+      .update({ seat_limit: 2 })
+      .eq("id", invitationId);
+    expect(lowered.error?.message).toContain("seat_limit_below_guests");
+  });
+
+  it("refuses an event from another page", async () => {
+    const wedding = await seedWedding("foreign");
+    const other = await seedWedding("other");
+    const { invitationId } = await addInvitation(wedding.providerId);
+
+    const foreign = await admin
+      .from("invitation_events")
+      .insert({ invitation_id: invitationId, service_id: other.serviceIds[0] });
+    expect(foreign.error?.message).toContain("service_not_on_this_page");
+  });
+
+  it("refuses attendance for an event the invitation is not invited to", async () => {
+    const wedding = await seedWedding("uninvited");
+    const { guestIds } = await addInvitation(wedding.providerId, {
+      eventIds: [wedding.serviceIds[0]],
+      guests: ["Ana"],
+    });
+
+    const invited = await wedding.client
+      .from("guest_attendance")
+      .insert({ guest_id: guestIds[0], service_id: wedding.serviceIds[0], attending: true });
+    expect(invited.error).toBeNull();
+
+    const uninvited = await wedding.client
+      .from("guest_attendance")
+      .insert({ guest_id: guestIds[0], service_id: wedding.serviceIds[1], attending: true });
+    expect(uninvited.error?.message).toContain("service_not_invited");
+  });
+
+  it("drops attendance when the event is deleted", async () => {
+    const wedding = await seedWedding("cascade");
+    const { invitationId, guestIds } = await addInvitation(wedding.providerId, {
+      eventIds: wedding.serviceIds,
+      guests: ["Ana"],
+    });
+    await admin
+      .from("guest_attendance")
+      .insert({ guest_id: guestIds[0], service_id: wedding.serviceIds[1], attending: true });
+
+    const { error } = await admin.from("services").delete().eq("id", wedding.serviceIds[1]);
+    expect(error).toBeNull();
+
+    const attendance = await admin.from("guest_attendance").select("service_id").eq("guest_id", guestIds[0]);
+    expect(attendance.data).toEqual([]);
+
+    const events = await admin
+      .from("invitation_events")
+      .select("service_id")
+      .eq("invitation_id", invitationId);
+    expect(events.data).toEqual([{ service_id: wedding.serviceIds[0] }]);
+
+    const invitation = await admin.from("invitations").select("id").eq("id", invitationId);
+    expect(invitation.data).toHaveLength(1);
+  });
+
+  it("accepts the weddings word set and rejects unknown modes", async () => {
+    const wedding = await seedWedding("modes");
+
+    const words = await wedding.client
+      .from("providers")
+      .update({ vocabulary: "weddings", default_invitation_seats: 4 })
+      .eq("id", wedding.providerId);
+    expect(words.error).toBeNull();
+
+    const unknown = await wedding.client
+      .from("providers")
+      .update({ rsvp_mode: "secret" })
+      .eq("id", wedding.providerId);
+    expect(unknown.error).not.toBeNull();
+
+    const tooMany = await wedding.client
+      .from("providers")
+      .update({ default_invitation_seats: 21 })
+      .eq("id", wedding.providerId);
+    expect(tooMany.error).not.toBeNull();
+
+    const publicRow = await localAnonClient()
+      .from("public_providers")
+      .select("rsvp_mode")
+      .eq("id", wedding.providerId)
+      .maybeSingle<{ rsvp_mode: string }>();
+    expect(publicRow.error).toBeNull();
+  });
+
+  it("resets the mode when switching away from events", async () => {
+    const wedding = await seedWedding("switch");
+
+    const { error } = await wedding.client.rpc("switch_provider_business_type", {
+      p_vertical: "professional",
+      p_availability: { monday: { enabled: true, startTime: "09:00", endTime: "17:00" } },
+      p_max_bookings_per_day: null,
+      p_services: [
+        {
+          name: "Session",
+          slug: "session",
+          booking_type: "appointment",
+          duration_minutes: 60,
+          description: "A session.",
+          sort_order: 0,
+        },
+      ],
+    });
+    expect(error).toBeNull();
+
+    const { data } = await admin
+      .from("providers")
+      .select("rsvp_mode, vocabulary")
+      .eq("id", wedding.providerId)
+      .single<{ rsvp_mode: string; vocabulary: string | null }>();
+    expect(data).toEqual({ rsvp_mode: "open", vocabulary: null });
+  });
+});
