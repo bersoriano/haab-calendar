@@ -195,7 +195,10 @@ function GuestListPanel({
     return () => controller.abort();
   }, [attempt, cacheKey, showList]);
 
-  const invitations = state.status === "ready" || state.status === "offline" ? state.invitations : [];
+  const invitations = useMemo(
+    () => (state.status === "ready" || state.status === "offline" ? state.invitations : []),
+    [state],
+  );
   const readOnly = state.status !== "ready";
   const serviceIds = useMemo(() => services.map((service) => service.id), [services]);
   const totals = useMemo(() => totalsByEvent(invitations, serviceIds), [invitations, serviceIds]);
