@@ -2,7 +2,8 @@ import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 
 import { EventSchedule, publicCardClass } from "@/components/invitations/EventSchedule";
 import { InvitationPageShell } from "@/components/invitations/InvitationPageShell";
-import { invitationCopy } from "@/components/invitations/invitation-copy";
+import { fillCopy, invitationCopy } from "@/components/invitations/invitation-copy";
+import { formatRsvpDeadline, isRsvpOpen } from "@/lib/rsvp-deadline";
 import type { Lang, ModuleStore, VerticalId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ export function InvitationOnlyPage({
   serviceSlug?: string;
 }) {
   const t = invitationCopy[lang];
+  const deadline = store.provider.rsvpDeadline;
   const focused = serviceSlug ? store.services.filter((service) => service.slug === serviceSlug) : [];
   const services = focused.length > 0 ? focused : store.services;
 
@@ -46,7 +48,16 @@ export function InvitationOnlyPage({
       </section>
       <p className={cn(publicCardClass, "flex items-center gap-3 text-[15.5px] font-medium text-[var(--ink)]")}>
         <EnvelopeSimple aria-hidden="true" size={22} className="shrink-0 text-[var(--accent)]" />
-        {t.openYourLink}
+        <span>
+          {t.openYourLink}
+          {deadline ? (
+            <span className="block text-[14.5px] font-normal text-[var(--ink-secondary)]">
+              {isRsvpOpen(deadline, timeZone)
+                ? fillCopy(t.rsvpBy, { date: formatRsvpDeadline(deadline, lang) })
+                : fillCopy(t.closed, { date: formatRsvpDeadline(deadline, lang) })}
+            </span>
+          ) : null}
+        </span>
       </p>
     </InvitationPageShell>
   );

@@ -6,6 +6,7 @@ import { useId, useState, type FormEvent } from "react";
 import { eventWhen, publicCardClass } from "@/components/invitations/EventSchedule";
 import { fillCopy, invitationCopy } from "@/components/invitations/invitation-copy";
 import { guestLabel } from "@/lib/invitations";
+import { formatRsvpDeadline } from "@/lib/rsvp-deadline";
 import type { PublicInvitation } from "@/lib/supabase/invitations";
 import type { Lang, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -58,17 +59,25 @@ export function InvitationRsvp({
   services,
   apiPath,
   lang,
+  deadline,
+  open = true,
+  organizerPhone,
 }: {
   invitation: PublicInvitation;
   /** The page's events, in page order. Only the invitation's are asked about. */
   services: Service[];
   apiPath: string;
   lang: Lang;
+  /** The page's RSVP deadline (YYYY-MM-DD), if it has one. */
+  deadline?: string;
+  /** False once the deadline has passed: the answer is shown, not editable. */
+  open?: boolean;
+  organizerPhone?: string;
 }) {
   const t = invitationCopy[lang];
   const id = useId();
   const [invitation, setInvitation] = useState(initialInvitation);
-  const [editing, setEditing] = useState(!initialInvitation.submittedAt);
+  const [editing, setEditing] = useState(open && !initialInvitation.submittedAt);
   const [guests, setGuests] = useState<DraftGuest[]>(() => initialGuests(initialInvitation));
   const [attendance, setAttendance] = useState<Record<string, boolean[]>>(() =>
     initialAttendance(initialInvitation, initialGuests(initialInvitation)),
@@ -183,6 +192,24 @@ export function InvitationRsvp({
       ? fillCopy(t.greetingOne, { name: invitation.displayName })
       : fillCopy(t.greetingMany, { name: invitation.displayName, seats: invitation.seatLimit });
 
+  const closedNotice = !open ? (
+    <div role="status" className="grid gap-1 rounded-2xl bg-[var(--surface-lowest)] px-4 py-3 text-[15px] text-[var(--ink)]">
+      <p className="font-semibold">{deadline ? fillCopy(t.closed, { date: formatRsvpDeadline(deadline, lang) }) : null}</p>
+      <p className="text-[var(--ink-secondary)]">
+        {organizerPhone?.trim() ? fillCopy(t.closedContactPhone, { phone: organizerPhone.trim() }) : t.closedContact}
+      </p>
+    </div>
+  ) : null;
+
+  if (!open && !invitation.submittedAt) {
+    return (
+      <section className={cn(publicCardClass, "grid gap-4")}>
+        <p className="text-[19px] font-semibold text-[var(--ink)] sm:text-[21px]">{greeting}</p>
+        {closedNotice}
+      </section>
+    );
+  }
+
   if (!editing) {
     return (
       <section aria-labelledby={`${id}-saved`} className={cn(publicCardClass, "grid gap-5")}>
@@ -213,18 +240,29 @@ export function InvitationRsvp({
             );
           })}
         </ul>
-        <div>
-          <button type="button" className={secondaryButtonClass} onClick={() => startEditing(invitation)}>
-            {t.changeAnswer}
-          </button>
-        </div>
+        {open ? (
+          <div>
+            <button type="button" className={secondaryButtonClass} onClick={() => startEditing(invitation)}>
+              {t.changeAnswer}
+            </button>
+          </div>
+        ) : (
+          closedNotice
+        )}
       </section>
     );
   }
 
   return (
     <form onSubmit={submit} className="grid gap-5" noValidate>
-      <p className="text-[19px] font-semibold text-[var(--ink)] sm:text-[21px]">{greeting}</p>
+      <div className="grid gap-1">
+        <p className="text-[19px] font-semibold text-[var(--ink)] sm:text-[21px]">{greeting}</p>
+        {deadline ? (
+          <p className="text-[15px] text-[var(--ink-secondary)]">
+            {fillCopy(t.answerBy, { date: formatRsvpDeadline(deadline, lang) })}
+          </p>
+        ) : null}
+      </div>
 
       <fieldset className={cn(publicCardClass, "grid gap-4")}>
         <legend className="sr-only">{t.guestsTitle}</legend>

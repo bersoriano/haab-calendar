@@ -3,6 +3,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { EventSchedule } from "@/components/invitations/EventSchedule";
 import { InvitationPageShell } from "@/components/invitations/InvitationPageShell";
 import { InvitationRsvp } from "@/components/invitations/InvitationRsvp";
+import { isRsvpOpen } from "@/lib/rsvp-deadline";
 import { isInvitationMode } from "@/lib/rsvp-mode";
 import { resolvePublicBookingUrl } from "@/lib/public-booking-resolver";
 import { parsePublicLanguage, withPublicLanguage } from "@/lib/public-language";
@@ -69,6 +70,9 @@ export default async function InvitationPage({
         services={store.services}
         apiPath={`/api/public/${verticalSegment}/${store.provider.publicSlug}/invitations/${token}`}
         lang={lang}
+        deadline={store.provider.rsvpDeadline}
+        open={isRsvpOpen(store.provider.rsvpDeadline, meta.timezone)}
+        organizerPhone={store.provider.phoneNumber1}
       />
     </InvitationPageShell>
   );

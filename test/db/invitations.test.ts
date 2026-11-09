@@ -424,6 +424,31 @@ describe("invitation data layer", () => {
     expect(await getPublicInvitation(admin, { ...route, token: renewed.token })).not.toBeNull();
   });
 
+  it("closes answers after the deadline, but not for the planner", async () => {
+    const wedding = await seedWedding("closed");
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Tarde", seatLimit: 1, eventIds: wedding.serviceIds },
+    ]);
+    await admin.from("providers").update({ rsvp_deadline: "2020-01-01" }).eq("id", wedding.providerId);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+
+    await expect(submitPublicRsvp(admin, route, { guests: [], attendance: {} })).rejects.toMatchObject({
+      status: 409,
+    });
+
+    const byPlanner = await updateInvitation(wedding.client, wedding.providerId, invitation.id, {
+      markAnswered: true,
+    });
+    expect(byPlanner.submittedAt).not.toBeNull();
+
+    await admin.from("providers").update({ rsvp_deadline: "2999-12-31" }).eq("id", wedding.providerId);
+    // Out of the double-submit window the planner's answer just opened.
+    await admin.from("invitations").update({ submitted_at: "2026-01-01T00:00:00Z" }).eq("id", invitation.id);
+    await expect(submitPublicRsvp(admin, route, { guests: [], attendance: {} })).resolves.toMatchObject({
+      displayName: "Familia Tarde",
+    });
+  });
+
   it("refuses too many guests from a household", async () => {
     const wedding = await seedWedding("public-limit");
     const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
