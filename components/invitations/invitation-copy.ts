@@ -46,6 +46,8 @@ export type InvitationCopy = {
   choose: string;
   forHousehold: string;
   tables: string;
+  showAtDoor: string;
+  qrAlt: string;
   goodToKnow: string;
 };
 
@@ -92,6 +94,8 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     choose: "Choose…",
     forHousehold: "For your household",
     tables: "Your table",
+    showAtDoor: "Show this code at the entrance. Save a screenshot in case there's no signal.",
+    qrAlt: "QR code of your invitation",
     goodToKnow: "Good to know",
   },
   es: {
@@ -136,6 +140,8 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     choose: "Elija…",
     forHousehold: "Para su familia",
     tables: "Su mesa",
+    showAtDoor: "Muestre este código en la entrada. Guarde una captura por si no hay señal.",
+    qrAlt: "Código QR de su invitación",
     goodToKnow: "Para tener en cuenta",
   },
 };
