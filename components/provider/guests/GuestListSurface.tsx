@@ -34,6 +34,7 @@ import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import { countCopy, guestsCopy, type GuestsCopy } from "@/components/provider/guests/guests-copy";
 import { InvitationEditor, type InvitationEditorSave } from "@/components/provider/guests/InvitationEditor";
 import { PasteImportDialog } from "@/components/provider/guests/PasteImportDialog";
+import { SeatingPanel } from "@/components/provider/guests/SeatingPanel";
 import { readGuestListCache, writeGuestListCache } from "@/lib/guest-list-cache";
 import { buildInvitationMessage, whatsappUrl } from "@/lib/invitation-messages";
 import { formatRsvpDeadline, isRsvpOpen } from "@/lib/rsvp-deadline";
@@ -166,6 +167,7 @@ function GuestListPanel({
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [reminding, setReminding] = useState(false);
+  const [view, setView] = useState<"guests" | "seating">("guests");
 
   const showList = useCallback(
     (invitations: Invitation[]) => {
@@ -485,8 +487,37 @@ function GuestListPanel({
   const shortDates = new Intl.DateTimeFormat(lang, { dateStyle: "medium" });
   const serviceName = (id: string) => services.find((service) => service.id === id)?.name ?? "";
 
+  const viewSwitch =
+    services.length > 0 ? (
+      <SegmentedControl<"guests" | "seating">
+        ariaLabel={t.views.guests}
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "guests", label: t.views.guests },
+          { value: "seating", label: t.views.seating },
+        ]}
+        className="justify-self-start"
+      />
+    ) : null;
+
+  if (view === "seating") {
+    return (
+      <div className="grid gap-6">
+        {viewSwitch}
+        {state.status === "offline" ? (
+          <Alert tone="warning" role="status">
+            {fillCopy(t.offlineBanner, { date: dates.format(new Date(state.savedAt)) })}
+          </Alert>
+        ) : null}
+        <SeatingPanel lang={lang} services={services} invitations={invitations} readOnly={readOnly} onSeated={showList} />
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6">
+      {viewSwitch}
       {state.status === "offline" ? (
         <Alert tone="warning" role="status">
           {fillCopy(t.offlineBanner, { date: dates.format(new Date(state.savedAt)) })}

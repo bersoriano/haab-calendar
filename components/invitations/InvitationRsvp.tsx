@@ -249,6 +249,20 @@ export function InvitationRsvp({
     setEditing(false);
   }
 
+  /**
+   * Where the people coming to an event sit: one name when they share a table,
+   * otherwise each person with theirs. Empty until the seating is published.
+   */
+  function tableLine(coming: PublicInvitation["guests"], all: PublicInvitation["guests"], serviceId: string) {
+    const seated = coming.filter((guest) => guest.tables?.[serviceId]);
+    if (seated.length === 0) return "";
+    const names = new Set(seated.map((guest) => guest.tables?.[serviceId]));
+    if (names.size === 1 && seated.length === coming.length) return [...names][0] ?? "";
+    return seated
+      .map((guest) => `${guestLabel(guest, all.indexOf(guest), all, lang)} · ${guest.tables?.[serviceId]}`)
+      .join(", ");
+  }
+
   const greeting =
     invitation.seatLimit === 1
       ? fillCopy(t.greetingOne, { name: invitation.displayName })
@@ -291,6 +305,11 @@ export function InvitationRsvp({
               <li key={service.id} className="rounded-2xl bg-[var(--surface-lowest)] px-4 py-3">
                 <p className="font-semibold text-[var(--ink)]">{service.name}</p>
                 <p className="text-[14px] text-[var(--ink-secondary)] first-letter:uppercase">{eventWhen(service, lang)}</p>
+                {tableLine(coming, invitation.guests, service.id) ? (
+                  <p className="mt-1 text-[14.5px] font-semibold text-[var(--ink)]">
+                    {t.tables}: {tableLine(coming, invitation.guests, service.id)}
+                  </p>
+                ) : null}
                 <p className="mt-1 text-[14.5px] text-[var(--ink)]">
                   {coming.length > 0
                     ? `${coming.length === 1 ? t.attendingCountOne : fillCopy(t.attendingCount, { count: coming.length })}: ${coming

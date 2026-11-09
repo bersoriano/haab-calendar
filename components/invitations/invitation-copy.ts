@@ -45,6 +45,7 @@ export type InvitationCopy = {
   questionsHint: string;
   choose: string;
   forHousehold: string;
+  tables: string;
   goodToKnow: string;
 };
 
@@ -90,6 +91,7 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     questionsHint: "For the people coming.",
     choose: "Choose…",
     forHousehold: "For your household",
+    tables: "Your table",
     goodToKnow: "Good to know",
   },
   es: {
@@ -133,6 +135,7 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     questionsHint: "Para quienes vienen.",
     choose: "Elija…",
     forHousehold: "Para su familia",
+    tables: "Su mesa",
     goodToKnow: "Para tener en cuenta",
   },
 };

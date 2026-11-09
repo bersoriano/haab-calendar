@@ -54,6 +54,40 @@ export type GuestsCopy = {
   downloadCsv: string;
   downloadCsvLabel: string;
   downloadFailed: string;
+  views: { guests: string; seating: string };
+  seating: {
+    eventLabel: string;
+    publishLabel: string;
+    publishHint: string;
+    publishedOn: string;
+    notPublished: string;
+    published: string;
+    unpublished: string;
+    addTitle: string;
+    tableName: string;
+    tableNamePlaceholder: string;
+    seats: string;
+    addTable: string;
+    noTables: string;
+    unseatedTitle: string;
+    allSeated: string;
+    nobodyYet: string;
+    seatAll: string;
+    seatAllLabel: string;
+    seatLabel: string;
+    notSeated: string;
+    filled: string;
+    filledNoLimit: string;
+    over: string;
+    renameLabel: string;
+    save: string;
+    deleteLabel: string;
+    deleteTitle: string;
+    deleteBody: string;
+    deleteConfirm: string;
+    download: string;
+    failed: string;
+  };
   noMatches: string;
   columns: { invitation: string; seats: string; answers: string; actions: string };
   states: { no_answer: string; attending: string; declined: string; partial: string };
@@ -194,6 +228,40 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     downloadCsv: "Download list",
     downloadCsvLabel: "Download the list for {event} (CSV)",
     downloadFailed: "Couldn't download the list. Try again.",
+    views: { guests: "Guests", seating: "Seating" },
+    seating: {
+      eventLabel: "Event",
+      publishLabel: "Show guests their table",
+      publishHint: "Households see their table in their invitation. Arrange freely before you publish.",
+      publishedOn: "Published {date}. Changes show right away.",
+      notPublished: "Not published: households don't see tables yet.",
+      published: "Seating published",
+      unpublished: "Seating hidden from guests",
+      addTitle: "Add a table",
+      tableName: "Name",
+      tableNamePlaceholder: "Table 1",
+      seats: "Seats",
+      addTable: "Add table",
+      noTables: "No tables for this event yet.",
+      unseatedTitle: "Not seated ({count})",
+      allSeated: "Everyone attending has a table.",
+      nobodyYet: "Nobody has confirmed for this event yet.",
+      seatAll: "Seat household at…",
+      seatAllLabel: "Seat everyone in {name} at",
+      seatLabel: "Table for {name}",
+      notSeated: "Not seated",
+      filled: "{count} of {seats}",
+      filledNoLimit: "{count} seated",
+      over: "More people than seats",
+      renameLabel: "Rename {name}",
+      save: "Save",
+      deleteLabel: "Delete {name}",
+      deleteTitle: "Delete {name}?",
+      deleteBody: "The people at it go back to Not seated.",
+      deleteConfirm: "Delete table",
+      download: "Download seating",
+      failed: "Couldn't save the seating. Try again.",
+    },
     noMatches: "No invitations match.",
     columns: { invitation: "Invitation", seats: "Seats", answers: "Answers", actions: "Actions" },
     states: { no_answer: "No answer", attending: "Attending", declined: "Declined", partial: "Some events" },
@@ -336,6 +404,40 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     downloadCsv: "Descargar lista",
     downloadCsvLabel: "Descargar la lista de {event} (CSV)",
     downloadFailed: "No se pudo descargar la lista. Intente de nuevo.",
+    views: { guests: "Invitados", seating: "Mesas" },
+    seating: {
+      eventLabel: "Evento",
+      publishLabel: "Mostrar su mesa a los invitados",
+      publishHint: "Las familias ven su mesa en su invitación. Acomode con calma antes de publicar.",
+      publishedOn: "Publicado el {date}. Los cambios se ven de inmediato.",
+      notPublished: "Sin publicar: las familias aún no ven las mesas.",
+      published: "Mesas publicadas",
+      unpublished: "Mesas ocultas para los invitados",
+      addTitle: "Agregar una mesa",
+      tableName: "Nombre",
+      tableNamePlaceholder: "Mesa 1",
+      seats: "Lugares",
+      addTable: "Agregar mesa",
+      noTables: "Aún no hay mesas para este evento.",
+      unseatedTitle: "Sin mesa ({count})",
+      allSeated: "Todos los que asistirán tienen mesa.",
+      nobodyYet: "Nadie ha confirmado para este evento todavía.",
+      seatAll: "Sentar a la familia en…",
+      seatAllLabel: "Sentar a todos en {name} en",
+      seatLabel: "Mesa de {name}",
+      notSeated: "Sin mesa",
+      filled: "{count} de {seats}",
+      filledNoLimit: "{count} sentados",
+      over: "Más personas que lugares",
+      renameLabel: "Renombrar {name}",
+      save: "Guardar",
+      deleteLabel: "Borrar {name}",
+      deleteTitle: "¿Borrar {name}?",
+      deleteBody: "Las personas sentadas ahí vuelven a Sin mesa.",
+      deleteConfirm: "Borrar mesa",
+      download: "Descargar mesas",
+      failed: "No se pudo guardar el acomodo. Intente de nuevo.",
+    },
     noMatches: "Ninguna invitación coincide.",
     columns: { invitation: "Invitación", seats: "Lugares", answers: "Respuestas", actions: "Acciones" },
     states: { no_answer: "Sin respuesta", attending: "Asistirán", declined: "No asistirán", partial: "Algunos eventos" },

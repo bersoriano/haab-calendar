@@ -266,4 +266,20 @@ describe("InvitationRsvp", () => {
     expect(body.guestAnswers).toEqual([{ menu: "veg" }, {}]);
     expect(body.answers).toEqual({ shuttle: "Hotel Sol" });
   });
+
+  it("shows the household its table once the seating is published", async () => {
+    await render(
+      invitation({
+        submittedAt: "2026-11-09T00:00:00.000Z",
+        guests: [
+          { id: "g1", name: "Ana", attending: { "svc-ceremony": true, "svc-brunch": true }, tables: { "svc-ceremony": "Mesa 7", "svc-brunch": "Terraza" } },
+          { id: "g2", name: "Luis", attending: { "svc-ceremony": true, "svc-brunch": true }, tables: { "svc-ceremony": "Mesa 7" } },
+        ],
+      }),
+    );
+
+    expect(container.textContent).toContain("Su mesa: Mesa 7");
+    expect(container.textContent).toContain("Su mesa: Ana · Terraza");
+  });
 });
+
