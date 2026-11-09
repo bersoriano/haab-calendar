@@ -43,11 +43,11 @@ export type SummaryFooter = {
 
 const backButtonClass = "shrink-0 !text-sm !font-semibold";
 
-const livery = "bg-[linear-gradient(90deg,#005bbf,#1a73e8_45%,#00bfa5)]";
+const livery = "bg-[linear-gradient(90deg,var(--glow-deep),var(--glow)_45%,var(--glow-teal))]";
 // `!` on the button type: globals.css resets `font` on buttons outside any
 // layer, which outranks layered utilities.
 const primaryButtonClass =
-  "inline-flex w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-[var(--on-primary)] shadow-[0_14px_30px_rgba(26,115,232,0.28)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-[var(--on-primary)] shadow-[0_14px_30px_color-mix(in_srgb,var(--glow)_28%,transparent)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60";
 
 /**
  * A price is free text: "$95" earns 30px, but "฿1,400 / attendee" or
@@ -190,7 +190,7 @@ export function AppointmentSummary({
           <span className="flex items-center gap-1.5 text-xs font-semibold text-[var(--action-teal-deep)]">
             <span
               aria-hidden="true"
-              className="haab-live-dot h-[7px] w-[7px] rounded-full bg-[var(--action-teal)] shadow-[0_0_0_3px_rgba(0,191,165,0.2)]"
+              className="haab-live-dot h-[7px] w-[7px] rounded-full bg-[var(--action-teal)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--glow-teal)_20%,transparent)]"
             />
             {t.publicFlow.summaryLive}
           </span>
@@ -276,7 +276,7 @@ export function AppointmentSummary({
               height="14"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#00796b"
+              style={{ stroke: "var(--callout-icon)" }}
               strokeWidth="2.2"
               strokeLinecap="round"
             >

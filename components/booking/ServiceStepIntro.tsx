@@ -33,11 +33,11 @@ export function ServiceStepIntro({
     <div className="relative isolate flex flex-col justify-between gap-8 overflow-hidden rounded-[28px] bg-[var(--panel-glass-62)] px-5 py-5 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-[30px] lg:flex-row lg:items-end">
       <span
         aria-hidden
-        className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,rgba(26,115,232,0.28),transparent_65%)] blur-2xl"
+        className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--glow)_28%,transparent),transparent_65%)] blur-2xl"
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute -left-20 bottom-[-3rem] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(104,250,221,0.32),transparent_65%)] blur-2xl"
+        className="pointer-events-none absolute -left-20 bottom-[-3rem] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--glow-mint)_32%,transparent),transparent_65%)] blur-2xl"
       />
 
       <div className="relative flex min-w-0 flex-col gap-2.5">

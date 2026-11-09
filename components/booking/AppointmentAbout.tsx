@@ -170,7 +170,7 @@ export function AppointmentAbout({
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#00796b"
+            style={{ stroke: "var(--callout-icon)" }}
             strokeWidth="2.2"
             strokeLinecap="round"
             className="mt-0.5 shrink-0"
