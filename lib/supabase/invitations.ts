@@ -490,6 +490,11 @@ async function readQuestions(supabase: SupabaseClient, providerId: string): Prom
   return parseRsvpQuestions(data?.rsvp_questions);
 }
 
+/** The page's RSVP questions, cleaned. */
+export async function getRsvpQuestions(supabase: SupabaseClient, providerId: string): Promise<RsvpQuestion[]> {
+  return readQuestions(supabase, providerId);
+}
+
 /** One invitation of the owner's page, or null. */
 export async function getInvitation(supabase: SupabaseClient, providerId: string, invitationId: string) {
   return readInvitation(supabase, providerId, invitationId);

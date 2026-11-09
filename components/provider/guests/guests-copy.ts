@@ -51,6 +51,9 @@ export type GuestsCopy = {
   remindersSentOne: string;
   remindersNone: string;
   remindFailed: string;
+  downloadCsv: string;
+  downloadCsvLabel: string;
+  downloadFailed: string;
   noMatches: string;
   columns: { invitation: string; seats: string; answers: string; actions: string };
   states: { no_answer: string; attending: string; declined: string; partial: string };
@@ -97,6 +100,9 @@ export type GuestsCopy = {
     answersHint: string;
     answered: string;
     answeredHint: string;
+    detailsLabel: string;
+    household: string;
+    choose: string;
     linkLabel: string;
     newLink: string;
     newLinkDone: string;
@@ -185,6 +191,9 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     remindersSentOne: "Reminder sent to 1 household",
     remindersNone: "Everyone with an email address has answered.",
     remindFailed: "Couldn't send the reminders. Try again.",
+    downloadCsv: "Download list",
+    downloadCsvLabel: "Download the list for {event} (CSV)",
+    downloadFailed: "Couldn't download the list. Try again.",
     noMatches: "No invitations match.",
     columns: { invitation: "Invitation", seats: "Seats", answers: "Answers", actions: "Actions" },
     states: { no_answer: "No answer", attending: "Attending", declined: "Declined", partial: "Some events" },
@@ -231,6 +240,9 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       answersHint: "For an answer given by phone or in person.",
       answered: "They answered",
       answeredHint: "Counts their ticks as an answer, even if they never opened the link.",
+      detailsLabel: "Their answers",
+      household: "Household",
+      choose: "Choose…",
       linkLabel: "Invitation link",
       newLink: "Make a new link",
       newLinkDone: "New link made. The old one no longer works.",
@@ -321,6 +333,9 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     remindersSentOne: "Recordatorio enviado a 1 familia",
     remindersNone: "Todas las familias con correo ya respondieron.",
     remindFailed: "No se pudieron enviar los recordatorios. Intente de nuevo.",
+    downloadCsv: "Descargar lista",
+    downloadCsvLabel: "Descargar la lista de {event} (CSV)",
+    downloadFailed: "No se pudo descargar la lista. Intente de nuevo.",
     noMatches: "Ninguna invitación coincide.",
     columns: { invitation: "Invitación", seats: "Lugares", answers: "Respuestas", actions: "Acciones" },
     states: { no_answer: "Sin respuesta", attending: "Asistirán", declined: "No asistirán", partial: "Algunos eventos" },
@@ -367,6 +382,9 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       answersHint: "Para una respuesta que le dieron por teléfono o en persona.",
       answered: "Ya respondieron",
       answeredHint: "Cuenta lo marcado como su respuesta, aunque nunca hayan abierto el enlace.",
+      detailsLabel: "Sus respuestas",
+      household: "Familia",
+      choose: "Elija…",
       linkLabel: "Enlace de la invitación",
       newLink: "Crear un enlace nuevo",
       newLinkDone: "Enlace nuevo creado. El anterior ya no funciona.",

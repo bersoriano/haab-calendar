@@ -4026,6 +4026,7 @@ export function HaabBookingModule({
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
             offersVocabulary={vertical === "events"}
+            services={services}
             onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
             businessType={
               onChangeBusinessType && vertical

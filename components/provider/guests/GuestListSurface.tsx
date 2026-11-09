@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, EnvelopeSimple, PencilSimple, Trash, UsersThree, WhatsappLogo } from "@phosphor-icons/react";
+import { Copy, DownloadSimple, EnvelopeSimple, PencilSimple, Trash, UsersThree, WhatsappLogo } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -37,6 +37,7 @@ import { PasteImportDialog } from "@/components/provider/guests/PasteImportDialo
 import { readGuestListCache, writeGuestListCache } from "@/lib/guest-list-cache";
 import { buildInvitationMessage, whatsappUrl } from "@/lib/invitation-messages";
 import { formatRsvpDeadline, isRsvpOpen } from "@/lib/rsvp-deadline";
+import { choiceCounts, questionLabel } from "@/lib/rsvp-questions";
 import {
   invitationPath,
   overallState,
@@ -226,6 +227,27 @@ function GuestListPanel({
     });
   }, [invitations, query, filter]);
 
+  const questions = useMemo(() => provider.rsvpQuestions ?? [], [provider.rsvpQuestions]);
+
+  async function downloadCsv(service: Service) {
+    try {
+      const response = await fetch(`${INVITATIONS_PATH}/export?event=${encodeURIComponent(service.id)}&lang=${lang}`);
+      if (!response.ok) throw new Error(`status ${response.status}`);
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "guests.csv";
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      notify({ tone: "neutral", message: t.downloadFailed });
+    }
+  }
+
   const remindable = invitations.filter(
     (invitation) => !invitation.submittedAt && invitation.contactEmail && invitation.eventIds.length > 0,
   );
@@ -345,6 +367,8 @@ function GuestListPanel({
               // The server saved the named guests in order; blank rows come back as new.
               guests: alignCreatedGuests(draft.guests, invitation.guests),
               attendance: draft.attendance,
+              guestAnswers: draft.guestAnswers,
+              answers: draft.answers,
               markAnswered: true,
             }),
           });
@@ -505,6 +529,29 @@ function GuestListPanel({
                       <p role="status" className="text-sm font-medium text-app-danger-fg">
                         {words(t.overCapacity, copy, { max: max ?? 0 })}
                       </p>
+                    ) : null}
+                    {Object.entries(choiceCounts(invitations, questions, total.serviceId)).map(([questionId, tally]) => {
+                      const question = questions.find((entry) => entry.id === questionId);
+                      if (!question) return null;
+                      return (
+                        <p key={questionId} className="text-sm text-app-fg-secondary">
+                          <span className="font-medium text-app-fg">{questionLabel(question, lang)}:</span>{" "}
+                          {question.options.map((option) => `${option.label} ${tally[option.id] ?? 0}`).join(" · ")}
+                        </p>
+                      );
+                    })}
+                    {service && total.attendingPeople > 0 && state.status === "ready" ? (
+                      <div>
+                        <Button
+                          variant="plain"
+                          size="sm"
+                          aria-label={fillCopy(t.downloadCsvLabel, { event: service.name })}
+                          leadingIcon={<DownloadSimple aria-hidden="true" size={16} />}
+                          onClick={() => void downloadCsv(service)}
+                        >
+                          {t.downloadCsv}
+                        </Button>
+                      </div>
                     ) : null}
                   </li>
                 );
@@ -733,6 +780,7 @@ function GuestListPanel({
         lang={lang}
         services={services}
         invitation={editing?.invitation}
+        questions={questions}
         defaultSeats={defaultSeats}
         invitationUrl={editing?.invitation ? linkFor(editing.invitation) : undefined}
         pending={pending}

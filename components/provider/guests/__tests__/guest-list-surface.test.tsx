@@ -227,3 +227,43 @@ describe("GuestListSurface sharing", () => {
     expect(shown[1]).toContain("Marta Paz");
   });
 });
+
+describe("GuestListSurface answers", () => {
+  it("counts each menu option among the people attending an event", async () => {
+    const withMenu = {
+      ...provider,
+      language: "en",
+      rsvpQuestions: [
+        {
+          id: "menu",
+          kind: "choice",
+          label: "Menu",
+          options: [
+            { id: "beef", label: "Beef" },
+            { id: "fish", label: "Fish" },
+          ],
+          per: "guest",
+          eventIds: [CEREMONY],
+        },
+      ],
+    } as ProviderInfo;
+    const answered = invitation({
+      id: "m",
+      displayName: "Familia Menú",
+      submittedAt: "2026-11-05T18:00:00.000Z",
+      guests: [
+        { id: "g1", name: "Ana", position: 0, attending: { [CEREMONY]: true }, answers: { menu: "fish" } },
+        { id: "g2", name: "Luis", position: 1, attending: { [CEREMONY]: true }, answers: { menu: "fish" } },
+        { id: "g3", name: "Sofía", position: 2, attending: { [BRUNCH]: true }, answers: { menu: "beef" } },
+      ],
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ invitations: [answered] }))));
+    await render(withMenu);
+
+    const cards = Array.from(container.querySelectorAll("section li")).slice(0, 2).map((card) => card.textContent ?? "");
+    expect(cards[0]).toContain("Menu: Beef 0 · Fish 2");
+    expect(cards[1]).not.toContain("Menu:");
+    expect(container.querySelector("button[aria-label='Download the list for Ceremonia (CSV)']")).not.toBeNull();
+  });
+});
+
