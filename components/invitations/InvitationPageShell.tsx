@@ -4,7 +4,7 @@ import { LanguageLinks } from "@/components/app-ui/LanguageLinks";
 import { PublicBookingFooter } from "@/components/booking/PublicBookingFooter";
 import { PublicBookingHeader } from "@/components/booking/PublicBookingHeader";
 import { withPublicLanguage } from "@/lib/public-language";
-import { getPublicThemeStyle } from "@/lib/public-theme";
+import { getPublicThemeRootAttributes, getPublicThemeStyle } from "@/lib/public-theme";
 import type { Lang, ProviderInfo, VerticalId } from "@/lib/types";
 import { getVerticalCopy } from "@/lib/vertical-copy";
 
@@ -34,6 +34,7 @@ export function InvitationPageShell({
 
   return (
     <div
+      {...getPublicThemeRootAttributes(provider.publicTheme)}
       lang={lang}
       className="relative isolate flex min-h-screen flex-col overflow-x-clip"
       style={{ background: theme.base, colorScheme: theme.dark ? "dark" : "light", ...theme.tokens } as CSSProperties}

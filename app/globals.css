@@ -395,3 +395,17 @@ code {
     text-align: center;
   }
 }
+
+/* Public themes that square every corner (see squareCorners in
+   lib/public-theme.ts). Radii live in the markup as utility classes, so the
+   page root's attribute overrides them here instead of in forty components.
+   Inside the utilities layer with doubled-attribute specificity, so it also
+   beats `!rounded-*` utilities, which an unlayered rule would lose to. */
+@layer utilities {
+  [data-square-corners][data-square-corners],
+  [data-square-corners][data-square-corners] *,
+  [data-square-corners][data-square-corners] *::before,
+  [data-square-corners][data-square-corners] *::after {
+    border-radius: 0 !important;
+  }
+}
