@@ -282,4 +282,3 @@ describe("InvitationRsvp", () => {
     expect(container.textContent).toContain("Su mesa: Ana · Terraza");
   });
 });
-

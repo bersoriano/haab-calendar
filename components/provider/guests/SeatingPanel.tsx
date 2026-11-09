@@ -431,4 +431,3 @@ function groupByInvitation(guests: SeatedGuest[]) {
   }
   return groups;
 }
-

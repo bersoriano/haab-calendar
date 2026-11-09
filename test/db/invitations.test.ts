@@ -694,4 +694,3 @@ describe("seating", () => {
     expect(again?.invitation.guests[0].tables).toBeUndefined();
   });
 });
-
