@@ -55,7 +55,8 @@ const RESERVED_PROVIDER_SLUGS = new Set([
   "settings",
 ]);
 
-const RESERVED_SERVICE_SLUGS = new Set(["manage"]);
+// Route segments under a page: a booking link (manage) and an invitation (i).
+const RESERVED_SERVICE_SLUGS = new Set(["manage", "i"]);
 
 function collapseSlug(value: string) {
   return value
