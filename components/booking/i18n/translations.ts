@@ -467,6 +467,7 @@ export type BookingDict = {
     vocabularyHint: string;
     vocabularyEvents: string;
     vocabularyTours: string;
+    vocabularyWeddings: string;
     tablesPerSeatingLabel: string;
     maxPartySizeLabel: string;
     partySizeLabel: string;
@@ -1085,6 +1086,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       vocabularyHint: "Changes the words on your page and in this dashboard. Your link and booking rules stay the same.",
       vocabularyEvents: "Events, attendees, registrations",
       vocabularyTours: "Tours, travelers, bookings",
+      vocabularyWeddings: "Wedding: events, guests, RSVPs",
       tablesPerSeatingLabel: "Tables per seating",
       maxPartySizeLabel: "Max party size",
       partySizeLabel: "Guests",
@@ -1720,6 +1722,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
       vocabularyHint: "Cambia las palabras en su página y en este panel. Su enlace y sus reglas de reserva no cambian.",
       vocabularyEvents: "Eventos, asistentes, registros",
       vocabularyTours: "Tours, viajeros, reservas",
+      vocabularyWeddings: "Boda: eventos, invitados, confirmaciones",
       tablesPerSeatingLabel: "Mesas por turno",
       maxPartySizeLabel: "Grupo máximo",
       partySizeLabel: "Comensales",

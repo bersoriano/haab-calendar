@@ -28,6 +28,7 @@ import {
 } from "@/lib/service-card";
 import type { Lang, Service, VerticalId } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { cancellationPolicyLabel } from "@/lib/vertical-copy";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 export const VERTICAL_ICONS: Record<
@@ -275,7 +276,7 @@ export function ServiceCard({
         // Cut short here; the details step shows all of it before anyone confirms.
         <span className="line-clamp-2 text-[13px] leading-[1.5] text-[var(--muted)] sm:text-[13.5px]">
           <span className="font-semibold text-[var(--ink-secondary)]">
-            {t.publicFlow.cancellationPolicy}:
+            {cancellationPolicyLabel(copy, t.publicFlow.cancellationPolicy)}:
           </span>{" "}
           {cancellationPolicy}
         </span>

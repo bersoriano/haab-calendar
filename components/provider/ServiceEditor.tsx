@@ -42,7 +42,7 @@ import {
 import { dashboardCopy, fillCopyWords } from "@/components/provider/dashboard-copy";
 import { ServicePhotosField } from "@/components/provider/ServicePhotosField";
 import type { VerticalHints } from "@/config/verticals";
-import { defaultCopy, type VerticalCopy } from "@/lib/vertical-copy";
+import { defaultCopy, type VerticalCopy, cancellationPolicyLabel, travelerFieldLabel } from "@/lib/vertical-copy";
 import {
   bookingTranslations,
   fillTemplate,
@@ -653,7 +653,7 @@ export function ServiceEditor({
                 />
               </Field>
               <Field
-                label={`${t.publicFlow.cancellationPolicy} ${t.publicFlow.optionalSuffix}`}
+                label={`${cancellationPolicyLabel(copy, t.publicFlow.cancellationPolicy)} ${t.publicFlow.optionalSuffix}`}
                 description={t.admin.cancellationPolicyHint}
               >
                 <Textarea
@@ -699,7 +699,7 @@ export function ServiceEditor({
                           }
                           className="size-4 accent-[var(--app-accent,currentColor)]"
                         />
-                        {t.publicFlow.travelerFieldLabels[field]}
+                        {travelerFieldLabel(copy, field, t.publicFlow.travelerFieldLabels)}
                       </label>
                     );
                   })}

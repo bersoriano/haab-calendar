@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatPriceRow,
+  isFreeCost,
   formatTimeLabel,
   formatTimeRange,
   formatCountdown,
@@ -380,5 +382,32 @@ describe("formatCost", () => {
     expect(formatCost("   ", "es")).toBe("");
     expect(formatCost(null, "en")).toBe("");
     expect(formatCost(undefined, "en")).toBe("");
+  });
+});
+
+describe("isFreeCost", () => {
+  it("reads zero, empty and free words as free", () => {
+    for (const cost of ["", "0", "$0", " US$0 ", "0.00", "MX$0", "€0", "Free", "gratis", "Sin costo", "no cost", "0 MXN"]) {
+      expect(isFreeCost(cost), cost).toBe(true);
+    }
+    expect(isFreeCost(undefined)).toBe(true);
+  });
+
+  it("keeps real prices", () => {
+    for (const cost of ["$95", "US$1,890 per person", "Menú de temporada 48 €", "$10 donation"]) {
+      expect(isFreeCost(cost), cost).toBe(false);
+    }
+  });
+});
+
+describe("formatPriceRow", () => {
+  it("drops the price row of a free event", () => {
+    expect(formatPriceRow("Sin costo", "es", "events")).toBe("");
+    expect(formatPriceRow("$0", "en", "events")).toBe("");
+  });
+
+  it("keeps it on other verticals and for priced events", () => {
+    expect(formatPriceRow("$0", "en", "healthcare")).toBe("No cost");
+    expect(formatPriceRow("$25", "en", "events")).toBe("$25");
   });
 });

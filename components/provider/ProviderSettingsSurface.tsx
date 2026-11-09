@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { parseVocabulary } from "@/lib/rsvp-mode";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   Button,
@@ -114,11 +115,12 @@ export function ProviderSettingsSurface({
                 disabled={disabled}
                 value={provider.vocabulary ?? ""}
                 onChange={(event) =>
-                  onProviderChange("vocabulary", event.target.value === "tours" ? "tours" : undefined)
+                  onProviderChange("vocabulary", parseVocabulary(event.target.value))
                 }
               >
                 <option value="">{t.admin.vocabularyEvents}</option>
                 <option value="tours">{t.admin.vocabularyTours}</option>
+                <option value="weddings">{t.admin.vocabularyWeddings}</option>
               </Select>
             </FormSection>
           ) : null}
