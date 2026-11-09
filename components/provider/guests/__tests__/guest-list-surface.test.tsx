@@ -90,7 +90,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-async function render() {
+async function render(pageProvider: ProviderInfo = provider) {
   await act(async () =>
     root.render(
       <ToastProvider dismissLabel="Dismiss">
@@ -98,7 +98,7 @@ async function render() {
           lang="en"
           integratedMode
           services={services}
-          provider={provider}
+          provider={pageProvider}
           vertical="events"
           copy={getVerticalCopy("events", "en", "weddings")}
         />
@@ -170,5 +170,60 @@ describe("alignCreatedGuests", () => {
     expect(
       alignCreatedGuests([{ name: "Ana" }, { name: "" }, { name: "Luis" }], [{ id: "g1" }, { id: "g2" }]),
     ).toEqual([{ id: "g1", name: "Ana" }, { name: "" }, { id: "g2", name: "Luis" }]);
+  });
+});
+
+describe("GuestListSurface sharing", () => {
+  const sharing = [
+    invitation({ id: "a", displayName: "Familia Ortiz", contactPhone: "+52 (777) 555-0101", contactEmail: "ana@example.com" }),
+    invitation({
+      id: "b",
+      displayName: "Familia Ruiz",
+      contactEmail: "ruiz@example.com",
+      lastContactedAt: "2026-11-02T00:00:00.000Z",
+    }),
+    invitation({ id: "c", displayName: "Marta Paz", submittedAt: "2026-11-06T18:00:00.000Z" }),
+  ];
+  const page = {
+    ...provider,
+    language: "es",
+    timezone: "UTC",
+    rsvpDeadline: "2999-12-20",
+  } as ProviderInfo;
+
+  it("says when answers close and how many households are silent", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ invitations: sharing }))));
+    await render(page);
+
+    expect(container.textContent).toContain("Answers close on December 20, 2999. 2 households haven't answered yet.");
+  });
+
+  it("opens WhatsApp on the household's number with its message in the page's language", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ invitations: sharing }))));
+    await render(page);
+
+    const link = container.querySelector<HTMLAnchorElement>("a[aria-label='Send Familia Ortiz the link by WhatsApp']")!;
+    const url = new URL(link.href);
+    expect(url.origin + url.pathname).toBe("https://wa.me/527775550101");
+    const text = url.searchParams.get("text")!;
+    expect(text).toContain("Hola, Familia Ortiz:");
+    expect(text).toContain("/events/boda-valeria-y-diego/i/");
+    expect(text).toContain("20 de diciembre de 2999");
+  });
+
+  it("filters households whose link was never sent, and counts who can be reminded", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ invitations: sharing }))));
+    await render(page);
+
+    expect(container.textContent).toContain("Remind by email (2)");
+    const notSent = Array.from(container.querySelectorAll<HTMLButtonElement>("[role='radiogroup'] button")).find(
+      (button) => button.textContent === "Not sent",
+    )!;
+    await act(async () => notSent.click());
+
+    const shown = rows();
+    expect(shown).toHaveLength(2);
+    expect(shown[0]).toContain("Familia Ortiz");
+    expect(shown[1]).toContain("Marta Paz");
   });
 });

@@ -1,12 +1,13 @@
 "use client";
 
-import { Copy, PencilSimple, Trash, UsersThree } from "@phosphor-icons/react";
+import { Copy, EnvelopeSimple, PencilSimple, Trash, UsersThree, WhatsappLogo } from "@phosphor-icons/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   Alert,
   Badge,
   Button,
+  buttonStyles,
   Card,
   CardBody,
   CardHeader,
@@ -34,6 +35,8 @@ import { countCopy, guestsCopy, type GuestsCopy } from "@/components/provider/gu
 import { InvitationEditor, type InvitationEditorSave } from "@/components/provider/guests/InvitationEditor";
 import { PasteImportDialog } from "@/components/provider/guests/PasteImportDialog";
 import { readGuestListCache, writeGuestListCache } from "@/lib/guest-list-cache";
+import { buildInvitationMessage, whatsappUrl } from "@/lib/invitation-messages";
+import { formatRsvpDeadline, isRsvpOpen } from "@/lib/rsvp-deadline";
 import {
   invitationPath,
   overallState,
@@ -51,7 +54,7 @@ import type { VerticalCopy } from "@/lib/vertical-copy";
 const INVITATIONS_PATH = "/api/provider/invitations";
 const SAVED_SERVICE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-type Filter = "all" | ResponseState | "partial";
+type Filter = "all" | ResponseState | "partial" | "not_contacted";
 type LoadState =
   | { status: "loading" }
   | { status: "failed" }
@@ -161,6 +164,7 @@ function GuestListPanel({
   const [deleteWord, setDeleteWord] = useState("");
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [reminding, setReminding] = useState(false);
 
   const showList = useCallback(
     (invitations: Invitation[]) => {
@@ -213,12 +217,85 @@ function GuestListPanel({
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return invitations.filter((invitation) => {
-      if (filter !== "all" && overallState(invitation) !== filter) return false;
+      if (filter === "not_contacted" ? invitation.lastContactedAt : filter !== "all" && overallState(invitation) !== filter) {
+        return false;
+      }
       if (!needle) return true;
       return [invitation.displayName, invitation.contactPhone, invitation.contactEmail, ...invitation.guests.map((g) => g.name)]
         .some((value) => value.toLowerCase().includes(needle));
     });
   }, [invitations, query, filter]);
+
+  const remindable = invitations.filter(
+    (invitation) => !invitation.submittedAt && invitation.contactEmail && invitation.eventIds.length > 0,
+  );
+  const unanswered = invitations.filter((invitation) => !invitation.submittedAt).length;
+
+  /** What the household reads: in the page's language, not the dashboard's. */
+  function messageFor(invitation: Invitation) {
+    return buildInvitationMessage({
+      lang: provider.language,
+      kind: invitation.lastContactedAt && !invitation.submittedAt ? "reminder" : "invite",
+      displayName: invitation.displayName,
+      pageName: provider.businessName || provider.fullName,
+      link: linkFor(invitation),
+      deadline: provider.rsvpDeadline,
+    });
+  }
+
+  async function recordContacted(invitation: Invitation) {
+    try {
+      const body = await requestJson<{ invitation: Invitation }>(`${INVITATIONS_PATH}/${invitation.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ markContacted: true }),
+      });
+      replace(body.invitation);
+    } catch {
+      // The message still went out on the planner's phone; only the note is missing.
+    }
+  }
+
+  async function sendEmail(invitation: Invitation) {
+    try {
+      const body = await requestJson<{ invitation: Invitation }>(`${INVITATIONS_PATH}/${invitation.id}/email`, {
+        method: "POST",
+        body: JSON.stringify({
+          kind: invitation.lastContactedAt && !invitation.submittedAt ? "reminder" : "invite",
+        }),
+      });
+      replace(body.invitation);
+      notify({ tone: "success", message: fillCopy(t.emailSent, { name: invitation.displayName }) });
+    } catch (error) {
+      notify({
+        tone: "neutral",
+        message: error instanceof Error && !error.message.startsWith("status") ? error.message : t.emailFailed,
+      });
+    }
+  }
+
+  async function remindAll() {
+    setPending(true);
+    setActionError(null);
+    try {
+      const body = await requestJson<{ sent: number }>(`${INVITATIONS_PATH}/remind`, { method: "POST" });
+      const contacted = new Set(remindable.map((invitation) => invitation.id));
+      const now = new Date().toISOString();
+      showList(
+        invitations.map((invitation) =>
+          contacted.has(invitation.id) && body.sent > 0 ? { ...invitation, lastContactedAt: now } : invitation,
+        ),
+      );
+      setReminding(false);
+      notify({
+        tone: "success",
+        message: body.sent === 0 ? t.remindersNone : countCopy(body.sent, t.remindersSentOne, t.remindersSent),
+      });
+    } catch (error) {
+      setActionError(error instanceof Error && !error.message.startsWith("status") ? error.message : t.remindFailed);
+    } finally {
+      setPending(false);
+    }
+  }
 
   function linkFor(invitation: Invitation) {
     const path = invitationPath(vertical, provider.publicSlug, invitation.token);
@@ -381,6 +458,7 @@ function GuestListPanel({
   }
 
   const dates = new Intl.DateTimeFormat(lang, { dateStyle: "medium", timeStyle: "short" });
+  const shortDates = new Intl.DateTimeFormat(lang, { dateStyle: "medium" });
   const serviceName = (id: string) => services.find((service) => service.id === id)?.name ?? "";
 
   return (
@@ -391,6 +469,13 @@ function GuestListPanel({
         </Alert>
       ) : null}
       {services.length === 0 ? <Alert tone="warning">{words(t.noEventsWarning, copy)}</Alert> : null}
+      {provider.rsvpDeadline ? (
+        <Alert tone={isRsvpOpen(provider.rsvpDeadline, provider.timezone) ? "info" : "neutral"} role="status">
+          {isRsvpOpen(provider.rsvpDeadline, provider.timezone)
+            ? fillCopy(t.deadlineOpen, { date: formatRsvpDeadline(provider.rsvpDeadline, lang), count: unanswered })
+            : fillCopy(t.deadlineClosed, { date: formatRsvpDeadline(provider.rsvpDeadline, lang) })}
+        </Alert>
+      ) : null}
 
       {services.length > 0 ? (
         <Card as="section">
@@ -460,6 +545,18 @@ function GuestListPanel({
           actions={
             readOnly ? undefined : (
               <div className="flex flex-wrap gap-2">
+                {remindable.length > 0 ? (
+                  <Button
+                    variant="secondary"
+                    leadingIcon={<EnvelopeSimple aria-hidden="true" size={16} />}
+                    onClick={() => {
+                      setActionError(null);
+                      setReminding(true);
+                    }}
+                  >
+                    {fillCopy(t.remindAll, { count: remindable.length })}
+                  </Button>
+                ) : null}
                 <Button variant="secondary" disabled={services.length === 0} onClick={() => { setActionError(null); setPasting(true); }}>
                   {t.pasteList}
                 </Button>
@@ -493,7 +590,7 @@ function GuestListPanel({
                   ariaLabel={t.filterLabel}
                   value={filter}
                   onChange={setFilter}
-                  options={(["all", "no_answer", "attending", "partial", "declined"] as const).map((value) => ({
+                  options={(["all", "no_answer", "attending", "partial", "declined", "not_contacted"] as const).map((value) => ({
                     value,
                     label: t.filters[value],
                   }))}
@@ -526,6 +623,11 @@ function GuestListPanel({
                                 {[invitation.contactPhone, invitation.contactEmail].filter(Boolean).join(" · ")}
                               </span>
                             ) : null}
+                            {invitation.lastContactedAt ? (
+                              <span className="block text-xs text-app-fg-muted">
+                                {fillCopy(t.contactedOn, { date: shortDates.format(new Date(invitation.lastContactedAt)) })}
+                              </span>
+                            ) : null}
                             <span className="mt-1 block md:hidden">
                               <Badge tone={STATE_TONES[overall]}>{t.states[overall]}</Badge>
                             </span>
@@ -554,7 +656,32 @@ function GuestListPanel({
                             </ul>
                           </Td>
                           <Td align="right">
-                            <div className="flex justify-end gap-1">
+                            <div className="flex flex-wrap justify-end gap-1">
+                              <a
+                                href={whatsappUrl(invitation.contactPhone, messageFor(invitation))}
+                                target="_blank"
+                                rel="noreferrer"
+                                aria-label={fillCopy(t.whatsappLabel, { name: invitation.displayName })}
+                                title={fillCopy(t.whatsappLabel, { name: invitation.displayName })}
+                                className={buttonStyles({ variant: "plain", iconOnly: true })}
+                                onClick={() => {
+                                  if (!readOnly) void recordContacted(invitation);
+                                }}
+                              >
+                                <WhatsappLogo aria-hidden="true" size={16} />
+                              </a>
+                              {readOnly ? null : (
+                                <IconButton
+                                  label={
+                                    invitation.contactEmail
+                                      ? fillCopy(t.emailLabel, { name: invitation.displayName })
+                                      : fillCopy(t.noEmail, { name: invitation.displayName })
+                                  }
+                                  icon={<EnvelopeSimple aria-hidden="true" size={16} />}
+                                  disabled={!invitation.contactEmail}
+                                  onClick={() => void sendEmail(invitation)}
+                                />
+                              )}
                               <IconButton
                                 label={`${t.copyLink}: ${invitation.displayName}`}
                                 icon={<Copy aria-hidden="true" size={16} />}
@@ -624,6 +751,19 @@ function GuestListPanel({
         error={actionError}
         onImport={importRows}
         onClose={() => setPasting(false)}
+      />
+
+      <ConfirmDialog
+        open={reminding}
+        title={t.remindAllTitle}
+        body={countCopy(remindable.length, t.remindAllBodyOne, t.remindAllBody)}
+        confirmLabel={t.remindAllConfirm}
+        cancelLabel={t.editor.cancel}
+        closeLabel={dashboardCopy[lang].closeDialog}
+        pending={pending}
+        error={reminding ? (actionError ?? undefined) : undefined}
+        onConfirm={remindAll}
+        onCancel={() => setReminding(false)}
       />
 
       <ConfirmDialog

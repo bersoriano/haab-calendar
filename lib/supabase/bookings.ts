@@ -40,11 +40,12 @@ import type {
 } from "@/lib/types";
 import { TRAVELER_FIELDS } from "@/lib/types";
 import { normalizePhotoUrls } from "@/lib/image-upload";
+import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
 import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { normalizeTravelerFields, parseTravelerDetails } from "@/lib/traveler-details";
 
 const PROVIDER_SELECT =
-  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, default_invitation_seats, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+  "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, default_invitation_seats, rsvp_deadline, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields";
 const BOOKING_SELECT =
@@ -82,6 +83,7 @@ type ProviderRow = {
   vocabulary: string | null;
   rsvp_mode?: string | null;
   default_invitation_seats?: number | null;
+  rsvp_deadline?: string | null;
 };
 
 type ServiceRow = {
@@ -294,6 +296,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
     vocabulary: parseVocabulary(row.vocabulary),
     rsvpMode: parseRsvpMode(row.rsvp_mode),
     defaultInvitationSeats: clampInvitationSeats(row.default_invitation_seats),
+    rsvpDeadline: parseRsvpDeadline(row.rsvp_deadline),
     publicTheme: normalizePublicTheme(row.public_theme),
     publicFooterText: row.public_footer_text ?? undefined,
     publicFooterUrl: row.public_footer_url ?? undefined,

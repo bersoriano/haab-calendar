@@ -36,6 +36,11 @@ export type InvitationCopy = {
   invalidTitle: string;
   invalidBody: string;
   where: string;
+  answerBy: string;
+  closed: string;
+  closedContactPhone: string;
+  closedContact: string;
+  rsvpBy: string;
   goodToKnow: string;
 };
 
@@ -72,6 +77,11 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     invalidTitle: "This invitation link is not valid",
     invalidBody: "Ask the person who invited you for yours.",
     where: "Where",
+    answerBy: "Please answer by {date}.",
+    closed: "Answers closed on {date}.",
+    closedContactPhone: "To change your answer, contact the organizers at {phone}.",
+    closedContact: "To change your answer, contact the organizers.",
+    rsvpBy: "Please RSVP by {date}.",
     goodToKnow: "Good to know",
   },
   es: {
@@ -106,6 +116,11 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     invalidTitle: "Este enlace de invitación no es válido",
     invalidBody: "Pídale el suyo a quien le invitó.",
     where: "Dónde",
+    answerBy: "Por favor responda a más tardar el {date}.",
+    closed: "Las respuestas cerraron el {date}.",
+    closedContactPhone: "Para cambiar su respuesta, contacte a los organizadores al {phone}.",
+    closedContact: "Para cambiar su respuesta, contacte a los organizadores.",
+    rsvpBy: "Por favor confirme a más tardar el {date}.",
     goodToKnow: "Para tener en cuenta",
   },
 };

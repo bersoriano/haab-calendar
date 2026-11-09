@@ -13,7 +13,9 @@ import {
   type InvitationGuest,
   type RsvpRejection,
 } from "@/lib/invitations";
+import { isRsvpOpen, parseRsvpDeadline } from "@/lib/rsvp-deadline";
 import { INVITATION_SEAT_LIMIT_MAX } from "@/lib/rsvp-mode";
+import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { getPublishedProvider, PublicBookingWriteError } from "@/lib/supabase/bookings";
 import type { VerticalId } from "@/lib/types";
 
@@ -428,6 +430,22 @@ export async function updateInvitation(
   return updated;
 }
 
+/** One invitation of the owner's page, or null. */
+export async function getInvitation(supabase: SupabaseClient, providerId: string, invitationId: string) {
+  return readInvitation(supabase, providerId, invitationId);
+}
+
+/** Records that the planner sent these households their link. */
+export async function markContacted(supabase: SupabaseClient, providerId: string, invitationIds: string[]) {
+  if (invitationIds.length === 0) return;
+  const { error } = await supabase
+    .from("invitations")
+    .update({ last_contacted_at: new Date().toISOString() })
+    .eq("provider_id", providerId)
+    .in("id", invitationIds);
+  if (error) rethrow(error, "Could not record that those households were contacted.");
+}
+
 export async function deleteInvitation(
   supabase: SupabaseClient,
   providerId: string,
@@ -515,6 +533,9 @@ async function findByToken(admin: SupabaseClient, route: PublicRoute) {
     rethrow(error, "Could not load this invitation.");
   }
   if (provider.rsvp_mode !== "invitations") return null;
+  const deadline = parseRsvpDeadline(provider.rsvp_deadline);
+  // An unchosen zone is stored as a placeholder; judge the deadline in UTC then.
+  const timeZone = isUnsetTimeZone(provider.timezone) ? "UTC" : normalizeTimeZone(provider.timezone) || "UTC";
 
   const { data, error } = await admin
     .from("invitations")
@@ -524,7 +545,7 @@ async function findByToken(admin: SupabaseClient, route: PublicRoute) {
     .maybeSingle<InvitationRow>();
 
   if (error) rethrow(error, "Could not load this invitation.");
-  return data ? { providerId: provider.id, invitation: toInvitation(data) } : null;
+  return data ? { providerId: provider.id, deadline, timeZone, invitation: toInvitation(data) } : null;
 }
 
 export async function getPublicInvitation(
@@ -558,6 +579,12 @@ export async function submitPublicRsvp(
   if (!found) throw new InvitationWriteError("This invitation link is not valid.", 404);
 
   const { invitation } = found;
+  if (!isRsvpOpen(found.deadline, found.timeZone)) {
+    throw new InvitationWriteError(
+      "The RSVP deadline has passed. Contact the organizer to change your answer.",
+      409,
+    );
+  }
   if (invitation.submittedAt && Date.now() - Date.parse(invitation.submittedAt) < RESUBMIT_COOLDOWN_MS) {
     throw new InvitationWriteError("We just saved your answer. Wait a moment before sending it again.", 429);
   }

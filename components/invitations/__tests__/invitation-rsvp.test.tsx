@@ -52,9 +52,12 @@ function invitation(overrides: Partial<PublicInvitation> = {}): PublicInvitation
   };
 }
 
-async function render(target: PublicInvitation) {
+async function render(
+  target: PublicInvitation,
+  extra: { deadline?: string; open?: boolean; organizerPhone?: string } = {},
+) {
   await act(async () =>
-    root.render(<InvitationRsvp invitation={target} services={SERVICES} apiPath="/api/x" lang="es" />),
+    root.render(<InvitationRsvp invitation={target} services={SERVICES} apiPath="/api/x" lang="es" {...extra} />),
   );
 }
 
@@ -181,5 +184,36 @@ describe("InvitationRsvp", () => {
     await act(async () => button("Cambiar mi respuesta").click());
     expect(checkbox(1, "Ana").checked).toBe(true);
     expect(checkbox(2, "No podremos asistir").checked).toBe(true);
+  });
+
+  it("asks for an answer by the deadline while it is open", async () => {
+    await render(invitation(), { deadline: "2026-12-20", open: true });
+
+    expect(container.textContent).toContain("Por favor responda a más tardar el 20 de diciembre de 2026.");
+    expect(button("Enviar confirmación")).toBeTruthy();
+  });
+
+  it("shows a saved answer read-only after the deadline, with the organizer's phone", async () => {
+    await render(
+      invitation({
+        submittedAt: "2026-11-09T00:00:00.000Z",
+        guests: [{ id: "g1", name: "Ana", attending: { "svc-ceremony": true } }],
+      }),
+      { deadline: "2026-12-20", open: false, organizerPhone: "+52 777 555 0193" },
+    );
+
+    expect(container.textContent).toContain("1 asistirá: Ana");
+    expect(container.textContent).toContain("Las respuestas cerraron el 20 de diciembre de 2026.");
+    expect(container.textContent).toContain("contacte a los organizadores al +52 777 555 0193");
+    expect(container.textContent).not.toContain("Cambiar mi respuesta");
+  });
+
+  it("shows no form to a household that never answered before the deadline", async () => {
+    await render(invitation(), { deadline: "2026-12-20", open: false });
+
+    expect(container.querySelector("form")).toBeNull();
+    expect(container.textContent).toContain("Familia Ortiz, guardamos 2 lugares para ustedes.");
+    expect(container.textContent).toContain("Las respuestas cerraron el 20 de diciembre de 2026.");
+    expect(container.textContent).toContain("Para cambiar su respuesta, contacte a los organizadores.");
   });
 });
