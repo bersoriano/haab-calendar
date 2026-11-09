@@ -266,4 +266,3 @@ describe("GuestListSurface answers", () => {
     expect(container.querySelector("button[aria-label='Download the list for Ceremonia (CSV)']")).not.toBeNull();
   });
 });
-
