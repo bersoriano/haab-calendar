@@ -22,8 +22,8 @@ export function SummaryStatusTitle({
           isCancelled
             ? "bg-[var(--danger-soft)] text-[var(--danger-strong)]"
             : isUpdated
-              ? "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)]"
-              : "bg-[rgba(0,191,165,0.14)] text-[var(--accent-strong)]",
+              ? "bg-[color-mix(in_srgb,var(--glow)_12%,transparent)] text-[var(--primary-container)]"
+              : "bg-[color-mix(in_srgb,var(--glow-teal)_14%,transparent)] text-[var(--accent-strong)]",
         )}
       >
         <svg

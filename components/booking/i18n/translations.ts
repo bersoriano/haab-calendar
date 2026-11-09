@@ -1,5 +1,6 @@
 import type { TravelerField } from "@/lib/types";
 import type { Lang, WeekdayKey } from "@/lib/types";
+import type { PublicTheme } from "@/lib/public-theme";
 
 export type BookingDict = {
   common: {
@@ -473,7 +474,7 @@ export type BookingDict = {
     partySizeLabel: string;
     publicThemeLabel: string;
     publicThemeHelper: string;
-    publicThemeNames: Record<"default" | "dark" | "pink" | "summer" | "miami", string>;
+    publicThemeNames: Record<PublicTheme, string>;
     partySizeRequiredError: string;
     partySizePlaceholder: string;
     guestsSuffix: string;
@@ -1099,6 +1100,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         pink: "Pink",
         summer: "Summer",
         miami: "Miami nights",
+        winter: "Winter",
       },
       partySizeRequiredError: "Tell us how many guests are coming.",
       partySizePlaceholder: "2",
@@ -1735,6 +1737,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         pink: "Rosa",
         summer: "Verano",
         miami: "Noches de Miami",
+        winter: "Invierno",
       },
       partySizeRequiredError: "Indique cuántos comensales asistirán.",
       partySizePlaceholder: "2",

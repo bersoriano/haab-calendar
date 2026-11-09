@@ -13,10 +13,10 @@ import type { Lang, Service } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const inputClass =
-  "h-[48px] w-full rounded-[15px] border border-[var(--form-border)] bg-[var(--surface-lowest)] px-4 !text-[16px] text-[var(--ink)] outline-none transition placeholder:text-[var(--field-placeholder)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_rgba(26,115,232,0.14)] sm:rounded-2xl sm:!text-[15px]";
+  "h-[48px] w-full rounded-[15px] border border-[var(--form-border)] bg-[var(--surface-lowest)] px-4 !text-[16px] text-[var(--ink)] outline-none transition placeholder:text-[var(--field-placeholder)] focus:border-[var(--accent)] focus:shadow-[0_0_0_1px_var(--accent),0_0_0_4px_color-mix(in_srgb,var(--glow)_14%,transparent)] sm:rounded-2xl sm:!text-[15px]";
 const labelClass = "text-[13px] font-semibold text-[var(--ink-secondary)]";
 const primaryButtonClass =
-  "inline-flex h-[50px] w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-[var(--on-primary)] shadow-[0_14px_30px_rgba(26,115,232,0.28)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
+  "inline-flex h-[50px] w-full items-center justify-center rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-6 !text-[16px] !font-semibold text-[var(--on-primary)] shadow-[0_14px_30px_color-mix(in_srgb,var(--glow)_28%,transparent)] transition hover:saturate-125 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto";
 const secondaryButtonClass =
   "inline-flex h-[44px] items-center justify-center rounded-full bg-[var(--surface-lowest)] px-5 text-[15px] font-semibold text-[var(--accent)] ring-1 ring-[var(--form-border)] transition hover:ring-[var(--accent)] disabled:opacity-50";
 

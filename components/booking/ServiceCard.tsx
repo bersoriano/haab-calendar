@@ -258,7 +258,7 @@ export function ServiceCard({
             height="16"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#00796b"
+            style={{ stroke: "var(--callout-icon)" }}
             strokeWidth="2.2"
             strokeLinecap="round"
             className="mt-0.5 hidden shrink-0 sm:block"
@@ -320,7 +320,7 @@ export function ServiceCard({
       ) : null}
 
       <span className="mt-auto flex border-t border-[rgba(193,198,214,0.6)] pt-3.5 sm:justify-end sm:pt-[18px]">
-        <span className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-[22px] text-[15.5px] font-semibold text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] sm:h-[46px] sm:w-auto sm:text-[15px]">
+        <span className="inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-full bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] px-[22px] text-[15.5px] font-semibold text-[var(--on-primary)] shadow-[0_12px_26px_color-mix(in_srgb,var(--glow)_28%,transparent)] sm:h-[46px] sm:w-auto sm:text-[15px]">
           {getServiceCardCta(service, vertical, t.publicFlow, copy.event)}
           <span aria-hidden="true">→</span>
         </span>

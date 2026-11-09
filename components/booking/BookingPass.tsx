@@ -253,7 +253,7 @@ export function BookingPass({
                 "flex w-full items-center justify-center gap-2 rounded-full px-3 py-2.5 ring-1 [animation:haab-pop-in_0.5s_cubic-bezier(0.34,1.4,0.64,1)_both]",
                 isCancelled
                   ? "bg-[var(--danger-soft)] text-[var(--danger-strong)] ring-[var(--danger-line)]"
-                  : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal)] ring-[rgba(0,191,165,0.28)]",
+                  : "bg-[color-mix(in_srgb,var(--glow-teal)_12%,transparent)] text-[var(--action-teal)] ring-[color-mix(in_srgb,var(--glow-teal)_28%,transparent)]",
               )}
               role="status"
               aria-live="polite"
@@ -500,7 +500,7 @@ export function RefinedBookingPass({
                     "mt-1 self-start rounded-full px-2.5 py-1 font-semibold [font-family:var(--font-plex-mono)] text-[0.625rem] uppercase tracking-[0.14em]",
                     isCancelled
                       ? "bg-[var(--danger-soft)] text-[var(--danger-strong)]"
-                      : "bg-[rgba(0,191,165,0.12)] text-[var(--action-teal-deep)]",
+                      : "bg-[color-mix(in_srgb,var(--glow-teal)_12%,transparent)] text-[var(--action-teal-deep)]",
                   )}
                 >
                   {confirmationLabel}

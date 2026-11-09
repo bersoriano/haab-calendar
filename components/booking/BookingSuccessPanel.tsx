@@ -81,9 +81,9 @@ export function BookingSuccessPanel({
         glow: "rgba(225,29,72,0.14)",
       }
     : {
-        disc: "bg-[var(--action-teal)] shadow-[0_0_0_10px_rgba(0,191,165,0.14),0_14px_30px_rgba(0,150,130,0.35)]",
+        disc: "bg-[var(--action-teal)] shadow-[0_0_0_10px_color-mix(in_srgb,var(--glow-teal)_14%,transparent),0_14px_30px_rgba(0,150,130,0.35)]",
         eyebrow: "text-[var(--action-teal-deep)]",
-        glow: "rgba(0,191,165,0.22)",
+        glow: "color-mix(in srgb,var(--glow-teal) 22%,transparent)",
       };
 
   return (
@@ -177,7 +177,7 @@ export function BookingSuccessPanel({
               onClick={onAddToCalendar}
               className={cn(
                 buttonBase,
-                "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125",
+                "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_color-mix(in_srgb,var(--glow)_28%,transparent)] hover:saturate-125",
               )}
             >
               <svg
@@ -231,7 +231,7 @@ export function BookingSuccessPanel({
         <div className="relative flex items-start gap-3.5 rounded-2xl border border-[var(--callout-mint-line)] bg-[var(--callout-mint)] p-3.5 text-left lg:rounded-[18px] lg:px-[18px] lg:py-4">
           <span
             aria-hidden="true"
-            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[#00796b] text-white lg:flex"
+            className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[var(--callout-icon)] text-white lg:flex"
           >
             <svg
               width="16"
