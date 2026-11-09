@@ -5,11 +5,14 @@ import { describe, expect, it } from "vitest";
 
 import { translations } from "@/components/landing/translations";
 import {
+  DEMO_ANSWERED_INVITATION_TOKEN,
   DEMO_PAGES,
+  DEMO_SAMPLE_INVITATION_TOKEN,
   findDemoPage,
   getDemoPagePath,
   isDemoOwnerEmail,
 } from "@/lib/demo-pages";
+import { isWellFormedInvitationToken } from "@/lib/invitations";
 
 const seedScript = readFileSync(
   join(process.cwd(), "scripts/seed-public-examples.mjs"),
@@ -51,6 +54,22 @@ describe("demo pages allowlist", () => {
   it("gives every demo its own owner", () => {
     const owners = new Set(DEMO_PAGES.map((page) => page.ownerEmail));
     expect(owners.size).toBe(DEMO_PAGES.length);
+  });
+});
+
+describe("wedding demo sample invitations", () => {
+  const samples = [DEMO_SAMPLE_INVITATION_TOKEN, DEMO_ANSWERED_INVITATION_TOKEN];
+
+  it("are well-formed invitation links", () => {
+    for (const token of samples) expect(isWellFormedInvitationToken(token)).toBe(true);
+  });
+
+  it("are two different households", () => {
+    expect(new Set(samples).size).toBe(2);
+  });
+
+  it("match the tokens the seed script writes", () => {
+    for (const token of samples) expect(seedScript).toContain(`"${token}"`);
   });
 });
 

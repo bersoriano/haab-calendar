@@ -1331,9 +1331,11 @@ const examples = [
 
 // The wedding demo's guest list. Fictional households in every state a
 // planner meets: answered, partly attending, declined, silent (some already
-// reminded), plus the sample invitation the landing card opens, whose token
-// lib/demo-pages.ts shares. Re-seeding resets all of it.
+// reminded), plus two samples whose tokens lib/demo-pages.ts shares: the
+// unanswered one the landing card opens, and one already answered and seated.
+// Re-seeding resets all of it.
 const SAMPLE_INVITATION_TOKEN = "DemoBodaValeriaYDiego-sample-invitation-001";
+const ANSWERED_INVITATION_TOKEN = "DemoBodaValeriaYDiego-answered-invitation-1";
 
 // [household, phone, seats, guests, answer, contacted]
 // answer: "all" (every event), "main" (reception and brunch only), "reception"
@@ -1411,6 +1413,20 @@ async function seedWeddingGuests(providerId) {
 
   const now = Date.now();
   const households = [
+    // The answered sample: everyone at every event, with menu picks, a diet
+    // note and a shuttle hotel. First in line, so it always gets a table.
+    {
+      name: "Familia Castañeda",
+      phone: "",
+      seats: 3,
+      guests: ["Mónica Castañeda", "Gerardo Castañeda", "Julia Reyes"],
+      guestAnswers: [{ menu: "pescado" }, { menu: "res" }, { menu: "vegetariano", diet: "Sin lactosa" }],
+      answer: "all",
+      contacted: true,
+      token: ANSWERED_INVITATION_TOKEN,
+      submittedAt: new Date(now - 3 * 86_400_000).toISOString(),
+      shuttle: "Hotel Casa Colonial",
+    },
     ...WEDDING_HOUSEHOLDS.map(([name, phone, seats, guests, answer, contacted], index) => ({
       name,
       phone,
@@ -1467,6 +1483,14 @@ async function seedWeddingGuests(providerId) {
   let person = 0;
   const guestRows = households.flatMap((household) =>
     household.guests.map((name, position) => {
+      if (household.guestAnswers) {
+        return {
+          invitation_id: invitationId.get(household.token),
+          name,
+          position,
+          answers: household.guestAnswers[position],
+        };
+      }
       const attending = attendsBy[household.answer].length > 0;
       const answers = {};
       if (attending) {
