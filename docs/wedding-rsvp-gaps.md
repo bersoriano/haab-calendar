@@ -1,9 +1,12 @@
 # Wedding RSVPs: what the demo shows and what is missing
 
 Status: notes written 2026-11-08, alongside the `weddings` demo
-(`/events/boda-valeria-y-diego`). Items 1 to 5 are addressed by invitation-only
-RSVPs (PR 1 of `docs/superpowers/specs/2026-11-08-wedding-rsvp-design.md`); the
-rest follow in that design's later steps.
+(`/events/boda-valeria-y-diego`). Every item below except 10 is now addressed by
+the invitation-only RSVP work (PRs #83–#88, design in
+`docs/superpowers/specs/2026-11-08-wedding-rsvp-design.md`), and the demo
+shows it. Still open: the guest list editor does not queue edits offline (it
+shows the saved list read-only), and the English toggle does not translate the
+Spanish demo's own text.
 
 ## The scenario
 
