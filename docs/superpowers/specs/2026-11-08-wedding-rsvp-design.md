@@ -283,8 +283,8 @@ Added like `tours`: the `providers_vocabulary_known` check, `Vocabulary`,
 | bookVerb | RSVP | Confirmar asistencia |
 
 Phrases replace "price", "cancellation policy", "hotel pickup",
-"registration". **Price is hidden on any events page when an event costs
-nothing**, wedding or not.
+"registration". **On any events page, a free event has no "Price" row** in the
+summary or on the pass, wedding or not. The event card may still say "Free".
 
 The word set and the mode are independent: a gala can use invitation mode with
 the event words, and a wedding can use the wedding words in open mode.
