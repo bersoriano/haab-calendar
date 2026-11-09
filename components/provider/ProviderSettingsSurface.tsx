@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { parseVocabulary } from "@/lib/rsvp-mode";
+import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX, parseVocabulary } from "@/lib/rsvp-mode";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   Button,
@@ -9,9 +9,11 @@ import {
   CardBody,
   CardHeader,
   ConfirmDialog,
+  Field,
   FormSection,
   Input,
   Select,
+  Switch,
 } from "@/components/app-ui";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
@@ -123,6 +125,15 @@ export function ProviderSettingsSurface({
                 <option value="weddings">{t.admin.vocabularyWeddings}</option>
               </Select>
             </FormSection>
+          ) : null}
+
+          {offersVocabulary ? (
+            <InvitationModeSettings
+              provider={provider}
+              lang={lang}
+              disabled={disabled}
+              onProviderChange={onProviderChange}
+            />
           ) : null}
 
           {onDashboardLanguageChange ? (
@@ -252,5 +263,90 @@ function PublicSlugEditor({
         </p>
       ) : null}
     </form>
+  );
+}
+
+const INVITATION_MODE_COPY = {
+  en: {
+    title: "Invitation-only RSVPs",
+    description:
+      "Only the households on your guest list can answer, each through its own link. Your page shows the schedule instead of taking bookings.",
+    switchLabel: "Take answers by invitation only",
+    seatsLabel: "Seats per new invitation",
+    seatsHint: "You can change each invitation's seats in the guest list.",
+    offTitle: "Turn off invitation-only RSVPs?",
+    offBody: "Your page will take bookings from anyone with the link again. Your guest list and its answers are kept.",
+    offConfirm: "Turn off",
+    keep: "Keep it on",
+  },
+  es: {
+    title: "Confirmaciones solo por invitación",
+    description:
+      "Solo las familias de su lista de invitados pueden responder, cada una con su propio enlace. Su página muestra el programa en lugar de tomar reservas.",
+    switchLabel: "Recibir respuestas solo por invitación",
+    seatsLabel: "Lugares por invitación nueva",
+    seatsHint: "Puede cambiar los lugares de cada invitación en la lista de invitados.",
+    offTitle: "¿Desactivar las confirmaciones solo por invitación?",
+    offBody: "Su página volverá a tomar reservas de cualquier persona con el enlace. Su lista de invitados y sus respuestas se conservan.",
+    offConfirm: "Desactivar",
+    keep: "Mantener activado",
+  },
+} as const;
+
+/** Events only: the mode switch and the seats a new invitation starts with. */
+function InvitationModeSettings({
+  provider,
+  lang,
+  disabled,
+  onProviderChange,
+}: Pick<ProviderSettingsSurfaceProps, "provider" | "lang" | "disabled" | "onProviderChange">) {
+  const copy = INVITATION_MODE_COPY[lang];
+  const shell = dashboardCopy[lang];
+  const [confirmOff, setConfirmOff] = useState(false);
+  const on = provider.rsvpMode === "invitations";
+
+  return (
+    <FormSection title={copy.title} description={copy.description}>
+      <div className="grid gap-4">
+        <Field label={copy.switchLabel} inline>
+          <Switch
+            checked={on}
+            disabled={disabled}
+            onChange={(event) => {
+              if (event.target.checked) onProviderChange("rsvpMode", "invitations");
+              else setConfirmOff(true);
+            }}
+          />
+        </Field>
+        {on ? (
+          <Field label={copy.seatsLabel} description={copy.seatsHint}>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={INVITATION_SEAT_LIMIT_MAX}
+              disabled={disabled}
+              value={String(provider.defaultInvitationSeats ?? 2)}
+              onChange={(event) =>
+                onProviderChange("defaultInvitationSeats", clampInvitationSeats(event.target.value))
+              }
+            />
+          </Field>
+        ) : null}
+      </div>
+      <ConfirmDialog
+        open={confirmOff}
+        title={copy.offTitle}
+        body={copy.offBody}
+        confirmLabel={copy.offConfirm}
+        cancelLabel={copy.keep}
+        closeLabel={shell.closeDialog}
+        onConfirm={() => {
+          onProviderChange("rsvpMode", "open");
+          setConfirmOff(false);
+        }}
+        onCancel={() => setConfirmOff(false)}
+      />
+    </FormSection>
   );
 }

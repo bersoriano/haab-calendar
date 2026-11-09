@@ -151,6 +151,9 @@ import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
 import { ProviderClientsSurface } from "@/components/provider/ProviderClientsSurface";
+import { GuestListSurface } from "@/components/provider/guests/GuestListSurface";
+import { guestsCopy } from "@/components/provider/guests/guests-copy";
+import { isInvitationMode } from "@/lib/rsvp-mode";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
@@ -3967,6 +3970,19 @@ export function HaabBookingModule({
             integratedMode={integratedMode}
             entitlements={providerEntitlements}
           />
+        );
+      case "guests":
+        return isInvitationMode(provider, vertical) && vertical ? (
+          <GuestListSurface
+            lang={lang}
+            integratedMode={integratedMode}
+            services={services}
+            provider={provider}
+            vertical={vertical}
+            copy={copy}
+          />
+        ) : (
+          <Alert tone="neutral">{guestsCopy[lang].modeOff}</Alert>
         );
       case "clients":
         return (

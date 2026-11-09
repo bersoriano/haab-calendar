@@ -8,7 +8,9 @@ import {
   resolveHomeRedirect,
   sectionFromPathname,
   sectionFromSegments,
+  sectionsHiddenFor,
 } from "@/lib/dashboard-routes";
+import type { ModuleStore } from "@/lib/types";
 
 describe("dashboard sections", () => {
   it("maps every section to a unique path and back", () => {
@@ -65,8 +67,10 @@ describe("dashboard sections", () => {
     const operate = DASHBOARD_SECTIONS.filter((section) => section.group === "operate").map(
       (section) => section.id,
     );
+    // "guests" only shows on invitation-only pages, in place of bookings.
     expect(operate).toEqual([
       "dashboard",
+      "guests",
       "bookings",
       "clients",
       "scan",
@@ -156,5 +160,23 @@ describe("query parsing", () => {
     expect(parseGoogleOutcome("missing_scopes")).toBe("missing_scopes");
     expect(parseGoogleOutcome("<script>")).toBeUndefined();
     expect(parseGoogleOutcome(undefined)).toBeUndefined();
+  });
+});
+
+describe("guest list section", () => {
+  it("has its own address", () => {
+    expect(sectionFromSegments(["guests"])).toBe("guests");
+    expect(pathForSection("guests")).toBe("/dashboard/guests");
+  });
+
+  it("replaces bookings, clients and campaigns on an invitation-only page only", () => {
+    const invitationOnly = sectionsHiddenFor({ vertical: "events", provider: { rsvpMode: "invitations" } as ModuleStore["provider"] });
+    expect([...invitationOnly].sort()).toEqual(["bookings", "campaigns", "clients"]);
+
+    const open = sectionsHiddenFor({ vertical: "events", provider: { rsvpMode: "open" } as ModuleStore["provider"] });
+    expect([...open]).toEqual(["guests"]);
+
+    const clinic = sectionsHiddenFor({ vertical: "healthcare", provider: { rsvpMode: "invitations" } as ModuleStore["provider"] });
+    expect([...clinic]).toEqual(["guests"]);
   });
 });
