@@ -430,6 +430,22 @@ export async function updateInvitation(
   return updated;
 }
 
+/** One invitation of the owner's page, or null. */
+export async function getInvitation(supabase: SupabaseClient, providerId: string, invitationId: string) {
+  return readInvitation(supabase, providerId, invitationId);
+}
+
+/** Records that the planner sent these households their link. */
+export async function markContacted(supabase: SupabaseClient, providerId: string, invitationIds: string[]) {
+  if (invitationIds.length === 0) return;
+  const { error } = await supabase
+    .from("invitations")
+    .update({ last_contacted_at: new Date().toISOString() })
+    .eq("provider_id", providerId)
+    .in("id", invitationIds);
+  if (error) rethrow(error, "Could not record that those households were contacted.");
+}
+
 export async function deleteInvitation(
   supabase: SupabaseClient,
   providerId: string,
