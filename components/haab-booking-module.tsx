@@ -95,6 +95,8 @@ import {
   bookingTypeBadgeTone,
   formatCountdown,
   formatCost,
+  formatPriceRow,
+  isFreeCost,
 } from "@/lib/format";
 import {
   createEmptyStore,
@@ -149,6 +151,9 @@ import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
 import { ProviderClientsSurface } from "@/components/provider/ProviderClientsSurface";
+import { GuestListSurface } from "@/components/provider/guests/GuestListSurface";
+import { guestsCopy } from "@/components/provider/guests/guests-copy";
+import { isInvitationMode } from "@/lib/rsvp-mode";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
@@ -3966,6 +3971,19 @@ export function HaabBookingModule({
             entitlements={providerEntitlements}
           />
         );
+      case "guests":
+        return isInvitationMode(provider, vertical) && vertical ? (
+          <GuestListSurface
+            lang={lang}
+            integratedMode={integratedMode}
+            services={services}
+            provider={provider}
+            vertical={vertical}
+            copy={copy}
+          />
+        ) : (
+          <Alert tone="neutral">{guestsCopy[lang].modeOff}</Alert>
+        );
       case "clients":
         return (
           <ProviderClientsSurface
@@ -4683,7 +4701,7 @@ export function HaabBookingModule({
         ? [selectedLocation.address]
         : detailsContact.addresses;
     const detailsPhones = detailsContact.phones;
-    const detailsCost = formatCost(effectiveCost, lang) || null;
+    const detailsCost = formatPriceRow(effectiveCost, lang, vertical) || null;
     // "About the appointment" rides inside the summary: open under the client rows
     // on desktop, folded at the foot of the compact card on a phone.
     const detailsAboutProps = selectedService
@@ -5230,8 +5248,8 @@ export function HaabBookingModule({
                     {service.medicalSpecialty ? (
                       <span>{t.publicFlow.specialty}: {service.medicalSpecialty}</span>
                     ) : null}
-                    {formatCost(service.cost, lang) ? (
-                      <span>{copy.event?.priceLabel ?? t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
+                    {formatPriceRow(service.cost, lang, vertical) ? (
+                      <span>{copy.event?.priceLabel ?? t.publicFlow.total}: {formatPriceRow(service.cost, lang, vertical)}</span>
                     ) : null}
                     {service.notes ? (
                       <span className="whitespace-pre-line">{t.publicFlow.notes}: {service.notes}</span>
@@ -5659,7 +5677,9 @@ export function HaabBookingModule({
                           {!selectionIsSingle ? (
                             <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                           ) : null}
-                          <SummaryField label={copy.event?.priceLabel ?? t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
+                          {vertical === "events" && isFreeCost(effectiveCost) ? null : (
+                            <SummaryField label={copy.event?.priceLabel ?? t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
+                          )}
                           {selectedService.notes ? (
                             <SummaryField
                               label={t.publicFlow.notes}
@@ -6221,7 +6241,7 @@ export function HaabBookingModule({
                                   }
                                 : undefined
                             }
-                            costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
+                            costLabel={formatPriceRow(successfulBooking.cost || effectiveCost, lang, vertical)}
                             admitLabel={
                               successfulBooking.capacitySnapshot ||
                               formatCapacityLabel(selectedService, lang)
@@ -6312,7 +6332,7 @@ export function HaabBookingModule({
                         isFullDay={isFullDayBooking}
                         durationLabel={formatDuration(selectedService, lang)}
                         clientFieldLabel={copy.phrases.clientLabel}
-                        costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
+                        costLabel={formatPriceRow(successfulBooking.cost || effectiveCost, lang, vertical)}
                         admitLabel={
                           successfulBooking.capacitySnapshot ||
                           formatCapacityLabel(selectedService, lang)

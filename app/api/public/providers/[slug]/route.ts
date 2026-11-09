@@ -8,6 +8,7 @@ import {
   PUBLIC_SERVICE_SELECT,
 } from "@/lib/public-booking-resolver";
 import { buildProviderPath, normalizeUrlSlugSegment, validateProviderSlug } from "@/lib/public-url";
+import { parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { isUnsetTimeZone } from "@/lib/timezone";
 import type {
   LocationKey,
@@ -39,6 +40,7 @@ type PublicProviderRow = {
   hero_text: string | null;
   gallery_image_urls: string[] | null;
   vocabulary?: string | null;
+  rsvp_mode?: string | null;
 };
 
 type PublicServiceRow = {
@@ -129,7 +131,8 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
-      vocabulary: provider.vocabulary === "tours" ? "tours" : undefined,
+      vocabulary: parseVocabulary(provider.vocabulary),
+      rsvpMode: parseRsvpMode(provider.rsvp_mode),
       timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),

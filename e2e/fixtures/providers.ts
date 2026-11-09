@@ -26,7 +26,8 @@ export type E2ERole =
   | "superAdminTarget"
   | "longEmail"
   | "eventsPage"
-  | "toursPage";
+  | "toursPage"
+  | "weddingsPage";
 
 export type E2EProviderSeed = {
   role: E2ERole;
@@ -39,7 +40,9 @@ export type E2EProviderSeed = {
   legacyPlanTier: "free" | "premium";
   /** Defaults to a clinic. Set where a test is about another vertical's words. */
   vertical?: "events";
-  vocabulary?: "tours";
+  vocabulary?: "tours" | "weddings";
+  /** Events only: take answers through a guest list instead of bookings. */
+  rsvpMode?: "invitations";
   billing?: {
     status: string;
     planTier: "free" | "premium";
@@ -219,6 +222,18 @@ export const E2E_PROVIDERS: readonly E2EProviderSeed[] = [
     legacyPlanTier: "free",
     vertical: "events",
     vocabulary: "tours",
+  },
+  {
+    role: "weddingsPage",
+    email: "weddings@example.invalid",
+    userId: "00000000-0000-4000-8000-0000000e2e15",
+    providerId: "00000000-0000-4000-8000-0000000e2eaf",
+    businessName: "Weddings Page E2E",
+    slug: "weddings-page-e2e",
+    legacyPlanTier: "free",
+    vertical: "events",
+    vocabulary: "weddings",
+    rsvpMode: "invitations",
   },
 ];
 

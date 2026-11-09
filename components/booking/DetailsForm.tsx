@@ -6,6 +6,7 @@ import { EARLIEST_DATE_OF_BIRTH } from "@/lib/date-of-birth";
 import { MAX_TRAVELER_DETAIL_LENGTH } from "@/lib/traveler-details";
 import type { Lang, TravelerDetails, TravelerField } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { travelerFieldLabel, travelerFieldPlaceholder } from "@/lib/vertical-copy";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 export type DetailsField =
@@ -216,14 +217,14 @@ export function DetailsForm({
       {travelerFields.map((field) => (
         <div key={field} className="flex flex-col gap-1.5">
           <label htmlFor={`${id}-${field}`} className={labelClass}>
-            {t.publicFlow.travelerFieldLabels[field]}{" "}
+            {travelerFieldLabel(copy, field, t.publicFlow.travelerFieldLabels)}{" "}
             <span className="font-normal text-[var(--muted)]">{t.publicFlow.optionalSuffix}</span>
           </label>
           <input
             id={`${id}-${field}`}
             value={travelerDetails[field] ?? ""}
             onChange={(event) => onTravelerDetailChange?.(field, event.target.value)}
-            placeholder={t.publicFlow.travelerFieldPlaceholders[field]}
+            placeholder={travelerFieldPlaceholder(copy, field, t.publicFlow.travelerFieldPlaceholders)}
             maxLength={MAX_TRAVELER_DETAIL_LENGTH}
             autoComplete="off"
             enterKeyHint="next"

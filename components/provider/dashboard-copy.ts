@@ -234,6 +234,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       integrations: "Connect the tools you already use.",
       settings: "Business details, booking link and workspace language.",
       "business-type": "Set up your page for a different kind of business.",
+      guests: "Who is invited, who answered, and the link each household uses to RSVP.",
     },
     copyLink: "Copy link",
     linkCopied: "Copied",
@@ -450,6 +451,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       integrations: "Conecte las herramientas que ya usa.",
       settings: "Datos del negocio, enlace de reservas e idioma de su espacio.",
       "business-type": "Configure su página para otro tipo de negocio.",
+      guests: "Quién está invitado, quién respondió y el enlace con el que cada familia confirma.",
     },
     copyLink: "Copiar enlace",
     linkCopied: "Copiado",
@@ -695,5 +697,7 @@ export function sectionTitle(section: AdminTab, lang: Lang, copy: VerticalCopy):
       return admin.tabSettings;
     case "business-type":
       return shell.titles.businessType;
+    case "guests":
+      return copy.Clients;
   }
 }

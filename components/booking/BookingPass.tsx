@@ -3,6 +3,7 @@
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import type { BookingRecord, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { cancellationPolicyLabel } from "@/lib/vertical-copy";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 export type PassField = {
@@ -616,7 +617,7 @@ export function RefinedBookingPass({
                   </RefinedCell>
                 ) : null}
                 {cancellationPolicy ? (
-                  <RefinedCell label={t.publicFlow.cancellationPolicy} className="sm:col-span-2">
+                  <RefinedCell label={cancellationPolicyLabel(copy, t.publicFlow.cancellationPolicy)} className="sm:col-span-2">
                     <p className="whitespace-pre-line text-sm leading-[1.6] text-[var(--ink-secondary)]">
                       {cancellationPolicy}
                     </p>

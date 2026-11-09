@@ -28,6 +28,7 @@ import {
   DASHBOARD_SECTIONS,
   pathForSection,
   sectionFromPathname,
+  sectionsHiddenFor,
   type CheckoutResult,
   type DashboardNavGroup,
   type GoogleOutcome,
@@ -60,6 +61,7 @@ const SECTION_ICONS: Record<AdminTab, ShellIconName> = {
   integrations: "integrations",
   settings: "settings",
   "business-type": "settings",
+  guests: "clients",
 };
 
 function googleOutcomeTone(outcome: GoogleOutcome) {
@@ -191,8 +193,13 @@ export function DashboardApp({
     document.documentElement.lang = lang;
   }, [lang]);
 
+  // An invitation-only page answers through its guest list, not bookings.
+  const hiddenSections = sectionsHiddenFor(snapshot);
+
   function navItems(group: DashboardNavGroup) {
-    return DASHBOARD_SECTIONS.filter((entry) => entry.group === group).map((entry) => ({
+    return DASHBOARD_SECTIONS.filter(
+      (entry) => entry.group === group && !hiddenSections.has(entry.id),
+    ).map((entry) => ({
       id: entry.id,
       href: pathForSection(entry.id),
       label: sectionTitle(entry.id, lang, verticalCopy),

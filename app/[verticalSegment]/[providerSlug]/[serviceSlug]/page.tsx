@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
+import { InvitationOnlyPage } from "@/components/invitations/InvitationOnlyPage";
 import { PublicBookingPageShell } from "@/components/public-booking-page-shell";
+import { isInvitationMode } from "@/lib/rsvp-mode";
 import {
   isPublicUrlBackendUnavailable,
   resolvePublicBookingUrl,
@@ -70,6 +72,20 @@ export default async function PublicServiceBookingPage({
 
   if (resolution.status === "redirect") {
     permanentRedirect(withPublicLanguage(resolution.location, publicLanguage));
+  }
+
+  // An invitation-only page takes answers through each household's link only.
+  if (isInvitationMode(resolution.store.provider, resolution.store.vertical) && resolution.store.vertical) {
+    return (
+      <InvitationOnlyPage
+        store={resolution.store}
+        vertical={resolution.store.vertical}
+        lang={publicLanguage ?? resolution.store.provider.language}
+        path={resolution.meta.canonicalPath}
+        timeZone={resolution.meta.timezone}
+      serviceSlug={resolution.meta.selectedServiceSlug}
+      />
+    );
   }
 
   return (

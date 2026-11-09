@@ -20,7 +20,8 @@ export type AdminTab =
   | "campaigns"
   | "integrations"
   | "settings"
-  | "business-type";
+  | "business-type"
+  | "guests";
 export type WeekdayKey =
   | "sunday"
   | "monday"
@@ -58,7 +59,15 @@ export type TravelerDetails = Partial<Record<TravelerField, string>>;
  * A word set that replaces the vertical's own on one provider's page and
  * dashboard. Undefined means the vertical's words. See getVerticalCopy.
  */
-export type Vocabulary = "tours";
+export const VOCABULARIES = ["tours", "weddings"] as const;
+export type Vocabulary = (typeof VOCABULARIES)[number];
+
+/**
+ * How an events page takes sign-ups. "open": anyone with the link books a spot.
+ * "invitations": only invited households answer, through their own link. See
+ * lib/rsvp-mode.ts and docs/superpowers/specs/2026-11-08-wedding-rsvp-design.md.
+ */
+export type RsvpMode = "open" | "invitations";
 
 export const VERTICAL_IDS = [
   "healthcare",
@@ -85,8 +94,12 @@ export type ProviderInfo = {
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
   /** UI/content language for this provider. Drives the public booking page. */
   language: Lang;
-  /** Events only: speak of tours and travelers instead of events and attendees. */
+  /** Events only: speak of tours or a wedding instead of events and attendees. */
   vocabulary?: Vocabulary;
+  /** Events only. Undefined is "open". */
+  rsvpMode?: RsvpMode;
+  /** Seat limit a new invitation starts with, 1–20. Undefined is 2. */
+  defaultInvitationSeats?: number;
   /**
    * The owner's own dashboard language. Undefined means "follow the browser",
    * which is what every pre-existing provider does. Deliberately separate from

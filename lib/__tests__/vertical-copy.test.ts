@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getVerticalCopy } from "../vertical-copy";
+import { cancellationPolicyLabel, getVerticalCopy, travelerFieldLabel } from "../vertical-copy";
 
 describe("getVerticalCopy", () => {
   it("returns the English value when no language is provided", () => {
@@ -128,5 +128,26 @@ describe("tour vocabulary", () => {
     const tours = getVerticalCopy("events", "en", "tours");
     expect(events.event?.confirmedLabel).toMatch(new RegExp(events.Booking));
     expect(tours.event?.confirmedLabel).toMatch(new RegExp(tours.Booking));
+  });
+});
+
+describe("weddings word set", () => {
+  it("speaks of guests and RSVPs on an events page", () => {
+    expect(getVerticalCopy("events", "es", "weddings").Clients).toBe("Invitados");
+    expect(getVerticalCopy("events", "en", "weddings").Bookings).toBe("RSVPs");
+    expect(getVerticalCopy("events", "es", "weddings").event?.cancellationPolicyLabel).toBe("Si sus planes cambian");
+  });
+
+  it("is ignored on any other vertical", () => {
+    expect(getVerticalCopy("healthcare", "en", "weddings")).toEqual(getVerticalCopy("healthcare", "en"));
+  });
+
+  it("renames the booking-form labels it sets and keeps the rest", () => {
+    const copy = getVerticalCopy("events", "en", "weddings");
+    const shared = { passport: "Passport number", emergency_contact: "Emergency contact", diet: "Dietary needs", hotel_pickup: "Hotel pickup" };
+    expect(travelerFieldLabel(copy, "hotel_pickup", shared)).toBe("Shuttle from your hotel");
+    expect(travelerFieldLabel(copy, "passport", shared)).toBe("Passport number");
+    expect(travelerFieldLabel(getVerticalCopy("events", "en"), "hotel_pickup", shared)).toBe("Hotel pickup");
+    expect(cancellationPolicyLabel(getVerticalCopy("events", "en"), "Cancellation policy")).toBe("Cancellation policy");
   });
 });

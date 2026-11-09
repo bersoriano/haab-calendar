@@ -10,6 +10,7 @@ import {
 import { formatCapacityChip } from "@/lib/service-card";
 import type { Lang, Service, VerticalId } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { cancellationPolicyLabel } from "@/lib/vertical-copy";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 const eyebrowClass =
@@ -185,7 +186,7 @@ export function AppointmentAbout({
 
       {cancellationPolicy ? (
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className={factLabelClass}>{t.publicFlow.cancellationPolicy}</span>
+          <span className={factLabelClass}>{cancellationPolicyLabel(copy, t.publicFlow.cancellationPolicy)}</span>
           <p className="whitespace-pre-line break-words text-[13.5px] leading-[1.55] text-[var(--ink-secondary)]">
             {cancellationPolicy}
           </p>
