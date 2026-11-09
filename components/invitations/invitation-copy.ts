@@ -28,6 +28,7 @@ export type InvitationCopy = {
   saved: string;
   savedBody: string;
   attendingCount: string;
+  attendingCountOne: string;
   notAttending: string;
   changeAnswer: string;
   offline: string;
@@ -63,6 +64,7 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     saved: "Thank you! We got your RSVP.",
     savedBody: "You can change it from this same link.",
     attendingCount: "{count} attending",
+    attendingCountOne: "1 attending",
     notAttending: "Not attending",
     changeAnswer: "Change my answer",
     offline: "You're offline. Your answer is still here; try again when you're connected.",
@@ -96,6 +98,7 @@ export const invitationCopy: Record<Lang, InvitationCopy> = {
     saved: "¡Gracias! Recibimos su confirmación.",
     savedBody: "Puede cambiarla desde este mismo enlace.",
     attendingCount: "{count} asistirán",
+    attendingCountOne: "1 asistirá",
     notAttending: "No asistirán",
     changeAnswer: "Cambiar mi respuesta",
     offline: "Sin conexión. Su respuesta sigue aquí; intente de nuevo cuando tenga conexión.",

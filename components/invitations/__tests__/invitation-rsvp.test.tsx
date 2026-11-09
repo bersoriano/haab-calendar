@@ -177,7 +177,7 @@ describe("InvitationRsvp", () => {
       }),
     );
 
-    expect(container.textContent).toContain("1 asistirán: Ana");
+    expect(container.textContent).toContain("1 asistirá: Ana");
     await act(async () => button("Cambiar mi respuesta").click());
     expect(checkbox(1, "Ana").checked).toBe(true);
     expect(checkbox(2, "No podremos asistir").checked).toBe(true);

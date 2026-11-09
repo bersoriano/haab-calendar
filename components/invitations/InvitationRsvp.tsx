@@ -204,7 +204,7 @@ export function InvitationRsvp({
                 <p className="text-[14px] text-[var(--ink-secondary)] first-letter:uppercase">{eventWhen(service, lang)}</p>
                 <p className="mt-1 text-[14.5px] text-[var(--ink)]">
                   {coming.length > 0
-                    ? `${fillCopy(t.attendingCount, { count: coming.length })}: ${coming
+                    ? `${coming.length === 1 ? t.attendingCountOne : fillCopy(t.attendingCount, { count: coming.length })}: ${coming
                         .map((guest) => guestLabel(guest, invitation.guests.indexOf(guest), invitation.guests, lang))
                         .join(", ")}`
                     : t.notAttending}
