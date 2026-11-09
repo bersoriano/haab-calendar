@@ -40,7 +40,7 @@ const WORDS: Record<
 };
 
 export function buildInvitationMessage(input: InvitationMessageInput): string {
-  const words = WORDS[input.lang];
+  const words = WORDS[input.lang] ?? WORDS.en;
   const ask = (input.kind === "invite" ? words.invite : words.reminder).replace("{page}", input.pageName);
   const by = input.deadline ? words.by.replace("{date}", formatRsvpDeadline(input.deadline, input.lang)) : "";
 
@@ -55,7 +55,7 @@ export function buildInvitationMessage(input: InvitationMessageInput): string {
 }
 
 export function buildInvitationEmail(input: InvitationMessageInput): { subject: string; text: string } {
-  const words = WORDS[input.lang];
+  const words = WORDS[input.lang] ?? WORDS.en;
   const subject = (input.kind === "invite" ? words.subjectInvite : words.subjectReminder).replace(
     "{page}",
     input.pageName,

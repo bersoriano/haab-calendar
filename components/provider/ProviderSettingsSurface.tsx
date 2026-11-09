@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
 import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX, parseVocabulary } from "@/lib/rsvp-mode";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
@@ -274,6 +275,8 @@ const INVITATION_MODE_COPY = {
     switchLabel: "Take answers by invitation only",
     seatsLabel: "Seats per new invitation",
     seatsHint: "You can change each invitation's seats in the guest list.",
+    deadlineLabel: "Answer by",
+    deadlineHint: "Optional. Households can answer through the end of this day; after it their link shows their answer and your phone number.",
     offTitle: "Turn off invitation-only RSVPs?",
     offBody: "Your page will take bookings from anyone with the link again. Your guest list and its answers are kept.",
     offConfirm: "Turn off",
@@ -286,6 +289,8 @@ const INVITATION_MODE_COPY = {
     switchLabel: "Recibir respuestas solo por invitación",
     seatsLabel: "Lugares por invitación nueva",
     seatsHint: "Puede cambiar los lugares de cada invitación en la lista de invitados.",
+    deadlineLabel: "Responder a más tardar el",
+    deadlineHint: "Opcional. Las familias pueden responder hasta el final de este día; después, su enlace muestra su respuesta y su teléfono.",
     offTitle: "¿Desactivar las confirmaciones solo por invitación?",
     offBody: "Su página volverá a tomar reservas de cualquier persona con el enlace. Su lista de invitados y sus respuestas se conservan.",
     offConfirm: "Desactivar",
@@ -318,6 +323,16 @@ function InvitationModeSettings({
             }}
           />
         </Field>
+        {on ? (
+          <Field label={copy.deadlineLabel} description={copy.deadlineHint}>
+            <Input
+              type="date"
+              disabled={disabled}
+              value={provider.rsvpDeadline ?? ""}
+              onChange={(event) => onProviderChange("rsvpDeadline", parseRsvpDeadline(event.target.value))}
+            />
+          </Field>
+        ) : null}
         {on ? (
           <Field label={copy.seatsLabel} description={copy.seatsHint}>
             <Input

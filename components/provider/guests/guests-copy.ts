@@ -33,7 +33,24 @@ export type GuestsCopy = {
   search: string;
   searchPlaceholder: string;
   filterLabel: string;
-  filters: { all: string; no_answer: string; attending: string; partial: string; declined: string };
+  filters: { all: string; no_answer: string; attending: string; partial: string; declined: string; not_contacted: string };
+  deadlineOpen: string;
+  deadlineClosed: string;
+  contactedOn: string;
+  whatsappLabel: string;
+  emailLabel: string;
+  noEmail: string;
+  emailSent: string;
+  emailFailed: string;
+  remindAll: string;
+  remindAllTitle: string;
+  remindAllBody: string;
+  remindAllBodyOne: string;
+  remindAllConfirm: string;
+  remindersSent: string;
+  remindersSentOne: string;
+  remindersNone: string;
+  remindFailed: string;
   noMatches: string;
   columns: { invitation: string; seats: string; answers: string; actions: string };
   states: { no_answer: string; attending: string; declined: string; partial: string };
@@ -143,7 +160,31 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
     search: "Search",
     searchPlaceholder: "Name, phone or email",
     filterLabel: "Show",
-    filters: { all: "All", no_answer: "No answer", attending: "Attending", partial: "Some events", declined: "Declined" },
+    filters: {
+      all: "All",
+      no_answer: "No answer",
+      attending: "Attending",
+      partial: "Some events",
+      declined: "Declined",
+      not_contacted: "Not sent",
+    },
+    deadlineOpen: "Answers close on {date}. {count} households haven't answered yet.",
+    deadlineClosed: "Answers closed on {date}. You can still edit any invitation.",
+    contactedOn: "Link sent {date}",
+    whatsappLabel: "Send {name} the link by WhatsApp",
+    emailLabel: "Email {name} the link",
+    noEmail: "{name} has no email address",
+    emailSent: "Email sent to {name}",
+    emailFailed: "Couldn't send that email. Try again.",
+    remindAll: "Remind by email ({count})",
+    remindAllTitle: "Email a reminder to every household that hasn't answered?",
+    remindAllBody: "{count} households with an email address will get their link again. Reminders can go out once a day.",
+    remindAllBodyOne: "1 household with an email address will get its link again. Reminders can go out once a day.",
+    remindAllConfirm: "Send reminders",
+    remindersSent: "Reminders sent to {count} households",
+    remindersSentOne: "Reminder sent to 1 household",
+    remindersNone: "Everyone with an email address has answered.",
+    remindFailed: "Couldn't send the reminders. Try again.",
     noMatches: "No invitations match.",
     columns: { invitation: "Invitation", seats: "Seats", answers: "Answers", actions: "Actions" },
     states: { no_answer: "No answer", attending: "Attending", declined: "Declined", partial: "Some events" },
@@ -261,7 +302,25 @@ export const guestsCopy: Record<Lang, GuestsCopy> = {
       attending: "Asistirán",
       partial: "Algunos eventos",
       declined: "No asistirán",
+      not_contacted: "Sin enviar",
     },
+    deadlineOpen: "Las respuestas cierran el {date}. {count} familias aún no han respondido.",
+    deadlineClosed: "Las respuestas cerraron el {date}. Aún puede editar cualquier invitación.",
+    contactedOn: "Enlace enviado el {date}",
+    whatsappLabel: "Enviar el enlace a {name} por WhatsApp",
+    emailLabel: "Enviar el enlace a {name} por correo",
+    noEmail: "{name} no tiene correo electrónico",
+    emailSent: "Correo enviado a {name}",
+    emailFailed: "No se pudo enviar el correo. Intente de nuevo.",
+    remindAll: "Recordar por correo ({count})",
+    remindAllTitle: "¿Enviar un recordatorio a todas las familias que no han respondido?",
+    remindAllBody: "{count} familias con correo recibirán su enlace de nuevo. Los recordatorios pueden enviarse una vez al día.",
+    remindAllBodyOne: "1 familia con correo recibirá su enlace de nuevo. Los recordatorios pueden enviarse una vez al día.",
+    remindAllConfirm: "Enviar recordatorios",
+    remindersSent: "Recordatorios enviados a {count} familias",
+    remindersSentOne: "Recordatorio enviado a 1 familia",
+    remindersNone: "Todas las familias con correo ya respondieron.",
+    remindFailed: "No se pudieron enviar los recordatorios. Intente de nuevo.",
     noMatches: "Ninguna invitación coincide.",
     columns: { invitation: "Invitación", seats: "Lugares", answers: "Respuestas", actions: "Acciones" },
     states: { no_answer: "Sin respuesta", attending: "Asistirán", declined: "No asistirán", partial: "Algunos eventos" },
