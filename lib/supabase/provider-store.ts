@@ -261,6 +261,7 @@ async function upsertProvider(options: {
     logo_image_url: trimOptional(provider.logoImageUrl),
     header_image_url: trimOptional(provider.headerImageUrl),
     hero_text: trimOptional(provider.heroText),
+    story: trimOptional(provider.story)?.slice(0, 600) ?? null,
     gallery_image_urls: Array.isArray(provider.galleryImageUrls)
       ? provider.galleryImageUrls
           .filter((url) => typeof url === "string" && url.trim())

@@ -39,7 +39,7 @@ import type {
 } from "@/lib/types";
 
 export const PUBLIC_PROVIDER_SELECT =
-  "id, full_name, business_name, slug, vertical, language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, rsvp_deadline, rsvp_questions, timezone, booking_window_days, max_bookings_per_day, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
+  "id, full_name, business_name, slug, vertical, language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, rsvp_deadline, rsvp_questions, story, timezone, booking_window_days, max_bookings_per_day, availability, phone_number_1, phone_number_2, address_1, address_2, header_image_url, hero_text, gallery_image_urls, logo_image_url";
 export const PUBLIC_SERVICE_SELECT =
   "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields";
 
@@ -69,6 +69,7 @@ type PublicProviderRow = {
   rsvp_mode?: string | null;
   rsvp_deadline?: string | null;
   rsvp_questions?: unknown;
+  story?: string | null;
 };
 
 type PublicServiceRow = {
@@ -231,6 +232,7 @@ function toModuleStore(provider: PublicProviderRow, services: PublicServiceRow[]
       logoImageUrl: provider.logo_image_url?.trim() || undefined,
       headerImageUrl: provider.header_image_url?.trim() || undefined,
       heroText: provider.hero_text?.trim() || undefined,
+      story: provider.story?.trim() || undefined,
       galleryImageUrls: Array.isArray(provider.gallery_image_urls)
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,

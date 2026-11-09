@@ -40,6 +40,11 @@ export function InvitationOnlyPage({
           {store.provider.heroText}
         </p>
       ) : null}
+      {store.provider.story ? (
+        <p className="whitespace-pre-line rounded-[26px] bg-[var(--panel-tint-94)] px-5 py-5 text-center text-[16px] leading-relaxed text-[var(--ink-secondary)] ring-1 ring-[rgba(255,255,255,0.7)] sm:px-8 sm:text-[17px]">
+          {store.provider.story}
+        </p>
+      ) : null}
       <section aria-labelledby="invitation-schedule" className="grid gap-4">
         <h2 id="invitation-schedule" className="text-[22px] font-semibold tracking-[-0.01em] text-[var(--ink)]">
           {t.scheduleTitle}

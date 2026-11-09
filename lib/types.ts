@@ -91,6 +91,8 @@ export type ProviderInfo = {
   logoImageUrl?: string; // logo shown beside the title on the public page
   headerImageUrl?: string; // banner shown at the public root, above services
   heroText?: string; // overlaid on the header image; defaults to businessName
+  /** A short story (≤600 characters): invitation-only pages and link previews. */
+  story?: string;
   galleryImageUrls?: string[]; // reserved: future manual carousel below header
   /** UI/content language for this provider. Drives the public booking page. */
   language: Lang;

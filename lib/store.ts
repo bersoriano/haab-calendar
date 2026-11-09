@@ -311,6 +311,8 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     logoImageUrl: source?.logoImageUrl?.trim() || undefined,
     headerImageUrl: source?.headerImageUrl?.trim() || undefined,
     heroText: source?.heroText?.trim() || undefined,
+    // Kept as typed, line breaks and all; trimmed when saved.
+    story: typeof source?.story === "string" && source.story.trim() ? source.story : undefined,
     galleryImageUrls: Array.isArray(source?.galleryImageUrls)
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,

@@ -64,6 +64,11 @@ export default async function InvitationPage({
           {store.provider.heroText}
         </p>
       ) : null}
+      {store.provider.story ? (
+        <p className="whitespace-pre-line rounded-[26px] bg-[var(--panel-tint-94)] px-5 py-5 text-center text-[16px] leading-relaxed text-[var(--ink-secondary)] ring-1 ring-[rgba(255,255,255,0.7)] sm:px-8 sm:text-[17px]">
+          {store.provider.story}
+        </p>
+      ) : null}
       <EventSchedule services={invitedServices} provider={store.provider} lang={lang} />
       <InvitationRsvp
         invitation={found.invitation}
