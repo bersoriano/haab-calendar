@@ -43,7 +43,7 @@ export const MAX_INVITATIONS_PER_REQUEST = 500;
 const RESUBMIT_COOLDOWN_MS = 2_000;
 
 const INVITATION_SELECT =
-  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, answers, invitation_events(service_id), invitation_guests(id, name, position, answers, guest_attendance(service_id, attending))";
+  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, answers, invitation_events(service_id), invitation_guests(id, name, position, answers, guest_attendance(service_id, attending, table_id))";
 
 type InvitationRow = {
   id: string;
@@ -66,7 +66,7 @@ type InvitationRow = {
         name: string;
         position: number;
         answers: Record<string, string> | null;
-        guest_attendance: { service_id: string; attending: boolean }[] | null;
+        guest_attendance: { service_id: string; attending: boolean; table_id: string | null }[] | null;
       }[]
     | null;
 };
@@ -83,6 +83,11 @@ function toInvitation(row: InvitationRow): Invitation {
         (guest.guest_attendance ?? []).map((answer) => [answer.service_id, answer.attending]),
       ),
       answers: guest.answers ?? {},
+      tables: Object.fromEntries(
+        (guest.guest_attendance ?? [])
+          .filter((answer) => answer.table_id)
+          .map((answer) => [answer.service_id, answer.table_id as string]),
+      ),
     }));
 
   return {
@@ -561,7 +566,14 @@ export async function regenerateInvitationToken(
 export type PublicInvitation = {
   displayName: string;
   seatLimit: number;
-  guests: { id: string; name: string; attending: Record<string, boolean>; answers?: Record<string, string> }[];
+  guests: {
+    id: string;
+    name: string;
+    attending: Record<string, boolean>;
+    answers?: Record<string, string>;
+    /** service id → table name. Only once the owner publishes the seating. */
+    tables?: Record<string, string>;
+  }[];
   answers?: Record<string, string>;
   eventIds: string[];
   contactPhone: string;
@@ -571,7 +583,7 @@ export type PublicInvitation = {
 
 type PublicRoute = { vertical: VerticalId; providerSlug: string; token: string };
 
-function toPublicInvitation(invitation: Invitation): PublicInvitation {
+function toPublicInvitation(invitation: Invitation, tableNames?: Map<string, string>): PublicInvitation {
   return {
     displayName: invitation.displayName,
     seatLimit: invitation.seatLimit,
@@ -580,6 +592,16 @@ function toPublicInvitation(invitation: Invitation): PublicInvitation {
       name: guest.name,
       attending: guest.attending,
       answers: guest.answers ?? {},
+      ...(tableNames
+        ? {
+            tables: Object.fromEntries(
+              Object.entries(guest.tables ?? {}).flatMap(([serviceId, tableId]) => {
+                const name = tableNames.get(tableId);
+                return name ? [[serviceId, name]] : [];
+              }),
+            ),
+          }
+        : {}),
     })),
     answers: invitation.answers ?? {},
     eventIds: invitation.eventIds,
@@ -618,7 +640,25 @@ async function findByToken(admin: SupabaseClient, route: PublicRoute) {
     .maybeSingle<InvitationRow>();
 
   if (error) rethrow(error, "Could not load this invitation.");
-  return data ? { providerId: provider.id, deadline, timeZone, questions, invitation: toInvitation(data) } : null;
+  if (!data) return null;
+  const invitation = toInvitation(data);
+  return {
+    providerId: provider.id,
+    deadline,
+    timeZone,
+    questions,
+    invitation,
+    tableNames: provider.seating_published ? await readTableNames(admin, invitation) : undefined,
+  };
+}
+
+/** The names of the tables this invitation's guests sit at. */
+async function readTableNames(admin: SupabaseClient, invitation: Invitation): Promise<Map<string, string>> {
+  const ids = [...new Set(invitation.guests.flatMap((guest) => Object.values(guest.tables ?? {})))];
+  if (ids.length === 0) return new Map();
+  const { data, error } = await admin.from("seating_tables").select("id, name").in("id", ids);
+  if (error) rethrow(error, "Could not load this invitation.");
+  return new Map((data ?? []).map((row: { id: string; name: string }) => [row.id, row.name]));
 }
 
 export async function getPublicInvitation(
@@ -626,7 +666,9 @@ export async function getPublicInvitation(
   route: PublicRoute,
 ): Promise<{ providerId: string; invitation: PublicInvitation } | null> {
   const found = await findByToken(admin, route);
-  return found ? { providerId: found.providerId, invitation: toPublicInvitation(found.invitation) } : null;
+  return found
+    ? { providerId: found.providerId, invitation: toPublicInvitation(found.invitation, found.tableNames) }
+    : null;
 }
 
 const REJECTION_MESSAGES: Record<RsvpRejection, string> = {
@@ -683,5 +725,5 @@ export async function submitPublicRsvp(
 
   const saved = await findByToken(admin, route);
   if (!saved) throw new InvitationWriteError("This invitation link is not valid.", 404);
-  return toPublicInvitation(saved.invitation);
+  return toPublicInvitation(saved.invitation, saved.tableNames);
 }

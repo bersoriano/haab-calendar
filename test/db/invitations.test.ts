@@ -15,6 +15,13 @@ import {
   submitPublicRsvp,
   updateInvitation,
 } from "@/lib/supabase/invitations";
+import {
+  assignSeats,
+  createSeatingTable,
+  deleteSeatingTable,
+  listSeatingTables,
+  setSeatingPublished,
+} from "@/lib/supabase/seating";
 import { localAdminClient, localAnonClient } from "@/test/db/local-client";
 
 /**
@@ -574,5 +581,116 @@ describe("RSVP questions", () => {
 
     const anon = await localAnonClient().rpc("purge_invitation_answers");
     expect(anon.error).not.toBeNull();
+  });
+});
+
+describe("seating", () => {
+  async function seatedWedding(label: string) {
+    const wedding = await seedWedding(label);
+    const [reception, brunch] = wedding.serviceIds;
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Mesa", seatLimit: 3, eventIds: [reception, brunch] },
+    ]);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+    await submitPublicRsvp(admin, route, {
+      guests: [{ name: "Ana" }, { name: "Luis" }, { name: "Sofía" }],
+      attendance: { [reception]: [true, true, false], [brunch]: [false, false, true] },
+    });
+    const [saved] = await listInvitations(wedding.client, wedding.providerId);
+    return { ...wedding, reception, brunch, invitation: saved, route };
+  }
+
+  it("seats only people attending that event, at a table of that event", async () => {
+    const wedding = await seatedWedding("seat");
+    const table = await createSeatingTable(wedding.client, wedding.providerId, {
+      serviceId: wedding.reception,
+      name: "Mesa 7",
+      seatCount: 8,
+    });
+    const brunchTable = await createSeatingTable(wedding.client, wedding.providerId, {
+      serviceId: wedding.brunch,
+      name: "Terraza",
+    });
+
+    const moved = await assignSeats(wedding.client, wedding.providerId, {
+      serviceId: wedding.reception,
+      guestIds: wedding.invitation.guests.map((guest) => guest.id),
+      tableId: table.id,
+    });
+    expect(moved).toBe(2);
+
+    await expect(
+      assignSeats(wedding.client, wedding.providerId, {
+        serviceId: wedding.reception,
+        guestIds: [wedding.invitation.guests[0].id],
+        tableId: brunchTable.id,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    const [seated] = await listInvitations(wedding.client, wedding.providerId);
+    expect(seated.guests.map((guest) => guest.tables?.[wedding.reception] ?? null)).toEqual([table.id, table.id, null]);
+  });
+
+  it("frees a seat when the guest stops attending, and when the table goes", async () => {
+    const wedding = await seatedWedding("free");
+    const table = await createSeatingTable(wedding.client, wedding.providerId, { serviceId: wedding.reception, name: "Mesa 1" });
+    await assignSeats(wedding.client, wedding.providerId, {
+      serviceId: wedding.reception,
+      guestIds: [wedding.invitation.guests[0].id, wedding.invitation.guests[1].id],
+      tableId: table.id,
+    });
+
+    // Luis now can't come to the reception.
+    await admin.from("invitations").update({ submitted_at: "2026-01-01T00:00:00Z" }).eq("id", wedding.invitation.id);
+    await submitPublicRsvp(admin, wedding.route, {
+      guests: wedding.invitation.guests.map((guest) => ({ id: guest.id, name: guest.name })),
+      attendance: { [wedding.reception]: [true, false, false], [wedding.brunch]: [false, false, true] },
+    });
+    let [current] = await listInvitations(wedding.client, wedding.providerId);
+    expect(current.guests.map((guest) => guest.tables?.[wedding.reception] ?? null)).toEqual([table.id, null, null]);
+
+    expect(await deleteSeatingTable(wedding.client, wedding.providerId, table.id)).toBe(true);
+    [current] = await listInvitations(wedding.client, wedding.providerId);
+    expect(current.guests[0].attending[wedding.reception]).toBe(true);
+    expect(current.guests[0].tables?.[wedding.reception]).toBeUndefined();
+    expect(await listSeatingTables(wedding.client, wedding.providerId)).toEqual([]);
+  });
+
+  it("refuses to seat another page's guests", async () => {
+    const wedding = await seatedWedding("mine");
+    const other = await seatedWedding("theirs");
+    const table = await createSeatingTable(wedding.client, wedding.providerId, { serviceId: wedding.reception, name: "Mesa 1" });
+
+    await expect(
+      assignSeats(wedding.client, wedding.providerId, {
+        serviceId: wedding.reception,
+        guestIds: [other.invitation.guests[0].id],
+        tableId: table.id,
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("shows households their table only while the seating is published", async () => {
+    const wedding = await seatedWedding("publish");
+    const table = await createSeatingTable(wedding.client, wedding.providerId, { serviceId: wedding.reception, name: "Mesa 7" });
+    await assignSeats(wedding.client, wedding.providerId, {
+      serviceId: wedding.reception,
+      guestIds: [wedding.invitation.guests[0].id],
+      tableId: table.id,
+    });
+
+    const hidden = await getPublicInvitation(admin, wedding.route);
+    expect(hidden?.invitation.guests.every((guest) => guest.tables === undefined)).toBe(true);
+
+    const state = await setSeatingPublished(wedding.client, wedding.providerId, true);
+    expect(state.published).toBe(true);
+    expect(state.publishedAt).not.toBeNull();
+    const shown = await getPublicInvitation(admin, wedding.route);
+    expect(shown?.invitation.guests[0].tables).toEqual({ [wedding.reception]: "Mesa 7" });
+    expect(shown?.invitation.guests[1].tables).toEqual({});
+
+    await setSeatingPublished(wedding.client, wedding.providerId, false);
+    const again = await getPublicInvitation(admin, wedding.route);
+    expect(again?.invitation.guests[0].tables).toBeUndefined();
   });
 });

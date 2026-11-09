@@ -18,6 +18,8 @@ export type InvitationGuest = {
   attending: Record<string, boolean>;
   /** question id → option id or text. See lib/rsvp-questions.ts. */
   answers?: Record<string, string>;
+  /** service id → table id, for the events this guest is seated at. */
+  tables?: Record<string, string>;
 };
 
 export type Invitation = {
