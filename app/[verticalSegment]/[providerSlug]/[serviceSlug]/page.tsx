@@ -5,6 +5,7 @@ import { PublicBookingPageShell } from "@/components/public-booking-page-shell";
 import { isInvitationMode } from "@/lib/rsvp-mode";
 import {
   isPublicUrlBackendUnavailable,
+  resolvePublicBookingPage,
   resolvePublicBookingUrl,
 } from "@/lib/public-booking-resolver";
 import { normalizeUrlSlugSegment } from "@/lib/public-url";
@@ -12,22 +13,20 @@ import {
   parsePublicLanguage,
   withPublicLanguage,
 } from "@/lib/public-language";
-import { buildProviderCanonicalMetadata } from "@/lib/site-metadata";
+import { buildProviderCanonicalMetadata, withShareMetadata } from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{
-    verticalSegment: string;
-    providerSlug: string;
-    serviceSlug: string;
-  }>;
+  params: Promise<{ verticalSegment: string; providerSlug: string; serviceSlug: string }>;
 }): Promise<Metadata> {
   const { verticalSegment, providerSlug, serviceSlug } = await params;
-
-  return buildProviderCanonicalMetadata(verticalSegment, providerSlug, serviceSlug);
+  return withShareMetadata(
+    buildProviderCanonicalMetadata(verticalSegment, providerSlug, serviceSlug),
+    () => resolvePublicBookingPage(verticalSegment, providerSlug, serviceSlug),
+  );
 }
 
 export default async function PublicServiceBookingPage({
@@ -47,11 +46,7 @@ export default async function PublicServiceBookingPage({
   let resolution: Awaited<ReturnType<typeof resolvePublicBookingUrl>>;
 
   try {
-    resolution = await resolvePublicBookingUrl({
-      verticalSegment,
-      providerSlug,
-      serviceSlug,
-    });
+    resolution = await resolvePublicBookingPage(verticalSegment, providerSlug, serviceSlug);
   } catch (error) {
     if (!isPublicUrlBackendUnavailable(error)) {
       throw error;

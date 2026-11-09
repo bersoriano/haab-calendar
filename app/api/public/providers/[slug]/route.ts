@@ -45,6 +45,7 @@ type PublicProviderRow = {
   rsvp_mode?: string | null;
   rsvp_deadline?: string | null;
   rsvp_questions?: unknown;
+  story?: string | null;
 };
 
 type PublicServiceRow = {
@@ -131,6 +132,7 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
       logoImageUrl: provider.logo_image_url?.trim() || undefined,
       headerImageUrl: provider.header_image_url?.trim() || undefined,
       heroText: provider.hero_text?.trim() || undefined,
+      story: provider.story?.trim() || undefined,
       galleryImageUrls: Array.isArray(provider.gallery_image_urls)
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,

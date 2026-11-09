@@ -7,7 +7,7 @@ import {
   parsePublicVerticalSegment,
 } from "@/lib/public-url";
 import { buildAbsoluteUrl, getSiteOrigin } from "@/lib/site-url";
-import type { Lang } from "@/lib/types";
+import type { Lang, ProviderInfo } from "@/lib/types";
 
 export const SITE_NAME = "Haab Calendar";
 
@@ -132,4 +132,76 @@ export function buildProviderCanonicalMetadata(
       ? buildServicePath(vertical, provider, service)
       : buildProviderPath(vertical, provider),
   );
+}
+
+const SHARE_DESCRIPTION_MAX = 160;
+
+/** Text cut at a word near the limit, with an ellipsis, for a link preview. */
+export function previewText(text: string, max = SHARE_DESCRIPTION_MAX): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > max * 0.4 ? cut.slice(0, lastSpace) : cut).replace(/[\s.,;:!?-]+$/, "")}…`;
+}
+
+/**
+ * How a shared link to a public page previews: the page's own name, its story
+ * (or hero line), and its header image when it has one. A wedding link on
+ * WhatsApp then shows the couple and their story, not Haab's pitch.
+ *
+ * Open Graph objects replace the parent's rather than merging, so the default
+ * card is restated when the page has no image of its own.
+ */
+export function buildProviderShareMetadata(
+  provider: Pick<ProviderInfo, "businessName" | "fullName" | "story" | "heroText" | "headerImageUrl" | "language">,
+): Metadata {
+  const title = (provider.businessName || provider.fullName || "").trim();
+  if (!title) return {};
+  const description = previewText(provider.story || provider.heroText || "") || undefined;
+  const images = provider.headerImageUrl
+    ? [{ url: provider.headerImageUrl, alt: title }]
+    : [{ url: socialCardPath(provider.language), ...SOCIAL_CARD_SIZE, type: "image/png", alt: SITE_NAME }];
+
+  return {
+    title,
+    ...(description ? { description } : {}),
+    openGraph: {
+      type: "website",
+      siteName: SITE_NAME,
+      title,
+      ...(description ? { description } : {}),
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      ...(description ? { description } : {}),
+      images,
+    },
+  };
+}
+
+/**
+ * A public page's canonical metadata plus its link preview. The preview needs
+ * the provider; when the lookup fails or finds nothing, the page keeps the
+ * site's default preview rather than failing to render.
+ */
+export async function withShareMetadata(
+  canonical: Metadata,
+  resolve: () => Promise<
+    | { status: "resolved"; store: { provider: Parameters<typeof buildProviderShareMetadata>[0] } }
+    | { status: "redirect" }
+    | null
+  >,
+): Promise<Metadata> {
+  try {
+    const resolution = await resolve();
+    if (resolution?.status === "resolved") {
+      return { ...buildProviderShareMetadata(resolution.store.provider), ...canonical };
+    }
+  } catch {
+    // The database is unreachable: the page renders its offline shell anyway.
+  }
+  return canonical;
 }
