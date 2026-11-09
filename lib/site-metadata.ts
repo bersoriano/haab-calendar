@@ -205,4 +205,3 @@ export async function withShareMetadata(
   }
   return canonical;
 }
-

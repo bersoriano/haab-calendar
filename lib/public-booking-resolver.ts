@@ -589,4 +589,3 @@ export const resolvePublicBookingPage = cache(
   (verticalSegment: string, providerSlug: string, serviceSlug?: string) =>
     resolvePublicBookingUrl({ verticalSegment, providerSlug, serviceSlug }),
 );
-

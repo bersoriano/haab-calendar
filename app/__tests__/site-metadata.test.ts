@@ -169,4 +169,3 @@ describe("link previews of public pages", () => {
     expect(previewText("  corto  ")).toBe("corto");
   });
 });
-
