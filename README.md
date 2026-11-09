@@ -69,6 +69,7 @@ overwrites edits made to the demos, so to publish a single new one use
 - Personal golf coaching: `/professionals/fairway-lab-golf`
 - Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
 - Guided tours, dated departures and weekly day trips: `/events/ruta-cenote-tours`
+- Wedding RSVPs, one dated event per moment of the weekend: `/events/boda-valeria-y-diego`
   (the events vertical in the `tours` word set, with photos, a cancellation
   policy, a minimum group size and traveler details)
 
@@ -80,8 +81,8 @@ single-resource business — one room, one chair, one bay, one coach — because
 booked appointment slot blocks that time across all of a provider's services. Hotel stays are deliberately absent; see the note at
 the end of this section.
 
-The two race entries and the tour departures are dated relative to the seed
-run, so re-seeding always leaves them in the future. Events have no end date,
+The two race entries, the tour departures and the wedding weekend are dated
+relative to the seed run, so re-seeding always leaves them in the future. Events have no end date,
 so a multi-day tour is stored as its first day's welcome meeting and states its
 length in the name and description. Every example is fictional, including the
 phone numbers and addresses.

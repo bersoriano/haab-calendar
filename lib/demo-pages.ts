@@ -123,6 +123,13 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     ownerEmail: "public-examples+tours@haab-calendar.invalid",
     label: "Ruta Cenote Tours",
   },
+  {
+    key: "weddings",
+    vertical: "events",
+    providerSlug: "boda-valeria-y-diego",
+    ownerEmail: "public-examples+weddings@haab-calendar.invalid",
+    label: "Boda de Valeria & Diego",
+  },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {
