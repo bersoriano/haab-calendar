@@ -100,6 +100,8 @@ export type ProviderInfo = {
   rsvpMode?: RsvpMode;
   /** Seat limit a new invitation starts with, 1–20. Undefined is 2. */
   defaultInvitationSeats?: number;
+  /** Invitation-only pages: last day answers are taken (YYYY-MM-DD, page time zone). */
+  rsvpDeadline?: string;
   /**
    * The owner's own dashboard language. Undefined means "follow the browser",
    * which is what every pre-existing provider does. Deliberately separate from

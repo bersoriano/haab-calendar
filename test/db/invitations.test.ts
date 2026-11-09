@@ -283,6 +283,30 @@ describe("invitation tables", () => {
     expect(publicRow.error).toBeNull();
   });
 
+  it("lets the owner set a deadline that the public page can read, and keeps the reminder clock private", async () => {
+    const wedding = await seedWedding("deadline");
+
+    const saved = await wedding.client
+      .from("providers")
+      .update({ rsvp_deadline: "2026-12-20" })
+      .eq("id", wedding.providerId);
+    expect(saved.error).toBeNull();
+
+    const publicRow = await localAnonClient()
+      .from("public_providers")
+      .select("rsvp_deadline")
+      .eq("id", wedding.providerId)
+      .maybeSingle<{ rsvp_deadline: string }>();
+    expect(publicRow.error).toBeNull();
+    expect(publicRow.data?.rsvp_deadline).toBe("2026-12-20");
+
+    const reset = await wedding.client
+      .from("providers")
+      .update({ last_bulk_reminder_at: null })
+      .eq("id", wedding.providerId);
+    expect(reset.error).not.toBeNull();
+  });
+
   it("resets the mode when switching away from events", async () => {
     const wedding = await seedWedding("switch");
 
