@@ -1,4 +1,5 @@
 import { normalizePhotoUrls } from "@/lib/image-upload";
+import { cache } from "react";
 import { normalizeTravelerFields } from "@/lib/traveler-details";
 import "server-only";
 
@@ -578,3 +579,14 @@ export async function resolvePublicBookingUrl(options: {
 
   return resolved;
 }
+
+/**
+ * The same lookup, once per request: a page's metadata (its link preview) and
+ * the page itself both need the provider, and React's cache keeps that to one
+ * database read. Primitive arguments, because the cache keys on identity.
+ */
+export const resolvePublicBookingPage = cache(
+  (verticalSegment: string, providerSlug: string, serviceSlug?: string) =>
+    resolvePublicBookingUrl({ verticalSegment, providerSlug, serviceSlug }),
+);
+
