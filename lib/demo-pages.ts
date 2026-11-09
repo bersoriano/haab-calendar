@@ -17,7 +17,16 @@ export type DemoPage = {
   /** Synthetic auth account that owns the provider row. */
   ownerEmail: string;
   label: string;
+  /** Where the landing card leads, when not the page itself (a sample invitation). */
+  cardPath?: string;
 };
+
+/**
+ * The wedding demo's sample invitation. Public on purpose: anyone can try the
+ * RSVP with it, and re-seeding resets it (scripts/seed-public-examples.mjs
+ * uses the same token).
+ */
+export const DEMO_SAMPLE_INVITATION_TOKEN = "DemoBodaValeriaYDiego-sample-invitation-001";
 
 export const DEMO_OWNER_EMAIL_PREFIX = "public-examples+";
 export const DEMO_OWNER_EMAIL_DOMAIN = "haab-calendar.invalid";
@@ -129,11 +138,17 @@ export const DEMO_PAGES: readonly DemoPage[] = [
     providerSlug: "boda-valeria-y-diego",
     ownerEmail: "public-examples+weddings@haab-calendar.invalid",
     label: "Boda de Valeria & Diego",
+    cardPath: `/events/boda-valeria-y-diego/i/${DEMO_SAMPLE_INVITATION_TOKEN}`,
   },
 ] as const;
 
 export function getDemoPagePath(page: DemoPage) {
   return buildProviderPath(page.vertical, page.providerSlug);
+}
+
+/** Where a demo's landing card leads: its sample when it has one, else the page. */
+export function getDemoCardPath(page: DemoPage) {
+  return page.cardPath ?? getDemoPagePath(page);
 }
 
 export function findDemoPage(key?: string | null): DemoPage | undefined {

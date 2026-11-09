@@ -296,8 +296,8 @@ export const translations = {
         {
           vertical: "Bodas",
           title: "Boda de Valeria & Diego",
-          proof: "Una wedding planner confirma a los invitados en cada evento del fin de semana, con cupo y restricciones alimentarias.",
-          cta: "Confirmar asistencia",
+          proof: "Solo por invitación: un enlace por familia, acompañantes, menú, mesas y registro con QR en la entrada.",
+          cta: "Abrir una invitación",
         },
       ],
       seeAll: "Ver las {n} demos →",
@@ -831,8 +831,8 @@ export const translations = {
         {
           vertical: "Weddings",
           title: "Boda de Valeria & Diego",
-          proof: "A wedding planner collects RSVPs for each event of the weekend, with seat caps and dietary needs.",
-          cta: "RSVP",
+          proof: "Invitation only: one link per household, plus-ones, menu choices, tables and QR check-in at the door.",
+          cta: "Open an invitation",
         },
       ],
       seeAll: "See all {n} demos →",

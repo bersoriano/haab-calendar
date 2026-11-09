@@ -83,7 +83,7 @@ overwrites edits made to the demos, so to publish a single new one use
 - Personal golf coaching: `/professionals/fairway-lab-golf`
 - Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
 - Guided tours, dated departures and weekly day trips: `/events/ruta-cenote-tours`
-- Wedding RSVPs, one dated event per moment of the weekend: `/events/boda-valeria-y-diego`
+- Wedding RSVPs, invitation only (30 households, menu questions, published tables): `/events/boda-valeria-y-diego`. The landing card opens its sample invitation, `/events/boda-valeria-y-diego/i/DemoBodaValeriaYDiego-sample-invitation-001`, which anyone can answer and re-seeding resets.
   (the events vertical in the `tours` word set, with photos, a cancellation
   policy, a minimum group size and traveler details)
 
