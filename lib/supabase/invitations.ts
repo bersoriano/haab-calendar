@@ -43,7 +43,7 @@ export const MAX_INVITATIONS_PER_REQUEST = 500;
 const RESUBMIT_COOLDOWN_MS = 2_000;
 
 const INVITATION_SELECT =
-  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, answers, invitation_events(service_id), invitation_guests(id, name, position, answers, guest_attendance(service_id, attending, table_id))";
+  "id, provider_id, display_name, contact_phone, contact_email, seat_limit, token, notes, submitted_at, last_contacted_at, created_at, updated_at, answers, invitation_events(service_id), invitation_guests(id, name, position, answers, guest_attendance(service_id, attending, table_id, checked_in_at))";
 
 type InvitationRow = {
   id: string;
@@ -66,7 +66,9 @@ type InvitationRow = {
         name: string;
         position: number;
         answers: Record<string, string> | null;
-        guest_attendance: { service_id: string; attending: boolean; table_id: string | null }[] | null;
+        guest_attendance:
+          | { service_id: string; attending: boolean; table_id: string | null; checked_in_at?: string | null }[]
+          | null;
       }[]
     | null;
 };
@@ -87,6 +89,11 @@ function toInvitation(row: InvitationRow): Invitation {
         (guest.guest_attendance ?? [])
           .filter((answer) => answer.table_id)
           .map((answer) => [answer.service_id, answer.table_id as string]),
+      ),
+      checkedIn: Object.fromEntries(
+        (guest.guest_attendance ?? [])
+          .filter((answer) => answer.checked_in_at)
+          .map((answer) => [answer.service_id, answer.checked_in_at as string]),
       ),
     }));
 

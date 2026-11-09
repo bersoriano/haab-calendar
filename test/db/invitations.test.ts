@@ -15,6 +15,7 @@ import {
   submitPublicRsvp,
   updateInvitation,
 } from "@/lib/supabase/invitations";
+import { getDoorList, recordCheckins } from "@/lib/supabase/checkin";
 import {
   assignSeats,
   createSeatingTable,
@@ -692,5 +693,63 @@ describe("seating", () => {
     await setSeatingPublished(wedding.client, wedding.providerId, false);
     const again = await getPublicInvitation(admin, wedding.route);
     expect(again?.invitation.guests[0].tables).toBeUndefined();
+  });
+});
+
+describe("door check-in", () => {
+  it("keeps the earliest arrival from two phones, skips people not coming, and can undo", async () => {
+    const wedding = await seedWedding("door");
+    const [reception, brunch] = wedding.serviceIds;
+    const [invitation] = await createInvitations(wedding.client, wedding.providerId, [
+      { displayName: "Familia Puerta", seatLimit: 2, eventIds: [reception, brunch] },
+    ]);
+    const route = { vertical: "events" as const, providerSlug: wedding.slug, token: invitation.token };
+    await submitPublicRsvp(admin, route, {
+      guests: [{ name: "Ana" }, { name: "Luis" }],
+      attendance: { [reception]: [true, false], [brunch]: [true, true] },
+    });
+    const [saved] = await listInvitations(wedding.client, wedding.providerId);
+    const [ana, luis] = saved.guests;
+
+    const list = await getDoorList(wedding.client, wedding.providerId, reception, "es");
+    expect(list?.guests.map((guest) => guest.label)).toEqual(["Ana"]);
+    expect(list?.invitations[0].tokenHash).toMatch(/^[0-9a-f]{64}$/);
+
+    // Phone B synced first with a later time; phone A's earlier time wins.
+    await recordCheckins(wedding.client, wedding.providerId, {
+      serviceId: reception,
+      entries: [{ guestId: ana.id, at: "2026-11-09T01:10:00.000Z" }],
+    });
+    const changed = await recordCheckins(wedding.client, wedding.providerId, {
+      serviceId: reception,
+      entries: [
+        { guestId: ana.id, at: "2026-11-09T01:05:00.000Z" },
+        { guestId: luis.id, at: "2026-11-09T01:05:00.000Z" },
+      ],
+    });
+    expect(changed).toBe(1);
+    let [current] = await listInvitations(wedding.client, wedding.providerId);
+    expect(Date.parse(current.guests[0].checkedIn?.[reception] ?? "")).toBe(Date.parse("2026-11-09T01:05:00.000Z"));
+    // The same moment written another way is no change.
+    expect(
+      await recordCheckins(wedding.client, wedding.providerId, {
+        serviceId: reception,
+        entries: [{ guestId: ana.id, at: "2026-11-09T01:05:00+00:00" }],
+      }),
+    ).toBe(0);
+    expect(current.guests[1].checkedIn?.[reception]).toBeUndefined();
+
+    await recordCheckins(wedding.client, wedding.providerId, { serviceId: reception, entries: [{ guestId: ana.id, at: null }] });
+    [current] = await listInvitations(wedding.client, wedding.providerId);
+    expect(current.guests[0].checkedIn?.[reception]).toBeUndefined();
+
+    await expect(
+      recordCheckins(wedding.client, wedding.providerId, {
+        serviceId: reception,
+        entries: [{ guestId: ana.id, at: "2999-01-01T00:00:00.000Z" }],
+      }),
+    ).rejects.toMatchObject({ status: 400 });
+
+    expect(await getDoorList(wedding.client, wedding.providerId, "not-an-event", "es")).toBeNull();
   });
 });

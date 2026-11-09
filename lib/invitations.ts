@@ -20,6 +20,8 @@ export type InvitationGuest = {
   answers?: Record<string, string>;
   /** service id → table id, for the events this guest is seated at. */
   tables?: Record<string, string>;
+  /** service id → when this guest was checked in at the door. */
+  checkedIn?: Record<string, string>;
 };
 
 export type Invitation = {
