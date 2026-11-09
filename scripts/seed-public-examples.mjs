@@ -31,6 +31,15 @@ function inWeeks(weeks, weekday = 0) {
   return date.toISOString().slice(0, 10);
 }
 
+function daysFrom(dateKey, days) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+// The wedding demo's Saturday. Its Friday and Sunday events are derived from it.
+const WEDDING_DAY = inWeeks(10, 6);
+
 const closedDay = (startTime, endTime) => ({ enabled: false, startTime, endTime });
 const openDay = (startTime, endTime, blockedWindows = []) => ({
   enabled: true,
@@ -1179,6 +1188,117 @@ const examples = [
         start_time: "18:00",
         end_time: "19:00",
         max_spots: 16,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+    ],
+  },
+  // A wedding weekend run by a planner: each moment of the weekend is a dated
+  // event and each RSVP takes one seat. There is no party size on events, so a
+  // couple confirms once per person, and the page says so. The three days are
+  // derived from one Saturday so they always stay in order. Windows on the same
+  // date must not overlap: a booking on one event closes any other event whose
+  // window overlaps it.
+  {
+    path: "/events/boda-valeria-y-diego",
+    ownerKey: "weddings",
+    provider: {
+      full_name: "Mariana Salgado",
+      business_name: "Boda de Valeria & Diego",
+      email: demoOwnerEmail("weddings"),
+      vertical: "events",
+      slug: "boda-valeria-y-diego",
+      custom_slug: "boda-valeria-y-diego",
+      plan_tier: "premium",
+      language: "es",
+      timezone: "America/Mexico_City",
+      booking_window_days: 120,
+      phone_number_1: "+52 777 555 0193",
+      phone_number_2: "",
+      address_1: "Jardín de la hacienda, Xochitepec, Morelos",
+      address_2: "Centro histórico, Cuernavaca, Morelos",
+      hero_text:
+        "Nos elegimos, hoy y siempre. Confirme su lugar en cada momento del fin de semana en Xochitepec, Morelos.",
+      gallery_image_urls: [],
+      availability: {
+        sunday: openDay("10:00", "15:00"),
+        monday: closedDay("10:00", "15:00"),
+        tuesday: closedDay("10:00", "15:00"),
+        wednesday: closedDay("10:00", "15:00"),
+        thursday: closedDay("10:00", "15:00"),
+        friday: openDay("19:00", "23:00"),
+        saturday: openDay("16:00", "23:30"),
+      },
+    },
+    services: [
+      {
+        name: "Cena de bienvenida",
+        slug: "cena-de-bienvenida",
+        booking_type: "appointment",
+        duration_minutes: 180,
+        description:
+          "La noche antes de la boda: cena, mezcal y música en una terraza del centro de Cuernavaca, para que las dos familias se conozcan.",
+        medical_specialty: null,
+        capacity: "90 invitados",
+        cost: "Sin costo",
+        notes: "Vestimenta casual elegante. Cada confirmación aparta un lugar: si asisten en pareja, confirme una vez por cada persona.",
+        cancellation_policy: "Si sus planes cambian, cancele desde su enlace personal para liberar el lugar.",
+        traveler_fields: ["diet"],
+        sort_order: 10,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: daysFrom(WEDDING_DAY, -1),
+        start_time: "19:30",
+        end_time: "22:30",
+        max_spots: 90,
+        linked_address_2: true,
+        linked_phone_1: true,
+      },
+      {
+        name: "Ceremonia y recepción",
+        slug: "ceremonia-y-recepcion",
+        booking_type: "appointment",
+        duration_minutes: 420,
+        description:
+          "Ceremonia a la sombra del ahuehuete a las 4:30 p. m., cóctel en el jardín, cena de tres tiempos y baile hasta las 11:30 p. m.",
+        medical_specialty: null,
+        capacity: "180 invitados",
+        cost: "Sin costo",
+        notes:
+          "Formal de jardín: la ceremonia es sobre pasto, se recomienda tacón ancho. Celebración solo para adultos. Cada confirmación aparta un lugar: si asisten en pareja, confirme una vez por cada persona. Si necesita transporte, escriba su hotel y lo sumamos a la ruta.",
+        cancellation_policy:
+          "Si sus planes cambian, cancele desde su enlace personal a más tardar tres semanas antes, cuando cerramos mesas con el banquete.",
+        traveler_fields: ["diet", "hotel_pickup"],
+        sort_order: 20,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: WEDDING_DAY,
+        start_time: "16:30",
+        end_time: "23:30",
+        max_spots: 180,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+      {
+        name: "Tornaboda",
+        slug: "tornaboda",
+        booking_type: "appointment",
+        duration_minutes: 180,
+        description:
+          "Brunch tranquilo al día siguiente en el mismo jardín: chilaquiles, café de olla y la última foto juntos antes de volver a casa.",
+        medical_specialty: null,
+        capacity: "70 invitados",
+        cost: "Sin costo",
+        notes: "Vestimenta casual. Cada confirmación aparta un lugar: si asisten en pareja, confirme una vez por cada persona.",
+        cancellation_policy: "Si sus planes cambian, cancele desde su enlace personal para liberar el lugar.",
+        traveler_fields: ["diet"],
+        sort_order: 30,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: daysFrom(WEDDING_DAY, 1),
+        start_time: "11:00",
+        end_time: "14:00",
+        max_spots: 70,
         linked_address_1: true,
         linked_phone_1: true,
       },
