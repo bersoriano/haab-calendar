@@ -542,6 +542,17 @@ for (const lang of ["en", "es"]) {
 // Footer links are public navigation too: verify visible attribution and its
 // destination on both page widths, including service and manage URLs.
 for (const width of WIDTHS) {
+  test(`landing footer shows developer credit at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    await page.goto("/?lang=en");
+    const footer = page.getByRole("contentinfo");
+    await expect(footer).toContainText("Haab Calendar. Multi purpose booking application. Developed by");
+    const developer = footer.getByRole("link", { name: "brilliant.dev", exact: true });
+    await developer.scrollIntoViewIfNeeded();
+    await expectUsable(developer, "the footer's developer link");
+    await expect(developer).toHaveAttribute("href", "https://brilliant.dev/");
+  });
+
   test(`landing footer links to the blog at ${width.name} width`, async ({ page }) => {
     await page.setViewportSize({ width: width.width, height: width.height });
     await page.goto("/?lang=es");
