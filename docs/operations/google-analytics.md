@@ -86,7 +86,49 @@ view doubles.
 
 ## Events
 
-<!-- Filled in with the approved landing event mapping. -->
+Shared landing-page taxonomy. `landing-browser.ts` emits them from the
+`data-landing-*` markup; `combineLandingCapture()` sends each one to GA
+through `track()` and to PostHog under the same name. Every landing event
+also carries `locale` (`en`/`es`).
+
+| Event | Fires on | Parameters |
+|---|---|---|
+| `page_view` | each measured route (`<PageAnalytics />`) | `page_type`, `locale` |
+| `section_view` | a `LANDING_SECTIONS` section half-visible for 1 s, once per visit | `section_id` |
+| `cta_click` | start / demo / gallery / login buttons | `cta_type`, `cta_location` (section) |
+| `select_content` | FAQ opened, industry picked, live example or featured post opened | `content_type`, `content_id` |
+| `read_progress` | page scroll 25/50/75/100 %; demo video start/25/50/75/complete | `content_type` (`page`/`video`), `percent` |
+| `language_change` | language switch | `language` (target) |
+
+`data-landing-action` → event:
+
+| Markup action | Event | Parameters |
+|---|---|---|
+| `create_page` | `cta_click` | `cta_type: signup` |
+| `resume_setup` (a saved draft exists) | `cta_click` | `cta_type: resume` |
+| `open_dashboard`, `login` | `cta_click` | `cta_type: login` |
+| `try_demo` | `cta_click` | `cta_type: demo` |
+| `view_gallery` | `cta_click` | `cta_type: gallery` |
+| `view_example` | `select_content` | `content_type: example`, `content_id: example_<card index>` or `featured` |
+| `read_post` | `select_content` | `content_type: article`, `content_id: featured` |
+
+Values are enumerated in `lib/analytics/landing-policy.ts`
+(`LANDING_SECTIONS`, `LANDING_CTA_TYPES`, `LANDING_CONTENT_TYPES`,
+`LANDING_VERTICALS`, `isLandingContentId`). PostHog's `sanitizeLandingEvent`
+drops any event or value not listed there, so add new values there first.
+No free text, form contents, or account identity is ever sent.
+
+**Renamed 2026-11-15.** Before that date, GA had page views only and PostHog
+had `landing_section_view`, `landing_cta_click` (`action`), `landing_faq_open`,
+`landing_vertical_select`, `landing_scroll_depth`, `landing_video_progress`,
+`landing_language_change` and `landing_nav_click` (now dropped: the
+destination's page view carries the referrer). Reports spanning the date need
+both series. PostHog's `$pageview`/`$pageleave` are unchanged and stay
+PostHog-only.
+
+**Key event.** There is no server-confirmed sign-up on a measured page
+(accounts are created on `/login`, which is private), so the conversion is the
+derived event `create_page_click` = `cta_click` where `cta_type` = `signup`.
 
 ## PostHog
 

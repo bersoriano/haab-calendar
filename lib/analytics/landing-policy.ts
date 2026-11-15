@@ -26,17 +26,27 @@ export const LANDING_SECTIONS = [
   // The doctors page's own sections.
   "front-desk", "for-practices",
 ] as const;
+/** `data-landing-action` values in the landing markup; mapped to events in landing-browser.ts. */
 export const LANDING_ACTIONS = [
   "create_page", "resume_setup", "open_dashboard", "try_demo", "view_gallery", "view_example", "read_post", "login",
 ] as const;
+export const LANDING_VERTICALS = ["healthcare", "professional", "spaces", "events", "restaurant"] as const;
+/** `cta_type` values the landing sends (a subset of CtaType in lib/analytics/analytics.ts). */
+export const LANDING_CTA_TYPES = ["signup", "resume", "login", "demo", "gallery"] as const;
+export const LANDING_CONTENT_TYPES = ["faq", "vertical", "example", "article", "page", "video"] as const;
+
+/**
+ * Shared landing-page taxonomy names (docs/operations/google-analytics.md),
+ * sent to Google Analytics and PostHog alike, plus PostHog's own page events.
+ * Renamed from landing_* on 2026-11-15.
+ */
 export const LANDING_EVENTS = [
-  "$pageview", "$pageleave", "landing_section_view", "landing_cta_click",
-  "landing_faq_open", "landing_video_progress", "landing_scroll_depth",
-  "landing_vertical_select", "landing_language_change", "landing_nav_click",
+  "$pageview", "$pageleave", "section_view", "cta_click", "select_content", "read_progress", "language_change",
 ] as const;
 
 export type LandingEventName = (typeof LANDING_EVENTS)[number];
-export type LandingCapture = (event: LandingEventName, properties?: Record<string, unknown>) => void;
+export type LandingProperties = Record<string, string | number>;
+export type LandingCapture = (event: LandingEventName, properties?: LandingProperties) => void;
 
 type AnalyticsEnvironment = { key?: string; host?: string; allowedHosts?: string };
 type Visitor = { hostname: string; pathname: string; doNotTrack: string | null; globalPrivacyControl: boolean };
@@ -71,6 +81,12 @@ export function readLandingAttribution(href: string, referrer: string): Record<s
     }
   } catch { /* A missing or invalid referrer is direct/unknown traffic. */ }
   return attribution;
+}
+
+/** FAQ number, vertical, example card index, or the featured post: never free text. */
+export function isLandingContentId(value: unknown): value is string {
+  return typeof value === "string" && (/^(q|example_)\d{1,2}$/.test(value)
+    || value === "featured" || (LANDING_VERTICALS as readonly string[]).includes(value));
 }
 
 type WireEvent = { event: string; properties: Record<string, unknown>; uuid?: string; timestamp?: Date };
@@ -113,16 +129,16 @@ export function sanitizeLandingEvent(input: WireEvent): WireEvent | null {
     if (typeof value === "string" && value.trim()) properties[key] = value.trim().toLowerCase().slice(0, 100);
   }
   const enums: Record<string, readonly unknown[]> = {
-    section: LANDING_SECTIONS, action: LANDING_ACTIONS, language: ["en", "es"],
-    target_language: ["en", "es"], vertical: ["healthcare", "professional", "spaces", "events", "restaurant"],
-    milestone: ["start", "25", "50", "75", "complete"],
+    section_id: LANDING_SECTIONS, cta_location: LANDING_SECTIONS, cta_type: LANDING_CTA_TYPES,
+    content_type: LANDING_CONTENT_TYPES, locale: ["en", "es"], language: ["en", "es"],
   };
   for (const [key, values] of Object.entries(enums)) {
     if (values.includes(input.properties[key])) properties[key] = input.properties[key];
   }
-  for (const key of ["question", "example", "percent", "duration_seconds", "active_seconds", "max_scroll_percent"]) {
+  if (isLandingContentId(input.properties.content_id)) properties.content_id = input.properties.content_id;
+  for (const key of ["percent", "duration_seconds", "active_seconds", "max_scroll_percent"]) {
     const value = input.properties[key];
-    const max = ["duration_seconds", "active_seconds"].includes(key) ? 86_400 : key === "question" ? 30 : 100;
+    const max = ["duration_seconds", "active_seconds"].includes(key) ? 86_400 : 100;
     if (typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= max) properties[key] = value;
   }
   return { event: input.event, properties, ...(input.uuid ? { uuid: input.uuid } : {}), ...(input.timestamp ? { timestamp: input.timestamp } : {}) };

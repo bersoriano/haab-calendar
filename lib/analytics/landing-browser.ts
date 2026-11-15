@@ -1,9 +1,29 @@
 import {
   LANDING_ACTIONS,
   LANDING_SECTIONS,
+  LANDING_VERTICALS,
   type LandingCapture,
   type LandingEventName,
+  type LandingProperties,
 } from "./landing-policy";
+
+type LandingAction = (typeof LANDING_ACTIONS)[number];
+
+/**
+ * Landing markup actions in the shared taxonomy. Navigation-style CTAs are
+ * cta_click; opening one example or the featured post is select_content.
+ */
+const ACTION_EVENTS: Record<LandingAction, (example?: string) => [LandingEventName, LandingProperties]> = {
+  create_page: () => ["cta_click", { cta_type: "signup" }],
+  resume_setup: () => ["cta_click", { cta_type: "resume" }],
+  open_dashboard: () => ["cta_click", { cta_type: "login" }],
+  login: () => ["cta_click", { cta_type: "login" }],
+  try_demo: () => ["cta_click", { cta_type: "demo" }],
+  view_gallery: () => ["cta_click", { cta_type: "gallery" }],
+  view_example: (example) => ["select_content", { content_type: "example", content_id: example && /^\d{1,2}$/.test(example) ? `example_${example}` : "featured" }],
+  read_post: () => ["select_content", { content_type: "article", content_id: "featured" }],
+};
+const VIDEO_PERCENT = { start: 0, "25": 25, "50": 50, "75": 75, complete: 100 } as const;
 
 const isSection = (value: string): boolean => (LANDING_SECTIONS as readonly string[]).includes(value);
 const sectionName = (element: HTMLElement) => element.dataset.landingSection || element.id;
@@ -23,9 +43,9 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
   const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-landing-section], section[id]"))
     .filter((element) => isSection(sectionName(element)));
   const openQuestions = new Set(root.querySelectorAll("details[data-landing-faq][open]"));
-  const emit = (event: LandingEventName, properties: Record<string, unknown> = {}) => {
+  const emit = (event: LandingEventName, properties: LandingProperties = {}) => {
     if (stopped || left) return;
-    try { capture(event, { ...properties, language: language() }); }
+    try { capture(event, { ...properties, locale: language() }); }
     catch { /* Telemetry must not interrupt an interaction. */ }
   };
   const placement = (element: Element): string | undefined => {
@@ -54,7 +74,7 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
           timers.delete(element);
           if (!inView(element) || stopped) return;
           seen.add(name);
-          emit("landing_section_view", { section: name });
+          emit("section_view", { section_id: name });
         }, 1000));
       }
     }
@@ -65,7 +85,7 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
     for (const percent of [25, 50, 75, 100]) {
       if (maxScroll >= percent && !depths.has(percent)) {
         depths.add(percent);
-        emit("landing_scroll_depth", { percent });
+        emit("read_progress", { content_type: "page", percent });
       }
     }
   }
@@ -80,20 +100,18 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
   };
   const onClick = (event: MouseEvent) => {
     if (!(event.target instanceof Element) || document.visibilityState !== "visible") return;
-    const target = event.target.closest<HTMLElement>("[data-landing-action], [data-landing-vertical], [data-landing-language], a[href^='#']");
+    const target = event.target.closest<HTMLElement>("[data-landing-action], [data-landing-vertical], [data-landing-language]");
     if (!target || !root.contains(target)) return;
     const section = placement(target);
     if (!section) return;
-    if (target.dataset.landingAction && (LANDING_ACTIONS as readonly string[]).includes(target.dataset.landingAction)) {
-      const example = target.dataset.landingExample;
-      emit("landing_cta_click", { section, action: target.dataset.landingAction, ...(example ? { example: Number(example) } : {}) });
-    } else if (target.dataset.landingVertical) {
-      emit("landing_vertical_select", { section, vertical: target.dataset.landingVertical });
-    } else if (target.dataset.landingLanguage) {
-      emit("landing_language_change", { section, target_language: target.dataset.landingLanguage });
-    } else {
-      const destination = target.getAttribute("href")?.slice(1);
-      if (destination && isSection(destination)) emit("landing_nav_click", { section: destination });
+    const { landingAction: action, landingVertical: vertical, landingLanguage: target_language } = target.dataset;
+    if (action && (LANDING_ACTIONS as readonly string[]).includes(action)) {
+      const [name, properties] = ACTION_EVENTS[action as LandingAction](target.dataset.landingExample);
+      emit(name, name === "cta_click" ? { ...properties, cta_location: section } : properties);
+    } else if (vertical && (LANDING_VERTICALS as readonly string[]).includes(vertical)) {
+      emit("select_content", { content_type: "vertical", content_id: vertical });
+    } else if (target_language === "en" || target_language === "es") {
+      emit("language_change", { language: target_language });
     }
   };
   const onToggle = (event: Event) => {
@@ -101,21 +119,22 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
     if (!(target instanceof HTMLDetailsElement) || !target.dataset.landingFaq) return;
     if (target.open) {
       if (!openQuestions.has(target) && document.visibilityState === "visible") {
-        emit("landing_faq_open", { section: "faq", question: Number(target.dataset.landingFaq) });
+        const question = target.dataset.landingFaq;
+        if (/^\d{1,2}$/.test(question)) emit("select_content", { content_type: "faq", content_id: `q${question}` });
       }
       openQuestions.add(target);
     } else openQuestions.delete(target);
   };
 
   const video = root.querySelector<HTMLVideoElement>("video[data-landing-video]");
-  const milestones = new Set<string>();
+  const milestones = new Set<keyof typeof VIDEO_PERCENT>();
   let watched = 0;
   let lastTime = video?.currentTime ?? 0;
   let seeking = false;
-  const videoMilestone = (milestone: string) => {
+  const videoMilestone = (milestone: keyof typeof VIDEO_PERCENT) => {
     if (milestones.has(milestone)) return;
     milestones.add(milestone);
-    emit("landing_video_progress", { section: "demo", milestone });
+    emit("read_progress", { content_type: "video", percent: VIDEO_PERCENT[milestone] });
   };
   const onPlay = () => {
     lastTime = video?.currentTime ?? 0;
@@ -130,7 +149,7 @@ export function observeLanding(root: HTMLElement, capture: LandingCapture, langu
     if (video.paused || seeking || document.visibilityState !== "visible" || delta <= 0 || delta > 2.5 || !Number.isFinite(video.duration)) return;
     watched += delta;
     for (const percent of [25, 50, 75]) {
-      if (watched >= video.duration * percent / 100) videoMilestone(String(percent));
+      if (watched >= video.duration * percent / 100) videoMilestone(String(percent) as "25" | "50" | "75");
     }
   };
   const onEnded = () => {

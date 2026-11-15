@@ -24,8 +24,8 @@ function pageParams(pathname: string): AnalyticsParams {
     : pathname === "/privacy" || pathname === "/terms" ? "legal" : "supporting";
   // The server resolves the language before the first byte (cookie, ?lang,
   // Accept-Language, or the path on the doctors pages) and writes it here.
-  const lang = document.documentElement.lang;
-  return { page_type, ...((lang === "en" || lang === "es") && { locale: lang }) };
+  const locale = document.documentElement.lang;
+  return { page_type, ...(["en", "es"].includes(locale) && { locale }) };
 }
 
 export function PageAnalytics() {

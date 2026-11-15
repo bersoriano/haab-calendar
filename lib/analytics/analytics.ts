@@ -20,7 +20,9 @@ export const ANALYTICS_EVENTS = [
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
 
 export type CtaType =
-  | "booking" | "whatsapp" | "phone" | "email" | "form" | "signup" | "login" | "demo" | "directions" | "pricing";
+  | "booking" | "whatsapp" | "phone" | "email" | "form" | "signup" | "login" | "demo" | "directions" | "pricing"
+  // haabcalendar.com: continuing a saved setup draft, and opening the examples gallery.
+  | "resume" | "gallery";
 
 /** Parameter values: short strings or finite numbers. Never PII, never form contents. */
 export type AnalyticsParams = Record<string, string | number | boolean | undefined>;

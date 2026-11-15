@@ -29,29 +29,29 @@ describe("real landing analytics wiring", () => {
     const { root, capture } = render();
     const hero = root.querySelector("h1")!.closest("section")!;
     Array.from(hero.querySelectorAll("button")).find((button) => button.textContent?.includes(translations.en.hero.ctaPrimary))!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "hero", action: "create_page", language: "en" });
+    expect(capture).toHaveBeenCalledWith("cta_click", { cta_type: "signup", cta_location: "hero", locale: "en" });
     root.querySelector<HTMLButtonElement>("footer button")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "footer", action: "create_page", language: "en" });
+    expect(capture).toHaveBeenCalledWith("cta_click", { cta_type: "signup", cta_location: "footer", locale: "en" });
     root.querySelector<HTMLAnchorElement>("a[href^='/gallery']")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "live-examples", action: "view_gallery", language: "en" });
+    expect(capture).toHaveBeenCalledWith("cta_click", { cta_type: "gallery", cta_location: "live-examples", locale: "en" });
     root.querySelector<HTMLAnchorElement>("#live-examples a[href^='/doctors']")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "live-examples", action: "view_example", example: 0, language: "en" });
+    expect(capture).toHaveBeenCalledWith("select_content", { content_type: "example", content_id: "example_0", locale: "en" });
     root.querySelector<HTMLAnchorElement>("#blog a")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "blog", action: "read_post", language: "en" });
+    expect(capture).toHaveBeenCalledWith("select_content", { content_type: "article", content_id: "featured", locale: "en" });
   });
 
-  it.each([[true, false, "open_dashboard"], [false, true, "resume_setup"]] as const)("distinguishes existing-page and draft CTAs (%s, %s)", (hasPage, hasDraft, action) => {
+  it.each([[true, false, "login"], [false, true, "resume"]] as const)("distinguishes existing-page and draft CTAs (%s, %s)", (hasPage, hasDraft, ctaType) => {
     const { root, capture } = render(hasPage, hasDraft);
     const hero = root.querySelector("h1")!.closest("section")!;
     const label = hasPage ? translations.en.nav.dashboard : translations.en.hero.ctaPrimary;
     Array.from(hero.querySelectorAll("button")).find((button) => button.textContent?.includes(label))!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { section: "hero", action, language: "en" });
+    expect(capture).toHaveBeenCalledWith("cta_click", { cta_type: ctaType, cta_location: "hero", locale: "en" });
   });
 
   it("records industry choices without sending card text or provider form contents", () => {
     const { root, capture } = render();
     root.querySelector<HTMLButtonElement>("#verticals button")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_vertical_select", { section: "verticals", vertical: "healthcare", language: "en" });
+    expect(capture).toHaveBeenCalledWith("select_content", { content_type: "vertical", content_id: "healthcare", locale: "en" });
     expect(JSON.stringify(capture.mock.calls)).not.toContain(translations.en.useCases.title);
   });
 });
