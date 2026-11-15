@@ -53,6 +53,10 @@ export const GOOGLE_ANALYTICS_SCRIPT = `
     var value = params.get('utm_' + pair[0]);
     if (value) config['campaign_' + pair[1]] = value;
   });
+  // The Google tag's own GA tag fires on initialization and ignores this page's
+  // config; queue the privacy settings with 'set' before 'js' so its automatic
+  // page view uses them.
+  gtag('set', config);
   gtag('js', new Date());
   gtag('config', id, config);
   var script = document.createElement('script');

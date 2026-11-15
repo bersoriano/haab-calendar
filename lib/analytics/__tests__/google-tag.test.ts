@@ -30,12 +30,16 @@ describe("Google Analytics privacy boundary", () => {
   it("initializes marketing collection without query strings or fragments", () => {
     start("/?lang=es&utm_source=newsletter");
     const commands = (analyticsWindow.dataLayer as IArguments[]).map((args) => Array.from(args));
-    expect(commands[1]).toEqual(["config", "G-2RHC147XNR", expect.objectContaining({
+    const settings = expect.objectContaining({
       page_location: `${window.location.origin}/`,
       page_referrer: "",
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
-    })]);
+    });
+    // 'set' comes before 'js' so the Google tag's own GA tag uses the privacy settings.
+    expect(commands[0]).toEqual(["set", settings]);
+    expect(commands[1][0]).toBe("js");
+    expect(commands[2]).toEqual(["config", "G-2RHC147XNR", settings]);
     expect(window.document.querySelector("script")?.src).toBe("https://www.googletagmanager.com/gtag/js?id=G-2RHC147XNR");
   });
 
@@ -89,7 +93,8 @@ describe("Google Analytics privacy boundary", () => {
     Object.defineProperty(window.document, "referrer", { value: "https://haabcalendar.com/public/test/manage/private-token?email=secret" });
     start("/");
     const commands = (analyticsWindow.dataLayer as IArguments[]).map((args) => Array.from(args));
-    expect(commands[1][2]).toMatchObject({ page_referrer: "https://haabcalendar.com" });
+    expect(commands[0][1]).toMatchObject({ page_referrer: "https://haabcalendar.com" });
+    expect(commands[2][2]).toMatchObject({ page_referrer: "https://haabcalendar.com" });
     expect(JSON.stringify(commands)).not.toContain("private-token");
   });
 });
