@@ -9,6 +9,16 @@ export const LANDING_PATHS: readonly string[] = ["/", ...Object.values(DOCTORS_L
 
 const isLandingPath = (pathname: string) => LANDING_PATHS.includes(pathname);
 
+/**
+ * Every page Google Analytics may see: the landing pages plus the gallery and
+ * the legal pages. An allowlist, so a new route is private until listed here.
+ * Booking pages, setup, dashboards and manage links (whose URL is a bearer
+ * credential) are never on it.
+ */
+export const ANALYTICS_PATHS: readonly string[] = [...LANDING_PATHS, "/gallery", "/privacy", "/terms"];
+
+export const isAnalyticsPath = (pathname: string) => ANALYTICS_PATHS.includes(pathname);
+
 /** The only landing data allowed to leave the browser. No account identity. */
 export const LANDING_SECTIONS = [
   "header", "hero", "facts", "verticals", "how", "demo", "live-examples",
