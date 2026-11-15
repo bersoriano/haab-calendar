@@ -1,5 +1,8 @@
 import { LANDING_PATHS } from "./landing-policy";
 
+/** The GA4 web stream for haabcalendar.com. */
+export const GOOGLE_MEASUREMENT_ID = "G-2RHC147XNR";
+
 /**
  * Run before loading gtag: a manage URL is a booking credential. Once a visit
  * leaves marketing, keep Google's documented opt-out flag set until reload,
@@ -8,7 +11,8 @@ import { LANDING_PATHS } from "./landing-policy";
 export const GOOGLE_ANALYTICS_SCRIPT = `
 (function () {
   var paths = ${JSON.stringify([...LANDING_PATHS, "/gallery", "/privacy", "/terms"])};
-  var disabled = 'ga-disable-G-PDRMG0Z2SM';
+  var id = ${JSON.stringify(GOOGLE_MEASUREMENT_ID)};
+  var disabled = 'ga-disable-' + id;
   function allowed(href) {
     var url = new URL(href, window.location.href);
     return paths.indexOf(url.pathname) !== -1 && (!url.hash || /^#[a-z][a-z0-9-]*$/.test(url.hash)) &&
@@ -50,10 +54,10 @@ export const GOOGLE_ANALYTICS_SCRIPT = `
     if (value) config['campaign_' + pair[1]] = value;
   });
   gtag('js', new Date());
-  gtag('config', 'G-PDRMG0Z2SM', config);
+  gtag('config', id, config);
   var script = document.createElement('script');
   script.async = true;
-  script.src = 'https://www.googletagmanager.com/gtag/js?id=G-PDRMG0Z2SM';
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
   document.head.appendChild(script);
 })();
 `;
