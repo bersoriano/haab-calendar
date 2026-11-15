@@ -1,7 +1,7 @@
 "use client";
 
 import { bookingTranslations } from "@/components/booking/i18n/translations";
-import { Field, Input } from "@/components/app-ui";
+import { Field, Input, Textarea } from "@/components/app-ui";
 import { HeaderImageUploader } from "@/components/provider/HeaderImageUploader";
 import type { Lang, ProviderInfo } from "@/lib/types";
 
@@ -37,6 +37,22 @@ export function ProviderAppearanceForm({
           value={provider.heroText ?? ""}
           onChange={(event) => onChange("heroText", event.target.value)}
           placeholder={provider.businessName || t.providerForm.heroTextPlaceholder}
+        />
+      </Field>
+      <Field
+        label={lang === "es" ? "Su historia" : "Your story"}
+        description={
+          lang === "es"
+            ? `Hasta 600 caracteres. Aparece en su página y cuando comparte su enlace. ${(provider.story ?? "").length}/600`
+            : `Up to 600 characters. Shown on your page and when you share its link. ${(provider.story ?? "").length}/600`
+        }
+      >
+        <Textarea
+          disabled={disabled}
+          maxLength={600}
+          rows={5}
+          value={provider.story ?? ""}
+          onChange={(event) => onChange("story", event.target.value)}
         />
       </Field>
     </div>

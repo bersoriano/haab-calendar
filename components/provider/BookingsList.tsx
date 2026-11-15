@@ -34,6 +34,7 @@ import {
 } from "@/lib/format";
 import type { BookingRecord, BookingStatus, BookingType, Lang } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { travelerFieldLabel } from "@/lib/vertical-copy";
 import type { VerticalCopy } from "@/lib/vertical-copy";
 
 /**
@@ -399,7 +400,7 @@ export function BookingsList({
                             {TRAVELER_FIELDS.map((field) =>
                               booking.travelerDetails?.[field] ? (
                                 <span key={field} className="break-words">
-                                  {t.publicFlow.travelerFieldLabels[field]}: {booking.travelerDetails[field]}
+                                  {travelerFieldLabel(copy, field, t.publicFlow.travelerFieldLabels)}: {booking.travelerDetails[field]}
                                 </span>
                               ) : null,
                             )}

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { getVerticalPreset } from "@/config/verticals";
-import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { DEMO_PAGES, getDemoCardPath } from "@/lib/demo-pages";
 import type { VerticalId } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "./language-provider";
 import { lpBody, lpDisplay, lpMono } from "./primitives";
 
-const liveExamplePaths = DEMO_PAGES.map(getDemoPagePath);
+const liveExamplePaths = DEMO_PAGES.map(getDemoCardPath);
 
 function localizedExamplePath(path: string, lang: "en" | "es") {
   return `${path}?lang=${lang}`;

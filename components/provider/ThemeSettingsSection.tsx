@@ -56,7 +56,9 @@ export function ThemeSettingsSection({
             icon: (
               <span
                 aria-hidden="true"
-                className="block size-11 overflow-hidden rounded-lg ring-1 ring-app-border"
+                // A theme that squares the page's corners squares its swatch too:
+                // the corners are part of the look being chosen.
+                className={`block size-11 overflow-hidden ring-1 ring-app-border ${style.squareCorners ? "rounded-none" : "rounded-lg"}`}
                 style={{ background: style.base }}
               >
                 <span

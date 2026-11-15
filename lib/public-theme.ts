@@ -1,4 +1,4 @@
-export const PUBLIC_THEMES = ["default", "dark", "pink", "summer", "miami"] as const;
+export const PUBLIC_THEMES = ["default", "dark", "pink", "summer", "miami", "winter"] as const;
 
 export type PublicTheme = (typeof PUBLIC_THEMES)[number];
 
@@ -24,6 +24,12 @@ export type PublicThemeStyle = {
   tokens: Record<string, string>;
   /** Dark grounds need light panels flipped, not just recoloured. */
   dark?: boolean;
+  /**
+   * Square every corner on the page. Radii are written into the markup as
+   * utility classes, not tokens, so this is applied by the page root as a
+   * `data-square-corners` attribute that globals.css answers.
+   */
+  squareCorners?: boolean;
 };
 
 const PHOTO_BACKDROP: PublicThemeStyle = {
@@ -294,12 +300,109 @@ const MIAMI: PublicThemeStyle = {
   },
 };
 
+/**
+ * Paper and linen: white, ivory and beige grounds with a mocha ink for
+ * anything that acts, and no rounded corners anywhere — the look of a printed
+ * wedding invitation rather than an app. Every panel is warmed, not only the
+ * accents, because the classic panels are a cool grey that reads as blue next
+ * to ivory.
+ */
+const WINTER: PublicThemeStyle = {
+  base: "#f7f3ec",
+  squareCorners: true,
+  layers: [
+    "linear-gradient(170deg, rgba(255,253,248,0.82), rgba(246,239,227,0.7) 50%, rgba(236,225,207,0.76) 100%)",
+    "radial-gradient(110% 85% at 100% 100%, rgba(222,206,180,0.5), transparent 62%)",
+    "radial-gradient(120% 90% at 8% 0%, rgba(255,255,255,0.9), transparent 60%)",
+  ],
+  tokens: {
+    "--background": "#f7f3ec",
+    "--foreground": "#2b2620",
+    "--ink": "#2b2620",
+    "--muted": "#6b6256",
+    "--line": "#d9cfbf",
+    "--outline-ghost": "rgba(217,207,191,0.3)",
+    "--surface": "rgba(253,250,244,0.86)",
+    "--surface-soft": "#f5efe5",
+    "--surface-lowest": "#fffdf9",
+    "--surface-highest": "#ece4d6",
+    "--primary": "#6f5840",
+    "--on-primary": "#ffffff",
+    "--primary-container": "#8b6f47",
+    "--accent": "#7d6340",
+    "--accent-strong": "#5c4a36",
+    "--accent-soft": "rgba(160,132,99,0.14)",
+    "--action-teal": "#8b6f47",
+    "--action-teal-deep": "#5e4a2f",
+    "--secondary-fixed": "#e8dcc8",
+    "--secondary-container": "rgba(232,220,200,0.45)",
+    "--full-day": "#6b5e4f",
+    "--teal": "#7d6340",
+    "--teal-soft": "rgba(139,111,71,0.12)",
+    "--avail-open": "rgba(139,111,71,0.14)",
+    "--avail-open-line": "rgba(122,98,72,0.34)",
+    "--avail-tight": "rgba(180,83,9,0.14)",
+    "--avail-tight-line": "rgba(154,52,18,0.34)",
+    "--shadow-air": "rgba(60,45,25,0.07)",
+    // Glows warm too: a blue halo under a mocha button is the classic theme
+    // showing through.
+    "--glow": "#a08463",
+    "--glow-deep": "#6f5840",
+    "--glow-teal": "#8b6f47",
+    "--glow-mint": "#e8dcc8",
+    "--panel-mute-14": "rgba(222,206,180,0.18)",
+    "--panel-mute-45": "rgba(205,192,170,0.45)",
+    "--panel-mute-72": "rgba(245,239,229,0.72)",
+    "--panel-mute-88": "rgba(245,239,229,0.88)",
+    "--panel-mute-9": "rgba(245,239,229,0.9)",
+    "--panel-mute-94": "rgba(245,239,229,0.94)",
+    "--panel-mute-96": "rgba(245,239,229,0.96)",
+    "--panel-tint-72": "rgba(253,250,244,0.72)",
+    "--panel-tint-75": "rgba(253,250,244,0.75)",
+    "--panel-tint-78": "rgba(253,250,244,0.78)",
+    "--panel-tint-9": "rgba(253,250,244,0.9)",
+    "--panel-tint-92": "rgba(253,250,244,0.92)",
+    "--panel-tint-94": "rgba(253,250,244,0.94)",
+    "--panel-tint-98": "rgba(253,250,244,0.98)",
+    "--panel-glass-44": "rgba(255,253,249,0.44)",
+    "--panel-glass-46": "rgba(255,253,249,0.46)",
+    "--panel-glass-5": "rgba(255,253,249,0.5)",
+    "--panel-glass-55": "rgba(255,253,249,0.55)",
+    "--panel-glass-58": "rgba(255,253,249,0.58)",
+    "--panel-glass-62": "rgba(255,253,249,0.62)",
+    "--panel-glass-72": "rgba(255,253,249,0.72)",
+    "--panel-glass-75": "rgba(255,253,249,0.75)",
+    "--panel-glass-78": "rgba(255,253,249,0.78)",
+    "--panel-glass-88": "rgba(255,253,249,0.88)",
+    "--panel-glass-9": "rgba(255,253,249,0.9)",
+    "--panel-glass-92": "rgba(255,253,249,0.92)",
+    "--panel-glass-98": "rgba(255,253,249,0.98)",
+    "--callout-mint": "#f4ede1",
+    "--callout-mint-line": "#e2d6c2",
+    "--callout-mint-ink": "#3d3326",
+    "--callout-icon": "#7d6340",
+    "--tile-blue": "#efe7da",
+    "--tile-teal": "#f3ece0",
+    "--chip-duration-bg": "#ece3d3",
+    "--summary-surface": "#f6f1e8",
+    "--ink-secondary": "#4a4238",
+    "--link": "#7a5a2e",
+    "--form-border": "#d6ccbb",
+    "--field-placeholder": "#9a8f80",
+    "--neutral-chip": "#efe9df",
+    "--tile-teal-ink": "#6e5a3e",
+    "--success-detail-ink": "#3d3a2e",
+    "--receipt-footer": "#f8f4ec",
+  },
+};
+
 const THEME_STYLES: Record<PublicTheme, PublicThemeStyle> = {
   default: PHOTO_BACKDROP,
   dark: DARK,
   pink: PINK,
   summer: SUMMER,
   miami: MIAMI,
+  winter: WINTER,
 };
 
 export function getPublicThemeStyle(theme?: PublicTheme | null): PublicThemeStyle {
@@ -334,4 +437,14 @@ export function normalizePublicTheme(value?: string | null): PublicTheme {
 /** True when the page's own surfaces need to be dark, not just its ground. */
 export function isDarkPublicTheme(theme?: PublicTheme | null) {
   return Boolean(getPublicThemeStyle(theme).dark);
+}
+
+/**
+ * The attributes a themed page root carries besides its inline style. Kept
+ * here so the booking page and the invitation pages cannot drift apart.
+ */
+export function getPublicThemeRootAttributes(theme?: PublicTheme | null): {
+  "data-square-corners"?: "";
+} {
+  return getPublicThemeStyle(theme).squareCorners ? { "data-square-corners": "" } : {};
 }

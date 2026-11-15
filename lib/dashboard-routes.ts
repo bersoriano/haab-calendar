@@ -1,4 +1,5 @@
-import type { AdminTab } from "@/lib/types";
+import { isInvitationMode } from "@/lib/rsvp-mode";
+import type { AdminTab, ModuleStore } from "@/lib/types";
 
 /**
  * The provider dashboard's URL model. Pure, so the server page, the client
@@ -19,6 +20,8 @@ export type DashboardSectionDef = {
 
 export const DASHBOARD_SECTIONS: readonly DashboardSectionDef[] = [
   { id: "dashboard", segment: "", group: "operate" },
+  // Invitation-only events pages only; the shell hides it everywhere else.
+  { id: "guests", segment: "guests", group: "operate" },
   { id: "bookings", segment: "bookings", group: "operate" },
   { id: "clients", segment: "clients", group: "operate" },
   { id: "scan", segment: "scan", group: "operate" },
@@ -127,4 +130,15 @@ export type GoogleOutcome = (typeof GOOGLE_OUTCOMES)[number];
 
 export function parseGoogleOutcome(value?: string): GoogleOutcome | undefined {
   return GOOGLE_OUTCOMES.find((outcome) => outcome === value);
+}
+
+/**
+ * Sections a page has no use for. Invitation-only pages take answers through
+ * the guest list, so bookings, clients and campaigns go; every other page has
+ * no guest list.
+ */
+export function sectionsHiddenFor(store: Pick<ModuleStore, "provider" | "vertical">): Set<AdminTab> {
+  return isInvitationMode(store.provider, store.vertical)
+    ? new Set<AdminTab>(["bookings", "clients", "campaigns"])
+    : new Set<AdminTab>(["guests"]);
 }

@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
+import { InvitationOnlyPage } from "@/components/invitations/InvitationOnlyPage";
 import { PublicBookingPageShell } from "@/components/public-booking-page-shell";
+import { isInvitationMode } from "@/lib/rsvp-mode";
 import {
   isPublicUrlBackendUnavailable,
+  resolvePublicBookingPage,
   resolvePublicBookingUrl,
 } from "@/lib/public-booking-resolver";
 import { normalizeUrlSlugSegment } from "@/lib/public-url";
@@ -10,7 +13,7 @@ import {
   parsePublicLanguage,
   withPublicLanguage,
 } from "@/lib/public-language";
-import { buildProviderCanonicalMetadata } from "@/lib/site-metadata";
+import { buildProviderCanonicalMetadata, withShareMetadata } from "@/lib/site-metadata";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +23,9 @@ export async function generateMetadata({
   params: Promise<{ verticalSegment: string; providerSlug: string }>;
 }): Promise<Metadata> {
   const { verticalSegment, providerSlug } = await params;
-
-  return buildProviderCanonicalMetadata(verticalSegment, providerSlug);
+  return withShareMetadata(buildProviderCanonicalMetadata(verticalSegment, providerSlug), () =>
+    resolvePublicBookingPage(verticalSegment, providerSlug),
+  );
 }
 
 export default async function PublicProviderBookingPage({
@@ -39,7 +43,7 @@ export default async function PublicProviderBookingPage({
   let resolution: Awaited<ReturnType<typeof resolvePublicBookingUrl>>;
 
   try {
-    resolution = await resolvePublicBookingUrl({ verticalSegment, providerSlug });
+    resolution = await resolvePublicBookingPage(verticalSegment, providerSlug);
   } catch (error) {
     if (!isPublicUrlBackendUnavailable(error)) {
       throw error;
@@ -59,6 +63,19 @@ export default async function PublicProviderBookingPage({
 
   if (resolution.status === "redirect") {
     permanentRedirect(withPublicLanguage(resolution.location, publicLanguage));
+  }
+
+  // An invitation-only page takes answers through each household's link only.
+  if (isInvitationMode(resolution.store.provider, resolution.store.vertical) && resolution.store.vertical) {
+    return (
+      <InvitationOnlyPage
+        store={resolution.store}
+        vertical={resolution.store.vertical}
+        lang={publicLanguage ?? resolution.store.provider.language}
+        path={resolution.meta.canonicalPath}
+        timeZone={resolution.meta.timezone}
+      />
+    );
   }
 
   return (

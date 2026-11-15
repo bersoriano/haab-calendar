@@ -174,9 +174,9 @@ export function PublicProgressIndicator({
                   className={cn(
                     "relative flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
                     status === "complete" &&
-                      "bg-[var(--primary)] text-[var(--on-primary)] shadow-[0_10px_22px_rgba(0,91,191,0.32),inset_0_1px_0_rgba(255,255,255,0.4)]",
+                      "bg-[var(--primary)] text-[var(--on-primary)] shadow-[0_10px_22px_color-mix(in_srgb,var(--glow-deep)_32%,transparent),inset_0_1px_0_rgba(255,255,255,0.4)]",
                     status === "current" &&
-                      "bg-[var(--surface-lowest)] text-[var(--primary)] ring-2 ring-[var(--primary)] shadow-[0_10px_24px_rgba(26,115,232,0.28),inset_0_1px_0_rgba(255,255,255,0.95)]",
+                      "bg-[var(--surface-lowest)] text-[var(--primary)] ring-2 ring-[var(--primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--glow)_28%,transparent),inset_0_1px_0_rgba(255,255,255,0.95)]",
                     status === "upcoming" &&
                       (isDedicatedPublicPage
                         ? "bg-[var(--panel-glass-55)] text-[var(--muted)] ring-1 ring-[rgba(193,198,214,0.5)]"
@@ -201,7 +201,7 @@ export function PublicProgressIndicator({
                   {status === "current" ? (
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute -inset-1 rounded-full ring-4 ring-[rgba(26,115,232,0.18)]"
+                      className="pointer-events-none absolute -inset-1 rounded-full ring-4 ring-[color-mix(in_srgb,var(--glow)_18%,transparent)]"
                     />
                   ) : null}
                 </span>

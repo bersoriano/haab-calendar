@@ -368,7 +368,7 @@ const CASES: NavCase[] = [
       sectionNamed("/dashboard/scan", "Scan registration"),
       sectionNamed("/dashboard/services", "Events"),
     ],
-    hides: [link("Log in"), link("Scan appointment"), link("Tours")],
+    hides: [link("Log in"), link("Scan appointment"), link("Tours"), section("/dashboard/guests")],
   },
   {
     // Still the events vertical: same sections, in a tour operator's words.
@@ -384,6 +384,27 @@ const CASES: NavCase[] = [
       sectionNamed("/dashboard/services", "Tours"),
     ],
     hides: [link("Log in"), link("Registrations"), link("Events"), link("Scan appointment")],
+  },
+  {
+    // Invitation-only: answers come through the guest list, so it replaces
+    // bookings, clients and campaigns, in the wedding's words.
+    surface: "dashboard of an invitation-only wedding page",
+    session: "signed in with a page",
+    role: "weddingsPage",
+    path: "/dashboard",
+    open: dashboardNav,
+    account: button("Sign out"),
+    offers: [
+      sectionNamed("/dashboard/guests", "Guests"),
+      sectionNamed("/dashboard/scan", "Scan RSVP"),
+      sectionNamed("/dashboard/services", "Events"),
+    ],
+    hides: [
+      link("Log in"),
+      section("/dashboard/bookings"),
+      section("/dashboard/clients"),
+      section("/dashboard/campaigns"),
+    ],
   },
 ];
 

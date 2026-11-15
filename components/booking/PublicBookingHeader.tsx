@@ -133,7 +133,7 @@ export function PublicBookingHeader({
         ) : monogram ? (
           <span
             aria-hidden="true"
-            className="col-start-1 row-start-1 flex h-11 w-11 items-center justify-center self-center rounded-[14px] bg-[linear-gradient(135deg,var(--accent),var(--action-teal))] text-base font-bold tracking-[-0.02em] text-[var(--on-primary)] shadow-[0_10px_22px_rgba(26,115,232,0.28)] sm:h-[54px] sm:w-[54px] sm:rounded-[17px] sm:text-[19px]"
+            className="col-start-1 row-start-1 flex h-11 w-11 items-center justify-center self-center rounded-[14px] bg-[linear-gradient(135deg,var(--accent),var(--action-teal))] text-base font-bold tracking-[-0.02em] text-[var(--on-primary)] shadow-[0_10px_22px_color-mix(in_srgb,var(--glow)_28%,transparent)] sm:h-[54px] sm:w-[54px] sm:rounded-[17px] sm:text-[19px]"
           >
             {monogram}
           </span>

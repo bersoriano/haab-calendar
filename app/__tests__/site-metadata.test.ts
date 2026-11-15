@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}));
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { DEMO_PAGES, getDemoPagePath } from "@/lib/demo-pages";
+import { buildProviderShareMetadata, previewText } from "@/lib/site-metadata";
 
 let saved: string | undefined;
 
@@ -127,5 +128,44 @@ describe("sitemap.xml", () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(new Set(urls).size).toBe(urls.length);
+  });
+});
+
+describe("link previews of public pages", () => {
+  const wedding = {
+    businessName: "Boda de Valeria & Diego",
+    fullName: "Mariana Salgado",
+    language: "es" as const,
+    heroText: "Nos casamos en Xochitepec.",
+    story: "Nos conocimos en 2019 hablando hasta la madrugada. Seis años después, entre las nubes de Monteverde, Diego preguntó y Valeria dijo que sí. Queremos celebrarlo con ustedes en el jardín donde todo empezó a tener sentido.",
+    headerImageUrl: "https://blob.example/cover.jpg",
+  };
+
+  it("previews a page with its name, the start of its story and its cover", () => {
+    const metadata = buildProviderShareMetadata(wedding);
+
+    expect(metadata.title).toBe("Boda de Valeria & Diego");
+    expect(metadata.openGraph?.title).toBe("Boda de Valeria & Diego");
+    const description = String(metadata.openGraph?.description);
+    expect(description.startsWith("Nos conocimos en 2019")).toBe(true);
+    expect(description.length).toBeLessThanOrEqual(160);
+    expect(description.endsWith("…")).toBe(true);
+    expect(metadata.openGraph?.images).toEqual([{ url: "https://blob.example/cover.jpg", alt: "Boda de Valeria & Diego" }]);
+  });
+
+  it("falls back to the hero line and the default card in the page's language", () => {
+    const metadata = buildProviderShareMetadata({ ...wedding, story: undefined, headerImageUrl: undefined });
+
+    expect(metadata.description).toBe("Nos casamos en Xochitepec.");
+    expect(metadata.openGraph?.images).toEqual([expect.objectContaining({ url: "/social-card/es.png" })]);
+  });
+
+  it("says nothing for a page with no name", () => {
+    expect(buildProviderShareMetadata({ ...wedding, businessName: "", fullName: "" })).toEqual({});
+  });
+
+  it("cuts long text at a word", () => {
+    expect(previewText("uno dos tres cuatro", 12)).toBe("uno dos…");
+    expect(previewText("  corto  ")).toBe("corto");
   });
 });

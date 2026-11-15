@@ -8,6 +8,9 @@ import {
   PUBLIC_SERVICE_SELECT,
 } from "@/lib/public-booking-resolver";
 import { buildProviderPath, normalizeUrlSlugSegment, validateProviderSlug } from "@/lib/public-url";
+import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
+import { parseRsvpQuestions } from "@/lib/rsvp-questions";
+import { parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { isUnsetTimeZone } from "@/lib/timezone";
 import type {
   LocationKey,
@@ -39,6 +42,10 @@ type PublicProviderRow = {
   hero_text: string | null;
   gallery_image_urls: string[] | null;
   vocabulary?: string | null;
+  rsvp_mode?: string | null;
+  rsvp_deadline?: string | null;
+  rsvp_questions?: unknown;
+  story?: string | null;
 };
 
 type PublicServiceRow = {
@@ -125,11 +132,15 @@ function toPublicStore(provider: PublicProviderRow, services: PublicServiceRow[]
       logoImageUrl: provider.logo_image_url?.trim() || undefined,
       headerImageUrl: provider.header_image_url?.trim() || undefined,
       heroText: provider.hero_text?.trim() || undefined,
+      story: provider.story?.trim() || undefined,
       galleryImageUrls: Array.isArray(provider.gallery_image_urls)
         ? provider.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
         : undefined,
       language: provider.language === "es" ? "es" : "en",
-      vocabulary: provider.vocabulary === "tours" ? "tours" : undefined,
+      vocabulary: parseVocabulary(provider.vocabulary),
+      rsvpMode: parseRsvpMode(provider.rsvp_mode),
+      rsvpDeadline: parseRsvpDeadline(provider.rsvp_deadline),
+      rsvpQuestions: parseRsvpQuestions(provider.rsvp_questions),
       timezone: isUnsetTimeZone(provider.timezone) ? "" : provider.timezone,
     },
     services: services.map(toPublicService),

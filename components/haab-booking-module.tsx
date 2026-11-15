@@ -95,6 +95,8 @@ import {
   bookingTypeBadgeTone,
   formatCountdown,
   formatCost,
+  formatPriceRow,
+  isFreeCost,
 } from "@/lib/format";
 import {
   createEmptyStore,
@@ -149,6 +151,10 @@ import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { ProviderAnalyticsSurface } from "@/components/provider/ProviderAnalyticsSurface";
 import { ProviderCampaignsSurface } from "@/components/provider/ProviderCampaignsSurface";
 import { ProviderClientsSurface } from "@/components/provider/ProviderClientsSurface";
+import { DoorCheckIn } from "@/components/provider/guests/DoorCheckIn";
+import { GuestListSurface } from "@/components/provider/guests/GuestListSurface";
+import { guestsCopy } from "@/components/provider/guests/guests-copy";
+import { isInvitationMode } from "@/lib/rsvp-mode";
 import { ProviderSettingsSurface } from "@/components/provider/ProviderSettingsSurface";
 import { AvailabilitySettingsSection } from "@/components/provider/AvailabilitySettingsSection";
 import { ProviderIntegrationsSection } from "@/components/provider/ProviderIntegrationsSection";
@@ -1242,8 +1248,8 @@ export function HaabBookingModule({
     ? "border border-[rgba(255,255,255,0.64)] bg-[var(--panel-glass-58)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_24px_52px_rgba(25,28,29,0.08)] backdrop-blur-[18px]"
     : "border-[var(--accent)] bg-[var(--accent-soft)]";
   const calendarNavPillClass = isDedicatedPublicPage
-    ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.24)] hover:bg-[var(--panel-glass-62)] hover:text-[var(--ink)]"
-    : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[var(--panel-glass-78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[rgba(26,115,232,0.22)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]";
+    ? "min-h-11 rounded-full border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-46)] px-4 text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:border-[color-mix(in_srgb,var(--glow)_24%,transparent)] hover:bg-[var(--panel-glass-62)] hover:text-[var(--ink)]"
+    : "rounded-full border border-[rgba(193,198,214,0.5)] bg-[var(--panel-glass-78)] px-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_30px_rgba(25,28,29,0.04)] backdrop-blur-[18px] hover:border-[color-mix(in_srgb,var(--glow)_22%,transparent)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--ink)]";
   const publicPillButtonClass = isDedicatedPublicPage ? "min-h-12 rounded-full px-6" : "";
   const publicPrimaryActionClass = isDedicatedPublicPage
     ? cn(publicPillButtonClass, "justify-center")
@@ -1252,10 +1258,10 @@ export function HaabBookingModule({
     ? "border border-[rgba(255,255,255,0.58)] bg-[var(--panel-glass-44)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.88),0_18px_36px_rgba(25,28,29,0.08)] backdrop-blur-[18px] hover:bg-[var(--panel-glass-58)] hover:text-[var(--ink)]"
     : "";
   const publicFieldClass = isDedicatedPublicPage
-    ? "min-h-14 rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "min-h-14 rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--glow)_20%,transparent)]"
     : "min-h-12 rounded-2xl border border-white px-4 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
   const publicTextareaClass = isDedicatedPublicPage
-    ? "rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[rgba(26,115,232,0.2)]"
+    ? "rounded-[24px] border border-white bg-[var(--panel-mute-96)] px-4 pb-3 pt-4 text-[var(--ink)] shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[rgba(25,28,29,0.42)] focus:bg-[var(--panel-glass-98)] focus:ring-2 focus:ring-[color-mix(in_srgb,var(--glow)_20%,transparent)]"
     : "rounded-2xl border border-white px-4 py-3 shadow-[0px_4px_10px_3px_#89a6c036] outline-none transition placeholder:text-[var(--muted)] focus:border-[var(--accent)]";
 
   /**
@@ -3937,6 +3943,17 @@ export function HaabBookingModule({
       case "bookings":
         return renderBookingsList();
       case "scan":
+        // An invitation-only page scans invitations at the door, offline-ready.
+        if (integratedMode && isInvitationMode(provider, vertical)) {
+          return (
+            <DoorCheckIn
+              lang={lang}
+              services={services}
+              pageKey={provider.publicSlug || "page"}
+              timeZone={provider.timezone}
+            />
+          );
+        }
         // Looks appointments up on the server, so only where there is one.
         return integratedMode ? <AppointmentScanner lang={lang} /> : null;
       case "services":
@@ -3965,6 +3982,19 @@ export function HaabBookingModule({
             integratedMode={integratedMode}
             entitlements={providerEntitlements}
           />
+        );
+      case "guests":
+        return isInvitationMode(provider, vertical) && vertical ? (
+          <GuestListSurface
+            lang={lang}
+            integratedMode={integratedMode}
+            services={services}
+            provider={provider}
+            vertical={vertical}
+            copy={copy}
+          />
+        ) : (
+          <Alert tone="neutral">{guestsCopy[lang].modeOff}</Alert>
         );
       case "clients":
         return (
@@ -4008,6 +4038,7 @@ export function HaabBookingModule({
             onSavePublicSlug={persistPublicSlug}
             onResetStandaloneSetup={resetStandaloneSetup}
             offersVocabulary={vertical === "events"}
+            services={services}
             onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
             businessType={
               onChangeBusinessType && vertical
@@ -4683,7 +4714,7 @@ export function HaabBookingModule({
         ? [selectedLocation.address]
         : detailsContact.addresses;
     const detailsPhones = detailsContact.phones;
-    const detailsCost = formatCost(effectiveCost, lang) || null;
+    const detailsCost = formatPriceRow(effectiveCost, lang, vertical) || null;
     // "About the appointment" rides inside the summary: open under the client rows
     // on desktop, folded at the foot of the compact card on a phone.
     const detailsAboutProps = selectedService
@@ -4893,7 +4924,7 @@ export function HaabBookingModule({
                       mind — the current booking is never touched until save. */}
                   {isManageRescheduling && successfulBooking ? (
                     <div className="px-5 pt-4 sm:px-7 sm:pt-5">
-                      <div className="rounded-[22px] border border-[rgba(26,115,232,0.18)] bg-[rgba(26,115,232,0.06)] px-4 py-3.5">
+                      <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--glow)_18%,transparent)] bg-[color-mix(in_srgb,var(--glow)_6%,transparent)] px-4 py-3.5">
                         <p className="text-[0.9375rem] font-semibold text-[var(--ink)]">
                           {t.manage.reschedulingTitle}
                         </p>
@@ -5159,11 +5190,11 @@ export function HaabBookingModule({
             <div className="relative isolate overflow-hidden rounded-[28px] bg-[var(--panel-glass-62)] px-6 py-6 ring-1 ring-[rgba(255,255,255,0.86)] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),0_22px_56px_rgba(15,23,42,0.10)] backdrop-blur-[22px] sm:px-8 sm:py-7">
               <span
                 aria-hidden
-                className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,rgba(26,115,232,0.28),transparent_65%)] blur-2xl"
+                className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--glow)_28%,transparent),transparent_65%)] blur-2xl"
               />
               <span
                 aria-hidden
-                className="pointer-events-none absolute -left-20 bottom-[-3rem] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,rgba(104,250,221,0.32),transparent_65%)] blur-2xl"
+                className="pointer-events-none absolute -left-20 bottom-[-3rem] h-40 w-40 rounded-full bg-[radial-gradient(circle_at_center,color-mix(in_srgb,var(--glow-mint)_32%,transparent),transparent_65%)] blur-2xl"
               />
               <div className="relative min-w-0">
                 <h3 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--ink)] sm:text-[1.75rem]">
@@ -5230,8 +5261,8 @@ export function HaabBookingModule({
                     {service.medicalSpecialty ? (
                       <span>{t.publicFlow.specialty}: {service.medicalSpecialty}</span>
                     ) : null}
-                    {formatCost(service.cost, lang) ? (
-                      <span>{copy.event?.priceLabel ?? t.publicFlow.total}: {formatCost(service.cost, lang)}</span>
+                    {formatPriceRow(service.cost, lang, vertical) ? (
+                      <span>{copy.event?.priceLabel ?? t.publicFlow.total}: {formatPriceRow(service.cost, lang, vertical)}</span>
                     ) : null}
                     {service.notes ? (
                       <span className="whitespace-pre-line">{t.publicFlow.notes}: {service.notes}</span>
@@ -5659,7 +5690,9 @@ export function HaabBookingModule({
                           {!selectionIsSingle ? (
                             <SummaryField label={t.publicFlow.length} value={formatDuration(selectedService, lang)} />
                           ) : null}
-                          <SummaryField label={copy.event?.priceLabel ?? t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
+                          {vertical === "events" && isFreeCost(effectiveCost) ? null : (
+                            <SummaryField label={copy.event?.priceLabel ?? t.publicFlow.total} value={formatCost(effectiveCost, lang) || t.publicFlow.notSet} />
+                          )}
                           {selectedService.notes ? (
                             <SummaryField
                               label={t.publicFlow.notes}
@@ -5807,7 +5840,7 @@ export function HaabBookingModule({
                   {hasPartialClientDetails && !isManageRescheduling ? (
                     <div
                       role="status"
-                      className="mt-5 rounded-[22px] border border-[rgba(0,191,165,0.28)] bg-[var(--panel-mute-14)] px-4 py-3.5 text-[var(--ink)]"
+                      className="mt-5 rounded-[22px] border border-[color-mix(in_srgb,var(--glow-teal)_28%,transparent)] bg-[var(--panel-mute-14)] px-4 py-3.5 text-[var(--ink)]"
                     >
                       <p className="text-[0.9375rem] font-semibold">
                         {t.publicFlow.detailsKeptNoticeTitle}
@@ -6221,7 +6254,7 @@ export function HaabBookingModule({
                                   }
                                 : undefined
                             }
-                            costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
+                            costLabel={formatPriceRow(successfulBooking.cost || effectiveCost, lang, vertical)}
                             admitLabel={
                               successfulBooking.capacitySnapshot ||
                               formatCapacityLabel(selectedService, lang)
@@ -6312,7 +6345,7 @@ export function HaabBookingModule({
                         isFullDay={isFullDayBooking}
                         durationLabel={formatDuration(selectedService, lang)}
                         clientFieldLabel={copy.phrases.clientLabel}
-                        costLabel={formatCost(successfulBooking.cost || effectiveCost, lang)}
+                        costLabel={formatPriceRow(successfulBooking.cost || effectiveCost, lang, vertical)}
                         admitLabel={
                           successfulBooking.capacitySnapshot ||
                           formatCapacityLabel(selectedService, lang)
@@ -6412,7 +6445,7 @@ export function HaabBookingModule({
                             className={cn(
                               "inline-flex min-w-[150px] items-center justify-center rounded-2xl border border-[var(--line)] px-5 py-2 text-sm font-semibold transition",
                               isSuccessfulBookingCancelled
-                                ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125"
+                                ? "border-transparent bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_14px_32px_color-mix(in_srgb,var(--glow)_24%,transparent)] hover:saturate-125"
                                 : "bg-[var(--surface-soft)] text-[var(--ink)] hover:bg-[var(--surface-lowest)]",
                               isDedicatedPublicPage && publicPillButtonClass,
                             )}
@@ -6927,9 +6960,9 @@ export function HaabBookingModule({
                               ? publicQuietChoiceClass
                               : publicSoftChoiceClass,
                             available &&
-                              "hover:bg-[var(--panel-glass-72)] hover:ring-2 hover:ring-[rgba(26,115,232,0.12)]",
+                              "hover:bg-[var(--panel-glass-72)] hover:ring-2 hover:ring-[color-mix(in_srgb,var(--glow)_12%,transparent)]",
                             selected &&
-                              cn(publicSelectedChoiceClass, "ring-2 ring-[rgba(26,115,232,0.16)]"),
+                              cn(publicSelectedChoiceClass, "ring-2 ring-[color-mix(in_srgb,var(--glow)_16%,transparent)]"),
                             !available && "cursor-default opacity-45",
                           )}
                         >

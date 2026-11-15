@@ -31,7 +31,7 @@ export function BookingStatusPill({
           ? "bg-[var(--danger-soft)] text-[var(--danger-strong)] ring-[var(--danger-line)]"
           : status === "rescheduled"
             ? "bg-[var(--warning-soft)] text-[var(--warning-strong)] ring-[var(--warning-line)]"
-            : "bg-[rgba(104,250,221,0.2)] text-[var(--action-teal-deep)] ring-[rgba(0,191,165,0.28)]",
+            : "bg-[color-mix(in_srgb,var(--glow-mint)_20%,transparent)] text-[var(--action-teal-deep)] ring-[color-mix(in_srgb,var(--glow-teal)_28%,transparent)]",
         className,
       )}
     >

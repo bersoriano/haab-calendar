@@ -1,4 +1,4 @@
-import type { Lang, VerticalId, Vocabulary } from "./types";
+import type { Lang, TravelerField, VerticalId, Vocabulary } from "./types";
 
 /**
  * Words only a dated event or tour needs: its schedule badge, the labels the
@@ -23,6 +23,10 @@ export interface EventWording {
   namePlaceholder?: string;
   descriptionPlaceholder?: string;
   costPlaceholder?: string;
+  // A word set may rename these booking-form labels; unset keeps the shared ones.
+  cancellationPolicyLabel?: string;
+  travelerFieldLabels?: Partial<Record<TravelerField, string>>;
+  travelerFieldPlaceholders?: Partial<Record<TravelerField, string>>;
 }
 
 export interface VerticalCopy {
@@ -1205,6 +1209,286 @@ export const toursCopyEs: VerticalCopy = {
   },
 };
 
+export const weddingsCopy: VerticalCopy = {
+  service: "event",
+  Service: "Event",
+  services: "events",
+  Services: "Events",
+  booking: "RSVP",
+  Booking: "RSVP",
+  bookings: "RSVPs",
+  Bookings: "RSVPs",
+  client: "guest",
+  Client: "Guest",
+  clients: "guests",
+  Clients: "Guests",
+
+  bookVerb: "RSVP",
+  bookingPage: "wedding page",
+  publicBookingUrl: "public wedding page URL",
+  bookingWorkspace: "Guest workspace",
+  bookingSummary: "Your RSVP",
+  manageBooking: "Change my RSVP",
+  cancelBooking: "I can't make it",
+  rescheduleBooking: "Change event",
+  bookFullDay: "RSVP for the day",
+
+  phrases: {
+    setupTitle: "Set up your wedding page",
+    setupDoneTitle: "Your wedding page is ready",
+    providerInfoBody:
+      "These details feed RSVP confirmations, branding, and your public wedding page URL.",
+    availabilityBody:
+      "Each event of the wedding keeps its own date and time. These hours only frame the days around it.",
+
+    addServiceFirstError: "Add at least one event before publishing your wedding page.",
+    serviceNameRequiredError: "Add an event name and a short description before saving it.",
+    keepOneServiceError: "Keep at least one event. Add another before removing this one.",
+    cancelActiveFirstError: "Cancel the RSVPs for this event before removing it.",
+    enableWeekdayError: "Enable at least one day so guests can RSVP.",
+    chooseServiceFirstError: "Choose an event before confirming your RSVP.",
+    pickDateFirstError: "Pick the date before confirming your RSVP.",
+    clientFieldsRequiredError: "Guest name, email, and phone number are required.",
+
+    chooseServiceTitle: "Choose an event",
+    chooseAnotherService: "Choose another event",
+    selectAppointmentCta: "See the date",
+    selectFullDayCta: "RSVP for the day",
+    selectCapacityCta: "Confirm my seat",
+    beforeVisitLabel: "Good to know:",
+    bringWithYouLabel: "Good to know",
+    holdReassurance: "Your seat is held for ten minutes.",
+    whatHappensNext:
+      "You will get a confirmation with everything you need. If your plans change, let us know with your private link so we can plan the tables.",
+    chooseServiceBody: "See the date, place, and dress code of each event before you RSVP.",
+    onlyOneServiceBody: "There is only one event, so this step is skipped automatically.",
+    serviceUnavailableBody: "A seat may open up, but you can still try.",
+    notesPlaceholder: "Anything the couple should know?",
+    bookingSummaryBodyReview: "Check your RSVP here before confirming.",
+    bookingSummaryBodySuccess: "Your confirmed RSVP stays visible here.",
+    aboutServiceTitle: "About this event",
+    serviceDetailsTitle: "Event details",
+
+    upcomingTitle: "Upcoming RSVPs",
+    upcomingEmptyTitle: "No RSVPs in the next 7 days",
+    upcomingEmptyBody: "New RSVPs appear here automatically.",
+    allBookingsTitle: "All RSVPs",
+    noBookingsMatchTitle: "No RSVPs match the current filters",
+    bookingsSoonDetail: "Events coming up",
+    activeBookingsDetail: "Confirmed RSVPs",
+    totalBookingsLabel: "Total RSVPs",
+    servicesStatDetail: "Events of the wedding",
+    searchPlaceholder: "Search guest, event, email, or phone",
+
+    addBookingHint: "Click an available day to add an RSVP.",
+
+    cancelExplain: "Letting us know frees your seat right away.",
+    keepBookingButton: "Keep my seat",
+    cancelBookingButton: "I can't make it",
+    tryBookingButton: "Try to RSVP",
+
+    loadingBookingTitle: "Loading your RSVP…",
+    bookingNotFoundTitle: "We can't find this RSVP on this device",
+    bookingNotFoundBody:
+      "RSVPs are stored locally in the browser they were made in. If you answered from a different browser or device, please open this link there. If you've cleared your browser data, the RSVP is no longer accessible from this device.",
+    bookNewButton: "RSVP to another event",
+
+    serviceEditorBody: "Give each event of the wedding its own date, time, place, and number of seats.",
+    noServicesTitle: "No events yet",
+    noServicesBody: "Add the ceremony, the reception, or any other event so guests can RSVP.",
+    serviceDescPlaceholder: "What happens at this event, in one or two lines.",
+    newServiceEyebrow: "New event",
+    editServiceEyebrow: "Edit event",
+    newServiceTitle: "Add an event",
+    editServiceTitle: "Update this event",
+    addServiceButton: "Add event",
+    saveServiceButton: "Save event",
+    typeOfServiceLabel: "Type of event",
+
+    clientLabel: "Guest",
+
+    scanQrBody: "Show this code at the entrance.",
+    calendarQrLabel: "Private QR code for this RSVP",
+
+    eventDateLabel: "Date",
+    singleOccurrenceHelper: "This event happens once, on the date and time below.",
+    spotsLeftSuffix: "seats left",
+    fullyBookedLabel: "No seats left",
+    pickEventDateError: "Pick the date before publishing this event.",
+    pickWeekdaysError: "Pick at least one weekday and a start time for this event.",
+    maxSpotsRequiredError: "Set the number of seats for this event.",
+  },
+
+  event: {
+    oneDateBadge: "One date",
+    everyWeekBadge: "Every week",
+    oneDateHint: "This event happens once, on the date and time below.",
+    everyWeekHint: "This event repeats on the days you pick, at the same time.",
+    priceLabel: "Price",
+    notesLabel: "Good to know",
+    notesHint: "Shown on the event and on the guest's pass. Add the dress code and anything guests should know.",
+    notesPlaceholder: "Garden formal. The ceremony is on grass, so block heels are best.",
+    seeOneDateCta: "See the date",
+    chooseDateCta: "See the date",
+    confirmedLabel: "RSVP confirmed",
+    cancelledLabel: "Not attending",
+    updatedLabel: "RSVP updated",
+    namePlaceholder: "Ceremony and reception",
+    descriptionPlaceholder: "What happens, where, and until when.",
+    costPlaceholder: "Free",
+    cancellationPolicyLabel: "If your plans change",
+    travelerFieldLabels: {
+      diet: "Dietary needs",
+      hotel_pickup: "Shuttle from your hotel",
+    },
+    travelerFieldPlaceholders: {
+      diet: "Allergies or food preferences",
+      hotel_pickup: "Your hotel's name, if you'd like a ride",
+    },
+  },
+};
+
+export const weddingsCopyEs: VerticalCopy = {
+  service: "evento",
+  Service: "Evento",
+  services: "eventos",
+  Services: "Eventos",
+  booking: "confirmación",
+  Booking: "Confirmación",
+  bookings: "confirmaciones",
+  Bookings: "Confirmaciones",
+  client: "invitado",
+  Client: "Invitado",
+  clients: "invitados",
+  Clients: "Invitados",
+
+  bookVerb: "confirmar asistencia",
+  bookingPage: "página de la boda",
+  publicBookingUrl: "URL pública de la boda",
+  bookingWorkspace: "Espacio de invitados",
+  bookingSummary: "Su confirmación",
+  manageBooking: "Cambiar mi respuesta",
+  cancelBooking: "No podré asistir",
+  rescheduleBooking: "Cambiar evento",
+  bookFullDay: "Confirmar el día",
+
+  phrases: {
+    setupTitle: "Configure la página de su boda",
+    setupDoneTitle: "La página de su boda está lista",
+    providerInfoBody:
+      "Estos datos alimentan las confirmaciones, la marca y la URL pública de la boda.",
+    availabilityBody:
+      "Cada evento de la boda conserva su propia fecha y hora. Este horario solo enmarca los días alrededor.",
+
+    addServiceFirstError: "Agregue al menos un evento antes de publicar la página de la boda.",
+    serviceNameRequiredError: "Agregue un nombre de evento y una breve descripción antes de guardarlo.",
+    keepOneServiceError: "Conserve al menos un evento. Agregue otro antes de eliminar este.",
+    cancelActiveFirstError: "Cancele las confirmaciones de este evento antes de eliminarlo.",
+    enableWeekdayError: "Habilite al menos un día para que los invitados puedan confirmar.",
+    chooseServiceFirstError: "Elija un evento antes de confirmar su asistencia.",
+    pickDateFirstError: "Elija la fecha antes de confirmar su asistencia.",
+    clientFieldsRequiredError:
+      "El nombre, el correo electrónico y el número de teléfono del invitado son obligatorios.",
+
+    chooseServiceTitle: "Elija un evento",
+    chooseAnotherService: "Elegir otro evento",
+    selectAppointmentCta: "Ver la fecha",
+    selectFullDayCta: "Confirmar el día",
+    selectCapacityCta: "Confirmar mi lugar",
+    beforeVisitLabel: "Para tener en cuenta:",
+    bringWithYouLabel: "Para tener en cuenta",
+    holdReassurance: "Su lugar queda apartado durante diez minutos.",
+    whatHappensNext:
+      "Recibirá una confirmación con todo lo necesario. Si sus planes cambian, avísenos con su enlace privado para organizar las mesas.",
+    chooseServiceBody: "Revise la fecha, el lugar y la vestimenta de cada evento antes de confirmar.",
+    onlyOneServiceBody: "Solo hay un evento, por lo que este paso se omite automáticamente.",
+    serviceUnavailableBody: "Podría liberarse un lugar, pero aún puede intentarlo.",
+    notesPlaceholder: "¿Algo que los novios deban saber?",
+    bookingSummaryBodyReview: "Revise aquí su confirmación antes de enviarla.",
+    bookingSummaryBodySuccess: "Su confirmación permanece visible aquí.",
+    aboutServiceTitle: "Acerca del evento",
+    serviceDetailsTitle: "Detalles del evento",
+
+    upcomingTitle: "Próximas confirmaciones",
+    upcomingEmptyTitle: "No hay confirmaciones en los próximos 7 días",
+    upcomingEmptyBody: "Las nuevas confirmaciones aparecen aquí automáticamente.",
+    allBookingsTitle: "Todas las confirmaciones",
+    noBookingsMatchTitle: "Ninguna confirmación coincide con los filtros actuales",
+    bookingsSoonDetail: "Eventos próximos",
+    activeBookingsDetail: "Confirmaciones vigentes",
+    totalBookingsLabel: "Total de confirmaciones",
+    servicesStatDetail: "Eventos de la boda",
+    searchPlaceholder: "Buscar invitado, evento, correo o teléfono",
+
+    addBookingHint: "Haga clic en un día disponible para agregar una confirmación.",
+
+    cancelExplain: "Avisarnos libera su lugar de inmediato.",
+    keepBookingButton: "Conservar mi lugar",
+    cancelBookingButton: "No podré asistir",
+    tryBookingButton: "Intentar confirmar",
+
+    loadingBookingTitle: "Cargando su confirmación…",
+    bookingNotFoundTitle: "No encontramos esta confirmación en este dispositivo",
+    bookingNotFoundBody:
+      "Las confirmaciones se almacenan localmente en el navegador en el que se hicieron. Si respondió desde otro navegador o dispositivo, abra este enlace allí. Si borró los datos de su navegador, la confirmación ya no es accesible desde este dispositivo.",
+    bookNewButton: "Confirmar otro evento",
+
+    serviceEditorBody:
+      "Asigne a cada evento de la boda su propia fecha, hora, lugar y número de lugares.",
+    noServicesTitle: "Aún no hay eventos",
+    noServicesBody: "Agregue la ceremonia, la recepción o cualquier otro evento para que los invitados confirmen.",
+    serviceDescPlaceholder: "Qué pasa en este evento, en una o dos líneas.",
+    newServiceEyebrow: "Nuevo evento",
+    editServiceEyebrow: "Editar evento",
+    newServiceTitle: "Agregar un evento",
+    editServiceTitle: "Actualizar este evento",
+    addServiceButton: "Agregar evento",
+    saveServiceButton: "Guardar evento",
+    typeOfServiceLabel: "Tipo de evento",
+
+    clientLabel: "Invitado",
+
+    scanQrBody: "Muestre este código en la entrada.",
+    calendarQrLabel: "Código QR privado de esta confirmación",
+
+    eventDateLabel: "Fecha",
+    singleOccurrenceHelper: "Este evento ocurre una sola vez, en la fecha y hora indicadas abajo.",
+    spotsLeftSuffix: "lugares disponibles",
+    fullyBookedLabel: "Sin lugares disponibles",
+    pickEventDateError: "Elija la fecha antes de publicar este evento.",
+    pickWeekdaysError: "Elija al menos un día de la semana y una hora de inicio para este evento.",
+    maxSpotsRequiredError: "Establezca el número de lugares de este evento.",
+  },
+
+  event: {
+    oneDateBadge: "Una fecha",
+    everyWeekBadge: "Cada semana",
+    oneDateHint: "Este evento ocurre una vez, en la fecha y hora indicadas abajo.",
+    everyWeekHint: "Este evento se repite los días que elija, a la misma hora.",
+    priceLabel: "Precio",
+    notesLabel: "Para tener en cuenta",
+    notesHint: "Se muestra en el evento y en el pase del invitado. Agregue la vestimenta y lo que los invitados deban saber.",
+    notesPlaceholder: "Formal de jardín. La ceremonia es sobre pasto: se recomienda tacón ancho.",
+    seeOneDateCta: "Ver la fecha",
+    chooseDateCta: "Ver la fecha",
+    confirmedLabel: "Asistencia confirmada",
+    cancelledLabel: "No asistirá",
+    updatedLabel: "Confirmación actualizada",
+    namePlaceholder: "Ceremonia y recepción",
+    descriptionPlaceholder: "Qué pasa, dónde y hasta qué hora.",
+    costPlaceholder: "Sin costo",
+    cancellationPolicyLabel: "Si sus planes cambian",
+    travelerFieldLabels: {
+      diet: "Necesidades alimentarias",
+      hotel_pickup: "Transporte desde su hotel",
+    },
+    travelerFieldPlaceholders: {
+      diet: "Alergias o preferencias de comida",
+      hotel_pickup: "El nombre de su hotel, si desea transporte",
+    },
+  },
+};
+
 export const spacesCopy: VerticalCopy = {
   service: "space",
   Service: "Space",
@@ -1971,6 +2255,11 @@ const TOURS: Record<Lang, VerticalCopy> = {
   es: toursCopyEs,
 };
 
+const WEDDINGS: Record<Lang, VerticalCopy> = {
+  en: weddingsCopy,
+  es: weddingsCopyEs,
+};
+
 /**
  * The words for a page. `vocabulary` swaps them on one provider without changing
  * what the page is: a tour page is still the events vertical, with its URL and
@@ -1984,10 +2273,36 @@ export function getVerticalCopy(
   if (verticalId === "events" && vocabulary === "tours") {
     return TOURS[lang] ?? toursCopy;
   }
+  if (verticalId === "events" && vocabulary === "weddings") {
+    return WEDDINGS[lang] ?? weddingsCopy;
+  }
 
   const table = COPY[lang] ?? COPY.en;
   if (!verticalId) {
     return DEFAULTS[lang] ?? defaultCopy;
   }
   return table[verticalId] ?? DEFAULTS[lang] ?? defaultCopy;
+}
+
+/** The policy label a word set uses, or the shared one. */
+export function cancellationPolicyLabel(copy: VerticalCopy, fallback: string): string {
+  return copy.event?.cancellationPolicyLabel ?? fallback;
+}
+
+/** A booking-form field's label in the page's words, or the shared label. */
+export function travelerFieldLabel(
+  copy: VerticalCopy,
+  field: TravelerField,
+  fallback: Record<TravelerField, string>,
+): string {
+  return copy.event?.travelerFieldLabels?.[field] ?? fallback[field];
+}
+
+/** A booking-form field's placeholder in the page's words, or the shared one. */
+export function travelerFieldPlaceholder(
+  copy: VerticalCopy,
+  field: TravelerField,
+  fallback: Record<TravelerField, string>,
+): string {
+  return copy.event?.travelerFieldPlaceholders?.[field] ?? fallback[field];
 }

@@ -17,12 +17,12 @@ export function ToneBadge({
         "inline-flex items-center rounded-[0.75rem] px-3 py-1 backdrop-blur-[20px]",
         compactBadgeTextClass,
         tone === "primary" &&
-          "bg-[rgba(26,115,232,0.12)] text-[var(--primary-container)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
+          "bg-[color-mix(in_srgb,var(--glow)_12%,transparent)] text-[var(--primary-container)] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]",
         tone === "secondary" &&
           "bg-[var(--panel-mute-72)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
         tone === "danger" && "bg-[var(--danger-soft)] text-[var(--danger-strong)]",
         tone === "neutral" &&
-          "bg-[rgba(104,250,221,0.22)] text-[var(--action-teal-deep)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
+          "bg-[color-mix(in_srgb,var(--glow-mint)_22%,transparent)] text-[var(--action-teal-deep)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]",
         className,
       )}
     >

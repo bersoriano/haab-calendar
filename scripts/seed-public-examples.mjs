@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -30,6 +30,15 @@ function inWeeks(weeks, weekday = 0) {
   date.setUTCDate(date.getUTCDate() + ((weekday - date.getUTCDay() + 7) % 7));
   return date.toISOString().slice(0, 10);
 }
+
+function daysFrom(dateKey, days) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+// The wedding demo's Saturday. Its Friday and Sunday events are derived from it.
+const WEDDING_DAY = inWeeks(10, 6);
 
 const closedDay = (startTime, endTime) => ({ enabled: false, startTime, endTime });
 const openDay = (startTime, endTime, blockedWindows = []) => ({
@@ -1184,7 +1193,354 @@ const examples = [
       },
     ],
   },
+  // A wedding weekend run by a planner, invitation only: each moment of the
+  // weekend is a dated event, and households answer through their own link
+  // (see seedWeddingGuests below for the guest list, tables and the sample
+  // invitation the landing card opens). The three days are derived from one
+  // Saturday so they always stay in order.
+  {
+    path: "/events/boda-valeria-y-diego",
+    ownerKey: "weddings",
+    provider: {
+      full_name: "Mariana Salgado",
+      business_name: "Boda de Valeria & Diego",
+      email: demoOwnerEmail("weddings"),
+      vertical: "events",
+      slug: "boda-valeria-y-diego",
+      custom_slug: "boda-valeria-y-diego",
+      plan_tier: "premium",
+      language: "es",
+      timezone: "America/Mexico_City",
+      booking_window_days: 120,
+      phone_number_1: "+52 777 555 0193",
+      phone_number_2: "",
+      address_1: "Jardín de la hacienda, Xochitepec, Morelos",
+      address_2: "Centro histórico, Cuernavaca, Morelos",
+      hero_text: "Nos elegimos, hoy y siempre.",
+      vocabulary: "weddings",
+      rsvp_mode: "invitations",
+      default_invitation_seats: 2,
+      // Answers close three weeks before, when the banquet needs its numbers.
+      rsvp_deadline: daysFrom(WEDDING_DAY, -21),
+      story:
+        "Nos conocimos hablando hasta la madrugada y no dejamos de hacerlo. Seis años después, entre las nubes de Monteverde, Diego preguntó y Valeria dijo que sí. Queremos celebrarlo con ustedes en Xochitepec, a la sombra de un ahuehuete.",
+      rsvp_questions: [
+        {
+          id: "menu",
+          kind: "choice",
+          label: "Menú",
+          options: [
+            { id: "res", label: "Res" },
+            { id: "pescado", label: "Pescado" },
+            { id: "vegetariano", label: "Vegetariano" },
+          ],
+          per: "guest",
+          eventIds: [],
+        },
+        { id: "diet", kind: "text", label: "", options: [], per: "guest", eventIds: [] },
+        { id: "shuttle", kind: "text", label: "", options: [], per: "invitation", eventIds: [] },
+      ],
+      seating_published: true,
+      seating_published_at: new Date().toISOString(),
+      gallery_image_urls: [],
+      availability: {
+        sunday: openDay("10:00", "15:00"),
+        monday: closedDay("10:00", "15:00"),
+        tuesday: closedDay("10:00", "15:00"),
+        wednesday: closedDay("10:00", "15:00"),
+        thursday: closedDay("10:00", "15:00"),
+        friday: openDay("19:00", "23:00"),
+        saturday: openDay("16:00", "23:30"),
+      },
+    },
+    services: [
+      {
+        name: "Cena de bienvenida",
+        slug: "cena-de-bienvenida",
+        booking_type: "appointment",
+        duration_minutes: 180,
+        description:
+          "La noche antes de la boda: cena, mezcal y música en una terraza del centro de Cuernavaca, para que las dos familias se conozcan.",
+        medical_specialty: null,
+        capacity: "90 invitados",
+        cost: "Sin costo",
+        notes: "Vestimenta casual elegante.",
+        cancellation_policy: "Si sus planes cambian, cancele desde su enlace personal para liberar el lugar.",
+        traveler_fields: [],
+        sort_order: 10,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: daysFrom(WEDDING_DAY, -1),
+        start_time: "19:30",
+        end_time: "22:30",
+        max_spots: 90,
+        linked_address_2: true,
+        linked_phone_1: true,
+      },
+      {
+        name: "Ceremonia y recepción",
+        slug: "ceremonia-y-recepcion",
+        booking_type: "appointment",
+        duration_minutes: 420,
+        description:
+          "Ceremonia a la sombra del ahuehuete a las 4:30 p. m., cóctel en el jardín, cena de tres tiempos y baile hasta las 11:30 p. m.",
+        medical_specialty: null,
+        capacity: "180 invitados",
+        cost: "Sin costo",
+        notes:
+          "Formal de jardín: la ceremonia es sobre pasto, se recomienda tacón ancho. Celebración solo para adultos. Hay transporte desde los hoteles de Cuernavaca.",
+        cancellation_policy:
+          "Si sus planes cambian, cancele desde su enlace personal a más tardar tres semanas antes, cuando cerramos mesas con el banquete.",
+        traveler_fields: [],
+        sort_order: 20,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: WEDDING_DAY,
+        start_time: "16:30",
+        end_time: "23:30",
+        max_spots: 180,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+      {
+        name: "Tornaboda",
+        slug: "tornaboda",
+        booking_type: "appointment",
+        duration_minutes: 180,
+        description:
+          "Brunch tranquilo al día siguiente en el mismo jardín: chilaquiles, café de olla y la última foto juntos antes de volver a casa.",
+        medical_specialty: null,
+        capacity: "70 invitados",
+        cost: "Sin costo",
+        notes: "Vestimenta casual.",
+        cancellation_policy: "Si sus planes cambian, cancele desde su enlace personal para liberar el lugar.",
+        traveler_fields: [],
+        sort_order: 30,
+        occurrence_mode: "single",
+        weekdays: [],
+        occurrence_date: daysFrom(WEDDING_DAY, 1),
+        start_time: "11:00",
+        end_time: "14:00",
+        max_spots: 70,
+        linked_address_1: true,
+        linked_phone_1: true,
+      },
+    ],
+  },
 ];
+
+// The wedding demo's guest list. Fictional households in every state a
+// planner meets: answered, partly attending, declined, silent (some already
+// reminded), plus two samples whose tokens lib/demo-pages.ts shares: the
+// unanswered one the landing card opens, and one already answered and seated.
+// Re-seeding resets all of it.
+const SAMPLE_INVITATION_TOKEN = "DemoBodaValeriaYDiego-sample-invitation-001";
+const ANSWERED_INVITATION_TOKEN = "DemoBodaValeriaYDiego-answered-invitation-1";
+
+// [household, phone, seats, guests, answer, contacted]
+// answer: "all" (every event), "main" (reception and brunch only), "reception"
+// (reception only), "declined", or "none" (no answer yet).
+const WEDDING_HOUSEHOLDS = [
+  ["Familia Ortiz Salgado", "+52 777 555 0101", 4, ["Ana Ortiz", "Luis Ortiz", "Sofía Ortiz", "Mateo Ortiz"], "all", true],
+  ["Familia Ruiz", "+52 777 555 0102", 2, ["Marta Ruiz", "Andrés Ruiz"], "all", true],
+  ["Abuela Rosa", "+52 777 555 0103", 1, ["Rosa Herrera"], "reception", true],
+  ["Familia Paz", "+52 777 555 0104", 3, ["Elena Paz", "Jorge Paz", ""], "main", true],
+  ["Tío Ramón y Lupita", "+52 777 555 0105", 2, ["Ramón Castillo", "Guadalupe Ríos"], "all", true],
+  ["Fernanda Gil", "+52 55 5555 0106", 2, ["Fernanda Gil", ""], "all", true],
+  ["Familia Navarro", "+52 55 5555 0107", 4, ["Diana Navarro", "Pablo Navarro", "Lucía Navarro"], "main", true],
+  ["Carlos Méndez", "+52 55 5555 0108", 1, ["Carlos Méndez"], "declined", true],
+  ["Familia Torres", "+52 33 5555 0109", 3, ["Isabel Torres", "Raúl Torres", "Emilia Torres"], "all", true],
+  ["Valentina Cruz", "+52 33 5555 0110", 2, ["Valentina Cruz", "Iván Soto"], "reception", true],
+  ["Familia Domínguez", "+52 81 5555 0111", 2, ["Héctor Domínguez", "Claudia Peña"], "declined", true],
+  ["Sebastián Vega", "+52 81 5555 0112", 2, ["Sebastián Vega", ""], "all", true],
+  ["Familia Aguilar", "+52 777 555 0113", 4, ["Rocío Aguilar", "Tomás Aguilar", "Paula Aguilar", "Diego Aguilar"], "main", true],
+  ["Mariana y Leo", "+52 777 555 0114", 2, ["Mariana León", "Leonardo Ibarra"], "all", true],
+  ["Familia Herrera", "+52 777 555 0115", 3, ["Gabriela Herrera", "Óscar Herrera"], "all", true],
+  ["Daniela Fuentes", "+52 55 5555 0116", 1, ["Daniela Fuentes"], "reception", true],
+  ["Familia Rojas", "+52 55 5555 0117", 2, ["Patricia Rojas", "Manuel Rojas"], "declined", true],
+  ["Natalia Ríos", "+52 55 5555 0118", 2, ["Natalia Ríos", "Bruno Lara"], "all", true],
+  ["Familia Campos", "+52 222 555 0119", 4, ["Alejandra Campos", "Ricardo Campos", "Inés Campos"], "main", true],
+  ["Javier Morales", "+52 222 555 0120", 2, ["Javier Morales", ""], "all", true],
+  ["Familia Silva", "+52 222 555 0121", 3, ["Laura Silva", "Eduardo Silva", "Camila Silva"], "reception", true],
+  ["Regina Flores", "+52 33 5555 0122", 2, ["Regina Flores", "Pedro Ávila"], "declined", true],
+  ["Familia Luna", "+52 777 555 0123", 2, [], "none", true],
+  ["Familia Sandoval", "+52 777 555 0124", 3, ["Verónica Sandoval"], "none", true],
+  ["Arturo Peña", "+52 55 5555 0125", 1, [], "none", false],
+  ["Familia Ibáñez", "+52 55 5555 0126", 4, [], "none", false],
+  ["Clara y Emilio", "+52 81 5555 0127", 2, ["Clara Mejía", "Emilio Rangel"], "none", true],
+  ["Familia Cortés", "", 3, [], "none", false],
+  ["Renata Salas", "+52 33 5555 0129", 2, [], "none", false],
+];
+
+const MENU_PICKS = ["res", "pescado", "res", "vegetariano", "pescado", "res"];
+const DIET_NOTES = { 2: "Sin gluten", 9: "Alergia a los mariscos", 17: "Vegana" };
+const SHUTTLE_HOTELS = ["Hotel Casa Colonial", "", "Hotel Las Mañanitas", "", "Posada del Sol"];
+
+function hashToken(token) {
+  return createHash("sha256").update(token, "utf8").digest("hex");
+}
+
+async function insertRows(table, rows, columns) {
+  if (rows.length === 0) return [];
+  const { data, error } = await supabase.from(table).insert(rows).select(columns);
+  if (error) throw error;
+  return data;
+}
+
+async function seedWeddingGuests(providerId) {
+  // Answers, seats and arrivals go with their invitations (cascade).
+  for (const table of ["invitations", "seating_tables"]) {
+    const { error } = await supabase.from(table).delete().eq("provider_id", providerId);
+    if (error) throw error;
+  }
+
+  const { data: services, error: servicesError } = await supabase
+    .from("services")
+    .select("id, slug")
+    .eq("provider_id", providerId);
+  if (servicesError) throw servicesError;
+  const eventId = Object.fromEntries(services.map((service) => [service.slug, service.id]));
+  const dinner = eventId["cena-de-bienvenida"];
+  const reception = eventId["ceremonia-y-recepcion"];
+  const brunch = eventId["tornaboda"];
+  const attendsBy = {
+    all: [dinner, reception, brunch],
+    main: [reception, brunch],
+    reception: [reception],
+    declined: [],
+    none: [],
+  };
+
+  const now = Date.now();
+  const households = [
+    // The answered sample: everyone at every event, with menu picks, a diet
+    // note and a shuttle hotel. First in line, so it always gets a table.
+    {
+      name: "Familia Castañeda",
+      phone: "",
+      seats: 3,
+      guests: ["Mónica Castañeda", "Gerardo Castañeda", "Julia Reyes"],
+      guestAnswers: [{ menu: "pescado" }, { menu: "res" }, { menu: "vegetariano", diet: "Sin lactosa" }],
+      answer: "all",
+      contacted: true,
+      token: ANSWERED_INVITATION_TOKEN,
+      submittedAt: new Date(now - 3 * 86_400_000).toISOString(),
+      shuttle: "Hotel Casa Colonial",
+    },
+    ...WEDDING_HOUSEHOLDS.map(([name, phone, seats, guests, answer, contacted], index) => ({
+      name,
+      phone,
+      seats,
+      guests,
+      answer,
+      contacted,
+      token: randomBytes(32).toString("base64url"),
+      submittedAt: answer === "none" ? null : new Date(now - (index + 1) * 9 * 3_600_000).toISOString(),
+      shuttle: answer !== "none" && answer !== "declined" ? SHUTTLE_HOTELS[index % SHUTTLE_HOTELS.length] : "",
+    })),
+    // The sample: unanswered, with two names and room for a plus-one.
+    {
+      name: "Familia Ejemplo",
+      phone: "",
+      seats: 3,
+      guests: ["Andrea Ejemplo", "Rafael Ejemplo"],
+      answer: "none",
+      contacted: true,
+      token: SAMPLE_INVITATION_TOKEN,
+      submittedAt: null,
+      shuttle: "",
+    },
+  ];
+
+  const invitations = await insertRows(
+    "invitations",
+    households.map((household) => ({
+      provider_id: providerId,
+      display_name: household.name,
+      contact_phone: household.phone,
+      seat_limit: household.seats,
+      token: household.token,
+      token_hash: hashToken(household.token),
+      submitted_at: household.submittedAt,
+      last_contacted_at: household.contacted ? new Date(now - 14 * 86_400_000).toISOString() : null,
+      answers: household.shuttle ? { shuttle: household.shuttle } : {},
+    })),
+    "id, token",
+  );
+  const invitationId = new Map(invitations.map((row) => [row.token, row.id]));
+
+  await insertRows(
+    "invitation_events",
+    households.flatMap((household) =>
+      [dinner, reception, brunch].map((serviceId) => ({
+        invitation_id: invitationId.get(household.token),
+        service_id: serviceId,
+      })),
+    ),
+    "invitation_id",
+  );
+
+  let person = 0;
+  const guestRows = households.flatMap((household) =>
+    household.guests.map((name, position) => {
+      if (household.guestAnswers) {
+        return {
+          invitation_id: invitationId.get(household.token),
+          name,
+          position,
+          answers: household.guestAnswers[position],
+        };
+      }
+      const attending = attendsBy[household.answer].length > 0;
+      const answers = {};
+      if (attending) {
+        answers.menu = MENU_PICKS[person % MENU_PICKS.length];
+        if (DIET_NOTES[person]) answers.diet = DIET_NOTES[person];
+      }
+      person += 1;
+      return { invitation_id: invitationId.get(household.token), name, position, answers };
+    }),
+  );
+  const guests = await insertRows("invitation_guests", guestRows, "id, invitation_id, position");
+
+  // Six round tables of ten for the reception, filled household by household;
+  // the last two answered households wait unseated, as they would a week out.
+  const tables = await insertRows(
+    "seating_tables",
+    Array.from({ length: 6 }, (_, index) => ({
+      provider_id: providerId,
+      service_id: reception,
+      name: `Mesa ${index + 1}`,
+      seat_count: 10,
+      position: index,
+    })),
+    "id, position",
+  );
+  tables.sort((a, b) => a.position - b.position);
+  const seated = households.filter((household) => attendsBy[household.answer].includes(reception)).slice(0, -2);
+  const seatedTokens = new Set(seated.map((household) => household.token));
+
+  let seat = 0;
+  const attendance = [];
+  for (const household of households) {
+    if (household.answer === "none") continue;
+    const id = invitationId.get(household.token);
+    for (const guest of guests.filter((row) => row.invitation_id === id).sort((a, b) => a.position - b.position)) {
+      for (const serviceId of [dinner, reception, brunch]) {
+        const attending = attendsBy[household.answer].includes(serviceId);
+        const atTable = attending && serviceId === reception && seatedTokens.has(household.token);
+        attendance.push({
+          guest_id: guest.id,
+          service_id: serviceId,
+          attending,
+          table_id: atTable ? tables[Math.min(Math.floor(seat / 10), tables.length - 1)].id : null,
+        });
+        if (atTable) seat += 1;
+      }
+    }
+  }
+  await insertRows("guest_attendance", attendance, "guest_id");
+}
 
 async function getOrCreateDemoOwner(email) {
   for (let page = 1; page <= 10; page += 1) {
@@ -1297,6 +1653,7 @@ for (const example of selected) {
 
   const providerId = await upsertProvider(ownerUserId, example);
   await upsertServices(providerId, example.services);
+  if (example.ownerKey === "weddings") await seedWeddingGuests(providerId);
 }
 
 console.log("Published example booking pages:");

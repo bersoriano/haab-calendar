@@ -24,6 +24,9 @@ import type {
   BookingFlow,
   Lang,
 } from "./types";
+import { parseRsvpDeadline } from "./rsvp-deadline";
+import { parseRsvpQuestions } from "./rsvp-questions";
+import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "./rsvp-mode";
 import type { Vertical } from "../config/verticals";
 
 export function createDefaultAvailability(): WeeklyAvailability {
@@ -308,11 +311,20 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     logoImageUrl: source?.logoImageUrl?.trim() || undefined,
     headerImageUrl: source?.headerImageUrl?.trim() || undefined,
     heroText: source?.heroText?.trim() || undefined,
+    // Kept as typed, line breaks and all; trimmed when saved.
+    story: typeof source?.story === "string" && source.story.trim() ? source.story : undefined,
     galleryImageUrls: Array.isArray(source?.galleryImageUrls)
       ? source.galleryImageUrls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: source?.language === "es" ? "es" : "en",
-    vocabulary: source?.vocabulary === "tours" ? "tours" : undefined,
+    vocabulary: parseVocabulary(source?.vocabulary),
+    rsvpMode: source?.rsvpMode === undefined ? undefined : parseRsvpMode(source.rsvpMode),
+    defaultInvitationSeats:
+      source?.defaultInvitationSeats === undefined
+        ? undefined
+        : clampInvitationSeats(source.defaultInvitationSeats),
+    rsvpDeadline: parseRsvpDeadline(source?.rsvpDeadline),
+    rsvpQuestions: source?.rsvpQuestions === undefined ? undefined : parseRsvpQuestions(source.rsvpQuestions),
     dashboardLanguage:
       source?.dashboardLanguage === "en" || source?.dashboardLanguage === "es"
         ? source.dashboardLanguage

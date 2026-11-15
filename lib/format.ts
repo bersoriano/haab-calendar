@@ -5,7 +5,7 @@ import {
 } from "./constants";
 import { parseDateKey } from "./date";
 import { pad } from "./utils";
-import type { BookingStatus, BookingType, Lang, OccurrenceMode, Service } from "./types";
+import type { BookingStatus, BookingType, Lang, OccurrenceMode, Service, VerticalId } from "./types";
 
 const FULL_DAY: Record<Lang, string> = { en: "Full Day", es: "Día completo" };
 const APPOINTMENT: Record<Lang, string> = { en: "Appointment", es: "Cita" };
@@ -25,6 +25,34 @@ export function formatCost(cost: string | null | undefined, lang: Lang = "en") {
   const text = cost?.trim() ?? "";
   const digits = text.replace(/\D/g, "");
   return /^0+$/.test(digits) ? NO_COST[lang] : text;
+}
+
+const FREE_WORDS = new Set(["free", "gratis", "sin costo", "no cost", "gratuito", "gratuita"]);
+
+/**
+ * Whether a free-text price means nothing to pay: empty, all zeros with an
+ * optional currency ("US$0", "0.00 MXN"), or a word that says so.
+ */
+export function isFreeCost(cost: string | null | undefined): boolean {
+  const text = cost?.trim().toLowerCase() ?? "";
+  if (!text) return true;
+  if (FREE_WORDS.has(text)) return true;
+  const digits = text.replace(/\D/g, "");
+  // Only currency marks may sit around the zeros, so "$10 donation" stays priced.
+  return /^0+$/.test(digits) && /^[a-z$€£¥\s.,0]*$/i.test(text) && text.replace(/[^a-z]/g, "").length <= 3;
+}
+
+/**
+ * The value for a "Price" row. On an events page a free event has no row at
+ * all: "Price: No cost" under a wedding reads like a bill.
+ */
+export function formatPriceRow(
+  cost: string | null | undefined,
+  lang: Lang,
+  vertical: VerticalId | undefined,
+): string {
+  if (vertical === "events" && isFreeCost(cost)) return "";
+  return formatCost(cost, lang);
 }
 
 export function formatDateLabel(dateKey: string, lang: Lang = "en") {

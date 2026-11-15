@@ -7,7 +7,7 @@ export function buttonClasses(
   return cn(
     "inline-flex min-h-11 items-center justify-center rounded-[0.75rem] px-4 text-sm font-semibold transition-[transform,filter,box-shadow,background-color,color] duration-200 disabled:cursor-not-allowed disabled:opacity-45",
     tone === "primary" &&
-      "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_30px_48px_rgba(25,28,29,0.08),0_14px_32px_rgba(26,115,232,0.24)] hover:saturate-125 hover:shadow-[0_34px_54px_rgba(25,28,29,0.1),0_18px_36px_rgba(26,115,232,0.3)]",
+      "bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_30px_48px_rgba(25,28,29,0.08),0_14px_32px_color-mix(in_srgb,var(--glow)_24%,transparent)] hover:saturate-125 hover:shadow-[0_34px_54px_rgba(25,28,29,0.1),0_18px_36px_color-mix(in_srgb,var(--glow)_30%,transparent)]",
     tone === "secondary" &&
       "bg-[var(--panel-mute-96)] text-[var(--ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_18px_36px_rgba(25,28,29,0.05)] hover:bg-[var(--panel-glass-92)] hover:text-[var(--primary-container)]",
     tone === "ghost" &&

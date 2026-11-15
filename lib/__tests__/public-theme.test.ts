@@ -4,6 +4,7 @@ import {
   DEFAULT_PUBLIC_THEME,
   PUBLIC_THEMES,
   getPublicThemeStyle,
+  getPublicThemeRootAttributes,
   isDarkPublicTheme,
   normalizePublicTheme, getPublicThemeSwatch } from "@/lib/public-theme";
 import { normalizeProvider } from "@/lib/store";
@@ -134,6 +135,56 @@ describe("theme styles", () => {
           `${theme}: ${text} on ${surface}`,
         ).toBeGreaterThanOrEqual(4.5);
       }
+    }
+  });
+});
+
+describe("the winter theme", () => {
+  it("is a light theme with square corners, and the only one", () => {
+    expect(normalizePublicTheme(" Winter ")).toBe("winter");
+    expect(normalizeProvider({ publicTheme: "winter" }).publicTheme).toBe("winter");
+    expect(isDarkPublicTheme("winter")).toBe(false);
+    expect(getPublicThemeRootAttributes("winter")).toEqual({ "data-square-corners": "" });
+
+    for (const theme of PUBLIC_THEMES.filter((option) => option !== "winter")) {
+      expect(getPublicThemeRootAttributes(theme), theme).toEqual({});
+    }
+  });
+
+  it("warms every panel surface, not only the accents", () => {
+    const tokens = getPublicThemeStyle("winter").tokens;
+    const panels = Object.keys(tokens).filter((token) => token.startsWith("--panel-"));
+
+    // All 27 panel tokens: a single classic cool-grey panel left behind reads
+    // as blue against ivory.
+    expect(panels).toHaveLength(27);
+    for (const token of ["--background", "--surface", "--surface-soft", "--surface-lowest", "--summary-surface"]) {
+      expect(tokens[token], token).toBeTruthy();
+    }
+  });
+
+  it("keeps text and buttons readable on its light grounds", () => {
+    const style = getPublicThemeStyle("winter");
+    const pairs = [
+      ["--on-primary", "--primary"],
+      ["--on-primary", "--action-teal"],
+      ["--ink", "--panel-glass-55"],
+      ["--ink-secondary", "--panel-tint-75"],
+      ["--muted", "--panel-tint-94"],
+      ["--muted", "--panel-mute-88"],
+      ["--accent", "--surface-lowest"],
+      ["--accent-strong", "--panel-tint-94"],
+      ["--link", "--surface-lowest"],
+      ["--callout-mint-ink", "--callout-mint"],
+      ["--tile-teal-ink", "--tile-teal"],
+      ["--action-teal-deep", "--chip-duration-bg"],
+    ];
+
+    for (const [text, surface] of pairs) {
+      expect(
+        contrastOnSurface(style.tokens[text], style.tokens[surface], style.base),
+        `winter: ${text} on ${surface}`,
+      ).toBeGreaterThanOrEqual(4.5);
     }
   });
 });

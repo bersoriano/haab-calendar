@@ -24,6 +24,17 @@ Reusable appointment and booking management module built with Next.js `16.2.4`.
 - Lets provider and client reschedule or cancel bookings with instant updates.
 - Protects public selections with a visible ten-minute server hold, one optional five-minute grace extension, reconnect validation, and automatic expiry cleanup.
 
+## Invitation-only RSVPs
+
+An events page can take answers by invitation only (Settings → "Invitation-only
+RSVPs"), which is how a wedding planner runs a wedding. The planner keeps a
+guest list in the dashboard (Guests): one invitation per household, with a seat
+limit, the events it is invited to and its own link. The household answers once
+for every event, including "we can't make it", and can change the answer from
+the same link. The public page shows the schedule instead of a booking flow, and
+RSVPs never become bookings. The "weddings" word set renames events, guests and
+RSVPs. Design: `docs/superpowers/specs/2026-11-08-wedding-rsvp-design.md`.
+
 ## Booking Process
 
 See [`docs/booking-engine.md`](docs/booking-engine.md) for diagrams of what
@@ -42,6 +53,9 @@ constraint enforces which kind of service. See
   Public service-specific booking page.
 - `/[vertical]/[providerSlug]/manage/[token]`
   Self-service page to view, reschedule, or cancel an existing booking via its manage token.
+- `/[vertical]/[providerSlug]/i/[token]`
+  A household's invitation on an invitation-only events page: one RSVP for every
+  event it is invited to. See "Invitation-only RSVPs" below.
 - `/gallery`
   Every published example page in one grid. The landing page shows four of them,
   picked per request, and links here.
@@ -69,6 +83,7 @@ overwrites edits made to the demos, so to publish a single new one use
 - Personal golf coaching: `/professionals/fairway-lab-golf`
 - Restaurant tables, 12 per seating: `/restaurants/casa-mirador`
 - Guided tours, dated departures and weekly day trips: `/events/ruta-cenote-tours`
+- Wedding RSVPs, invitation only (31 households, menu questions, published tables): `/events/boda-valeria-y-diego`. Two sample invitations anyone can open, both reset by re-seeding: the unanswered one the landing card opens, `/events/boda-valeria-y-diego/i/DemoBodaValeriaYDiego-sample-invitation-001`, and one already answered and seated (answers, table, door QR), `/events/boda-valeria-y-diego/i/DemoBodaValeriaYDiego-answered-invitation-1`.
   (the events vertical in the `tours` word set, with photos, a cancellation
   policy, a minimum group size and traveler details)
 
@@ -80,8 +95,8 @@ single-resource business — one room, one chair, one bay, one coach — because
 booked appointment slot blocks that time across all of a provider's services. Hotel stays are deliberately absent; see the note at
 the end of this section.
 
-The two race entries and the tour departures are dated relative to the seed
-run, so re-seeding always leaves them in the future. Events have no end date,
+The two race entries, the tour departures and the wedding weekend are dated
+relative to the seed run, so re-seeding always leaves them in the future. Events have no end date,
 so a multi-day tour is stored as its first day's welcome meeting and states its
 length in the name and description. Every example is fictional, including the
 phone numbers and addresses.

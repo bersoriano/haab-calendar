@@ -39,7 +39,7 @@ export function SuccessActions({
   const t = bookingTranslations[lang];
   // Once cancelled, booking again is the one thing left to do, so it leads.
   const bookAnotherClass = isCancelled
-    ? "h-12 bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_rgba(26,115,232,0.28)] hover:saturate-125 lg:h-[46px]"
+    ? "h-12 bg-[linear-gradient(135deg,var(--primary),var(--primary-container))] text-[var(--on-primary)] shadow-[0_12px_26px_color-mix(in_srgb,var(--glow)_28%,transparent)] hover:saturate-125 lg:h-[46px]"
     : "h-11 bg-transparent text-[var(--link)] hover:bg-[var(--accent-soft)] lg:h-[46px]";
 
   return (

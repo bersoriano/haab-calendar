@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
+import { clampInvitationSeats, INVITATION_SEAT_LIMIT_MAX, parseVocabulary } from "@/lib/rsvp-mode";
 import { bookingTranslations } from "@/components/booking/i18n/translations";
 import {
   Button,
@@ -8,9 +10,11 @@ import {
   CardBody,
   CardHeader,
   ConfirmDialog,
+  Field,
   FormSection,
   Input,
   Select,
+  Switch,
 } from "@/components/app-ui";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
@@ -19,9 +23,12 @@ import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSe
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { canUseCustomProviderSlug } from "@/lib/public-url";
-import type { Lang, ProviderInfo } from "@/lib/types";
+import type { Lang, ProviderInfo, Service } from "@/lib/types";
+import { RsvpQuestionsSettings } from "@/components/provider/guests/RsvpQuestionsSettings";
 
 export type ProviderSettingsSurfaceProps = {
+  /** The page's events, for questions asked at some of them only. */
+  services?: Pick<Service, "id" | "name">[];
   /** Already resolved by the caller, which owns the vertical's role wording. */
   title: string;
   /** Same reason: "Public booking link for" reads differently per vertical. */
@@ -78,6 +85,7 @@ export function ProviderSettingsSurface({
   onSavePublicSlug,
   onResetStandaloneSetup,
   offersVocabulary = false,
+  services = [],
   onDashboardLanguageChange,
   businessType,
 }: ProviderSettingsSurfaceProps) {
@@ -114,13 +122,24 @@ export function ProviderSettingsSurface({
                 disabled={disabled}
                 value={provider.vocabulary ?? ""}
                 onChange={(event) =>
-                  onProviderChange("vocabulary", event.target.value === "tours" ? "tours" : undefined)
+                  onProviderChange("vocabulary", parseVocabulary(event.target.value))
                 }
               >
                 <option value="">{t.admin.vocabularyEvents}</option>
                 <option value="tours">{t.admin.vocabularyTours}</option>
+                <option value="weddings">{t.admin.vocabularyWeddings}</option>
               </Select>
             </FormSection>
+          ) : null}
+
+          {offersVocabulary ? (
+            <InvitationModeSettings
+              provider={provider}
+              services={services}
+              lang={lang}
+              disabled={disabled}
+              onProviderChange={onProviderChange}
+            />
           ) : null}
 
           {onDashboardLanguageChange ? (
@@ -250,5 +269,119 @@ function PublicSlugEditor({
         </p>
       ) : null}
     </form>
+  );
+}
+
+const INVITATION_MODE_COPY = {
+  en: {
+    title: "Invitation-only RSVPs",
+    description:
+      "Only the households on your guest list can answer, each through its own link. Your page shows the schedule instead of taking bookings.",
+    switchLabel: "Take answers by invitation only",
+    seatsLabel: "Seats per new invitation",
+    seatsHint: "You can change each invitation's seats in the guest list.",
+    questionsTitle: "Questions with the RSVP",
+    deadlineLabel: "Answer by",
+    deadlineHint: "Optional. Households can answer through the end of this day; after it their link shows their answer and your phone number.",
+    offTitle: "Turn off invitation-only RSVPs?",
+    offBody: "Your page will take bookings from anyone with the link again. Your guest list and its answers are kept.",
+    offConfirm: "Turn off",
+    keep: "Keep it on",
+  },
+  es: {
+    title: "Confirmaciones solo por invitación",
+    description:
+      "Solo las familias de su lista de invitados pueden responder, cada una con su propio enlace. Su página muestra el programa en lugar de tomar reservas.",
+    switchLabel: "Recibir respuestas solo por invitación",
+    seatsLabel: "Lugares por invitación nueva",
+    seatsHint: "Puede cambiar los lugares de cada invitación en la lista de invitados.",
+    questionsTitle: "Preguntas con la confirmación",
+    deadlineLabel: "Responder a más tardar el",
+    deadlineHint: "Opcional. Las familias pueden responder hasta el final de este día; después, su enlace muestra su respuesta y su teléfono.",
+    offTitle: "¿Desactivar las confirmaciones solo por invitación?",
+    offBody: "Su página volverá a tomar reservas de cualquier persona con el enlace. Su lista de invitados y sus respuestas se conservan.",
+    offConfirm: "Desactivar",
+    keep: "Mantener activado",
+  },
+} as const;
+
+/** Events only: the mode switch and the seats a new invitation starts with. */
+function InvitationModeSettings({
+  provider,
+  services = [],
+  lang,
+  disabled,
+  onProviderChange,
+}: Pick<ProviderSettingsSurfaceProps, "provider" | "services" | "lang" | "disabled" | "onProviderChange">) {
+  const copy = INVITATION_MODE_COPY[lang];
+  const shell = dashboardCopy[lang];
+  const [confirmOff, setConfirmOff] = useState(false);
+  const on = provider.rsvpMode === "invitations";
+
+  return (
+    <FormSection title={copy.title} description={copy.description}>
+      <div className="grid gap-4">
+        <Field label={copy.switchLabel} inline>
+          <Switch
+            checked={on}
+            disabled={disabled}
+            onChange={(event) => {
+              if (event.target.checked) onProviderChange("rsvpMode", "invitations");
+              else setConfirmOff(true);
+            }}
+          />
+        </Field>
+        {on ? (
+          <Field label={copy.deadlineLabel} description={copy.deadlineHint}>
+            <Input
+              type="date"
+              disabled={disabled}
+              value={provider.rsvpDeadline ?? ""}
+              onChange={(event) => onProviderChange("rsvpDeadline", parseRsvpDeadline(event.target.value))}
+            />
+          </Field>
+        ) : null}
+        {on ? (
+          <Field label={copy.seatsLabel} description={copy.seatsHint}>
+            <Input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={INVITATION_SEAT_LIMIT_MAX}
+              disabled={disabled}
+              value={String(provider.defaultInvitationSeats ?? 2)}
+              onChange={(event) =>
+                onProviderChange("defaultInvitationSeats", clampInvitationSeats(event.target.value))
+              }
+            />
+          </Field>
+        ) : null}
+      </div>
+      {on ? (
+        <div className="mt-6 grid gap-3 border-t border-app-border pt-6">
+          <p className="text-sm font-semibold text-app-fg">{copy.questionsTitle}</p>
+          <RsvpQuestionsSettings
+            questions={provider.rsvpQuestions ?? []}
+            services={services}
+            lang={lang}
+            disabled={disabled}
+            onChange={(next) => onProviderChange("rsvpQuestions", next)}
+          />
+        </div>
+      ) : null}
+      <ConfirmDialog
+        open={confirmOff}
+        title={copy.offTitle}
+        body={copy.offBody}
+        confirmLabel={copy.offConfirm}
+        cancelLabel={copy.keep}
+        closeLabel={shell.closeDialog}
+        onConfirm={() => {
+          onProviderChange("rsvpMode", "open");
+          setConfirmOff(false);
+        }}
+        onCancel={() => setConfirmOff(false)}
+      />
+    </FormSection>
   );
 }

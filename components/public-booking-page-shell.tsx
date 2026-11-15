@@ -2,7 +2,7 @@
 
 import { HaabBookingModule } from "@/components/haab-booking-module";
 import { PublicBookingFooter } from "@/components/booking/PublicBookingFooter";
-import { getPublicThemeStyle } from "@/lib/public-theme";
+import { getPublicThemeRootAttributes, getPublicThemeStyle } from "@/lib/public-theme";
 import { useCallback, useState, type CSSProperties } from "react";
 import type { InjectedConfig, Lang, ModuleStore } from "@/lib/types";
 
@@ -24,6 +24,7 @@ export function PublicBookingPageShell({
   providerTimeZone,
 }: PublicBookingPageShellProps) {
   const theme = getPublicThemeStyle(injectedConfig?.provider?.publicTheme);
+  const themeAttributes = getPublicThemeRootAttributes(injectedConfig?.provider?.publicTheme);
   const [standaloneFooter, setStandaloneFooter] = useState<{ publicFooterText?: string; publicFooterUrl?: string }>({});
   const onStoreChange = useCallback((store: ModuleStore) => {
     setStandaloneFooter((current) =>
@@ -36,6 +37,7 @@ export function PublicBookingPageShell({
 
   return (
     <div
+      {...themeAttributes}
       className="relative isolate flex min-h-screen flex-col overflow-x-clip"
       // A theme is a set of custom-property overrides on this one element;
       // everything below styles itself from the same tokens either way, so
