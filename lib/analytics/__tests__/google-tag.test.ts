@@ -1,6 +1,8 @@
 import { Window } from "happy-dom";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { GOOGLE_ANALYTICS_SCRIPT } from "@/lib/analytics/google-tag";
+import { GOOGLE_ANALYTICS_SCRIPT, GOOGLE_MEASUREMENT_ID } from "@/lib/analytics/google-tag";
+
+const DISABLE_FLAG = "ga-disable-G-2RHC147XNR";
 
 let window: Window;
 let analyticsWindow: Record<string, unknown>;
@@ -21,16 +23,20 @@ function start(path: string) {
 }
 
 describe("Google Analytics privacy boundary", () => {
+  it("targets the haabcalendar.com web stream", () => {
+    expect(GOOGLE_MEASUREMENT_ID).toBe("G-2RHC147XNR");
+  });
+
   it("initializes marketing collection without query strings or fragments", () => {
     start("/?lang=es&utm_source=newsletter");
     const commands = (analyticsWindow.dataLayer as IArguments[]).map((args) => Array.from(args));
-    expect(commands[1]).toEqual(["config", "G-PDRMG0Z2SM", expect.objectContaining({
+    expect(commands[1]).toEqual(["config", "G-2RHC147XNR", expect.objectContaining({
       page_location: `${window.location.origin}/`,
       page_referrer: "",
       allow_google_signals: false,
       allow_ad_personalization_signals: false,
     })]);
-    expect(window.document.querySelector("script")?.src).toBe("https://www.googletagmanager.com/gtag/js?id=G-PDRMG0Z2SM");
+    expect(window.document.querySelector("script")?.src).toBe("https://www.googletagmanager.com/gtag/js?id=G-2RHC147XNR");
   });
 
   it.each([
@@ -50,28 +56,28 @@ describe("Google Analytics privacy boundary", () => {
     const original = window.history[method];
     let disabledAtNavigation: unknown;
     window.history[method] = function (...args) {
-      disabledAtNavigation = analyticsWindow["ga-disable-G-PDRMG0Z2SM"];
+      disabledAtNavigation = analyticsWindow[DISABLE_FLAG];
       return original.apply(this, args);
     };
     start("/");
     window.history[method](null, "", "/public/test/manage/private-token");
     expect(disabledAtNavigation).toBe(true);
-    expect(analyticsWindow["ga-disable-G-PDRMG0Z2SM"]).toBe(true);
+    expect(analyticsWindow[DISABLE_FLAG]).toBe(true);
     window.history[method](null, "", "/gallery");
-    expect(analyticsWindow["ga-disable-G-PDRMG0Z2SM"]).toBe(true);
+    expect(analyticsWindow[DISABLE_FLAG]).toBe(true);
   });
 
   it("disables collection on back/forward navigation to private pages", () => {
     start("/");
     window.happyDOM.setURL("https://haabcalendar.com/public/test/manage/private-token");
     window.dispatchEvent(new window.PopStateEvent("popstate"));
-    expect(analyticsWindow["ga-disable-G-PDRMG0Z2SM"]).toBe(true);
+    expect(analyticsWindow[DISABLE_FLAG]).toBe(true);
   });
 
   it("keeps collection active between marketing pages and section anchors", () => {
     start("/");
     window.history.pushState(null, "", "/en/online-booking-for-doctors#faq");
-    expect(analyticsWindow["ga-disable-G-PDRMG0Z2SM"]).toBeUndefined();
+    expect(analyticsWindow[DISABLE_FLAG]).toBeUndefined();
   });
 
   it.each(["http://localhost:3000/", "https://preview.vercel.app/"])("excludes non-production host %s", (url) => {

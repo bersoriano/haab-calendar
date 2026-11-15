@@ -1,6 +1,7 @@
 # Google Analytics
 
-The Google tag uses measurement ID `G-PDRMG0Z2SM`. No environment variable or
+The Google tag uses measurement ID `G-2RHC147XNR` (`GOOGLE_MEASUREMENT_ID` in
+`lib/analytics/google-tag.ts`). No environment variable or
 additional package is required. Deploy a production build to activate it on
 `haabcalendar.com` and `www.haabcalendar.com`; development and preview hosts
 do not collect data.
@@ -17,7 +18,7 @@ contain personal information. Google signals and advertising personalization
 are disabled.
 
 Before a client navigation leaves the allowlist, the tag sets Google's
-`ga-disable-G-PDRMG0Z2SM` flag. Collection stays disabled for that document,
+`ga-disable-G-2RHC147XNR` flag. Collection stays disabled for that document,
 including a later return to marketing, until a full page load. This prevents
 automatic events from collecting private locations or private referrers.
 
