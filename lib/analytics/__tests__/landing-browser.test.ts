@@ -45,12 +45,12 @@ describe("landing exposure", () => {
   it("counts tall sections after one continuous visible second and only once", async () => {
     stop = observeLanding(root, capture, () => "en");
     await vi.advanceTimersByTimeAsync(999);
-    expect(capture.mock.calls.filter(([event]) => event === "landing_section_view")).toEqual([]);
+    expect(capture.mock.calls.filter(([event]) => event === "section_view")).toEqual([]);
     await vi.advanceTimersByTimeAsync(1);
-    expect(capture).toHaveBeenCalledWith("landing_section_view", { section: "hero", language: "en" });
+    expect(capture).toHaveBeenCalledWith("section_view", { section_id: "hero", locale: "en" });
     await scroll();
     await vi.advanceTimersByTimeAsync(2000);
-    expect(capture.mock.calls.filter(([event]) => event === "landing_section_view")).toHaveLength(1);
+    expect(capture.mock.calls.filter(([event]) => event === "section_view")).toHaveLength(1);
   });
 
   it("does not count quick passes or time spent in hidden tabs", async () => {
@@ -59,28 +59,28 @@ describe("landing exposure", () => {
     rect('[data-landing-section="hero"]', -2000, 1800);
     await scroll();
     await vi.advanceTimersByTimeAsync(1500);
-    expect(capture.mock.calls.filter(([event]) => event === "landing_section_view")).toEqual([]);
+    expect(capture.mock.calls.filter(([event]) => event === "section_view")).toEqual([]);
     rect("#features", 0, 2000);
     await scroll();
     await vi.advanceTimersByTimeAsync(500);
     visible(false);
     await vi.advanceTimersByTimeAsync(2000);
-    expect(capture.mock.calls.filter(([event]) => event === "landing_section_view")).toEqual([]);
+    expect(capture.mock.calls.filter(([event]) => event === "section_view")).toEqual([]);
     visible(true);
     await vi.advanceTimersByTimeAsync(1000);
-    expect(capture).toHaveBeenCalledWith("landing_section_view", { section: "features", language: "en" });
+    expect(capture).toHaveBeenCalledWith("section_view", { section_id: "features", locale: "en" });
   });
 
   it("keeps visit counts stable across language changes and records click placement", () => {
     let language = "en" as "en" | "es";
     stop = observeLanding(root, capture, () => language);
     document.getElementById("cta")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_cta_click", { action: "create_page", section: "hero", language: "en" });
+    expect(capture).toHaveBeenCalledWith("cta_click", { cta_type: "signup", cta_location: "hero", locale: "en" });
     language = "es";
     root.querySelector<HTMLButtonElement>("[data-landing-language]")!.click();
-    expect(capture).toHaveBeenCalledWith("landing_language_change", { target_language: "es", section: "footer", language: "es" });
+    expect(capture).toHaveBeenCalledWith("language_change", { language: "es", locale: "es" });
     document.getElementById("private")!.click();
-    expect(capture.mock.calls.filter(([event]) => event === "landing_cta_click")).toHaveLength(1);
+    expect(capture.mock.calls.filter(([event]) => event === "cta_click")).toHaveLength(1);
     expect(capture.mock.calls.filter(([event]) => event === "$pageview")).toHaveLength(1);
   });
 
@@ -88,11 +88,11 @@ describe("landing exposure", () => {
     stop = observeLanding(root, capture, () => "en");
     const initial = root.querySelector<HTMLDetailsElement>('[data-landing-faq="1"]')!;
     initial.dispatchEvent(new Event("toggle"));
-    expect(capture.mock.calls.filter(([event]) => event === "landing_faq_open")).toEqual([]);
+    expect(capture.mock.calls.filter(([event]) => event === "select_content")).toEqual([]);
     const next = root.querySelector<HTMLDetailsElement>('[data-landing-faq="2"]')!;
     next.open = true;
     next.dispatchEvent(new Event("toggle"));
-    expect(capture).toHaveBeenCalledWith("landing_faq_open", { question: 2, section: "faq", language: "en" });
+    expect(capture).toHaveBeenCalledWith("select_content", { content_type: "faq", content_id: "q2", locale: "en" });
   });
 
   it("records scroll thresholds once and ends visits once with foreground time", async () => {
@@ -104,7 +104,7 @@ describe("landing exposure", () => {
     Object.defineProperty(window, "scrollY", { configurable: true, value: 3200 });
     await scroll();
     await scroll();
-    expect(capture.mock.calls.filter(([event]) => event === "landing_scroll_depth").map(([, props]) => props.percent)).toEqual([25, 50, 75, 100]);
+    expect(capture.mock.calls.filter(([event, props]) => event === "read_progress" && props.content_type === "page").map(([, props]) => props.percent)).toEqual([25, 50, 75, 100]);
     window.dispatchEvent(new Event("pagehide"));
     stop();
     const leaves = capture.mock.calls.filter(([event]) => event === "$pageleave");
@@ -133,6 +133,6 @@ describe("landing video engagement", () => {
     video.currentTime = 20;
     video.dispatchEvent(new Event("seeked"));
     video.dispatchEvent(new Event("ended"));
-    expect(capture.mock.calls.filter(([event]) => event === "landing_video_progress").map(([, props]) => props.milestone)).toEqual(["start", "25"]);
+    expect(capture.mock.calls.filter(([event, props]) => event === "read_progress" && props.content_type === "video").map(([, props]) => props.percent)).toEqual([0, 25]);
   });
 });

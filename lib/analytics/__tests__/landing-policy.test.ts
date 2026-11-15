@@ -50,18 +50,18 @@ describe("landing analytics privacy boundary", () => {
   });
 
   it("strips arbitrary properties, form values, raw URLs, and SDK initial attribution", () => {
-    const result = sanitizeLandingEvent({ event: "landing_cta_click", properties: {
+    const result = sanitizeLandingEvent({ event: "cta_click", properties: {
       token: "phc_test", distinct_id: "anonymous", $session_id: "session",
       $current_url: "https://haabcalendar.com/?email=private@example.com#secret",
       $pathname: "/", $host: "haabcalendar.com", $referrer: "https://google.com",
       $initial_current_url: "https://haabcalendar.com/?token=secret", $initial_utm_source: "secret",
       email: "private@example.com", name: "Private", $set: { email: "private@example.com" },
-      section: "hero", action: "create_page", language: "en", $device_type: "Mobile",
+      cta_location: "hero", cta_type: "signup", locale: "en", $device_type: "Mobile",
     } });
     expect(result?.properties).toEqual({
       token: "phc_test", distinct_id: "anonymous", $session_id: "session",
       $current_url: "https://haabcalendar.com/", $pathname: "/", $host: "haabcalendar.com",
-      $referrer: "https://google.com", section: "hero", action: "create_page", language: "en", $device_type: "Mobile",
+      $referrer: "https://google.com", cta_location: "hero", cta_type: "signup", locale: "en", $device_type: "Mobile",
     });
   });
 
@@ -74,13 +74,13 @@ describe("landing analytics privacy boundary", () => {
   });
 
   it("names which measured page an event came from, without its query or hash", () => {
-    const result = sanitizeLandingEvent({ event: "landing_section_view", properties: {
+    const result = sanitizeLandingEvent({ event: "section_view", properties: {
       $current_url: "https://haabcalendar.com/es/agenda-online-para-medicos?email=private@example.com#secret",
-      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section: "front-desk", language: "es",
+      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section_id: "front-desk", locale: "es",
     } });
     expect(result?.properties).toEqual({
       $current_url: "https://haabcalendar.com/es/agenda-online-para-medicos",
-      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section: "front-desk", language: "es",
+      $pathname: "/es/agenda-online-para-medicos", $host: "haabcalendar.com", section_id: "front-desk", locale: "es",
     });
     // A path the event does not come from is dropped, never trusted.
     expect(sanitizeLandingEvent({ event: "$pageview", properties: {
@@ -89,8 +89,8 @@ describe("landing analytics privacy boundary", () => {
   });
 
   it("rejects free-form metadata even when a property name is approved", () => {
-    const result = sanitizeLandingEvent({ event: "landing_cta_click", properties: {
-      $current_url: "https://haabcalendar.com/", section: "private@example.com", action: "secret-token", language: "xx", vertical: "private", question: -1, percent: 900,
+    const result = sanitizeLandingEvent({ event: "select_content", properties: {
+      $current_url: "https://haabcalendar.com/", section_id: "private@example.com", cta_type: "secret-token", locale: "xx", language: "xx", content_type: "private", content_id: "private@example.com", percent: 900,
     } });
     expect(result?.properties).toEqual({ $current_url: "https://haabcalendar.com/" });
   });

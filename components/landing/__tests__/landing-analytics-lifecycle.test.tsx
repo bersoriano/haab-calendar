@@ -68,5 +68,5 @@ it("preserves FAQ state across language switches without reporting manufactured 
   // A newly mounted open <details> dispatches toggle in real browsers.
   await act(async () => translatedQuestion.dispatchEvent(new Event("toggle")));
   expect(translatedQuestion).toBe(firstQuestion);
-  expect(capture.mock.calls.filter(([event]) => event === "landing_faq_open")).toEqual([]);
+  expect(capture.mock.calls.filter(([event]) => event === "select_content")).toEqual([]);
 });
