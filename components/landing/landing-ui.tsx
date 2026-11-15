@@ -920,7 +920,7 @@ export function Footer({
           <LangPill lang={lang} onChange={setLang} variant="night" long />
         </div>
         <div className="border-t border-[var(--lp-night-line)] pt-[22px] text-[13px] leading-[1.5] text-[var(--lp-night-muted)] lg:pt-7 lg:text-[14px]">
-          <p>{t.footer.copyright}</p>
+          <p>{t.footer.copyright}{" "}<a href="https://brilliant.dev/" className="underline underline-offset-4 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-mint-300)]">brilliant.dev</a></p>
         </div>
       </div>
     </footer>
