@@ -100,6 +100,7 @@ export function toServicePayload(providerId: string, service: Service, sortOrder
 
   return {
     provider_id: providerId,
+    reminders_enabled: service.remindersEnabled !== false,
     name: requireText(service.name, "Every service needs a name."),
     slug: getServiceSlug(service),
     booking_type: bookingType,
@@ -234,6 +235,12 @@ async function upsertProvider(options: {
     email,
     vertical,
     language: provider.language,
+    reminders_enabled: provider.remindersEnabled !== false,
+    reminder_primary_minutes: provider.reminderPrimaryMinutes ?? 1440,
+    reminder_secondary_minutes: provider.reminderSecondaryMinutes &&
+      provider.reminderSecondaryMinutes < (provider.reminderPrimaryMinutes ?? 1440)
+      ? provider.reminderSecondaryMinutes : null,
+    reminder_message: provider.reminderMessage?.trim().slice(0, 500) ?? "",
     // A word set only means something on the vertical it was written for.
     vocabulary: vertical === "events" ? (parseVocabulary(provider.vocabulary) ?? null) : null,
     // Invitation-only RSVPs exist only on the events vertical.

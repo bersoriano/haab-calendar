@@ -201,6 +201,7 @@ export function setServiceBookingLength(
 export function createBlankServiceDraft(vertical?: VerticalId): ServiceDraft {
   return {
     name: "",
+    remindersEnabled: true,
     bookingType: "appointment",
     durationMinutes: DEFAULT_APPOINTMENT_DURATION_MINUTES,
     description: "",
@@ -340,12 +341,22 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
     timezone: normalizeTimeZone(source?.timezone),
     maxBookingsPerDay: normalizeDailyBookingLimit(source?.maxBookingsPerDay) ?? undefined,
     keepBookingHistoryOneYear: source?.keepBookingHistoryOneYear === true,
+    remindersEnabled: source?.remindersEnabled !== false,
+    reminderPrimaryMinutes: Number.isInteger(source?.reminderPrimaryMinutes) &&
+      (source?.reminderPrimaryMinutes ?? 0) >= 15 && (source?.reminderPrimaryMinutes ?? 0) <= 43200
+      ? source!.reminderPrimaryMinutes : 1440,
+    reminderSecondaryMinutes: source?.reminderSecondaryMinutes === null ? null :
+      Number.isInteger(source?.reminderSecondaryMinutes) &&
+      (source?.reminderSecondaryMinutes ?? 0) >= 15 && (source?.reminderSecondaryMinutes ?? 0) <= 43200
+        ? source!.reminderSecondaryMinutes : null,
+    reminderMessage: source?.reminderMessage?.slice(0, 500) ?? "",
   };
 }
 
 export function normalizeServices(source?: Service[] | null): Service[] {
   return (source ?? []).map((service) => ({
     id: service.id,
+    remindersEnabled: service.remindersEnabled !== false,
     name: service.name,
     slug: getServiceSlug(service),
     bookingType: service.bookingType,
