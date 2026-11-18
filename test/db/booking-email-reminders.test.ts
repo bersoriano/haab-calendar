@@ -5,7 +5,7 @@ import { assertLocalSupabase } from "@/test/db/local-client";
 
 const databaseUrl = assertLocalSupabase(process.env.REMINDER_TEST_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres");
 const inlineMigration = process.env.REMINDER_TEST_INLINE_MIGRATION === "1"
-  ? readFileSync("supabase/migrations/20261118184136_booking_email_reminders.sql", "utf8")
+  ? readFileSync("supabase/migrations/20261118230550_booking_email_reminders.sql", "utf8")
   : "";
 
 function check(sql: string) {
