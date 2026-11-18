@@ -5,7 +5,11 @@ import { assertLocalSupabase } from "@/test/db/local-client";
 
 const databaseUrl = assertLocalSupabase(process.env.REMINDER_TEST_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres");
 const inlineMigration = process.env.REMINDER_TEST_INLINE_MIGRATION === "1"
-  ? readFileSync("supabase/migrations/20261118230550_booking_email_reminders.sql", "utf8")
+  ? [
+      "20261118230550_booking_email_reminders.sql",
+      "20261118230839_index_booking_email_reminders_provider.sql",
+      "20261118232210_grant_provider_reminder_settings_writes.sql",
+    ].map((name) => readFileSync(`supabase/migrations/${name}`, "utf8")).join("\n")
   : "";
 
 function check(sql: string) {
@@ -29,6 +33,33 @@ function check(sql: string) {
 }
 
 describe("booking email reminder scheduling", () => {
+  it("lets owner save reminder settings on existing and new businesses", () => check(`
+    select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000e101', true);
+    set local role authenticated;
+    update public.providers set reminders_enabled = false,
+      reminder_primary_minutes = 2880, reminder_secondary_minutes = 120,
+      reminder_message = 'Bring documents'
+      where id = '00000000-0000-4000-8000-00000000e102';
+    reset role;
+    insert into auth.users (id, email)
+      values ('00000000-0000-4000-8000-00000000e106', 'new-reminders-owner@example.invalid');
+    select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-00000000e106', true);
+    set local role authenticated;
+    insert into public.providers (owner_user_id, full_name, business_name,
+      email, vertical, timezone, availability, setup_complete,
+      reminders_enabled, reminder_primary_minutes, reminder_secondary_minutes, reminder_message)
+      values ('00000000-0000-4000-8000-00000000e106', 'New Owner', 'New Business',
+        'new-reminders@example.invalid', 'professional', 'UTC', '{}', true,
+        true, 1440, 120, 'Welcome');
+    reset role;
+    do $$ begin
+      if (select reminder_message from public.providers where id = '00000000-0000-4000-8000-00000000e102') <> 'Bring documents' then
+        raise exception 'Owner reminder update missing'; end if;
+      if (select reminder_message from public.providers where owner_user_id = '00000000-0000-4000-8000-00000000e106') <> 'Welcome' then
+        raise exception 'New business reminder insert missing'; end if;
+    end $$;
+  `));
+
   it("keeps reminder delivery state private from public clients", () => check(`
     set local role anon;
     do $$ begin
