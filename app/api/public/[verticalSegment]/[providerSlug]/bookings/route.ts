@@ -25,6 +25,7 @@ type PublicBookingBody = {
   time?: unknown;
   clientName?: unknown;
   clientEmail?: unknown;
+  clientLanguage?: unknown;
   clientPhone?: unknown;
   partySize?: unknown;
   dateOfBirth?: unknown;
@@ -135,6 +136,8 @@ export async function POST(
       time: readOptionalString(body.time),
       clientName,
       clientEmail,
+      clientLanguage: body.clientLanguage === "en" || body.clientLanguage === "es"
+        ? body.clientLanguage : undefined,
       clientPhone,
       partySize: readPositiveInteger(body.partySize),
       dateOfBirth: dateOfBirth.value,

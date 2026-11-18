@@ -14,7 +14,7 @@ const reminder = {
 const booking = {
   id: bookingId, provider_id: "provider-1", service_id: "service-1",
   service_name: "Consultation", booking_type: "appointment", duration_minutes_snapshot: 30,
-  client_email: "guest@example.com", date: "2026-12-02", start_time: "09:00:00", status: "confirmed",
+  client_email: "guest@example.com", client_language: null, date: "2026-12-02", start_time: "09:00:00", status: "confirmed",
 };
 const provider = {
   id: "provider-1", business_name: "Clinic", email: "clinic@example.com",
@@ -37,8 +37,8 @@ describe("booking reminder email", () => {
   });
 
   it("localizes Spanish and escapes owner message in HTML", () => {
-    const email = buildReminderEmail({ booking, provider: {
-      ...provider, language: "es", reminder_message: "<script>alert('x')</script>",
+    const email = buildReminderEmail({ booking: { ...booking, client_language: "es" }, provider: {
+      ...provider, reminder_message: "<script>alert('x')</script>",
     }, reminder, manageUrl: "https://example.com/manage", fromAddress: "booking@example.com" });
     expect(email.subject).toBe("Recordatorio de cita: Consultation");
     expect(email.text).toContain("Duración: 30 minutos");

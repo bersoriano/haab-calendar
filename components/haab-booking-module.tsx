@@ -3089,6 +3089,7 @@ export function HaabBookingModule({
               time: bookingFlow.time || undefined,
               clientName: bookingFlow.clientName.trim(),
               clientEmail: bookingFlow.clientEmail.trim(),
+              clientLanguage: lang,
               clientPhone: bookingFlow.clientPhone.trim(),
               partySize: partySizeForBooking,
               dateOfBirth: dateOfBirthForBooking,

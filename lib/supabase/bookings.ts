@@ -185,6 +185,7 @@ export type ConfirmPublicBookingInput = {
   time?: string;
   clientName: string;
   clientEmail: string;
+  clientLanguage?: "en" | "es";
   clientPhone: string;
   /** Restaurants: guests in the party. Validated against the table's cap. */
   partySize?: number;
@@ -1242,6 +1243,7 @@ export async function confirmPublicBooking(
       capacity_snapshot: capacitySnapshot,
       client_name: input.clientName.trim(),
       client_email: input.clientEmail.trim(),
+      client_language: input.clientLanguage ?? null,
       client_phone: input.clientPhone.trim(),
       date: input.dateKey,
       start_time: startTime ?? null,

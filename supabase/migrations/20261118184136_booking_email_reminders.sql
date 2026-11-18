@@ -13,6 +13,9 @@ alter table public.providers add constraint providers_reminder_order
 alter table public.services
   add column reminders_enabled boolean not null default true;
 
+alter table public.bookings
+  add column client_language text check (client_language in ('en', 'es'));
+
 grant select (reminders_enabled) on public.services to anon;
 
 create table public.booking_email_reminders (

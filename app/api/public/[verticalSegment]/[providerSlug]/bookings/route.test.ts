@@ -59,13 +59,15 @@ describe("POST public booking emails", () => {
   });
 
   it("attempts both emails before returning confirmed booking", async () => {
-    const response = await POST(request(), context);
+    const response = await POST(request({ clientLanguage: "es" }), context);
 
     expect(response.status).toBe(201);
     expect(mocks.sendBookingEmailImmediately).toHaveBeenCalledWith({
       bookingId: "booking-1",
       providerId: "provider-1",
     });
+    expect(mocks.confirmPublicBooking).toHaveBeenCalledWith(expect.anything(),
+      expect.objectContaining({ clientLanguage: "es" }));
     await expect(response.json()).resolves.toEqual({
       booking,
       canonicalPath: "/professionals/test-provider",

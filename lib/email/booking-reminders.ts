@@ -25,6 +25,7 @@ type Booking = {
   booking_type: string;
   duration_minutes_snapshot: number | null;
   client_email: string;
+  client_language: "en" | "es" | null;
   date: string;
   start_time: string | null;
   status: string;
@@ -56,7 +57,7 @@ export function buildReminderEmail(input: {
   fromAddress: string;
 }) {
   const { booking, provider, reminder, manageUrl } = input;
-  const es = provider.language === "es";
+  const es = (booking.client_language ?? provider.language) === "es";
   const date = new Intl.DateTimeFormat(es ? "es-MX" : "en-US", {
     timeZone: provider.timezone, weekday: "long", year: "numeric", month: "long", day: "numeric",
   }).format(new Date(reminder.appointment_at));
@@ -117,7 +118,7 @@ async function recordOutcome(reminder: Reminder, status: "sent" | "cancelled" | 
 async function deliver(reminder: Reminder, fetcher: typeof fetch): Promise<"sent" | "cancelled" | "failed"> {
   const admin = createAdminClient();
   const [{ data: booking, error: bookingError }, { data: provider, error: providerError }] = await Promise.all([
-    admin.from("bookings").select("id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, client_email, date, start_time, status")
+    admin.from("bookings").select("id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, client_email, client_language, date, start_time, status")
       .eq("id", reminder.booking_id).maybeSingle<Booking>(),
     admin.from("providers").select("id, business_name, email, slug, vertical, timezone, language, reminders_enabled, reminder_message")
       .eq("id", reminder.provider_id).maybeSingle<Provider>(),
@@ -159,7 +160,7 @@ async function deliver(reminder: Reminder, fetcher: typeof fetch): Promise<"sent
   if (currentError) throw currentError;
   if (!current || current.status !== "processing" || current.lease_token !== reminder.lease_token) return "cancelled";
   const token = createReminderManageToken(booking.id);
-  const manageUrl = `${getSiteOrigin()}${buildManagePath(provider.vertical, provider.slug, token)}?lang=${provider.language === "es" ? "es" : "en"}`;
+  const manageUrl = `${getSiteOrigin()}${buildManagePath(provider.vertical, provider.slug, token)}?lang=${booking.client_language ?? (provider.language === "es" ? "es" : "en")}`;
   const response = await fetcher("https://api.resend.com/emails", {
     method: "POST",
     headers: {

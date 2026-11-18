@@ -17,6 +17,7 @@ export type BookingEmailContext = {
     service_name: string;
     client_name: string;
     client_email: string;
+    client_language?: "en" | "es" | null;
     client_phone: string;
     date: string;
     start_time: string | null;
@@ -53,7 +54,7 @@ export function buildBookingEmails(
   from: string,
 ): [EmailMessage, EmailMessage] {
   const { booking, provider } = context;
-  const spanish = provider.language === "es";
+  const spanish = (booking.client_language ?? provider.language) === "es";
   const cancelled = booking.status === "cancelled";
   const time = appointmentTime(context, spanish);
   const location = booking.location_snapshot?.trim();
@@ -125,7 +126,7 @@ async function loadBookingEmailContext(
   const admin = createAdminClient();
   const { data: booking, error: bookingError } = await admin
     .from("bookings")
-    .select("id, provider_id, service_name, client_name, client_email, client_phone, date, start_time, end_time, location_snapshot, status")
+    .select("id, provider_id, service_name, client_name, client_email, client_language, client_phone, date, start_time, end_time, location_snapshot, status")
     .eq("id", event.bookingId)
     .eq("provider_id", event.providerId)
     .maybeSingle<BookingEmailContext["booking"]>();
