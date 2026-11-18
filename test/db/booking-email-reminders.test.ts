@@ -1,12 +1,17 @@
 import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { describe, it } from "vitest";
 import { assertLocalSupabase } from "@/test/db/local-client";
 
 const databaseUrl = assertLocalSupabase(process.env.REMINDER_TEST_DB_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres");
+const inlineMigration = process.env.REMINDER_TEST_INLINE_MIGRATION === "1"
+  ? readFileSync("supabase/migrations/20261118184136_booking_email_reminders.sql", "utf8")
+  : "";
 
 function check(sql: string) {
   execFileSync("psql", [databaseUrl, "-v", "ON_ERROR_STOP=1", "-q"], {
     input: `begin;
+      ${inlineMigration}
       insert into auth.users (id, email) values ('00000000-0000-4000-8000-00000000e101', 'reminders@example.invalid');
       insert into public.providers (id, owner_user_id, full_name, business_name, email, vertical, timezone, availability, setup_complete)
         values ('00000000-0000-4000-8000-00000000e102', '00000000-0000-4000-8000-00000000e101', 'Owner', 'Reminder Tests', 'reminders@example.invalid', 'professional', 'UTC', '{}', true);
@@ -24,6 +29,27 @@ function check(sql: string) {
 }
 
 describe("booking email reminder scheduling", () => {
+  it("keeps reminder delivery state private from public clients", () => check(`
+    set local role anon;
+    do $$ begin
+      begin
+        perform 1 from public.booking_email_reminders limit 1;
+        raise exception 'Anonymous client read reminder state';
+      exception when insufficient_privilege then null;
+      end;
+    end $$;
+    reset role;
+    set local role authenticated;
+    do $$ begin
+      begin
+        perform 1 from public.booking_email_reminders limit 1;
+        raise exception 'Authenticated client read reminder state';
+      exception when insufficient_privilege then null;
+      end;
+    end $$;
+    reset role;
+  `));
+
   it("claims a due reminder once and keeps sent state terminal", () => check(`
     update public.booking_email_reminders set scheduled_at = now() - interval '1 minute'
       where booking_id = '00000000-0000-4000-8000-00000000e104';
