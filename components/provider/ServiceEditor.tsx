@@ -33,6 +33,7 @@ import {
   Field,
   Input,
   Select,
+  Switch,
   StackedList,
   StackedListItem,
   Textarea,
@@ -624,6 +625,10 @@ export function ServiceEditor({
               placeholder={copy.event?.notesPlaceholder ?? t.admin.notesPlaceholder}
               rows={3}
             />
+          </Field>
+          <Field label={lang === "es" ? "Recordatorios por correo para este servicio" : "Email reminders for this service"} inline>
+            <Switch checked={serviceDraft.remindersEnabled !== false} disabled={disabled}
+              onChange={(event) => onDraftChange((current) => ({ ...current, remindersEnabled: event.target.checked }))} />
           </Field>
           {isEvents ? (
             <section className="grid grid-cols-[minmax(0,1fr)] gap-5 border-t border-app-border pt-5">

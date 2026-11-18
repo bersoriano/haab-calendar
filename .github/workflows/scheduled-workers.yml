@@ -53,11 +53,10 @@ jobs:
 
           failures=0
 
-          # Each endpoint claims one job per worker per call, so one call per
-          # run would drain twelve jobs an hour. Six passes with a short pause
-          # keeps a backlog moving without holding a runner for long.
+          # Six passes with a short pause keep backlogs moving without holding
+          # a runner for long. The reminder endpoint claims a bounded batch.
           for pass in $(seq 1 6); do
-            for path in /api/cron/integration-outbox /api/cron/google-workers; do
+            for path in /api/cron/integration-outbox /api/cron/google-workers /api/cron/booking-reminders; do
               # The secret goes through an env var, never the command line:
               # arguments are visible to anything reading the process table.
               status=$(curl -sS -o /tmp/body.json -w '%{http_code}' \
@@ -80,7 +79,7 @@ jobs:
           done
 
           # One transient failure is the network. Half of them is the service.
-          if [ "${failures}" -ge 6 ]; then
-            echo "::error::${failures} of 12 worker calls failed."
+          if [ "${failures}" -ge 9 ]; then
+            echo "::error::${failures} of 18 worker calls failed."
             exit 1
           fi

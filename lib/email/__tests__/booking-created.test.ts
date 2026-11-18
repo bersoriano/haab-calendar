@@ -86,6 +86,14 @@ describe("booking creation email", () => {
     expect(messages[0].text).toContain("Todo el día");
   });
 
+  it("uses client booking language ahead of business default", () => {
+    const messages = buildBookingEmails({
+      booking: { ...context.booking, client_language: "es" },
+      provider: { ...context.provider, language: "en" },
+    }, "Haab <bookings@example.com>");
+    expect(messages[0].subject).toBe("Cita confirmada: Consultation");
+  });
+
   it("sends both emails in one idempotent batch", async () => {
     const fetcher = vi.fn(async () =>
       new Response(JSON.stringify({ data: [{ id: "mail-1" }, { id: "mail-2" }] }), {

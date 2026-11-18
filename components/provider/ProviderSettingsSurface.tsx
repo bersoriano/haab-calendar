@@ -15,6 +15,7 @@ import {
   Input,
   Select,
   Switch,
+  Textarea,
 } from "@/components/app-ui";
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
@@ -151,6 +152,46 @@ export function ProviderSettingsSurface({
           {integratedMode && canPersist ? (
             <FormSection title={lang === "es" ? "Pie de página de reservas" : "Booking page footer"}>
               <BookingFooterSettings provider={provider} entitlements={entitlements} lang={lang} disabled={disabled} onChange={onProviderChange} />
+            </FormSection>
+          ) : null}
+
+          {integratedMode && canPersist ? (
+            <FormSection
+              title={lang === "es" ? "Recordatorios por correo" : "Email reminders"}
+              description={lang === "es" ? "Se envían antes de cada reserva confirmada." : "Sent before each confirmed booking."}
+            >
+              <div className="grid gap-4">
+                <Field label={lang === "es" ? "Activar recordatorios" : "Enable reminders"} inline>
+                  <Switch checked={provider.remindersEnabled !== false} disabled={disabled}
+                    onChange={(event) => onProviderChange("remindersEnabled", event.target.checked)} />
+                </Field>
+                <Field label={lang === "es" ? "Primer recordatorio" : "First reminder"}>
+                  <Select value={provider.reminderPrimaryMinutes ?? 1440} disabled={disabled || provider.remindersEnabled === false}
+                    onChange={(event) => {
+                      const minutes = Number(event.target.value);
+                      onProviderChange("reminderPrimaryMinutes", minutes);
+                      if ((provider.reminderSecondaryMinutes ?? 0) >= minutes) onProviderChange("reminderSecondaryMinutes", null);
+                    }}>
+                    <option value={60}>{lang === "es" ? "1 hora antes" : "1 hour before"}</option>
+                    <option value={120}>{lang === "es" ? "2 horas antes" : "2 hours before"}</option>
+                    <option value={1440}>{lang === "es" ? "24 horas antes" : "24 hours before"}</option>
+                    <option value={2880}>{lang === "es" ? "48 horas antes" : "48 hours before"}</option>
+                  </Select>
+                </Field>
+                <Field label={lang === "es" ? "Segundo recordatorio" : "Second reminder"}>
+                  <Select value={provider.reminderSecondaryMinutes ?? ""} disabled={disabled || provider.remindersEnabled === false}
+                    onChange={(event) => onProviderChange("reminderSecondaryMinutes", event.target.value ? Number(event.target.value) : null)}>
+                    <option value="">{lang === "es" ? "Ninguno" : "None"}</option>
+                    {(provider.reminderPrimaryMinutes ?? 1440) > 60 ? <option value={60}>{lang === "es" ? "1 hora antes" : "1 hour before"}</option> : null}
+                    {(provider.reminderPrimaryMinutes ?? 1440) > 120 ? <option value={120}>{lang === "es" ? "2 horas antes" : "2 hours before"}</option> : null}
+                    {(provider.reminderPrimaryMinutes ?? 1440) > 360 ? <option value={360}>{lang === "es" ? "6 horas antes" : "6 hours before"}</option> : null}
+                  </Select>
+                </Field>
+                <Field label={lang === "es" ? "Mensaje opcional" : "Optional message"}>
+                  <Textarea value={provider.reminderMessage ?? ""} maxLength={500} rows={3} disabled={disabled || provider.remindersEnabled === false}
+                    onChange={(event) => onProviderChange("reminderMessage", event.target.value)} />
+                </Field>
+              </div>
             </FormSection>
           ) : null}
 

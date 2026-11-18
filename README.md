@@ -239,8 +239,9 @@ exactly one thing rather than breaking the app:
 | `STRIPE_*` | The webhook endpoint refuses every request; no subscription grants premium |
 | `STRIPE_PREMIUM_PRICE_ID` | The in-app "Upgrade to Premium" button reports that upgrades are not open yet. Its product must be listed in `STRIPE_PREMIUM_PRODUCT_IDS` |
 | `GOOGLE_*` | The Google integration reports itself unavailable and no route offers it |
-| `CRON_SECRET` | Both cron routes answer 401 to everything |
+| `CRON_SECRET` | Cron routes answer 401 to everything |
 | `RESEND_API_KEY` or `BOOKING_EMAIL_FROM` | Booking email deliveries retry, then dead-letter; set both before accepting live bookings |
+| `REMINDER_LINK_SECRET` | Reminder delivery retries; use a stable random value of at least 32 characters so emailed management links stay valid |
 | `BLOB_READ_WRITE_TOKEN` | Image upload is unavailable |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | No traces exported; the app runs normally |
 | `ANALYTICS_HASH_SECRET` | Booking page visitor hashes are keyed with the service role key instead; rotating either resets only that day's visitor counts |
@@ -383,12 +384,13 @@ Provider booking analytics continue to use Supabase.
 
 ### Background workers
 
-`.github/workflows/scheduled-workers.yml` drives the two cron routes every five
+`.github/workflows/scheduled-workers.yml` drives the cron routes every five
 minutes:
 
 ```
 GET /api/cron/integration-outbox   Authorization: Bearer $CRON_SECRET
 GET /api/cron/google-workers       Authorization: Bearer $CRON_SECRET
+GET /api/cron/booking-reminders    Authorization: Bearer $CRON_SECRET
 ```
 
 Not Vercel cron: the Hobby plan permits one run per day, which for a booking app

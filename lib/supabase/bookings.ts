@@ -24,6 +24,7 @@ import { getEffectiveCost } from "@/lib/locations";
 import { isUnsetTimeZone, normalizeTimeZone } from "@/lib/timezone";
 import { normalizePublicTheme } from "@/lib/public-theme";
 import { getPublicVerticalSegment } from "@/lib/public-url";
+import { bookingIdFromReminderManageToken } from "@/lib/email/reminder-link";
 import type {
   BookingCampaign,
   BookingHoldRecord,
@@ -47,8 +48,9 @@ import { normalizeTravelerFields, parseTravelerDetails } from "@/lib/traveler-de
 
 const PROVIDER_SELECT =
   "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, default_invitation_seats, rsvp_deadline, rsvp_questions, seating_published, story, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
+const PROVIDER_DASHBOARD_SELECT = `${PROVIDER_SELECT}, reminders_enabled, reminder_primary_minutes, reminder_secondary_minutes, reminder_message`;
 const SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields, reminders_enabled";
 const BOOKING_SELECT =
   "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, reviewed_at, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
@@ -56,6 +58,10 @@ const BOOKING_HOLD_SELECT =
 
 type ProviderRow = {
   id: string;
+  reminders_enabled?: boolean;
+  reminder_primary_minutes?: number;
+  reminder_secondary_minutes?: number | null;
+  reminder_message?: string;
   owner_user_id: string;
   full_name: string;
   business_name: string;
@@ -92,6 +98,7 @@ type ProviderRow = {
 
 type ServiceRow = {
   id: string;
+  reminders_enabled?: boolean;
   provider_id: string;
   name: string;
   slug: string | null;
@@ -178,6 +185,7 @@ export type ConfirmPublicBookingInput = {
   time?: string;
   clientName: string;
   clientEmail: string;
+  clientLanguage?: "en" | "es";
   clientPhone: string;
   /** Restaurants: guests in the party. Validated against the table's cap. */
   partySize?: number;
@@ -298,6 +306,10 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
       ? row.gallery_image_urls.filter((url) => typeof url === "string" && url.trim())
       : undefined,
     language: row.language === "es" ? "es" : "en",
+    remindersEnabled: row.reminders_enabled !== false,
+    reminderPrimaryMinutes: row.reminder_primary_minutes ?? 1440,
+    reminderSecondaryMinutes: row.reminder_secondary_minutes ?? null,
+    reminderMessage: row.reminder_message ?? "",
     vocabulary: parseVocabulary(row.vocabulary),
     rsvpMode: parseRsvpMode(row.rsvp_mode),
     defaultInvitationSeats: clampInvitationSeats(row.default_invitation_seats),
@@ -321,6 +333,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
 function toService(row: ServiceRow): Service {
   return {
     id: row.id,
+    remindersEnabled: row.reminders_enabled !== false,
     name: row.name,
     slug: row.slug ?? undefined,
     bookingType: row.booking_type,
@@ -766,11 +779,18 @@ async function getBookingByManageToken(
   providerId: string,
   token: string,
 ) {
+  const reminderBookingId = token.startsWith("r.")
+    ? bookingIdFromReminderManageToken(token)
+    : null;
+  if (token.startsWith("r.") && !reminderBookingId) {
+    throw new PublicBookingWriteError("That booking link was not found.", 404);
+  }
   const { data, error } = await supabase
     .from("bookings")
     .select(BOOKING_SELECT)
     .eq("provider_id", providerId)
-    .eq("manage_token_hash", hashManageToken(token))
+    .eq(reminderBookingId ? "id" : "manage_token_hash",
+      reminderBookingId ?? hashManageToken(token))
     .maybeSingle<BookingRow>();
 
   if (error) {
@@ -1223,6 +1243,7 @@ export async function confirmPublicBooking(
       capacity_snapshot: capacitySnapshot,
       client_name: input.clientName.trim(),
       client_email: input.clientEmail.trim(),
+      client_language: input.clientLanguage ?? null,
       client_phone: input.clientPhone.trim(),
       date: input.dateKey,
       start_time: startTime ?? null,
@@ -1626,7 +1647,7 @@ export async function getProviderDashboardContext(
 ): Promise<ProviderDashboardContext | null> {
   const { data: provider, error: providerError } = await supabase
     .from("providers")
-    .select(`${PROVIDER_SELECT}, keep_booking_history_one_year`)
+    .select(`${PROVIDER_DASHBOARD_SELECT}, keep_booking_history_one_year`)
     .eq("owner_user_id", ownerUserId)
     .maybeSingle<ProviderRow>();
 

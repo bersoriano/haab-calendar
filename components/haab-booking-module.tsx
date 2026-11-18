@@ -2025,6 +2025,7 @@ export function HaabBookingModule({
     setEditingServiceId(service.id);
     setServiceDraft({
       name: service.name,
+      remindersEnabled: service.remindersEnabled !== false,
       bookingType: service.bookingType,
       durationMinutes: service.durationMinutes ?? 30,
       description: service.description,
@@ -2159,6 +2160,7 @@ export function HaabBookingModule({
 
       const nextService: Service = {
         id: editingServiceId ?? createId("service"),
+        remindersEnabled: serviceDraft.remindersEnabled !== false,
         name: serviceDraft.name.trim(),
         // Fixed-window events are represented by their own start/end times.
         // Keep the internal booking type timed so legacy full-day seeds do not
@@ -3087,6 +3089,7 @@ export function HaabBookingModule({
               time: bookingFlow.time || undefined,
               clientName: bookingFlow.clientName.trim(),
               clientEmail: bookingFlow.clientEmail.trim(),
+              clientLanguage: lang,
               clientPhone: bookingFlow.clientPhone.trim(),
               partySize: partySizeForBooking,
               dateOfBirth: dateOfBirthForBooking,

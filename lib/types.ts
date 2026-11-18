@@ -134,10 +134,15 @@ export type ProviderInfo = {
   maxBookingsPerDay?: number;
   /** Opt-in preference; effective only with extended-history entitlement. */
   keepBookingHistoryOneYear?: boolean;
+  remindersEnabled?: boolean;
+  reminderPrimaryMinutes?: number;
+  reminderSecondaryMinutes?: number | null;
+  reminderMessage?: string;
 };
 
 export type Service = {
   id: string;
+  remindersEnabled?: boolean;
   name: string;
   slug?: string;
   bookingType: BookingType;
@@ -278,6 +283,7 @@ export type InjectedConfig = {
 
 export type ServiceDraft = {
   name: string;
+  remindersEnabled?: boolean;
   bookingType: BookingType;
   durationMinutes: number;
   description: string;
