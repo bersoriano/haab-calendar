@@ -1,6 +1,6 @@
 # Booking email reminders
 
-Apply `20261118230550_booking_email_reminders.sql` before deploying application code. Set `REMINDER_LINK_SECRET` to a stable random secret of at least 32 characters, alongside existing `RESEND_API_KEY`, `BOOKING_EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, and `CRON_SECRET`. Keep reminder secret across deployments: changing it invalidates management links sent in earlier reminders.
+Apply `20261118230550_booking_email_reminders.sql` and `20261118230839_index_booking_email_reminders_provider.sql` before deploying application code. Set `REMINDER_LINK_SECRET` to a stable random secret of at least 32 characters, alongside existing `RESEND_API_KEY`, `BOOKING_EMAIL_FROM`, `NEXT_PUBLIC_SITE_URL`, and `CRON_SECRET`. Keep reminder secret across deployments: changing it invalidates management links sent in earlier reminders.
 
 The booking trigger writes one primary reminder (24 hours before) and an optional second reminder into `booking_email_reminders` in the booking transaction. Business settings and service opt-outs refresh pending rows. Cancellation and rescheduling cancel old pending rows. Appointment times use the business IANA timezone; full-day bookings use 09:00 local as the reminder anchor. A reminder whose configured lead time has already passed is not sent late at booking creation.
 
