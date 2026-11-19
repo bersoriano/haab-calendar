@@ -1,5 +1,6 @@
 import { createGoogleCalendarHandler } from "@/lib/google/handler";
 import { createBookingEmailHandler } from "@/lib/email/booking-created";
+import { createDepositStatusEmailHandler } from "@/lib/email/deposit-status";
 import type { IntegrationOutboxHandler } from "@/lib/integrations/outbox/types";
 
 /**
@@ -18,6 +19,7 @@ import type { IntegrationOutboxHandler } from "@/lib/integrations/outbox/types";
 const HANDLERS: IntegrationOutboxHandler[] = [
   createGoogleCalendarHandler(),
   createBookingEmailHandler(),
+  createDepositStatusEmailHandler(),
 ];
 
 export function getIntegrationOutboxHandlers(): readonly IntegrationOutboxHandler[] {

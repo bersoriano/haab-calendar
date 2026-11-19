@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -31,6 +31,8 @@ const context: BookingEmailContext = {
     email: "doctor@example.com",
     timezone: "America/Mexico_City",
     language: "en",
+    vertical: "professional",
+    slug: "clinica-sol",
   },
 };
 
@@ -52,6 +54,15 @@ const event = {
 } satisfies IntegrationOutboxEvent;
 
 describe("booking creation email", () => {
+  beforeEach(() => { process.env.REMINDER_LINK_SECRET = "test-booking-link-secret-at-least-32-characters"; });
+  afterEach(() => { delete process.env.REMINDER_LINK_SECRET; });
+  it("includes private status link on pending deposit email", () => {
+    const [customer] = buildBookingEmails({
+      ...context, booking: { ...context.booking, status: "pending_payment_verification" },
+    }, "Haab <bookings@example.com>");
+    expect(customer.text).toContain("pending until the business verifies");
+    expect(customer.text).toContain("/professionals/clinica-sol/manage/r.");
+  });
   it("builds separate customer and provider messages with appointment details", () => {
     const messages = buildBookingEmails(context, "Haab <bookings@example.com>");
 

@@ -1,4 +1,5 @@
 import "server-only";
+import { managedBookingCalendarLabel } from "@/lib/google/deposit-summary";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -42,6 +43,7 @@ type BookingRow = {
   start_time: string | null;
   end_time: string | null;
   status: string;
+  payment_status?: string | null;
   integration_version: number;
 };
 
@@ -131,7 +133,7 @@ export function createGoogleCalendarHandler(
         const { data: booking, error: bookingError } = await admin
           .from("bookings")
           .select(
-            "id, provider_id, service_name, date, start_time, end_time, status, integration_version",
+            "id, provider_id, service_name, date, start_time, end_time, status, payment_status, integration_version",
           )
           .eq("id", event.bookingId)
           .eq("provider_id", event.providerId)
@@ -213,7 +215,7 @@ export function createGoogleCalendarHandler(
                 body: {
                   // The service name, not the client's: a calendar can be
                   // shared, and Haab does not decide who may read a client name.
-                  summary: booking.service_name,
+                  ...managedBookingCalendarLabel(booking.status, booking.service_name, booking.payment_status),
                   ...buildEventTimes({
                     date: booking.date,
                     startTime: booking.start_time,

@@ -87,6 +87,8 @@ export type GoogleEventTime =
 
 export type ManagedEventBody = {
   summary: string;
+  visibility?: "private" | "default";
+  transparency?: "opaque";
   start: GoogleEventTime;
   end: GoogleEventTime;
   privateProperties: Record<string, string>;
@@ -447,6 +449,8 @@ export function createGoogleCalendarClient(input: {
           body: JSON.stringify({
             id: eventId,
             summary: body.summary,
+            visibility: body.visibility,
+            transparency: body.transparency,
             start: body.start,
             end: body.end,
             extendedProperties: { private: body.privateProperties },
@@ -468,6 +472,8 @@ export function createGoogleCalendarClient(input: {
       const payload: Record<string, unknown> = {};
 
       if (body.summary !== undefined) payload.summary = body.summary;
+      if (body.visibility !== undefined) payload.visibility = body.visibility;
+      if (body.transparency !== undefined) payload.transparency = body.transparency;
       if (body.start !== undefined) payload.start = body.start;
       if (body.end !== undefined) payload.end = body.end;
       if (body.privateProperties !== undefined) {

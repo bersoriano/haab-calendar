@@ -1,4 +1,5 @@
 import "server-only";
+import { managedBookingCalendarLabel } from "@/lib/google/deposit-summary";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -62,6 +63,7 @@ type BookingRow = {
   start_time: string | null;
   end_time: string | null;
   status: string;
+  payment_status?: string | null;
   integration_version: number;
 };
 
@@ -145,7 +147,7 @@ export async function runGoogleConflictRepairWorker(
     const { data: booking } = await admin
       .from("bookings")
       .select(
-        "id, provider_id, service_name, date, start_time, end_time, status, integration_version",
+        "id, provider_id, service_name, date, start_time, end_time, status, payment_status, integration_version",
       )
       .eq("id", conflict.booking_id)
       .eq("provider_id", conflict.provider_id)
@@ -195,7 +197,7 @@ export async function runGoogleConflictRepairWorker(
       bookingId: booking.id,
       owner: { namespace, providerId: booking.provider_id },
       body: {
-        summary: booking.service_name,
+        ...managedBookingCalendarLabel(booking.status, booking.service_name, booking.payment_status),
         ...buildEventTimes({
           date: booking.date,
           startTime: booking.start_time,

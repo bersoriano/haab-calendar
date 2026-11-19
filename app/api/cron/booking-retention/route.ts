@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runBookingRetentionWorker } from "@/lib/booking-retention/worker";
+import { runDepositRetentionWorker } from "@/lib/bank-deposit-retention";
 import { toSafeError } from "@/lib/observability/errors";
 import { resolveRequestId, withRequestId } from "@/lib/observability/context";
 import { logger } from "@/lib/observability/logger";
@@ -17,7 +18,10 @@ export async function GET(request: Request) {
     return respond({ userMessage: "Not found." }, 401);
   }
   try {
-    const summary = await runBookingRetentionWorker();
+    const [booking, deposits] = await Promise.all([
+      runBookingRetentionWorker(), runDepositRetentionWorker(),
+    ]);
+    const summary = { ...booking, hasMore: booking.hasMore || deposits.hasMore, deposits };
     log.info("booking.retention.completed", summary);
     return respond(summary);
   } catch (error) {
