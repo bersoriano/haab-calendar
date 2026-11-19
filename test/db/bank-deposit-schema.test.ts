@@ -293,7 +293,8 @@ describe("bank deposit database contract", () => {
     set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000bd01';
     set local request.jwt.claim.role = 'authenticated';
     set local role authenticated;
-    select public.review_bank_deposit((select id from public.bookings limit 1), 'confirm', null);
+    select public.review_bank_deposit((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1), 'confirm', null);
     reset role;
     do $$ begin
       if not exists (select 1 from public.bookings where status = 'confirmed' and payment_status = 'payment_confirmed') then
@@ -316,7 +317,8 @@ describe("bank deposit database contract", () => {
     set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000bd01';
     set local request.jwt.claim.role = 'authenticated';
     set local role authenticated;
-    select public.review_bank_deposit((select id from public.bookings limit 1), 'reject', 'Amount not found');
+    select public.review_bank_deposit((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1), 'reject', 'Amount not found');
     reset role;
     do $$ begin
       if not exists (select 1 from public.payment_requests where status = 'receipt_rejected' and correction_deadline is null) then
@@ -325,7 +327,9 @@ describe("bank deposit database contract", () => {
     end $$;
     set local request.jwt.claim.role = 'service_role';
     set local role service_role;
-    select public.record_deposit_notice_delivered((select id from public.payment_proofs limit 1));
+    select public.record_deposit_notice_delivered((select p.id from public.payment_proofs p
+      join public.payment_requests r on r.id = p.payment_request_id
+      where r.provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1));
     reset role;
     do $$ begin
       if not exists (select 1 from public.payment_requests where correction_deadline > now() + interval '23 hours') then
@@ -333,11 +337,13 @@ describe("bank deposit database contract", () => {
       end if;
     end $$;
     insert into public.payment_proofs (id, payment_request_id, storage_path, mime_type, byte_size)
-    values ('00000000-0000-4000-8000-00000000bd08', (select id from public.payment_requests limit 1),
+    values ('00000000-0000-4000-8000-00000000bd08', (select id from public.payment_requests
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1),
             'test/replacement.jpg', 'image/jpeg', 1024);
     set local request.jwt.claim.role = 'service_role';
     set local role service_role;
-    select public.replace_bank_deposit_receipt((select id from public.bookings limit 1),
+    select public.replace_bank_deposit_receipt((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1),
       '00000000-0000-4000-8000-00000000bd08');
     reset role;
     do $$ begin
@@ -367,7 +373,8 @@ describe("bank deposit database contract", () => {
     set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000bd01';
     set local request.jwt.claim.role = 'authenticated';
     set local role authenticated;
-    select public.review_bank_deposit((select id from public.bookings limit 1), 'confirm', null);
+    select public.review_bank_deposit((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1), 'confirm', null);
     reset role;
     update public.bookings set status = 'cancelled' where status = 'confirmed';
     do $$ begin
@@ -381,7 +388,8 @@ describe("bank deposit database contract", () => {
     set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000bd01';
     set local request.jwt.claim.role = 'authenticated';
     set local role authenticated;
-    select public.record_bank_refund((select id from public.bookings limit 1));
+    select public.record_bank_refund((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1));
     reset role;
     do $$ begin
       if not exists (select 1 from public.bookings where payment_status = 'refunded') then
@@ -404,7 +412,8 @@ describe("bank deposit database contract", () => {
     set local request.jwt.claim.sub = '00000000-0000-4000-8000-00000000bd01';
     set local request.jwt.claim.role = 'authenticated';
     set local role authenticated;
-    select public.record_cancelled_deposit_refund_due((select id from public.bookings limit 1));
+    select public.record_cancelled_deposit_refund_due((select id from public.bookings
+      where provider_id = '00000000-0000-4000-8000-00000000bd02' limit 1));
     reset role;
     do $$ begin
       if not exists (select 1 from public.bookings where status = 'cancelled' and payment_status = 'refund_due') then
