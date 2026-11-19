@@ -232,7 +232,8 @@ export type StatusTone =
 
 export function bookingStatusBadgeTone(status: BookingStatus): StatusTone {
   if (status === "cancelled") return "danger";
-  if (status === "rescheduled") return "warning";
+  if (status === "rescheduled" || status === "pending_payment_verification" ||
+      status === "payment_action_required") return "warning";
   return "success";
 }
 
@@ -241,8 +242,10 @@ export function bookingTypeBadgeTone(type: BookingType): StatusTone {
 }
 
 const STATUS_LABELS: Record<Lang, Record<BookingStatus, string>> = {
-  en: { confirmed: "Confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled" },
-  es: { confirmed: "Confirmado", rescheduled: "Reagendado", cancelled: "Cancelado" },
+  en: { confirmed: "Confirmed", rescheduled: "Rescheduled", cancelled: "Cancelled",
+    pending_payment_verification: "Pending payment verification", payment_action_required: "Receipt needs correction" },
+  es: { confirmed: "Confirmado", rescheduled: "Reagendado", cancelled: "Cancelado",
+    pending_payment_verification: "Pago pendiente de verificación", payment_action_required: "Comprobante necesita corrección" },
 };
 
 export function getBookingStatusLabel(status: BookingStatus, lang: Lang = "en"): string {

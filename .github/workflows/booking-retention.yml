@@ -44,5 +44,5 @@ jobs:
             echo "pass ${pass}: deleted ${deleted} expired bookings"
             if [ "${more}" = "false" ]; then exit 0; fi
           done
-          echo "::error::Cleanup reached its 10,000-booking run limit. Run this workflow again to drain the remaining history."
+          echo "::error::Cleanup reached its 20-pass limit. Run this workflow again to drain remaining history and receipts."
           exit 1

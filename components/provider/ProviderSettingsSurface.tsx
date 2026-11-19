@@ -20,6 +20,7 @@ import {
 import { ProviderInfoForm } from "@/components/provider/ProviderInfoForm";
 import { BookingRetentionSettings } from "@/components/provider/BookingRetentionSettings";
 import { BookingFooterSettings } from "@/components/provider/BookingFooterSettings";
+import { BankDepositSettings } from "@/components/provider/BankDepositSettings";
 import { DashboardLanguageField } from "@/components/provider/LanguageSettingsSection";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
 import type { ProviderEntitlements } from "@/lib/entitlements/resolve";
@@ -30,6 +31,7 @@ import { RsvpQuestionsSettings } from "@/components/provider/guests/RsvpQuestion
 export type ProviderSettingsSurfaceProps = {
   /** The page's events, for questions asked at some of them only. */
   services?: Pick<Service, "id" | "name">[];
+  depositEligible?: boolean;
   /** Already resolved by the caller, which owns the vertical's role wording. */
   title: string;
   /** Same reason: "Public booking link for" reads differently per vertical. */
@@ -87,6 +89,7 @@ export function ProviderSettingsSurface({
   onResetStandaloneSetup,
   offersVocabulary = false,
   services = [],
+  depositEligible = false,
   onDashboardLanguageChange,
   businessType,
 }: ProviderSettingsSurfaceProps) {
@@ -205,6 +208,12 @@ export function ProviderSettingsSurface({
                 disabled={disabled}
                 onChange={(enabled) => onProviderChange("keepBookingHistoryOneYear", enabled)}
               />
+            </FormSection>
+          ) : null}
+
+          {integratedMode && canPersist && depositEligible ? (
+            <FormSection title={lang === "es" ? "Depósitos bancarios" : "Bank deposits"}>
+              <BankDepositSettings lang={lang} disabled={disabled} />
             </FormSection>
           ) : null}
 

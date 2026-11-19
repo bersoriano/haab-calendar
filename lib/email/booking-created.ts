@@ -1,6 +1,10 @@
 import "server-only";
 
+import { createReminderManageToken } from "@/lib/email/reminder-link";
+import { buildManagePath } from "@/lib/public-url";
+import { getSiteOrigin } from "@/lib/site-url";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { VerticalId } from "@/lib/types";
 import type {
   HandlerResult,
   IntegrationOutboxEvent,
@@ -31,6 +35,8 @@ export type BookingEmailContext = {
     email: string;
     timezone: string;
     language: string | null;
+    vertical: VerticalId;
+    slug: string;
   };
 };
 
@@ -56,35 +62,42 @@ export function buildBookingEmails(
   const { booking, provider } = context;
   const spanish = (booking.client_language ?? provider.language) === "es";
   const cancelled = booking.status === "cancelled";
+  const pending = booking.status === "pending_payment_verification";
   const time = appointmentTime(context, spanish);
   const location = booking.location_snapshot?.trim();
+  const manageUrl = pending
+    ? `${getSiteOrigin()}${buildManagePath(provider.vertical, provider.slug,
+        createReminderManageToken(booking.id))}?lang=${spanish ? "es" : "en"}`
+    : null;
 
   const customer: EmailMessage = {
     from,
     to: [booking.client_email],
     subject: spanish
-      ? `${cancelled ? "Cita cancelada" : "Cita confirmada"}: ${booking.service_name}`
-      : `${cancelled ? "Appointment cancelled" : "Appointment confirmed"}: ${booking.service_name}`,
+      ? `${cancelled ? "Cita cancelada" : pending ? "Reserva pendiente de verificación" : "Cita confirmada"}: ${booking.service_name}`
+      : `${cancelled ? "Appointment cancelled" : pending ? "Booking pending payment verification" : "Appointment confirmed"}: ${booking.service_name}`,
     text: spanish
       ? [
           `Hola ${booking.client_name},`,
           "",
-          cancelled ? "Tu cita fue cancelada." : "Tu cita está confirmada.",
+          cancelled ? "Tu cita fue cancelada." : pending ? "Recibimos tu comprobante. La reserva está pendiente hasta que el negocio verifique el depósito." : "Tu cita está confirmada.",
           `Servicio: ${booking.service_name}`,
           `Proveedor: ${provider.business_name}`,
           `Fecha: ${booking.date}`,
           `Hora: ${time}`,
           ...(location ? [`Lugar: ${location}`] : []),
+          ...(manageUrl ? ["", `Consulta tu reserva: ${manageUrl}`] : []),
         ].join("\n")
       : [
           `Hello ${booking.client_name},`,
           "",
-          cancelled ? "Your appointment was cancelled." : "Your appointment is confirmed.",
+          cancelled ? "Your appointment was cancelled." : pending ? "We received your receipt. Booking is pending until the business verifies the deposit." : "Your appointment is confirmed.",
           `Service: ${booking.service_name}`,
           `Provider: ${provider.business_name}`,
           `Date: ${booking.date}`,
           `Time: ${time}`,
           ...(location ? [`Location: ${location}`] : []),
+          ...(manageUrl ? ["", `View your booking: ${manageUrl}`] : []),
         ].join("\n"),
   };
 
@@ -96,7 +109,7 @@ export function buildBookingEmails(
       : `${cancelled ? "Appointment cancelled" : "New booking"}: ${booking.service_name}`,
     text: spanish
       ? [
-          cancelled ? "Esta cita fue cancelada." : "Recibiste una nueva reserva.",
+          cancelled ? "Esta cita fue cancelada." : pending ? "Nueva reserva con comprobante pendiente de verificar. Revisa tu cuenta bancaria antes de confirmar el pago." : "Recibiste una nueva reserva.",
           `Servicio: ${booking.service_name}`,
           `Fecha: ${booking.date}`,
           `Hora: ${time}`,
@@ -106,7 +119,7 @@ export function buildBookingEmails(
           `Teléfono: ${booking.client_phone}`,
         ].join("\n")
       : [
-          cancelled ? "This appointment was cancelled." : "You received a new booking.",
+          cancelled ? "This appointment was cancelled." : pending ? "New booking with a receipt pending review. Check your bank account before confirming payment." : "You received a new booking.",
           `Service: ${booking.service_name}`,
           `Date: ${booking.date}`,
           `Time: ${time}`,
@@ -136,7 +149,7 @@ async function loadBookingEmailContext(
 
   const { data: provider, error: providerError } = await admin
     .from("providers")
-    .select("id, business_name, email, timezone, language")
+    .select("id, business_name, email, timezone, language, vertical, slug")
     .eq("id", event.providerId)
     .maybeSingle<BookingEmailContext["provider"]>();
 

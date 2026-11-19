@@ -109,6 +109,14 @@ describe("BookingsList", () => {
     expect(html).toContain(en.admin.cancelled);
   });
 
+  it("shows deposit review actions on a pending booking", () => {
+    const pending = booking({ status: "pending_payment_verification", paymentStatus: "pending_verification" });
+    const html = render({ bookings: [pending], totalCount: 1, onPaymentReviewed: () => undefined });
+    expect(html).toContain("Deposit verification");
+    expect(html).toContain("Mark as payment confirmed");
+    expect(html).toContain("Reject receipt");
+  });
+
   it("hides reschedule where the booking cannot move", () => {
     // Matched as a whole text node: the status filter also says "Rescheduled".
     expect(render()).toContain(`>${en.publicFlow.reschedule}<`);

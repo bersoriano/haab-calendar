@@ -15,6 +15,7 @@ import {
 } from "@/components/app-ui";
 import { bookingTranslations, fillTemplate } from "@/components/booking/i18n/translations";
 import { BookingRetentionNotice } from "@/components/provider/BookingRetentionSettings";
+import { PaymentReviewCard } from "@/components/provider/PaymentReviewCard";
 import { CampaignBadge } from "@/components/provider/CampaignBadge";
 import { dashboardCopy, fillCopyWords } from "@/components/provider/dashboard-copy";
 import { TRAVELER_FIELDS } from "@/lib/types";
@@ -103,6 +104,7 @@ export function BookingsList({
   canReschedule,
   onReschedule,
   onCancel,
+  onPaymentReviewed,
   review,
 }: {
   lang: Lang;
@@ -132,6 +134,7 @@ export function BookingsList({
   canReschedule: (booking: BookingRecord) => boolean;
   onReschedule: (bookingId: string) => void;
   onCancel: (bookingId: string) => void;
+  onPaymentReviewed?: (booking: BookingRecord) => void;
   /** Present only where bookings are reviewed: the new/seen flag, its filter and its toggle. */
   review?: {
     filter: BookingReviewFilter;
@@ -211,6 +214,8 @@ export function BookingsList({
           >
             <option value="all">{t.admin.allStatuses}</option>
             <option value="confirmed">{t.admin.confirmed}</option>
+            <option value="pending_payment_verification">{getBookingStatusLabel("pending_payment_verification", lang)}</option>
+            <option value="payment_action_required">{getBookingStatusLabel("payment_action_required", lang)}</option>
             <option value="rescheduled">{t.admin.rescheduled}</option>
             <option value="cancelled">{t.admin.cancelled}</option>
           </Select>
@@ -456,6 +461,13 @@ export function BookingsList({
                             </div>
                           ))}
                         </div>
+                        {onPaymentReviewed && booking.paymentStatus &&
+                        (booking.status === "pending_payment_verification" || booking.status === "payment_action_required" ||
+                          booking.paymentStatus === "refund_due" ||
+                          (booking.status === "cancelled" &&
+                           (booking.paymentStatus === "pending_verification" || booking.paymentStatus === "receipt_rejected"))) ? (
+                          <PaymentReviewCard booking={booking} lang={lang} onReviewed={onPaymentReviewed} />
+                        ) : null}
                       </li>
                     );
                   })}

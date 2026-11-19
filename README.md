@@ -195,9 +195,9 @@ Node.js 22, the version CI uses. Older majors are untested.
 npm install
 ```
 
-Two transitive packages (`sharp`, `unrs-resolver`) print an npm
-`allow-scripts` warning about install scripts. Harmless — `sharp` matters only
-for self-hosted image optimization and `unrs-resolver` only for ESLint.
+`sharp` decodes uploaded receipt images on the server and is a direct runtime
+dependency. Its native package must be available in deployments. The
+`unrs-resolver` install-script warning concerns ESLint only.
 
 ### 3. A database
 

@@ -38,6 +38,9 @@ type PublicBookingBody = {
   detailsSchemaVersion?: unknown;
   idempotencyKey?: unknown;
   holdId?: unknown;
+  checkoutId?: unknown;
+  checkoutToken?: unknown;
+  proofId?: unknown;
   /** Campaign tags and referrer the page was opened with, for analytics. */
   attribution?: unknown;
 };
@@ -150,6 +153,9 @@ export async function POST(
       detailsSchemaVersion: readPositiveInteger(body.detailsSchemaVersion),
       idempotencyKey: readOptionalString(body.idempotencyKey),
       holdId: readOptionalString(body.holdId),
+      checkoutId: readOptionalString(body.checkoutId),
+      checkoutToken: readOptionalString(body.checkoutToken),
+      proofId: readOptionalString(body.proofId),
       campaign: {
         source: attribution.utmSource,
         medium: attribution.utmMedium,

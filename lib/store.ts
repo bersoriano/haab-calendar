@@ -356,6 +356,7 @@ export function normalizeProvider(source?: Partial<ProviderInfo> | null): Provid
 export function normalizeServices(source?: Service[] | null): Service[] {
   return (source ?? []).map((service) => ({
     id: service.id,
+    ...(service.depositRequired ? { depositRequired: true } : {}),
     remindersEnabled: service.remindersEnabled !== false,
     name: service.name,
     slug: getServiceSlug(service),
@@ -429,6 +430,11 @@ export function normalizeBookings(source?: BookingRecord[] | null): BookingRecor
       cost: booking.cost ?? "",
       location: booking.location,
       status: booking.status,
+      ...(booking.paymentStatus ? { paymentStatus: booking.paymentStatus } : {}),
+      ...(booking.paymentRejectionReason ? { paymentRejectionReason: booking.paymentRejectionReason } : {}),
+      ...(booking.paymentCorrectionDeadline ? { paymentCorrectionDeadline: booking.paymentCorrectionDeadline } : {}),
+      ...(booking.amountDueMinor ? { amountDueMinor: booking.amountDueMinor } : {}),
+      ...(booking.currencyCode ? { currencyCode: booking.currencyCode } : {}),
       // Rebuilt field by field, so anything omitted here is silently dropped:
       // without sharedCapacity every capacity booking reads as exclusive and
       // the first party to take a seating hides it from everyone else.

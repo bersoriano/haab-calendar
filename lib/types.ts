@@ -1,7 +1,8 @@
 export type BookingType = "appointment" | "full-day";
 export type OccurrenceMode = "single" | "periodic" | "weekly";
 export type LocationKey = "address1" | "address2" | "custom";
-export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
+export type BookingStatus = "confirmed" | "cancelled" | "rescheduled" |
+  "pending_payment_verification" | "payment_action_required";
 export type Surface = "management" | "public";
 export type SurfaceMode = "adaptive" | "public-only";
 export type Lang = "en" | "es";
@@ -142,6 +143,7 @@ export type ProviderInfo = {
 
 export type Service = {
   id: string;
+  depositRequired?: boolean;
   remindersEnabled?: boolean;
   name: string;
   slug?: string;
@@ -229,6 +231,11 @@ export type BookingRecord = {
   cost: string;
   location?: string; // chosen location's address text (per-location pricing)
   status: BookingStatus;
+  paymentStatus?: string;
+  paymentRejectionReason?: string;
+  paymentCorrectionDeadline?: string;
+  amountDueMinor?: number;
+  currencyCode?: string;
   /** The campaign link and referring site the client booked through. */
   campaign?: BookingCampaign;
   /**

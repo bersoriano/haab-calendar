@@ -106,6 +106,12 @@ describe("booking pass", () => {
     expect(html).not.toContain("data:image/png;base64,AAA");
   });
 
+  it("shows payment pending without issuing a QR pass", () => {
+    const html = renderPass({ status: "pending_payment_verification", paymentStatus: "pending_verification" });
+    expect(html).toContain("Code available after payment confirmation");
+    expect(html).not.toContain("data:image/png;base64,AAA");
+  });
+
   it("keeps the ticket voice in Spanish", () => {
     const html = renderToStaticMarkup(
       <BookingPass
