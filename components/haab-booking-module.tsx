@@ -192,6 +192,7 @@ import {
   type BookingReviewFilter,
 } from "@/lib/booking-review";
 import { getBookingRetentionPolicy } from "@/lib/booking-retention";
+import { isEligibleDepositBusiness } from "@/lib/bank-deposit-settings";
 import { describeBookingWriteFailure } from "@/lib/booking-write-failure";
 import { isStoreDirty } from "@/lib/store-dirty";
 import { shouldWarnBeforeLeaving } from "@/lib/leave-guard";
@@ -4042,6 +4043,7 @@ export function HaabBookingModule({
             onResetStandaloneSetup={resetStandaloneSetup}
             offersVocabulary={vertical === "events"}
             services={services}
+            depositEligible={Boolean(vertical && isEligibleDepositBusiness(vertical, provider.rsvpMode))}
             onDashboardLanguageChange={(next) => updateProvider("dashboardLanguage", next)}
             businessType={
               onChangeBusinessType && vertical

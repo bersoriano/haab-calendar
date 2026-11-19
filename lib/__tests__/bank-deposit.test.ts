@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatDepositAmountInput,
   getReceiptDeletionDate,
   parseDepositAmountMinor,
 } from "@/lib/bank-deposit";
@@ -19,6 +20,12 @@ describe("bank deposit amounts", () => {
     expect(parseDepositAmountMinor("500", "JPY")).toBe(500);
     expect(parseDepositAmountMinor("1.25", "JPY")).toBeNull();
     expect(parseDepositAmountMinor("12.345", "KWD")).toBe(12345);
+  });
+
+  it("shows saved exact price in the service editor", () => {
+    expect(formatDepositAmountInput(125050, "MXN")).toBe("1250.50");
+    expect(formatDepositAmountInput(500, "JPY")).toBe("500");
+    expect(formatDepositAmountInput(12345, "KWD")).toBe("12.345");
   });
 
   it("rejects formatted text and unsafe integers", () => {
