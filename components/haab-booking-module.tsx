@@ -209,6 +209,22 @@ import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 import { resolveSurfaceLanguage } from "@/lib/language/surface";
 import { localizePublicExampleContent } from "@/lib/public-content-i18n";
 import { createClient as createBrowserSupabaseClient } from "@/lib/supabase/client";
+
+type DepositCheckout = {
+  checkoutId: string;
+  checkoutToken: string;
+  serviceId: string;
+  serviceDate: string;
+  amountMinor: number;
+  currencyCode: string;
+  reference: string;
+  account: {
+    bankName?: string; accountHolder?: string; accountNumber?: string;
+    clabe?: string; iban?: string; swiftBic?: string; routingCode?: string;
+    instructionsEn?: string; instructionsEs?: string;
+  };
+  expiresAt: string;
+};
 import {
   ActionButton,
   BookingHoldCountdownBar,
@@ -562,6 +578,14 @@ export function HaabBookingModule({
     createInitialBookingFlow(initialServices, requestedInitialServiceId),
   );
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [depositCheckout, setDepositCheckout] = useState<DepositCheckout | null>(null);
+  const [depositProofId, setDepositProofId] = useState<string | null>(null);
+  const [depositLoading, setDepositLoading] = useState(false);
+  const [depositUploading, setDepositUploading] = useState(false);
+  const [depositError, setDepositError] = useState<string | null>(null);
+  const [copiedDepositLink, setCopiedDepositLink] = useState(false);
+  const [replacementUploading, setReplacementUploading] = useState(false);
+  const [replacementError, setReplacementError] = useState<string | null>(null);
   // Why the visitor was last sent back to time selection (expired hold, or a
   // slot someone else confirmed first). Rendered as a banner on step 2.
   const [flowNotice, setFlowNotice] = useState<BookingFlowNotice>(null);
@@ -1102,6 +1126,89 @@ export function HaabBookingModule({
           description: "",
         } as Service
       : undefined);
+  const matchingDepositCheckout = Boolean(depositCheckout &&
+    depositCheckout.serviceId === selectedService?.id &&
+    depositCheckout.serviceDate === bookingFlow.dateKey);
+  const requiresDepositForSelection = Boolean(selectedService?.depositRequired || matchingDepositCheckout);
+  const depositSelectionKey = requiresDepositForSelection && selectedService &&
+    integratedMode && isDedicatedPublicPage && resolvedBookingFlow.step === 3 && bookingFlow.dateKey
+      ? `${selectedService.id}:${bookingFlow.dateKey}` : null;
+  useEffect(() => {
+    if (!depositSelectionKey || !vertical) return;
+    if (depositCheckout && depositCheckout.serviceId === selectedService?.id &&
+        depositCheckout.serviceDate === bookingFlow.dateKey &&
+        new Date(depositCheckout.expiresAt).getTime() > currentTimestamp()) return;
+    let cancelled = false;
+    const base = `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/deposit`;
+    const sessionKey = `haab-deposit:${businessSlug}:${depositSelectionKey}`;
+    void (async () => {
+      setDepositLoading(true);
+      setDepositError(null);
+      setDepositProofId(null);
+      try {
+        const saved = JSON.parse(sessionStorage.getItem(sessionKey) ?? "null") as
+          (DepositCheckout & { proofId?: string }) | null;
+        const resume = saved && new Date(saved.expiresAt).getTime() > Date.now();
+        const response = await fetch(base, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(resume
+            ? { action: "resume", checkoutId: saved.checkoutId, checkoutToken: saved.checkoutToken }
+            : { action: "open", serviceId: selectedService?.id, dateKey: bookingFlow.dateKey }),
+        });
+        const data = await response.json() as Partial<DepositCheckout> & { userMessage?: string; proofId?: string | null; booked?: boolean; managePath?: string };
+        if (data.booked && data.managePath) {
+          if (!cancelled) window.location.assign(data.managePath);
+          return;
+        }
+        if (!response.ok || !data.checkoutId) throw new Error(data.userMessage ?? "Could not load payment instructions.");
+        if (cancelled) return;
+        const checkout = { ...data, checkoutToken: resume ? saved.checkoutToken : data.checkoutToken } as DepositCheckout;
+        setDepositCheckout(checkout);
+        setDepositProofId(resume ? data.proofId ?? null : null);
+        sessionStorage.setItem(sessionKey, JSON.stringify({ ...checkout, proofId: resume ? data.proofId : null }));
+      } catch (error) {
+        if (!cancelled) setDepositError(error instanceof Error ? error.message : "Could not load payment instructions.");
+      } finally {
+        if (!cancelled) setDepositLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- selection identity controls checkout lifetime
+  }, [depositSelectionKey, vertical, businessSlug]);
+  useEffect(() => {
+    if (!integratedMode || !isDedicatedPublicPage || manageBookingToken || !vertical) return;
+    const match = window.location.hash.match(/^#deposit=([0-9a-f-]{36})\.([A-Za-z0-9_-]{43})$/);
+    if (!match) return;
+    let cancelled = false;
+    const [, checkoutId, checkoutToken] = match;
+    void (async () => {
+      try {
+        const response = await fetch(`/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/deposit`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "resume", checkoutId, checkoutToken }),
+        });
+        const data = await response.json() as Partial<DepositCheckout> & { userMessage?: string; proofId?: string | null; booked?: boolean; managePath?: string };
+        if (data.booked && data.managePath) {
+          if (!cancelled) window.location.assign(data.managePath);
+          return;
+        }
+        if (!response.ok || !data.checkoutId || !data.serviceId || !data.serviceDate) {
+          throw new Error(data.userMessage ?? "Payment link expired.");
+        }
+        if (cancelled) return;
+        const checkout = { ...data, checkoutToken } as DepositCheckout;
+        const sessionKey = `haab-deposit:${businessSlug}:${data.serviceId}:${data.serviceDate}`;
+        sessionStorage.setItem(sessionKey, JSON.stringify({ ...checkout, proofId: data.proofId ?? null }));
+        setDepositCheckout(checkout);
+        setDepositProofId(data.proofId ?? null);
+        setBookingFlow((current) => ({ ...current, serviceId: data.serviceId!, dateKey: data.serviceDate!,
+          time: "", step: 2 }));
+      } catch (error) {
+        if (!cancelled) setDepositError(error instanceof Error ? error.message : "Payment link expired.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [integratedMode, isDedicatedPublicPage, manageBookingToken, vertical, businessSlug]);
   // Single-occurrence events have one fixed date + time: auto-select it so the
   // public flow can skip the calendar entirely.
   useEffect(() => {
@@ -2914,6 +3021,93 @@ export function HaabBookingModule({
     });
   }
 
+  async function uploadDepositReceipt(file: File | undefined) {
+    if (!file || !depositCheckout || !vertical) return;
+    if (!(["image/jpeg", "image/png", "image/webp"].includes(file.type)) ||
+        file.size < 1 || file.size > 10 * 1024 * 1024) {
+      setDepositError(lang === "es"
+        ? "Sube una foto JPG, PNG o WebP de menos de 10 MB."
+        : "Upload a JPG, PNG, or WebP photo under 10 MB.");
+      return;
+    }
+    const base = `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/deposit`;
+    const post = async (body: Record<string, unknown>) => {
+      const response = await fetch(base, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+          ...body, checkoutId: depositCheckout.checkoutId,
+          checkoutToken: depositCheckout.checkoutToken,
+        }) });
+      const payload = await response.json() as { userMessage?: string; storagePath?: string; uploadToken?: string; proofId?: string };
+      if (!response.ok) throw new Error(payload.userMessage ?? "Receipt upload failed.");
+      return payload;
+    };
+    setDepositUploading(true);
+    setDepositError(null);
+    setDepositProofId(null);
+    try {
+      const upload = await post({ action: "upload", mimeType: file.type });
+      if (!upload.storagePath || !upload.uploadToken) throw new Error("Could not start receipt upload.");
+      const { error } = await createBrowserSupabaseClient().storage.from("deposit-receipts")
+        .uploadToSignedUrl(upload.storagePath, upload.uploadToken, file, { contentType: file.type });
+      if (error) throw error;
+      const completed = await post({ action: "complete", storagePath: upload.storagePath });
+      if (!completed.proofId) throw new Error("Receipt upload was not saved.");
+      setDepositProofId(completed.proofId);
+      sessionStorage.setItem(`haab-deposit:${businessSlug}:${depositCheckout.serviceId}:${depositCheckout.serviceDate}`,
+        JSON.stringify({ ...depositCheckout, proofId: completed.proofId }));
+    } catch (error) {
+      setDepositError(error instanceof Error ? error.message : "Receipt upload failed.");
+    } finally {
+      setDepositUploading(false);
+    }
+  }
+
+  async function copyDepositReturnLink() {
+    if (!depositCheckout) return;
+    const url = `${window.location.origin}${publicUrl}#deposit=${depositCheckout.checkoutId}.${depositCheckout.checkoutToken}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedDepositLink(true);
+    } catch {
+      setDepositError(lang === "es" ? "No se pudo copiar el enlace." : "Could not copy return link.");
+    }
+  }
+
+  async function uploadReplacementReceipt(file: File | undefined) {
+    if (!file || !manageBookingToken || !vertical || !successfulBooking) return;
+    if (!(["image/jpeg", "image/png", "image/webp"].includes(file.type)) ||
+        file.size < 1 || file.size > 10 * 1024 * 1024) {
+      setReplacementError(lang === "es" ? "Usa una imagen JPG, PNG o WebP de hasta 10 MB."
+        : "Use a JPG, PNG, or WebP image up to 10 MB.");
+      return;
+    }
+    const base = `/api/public/${getPublicVerticalSegment(vertical)}/${encodeURIComponent(businessSlug)}/manage/${encodeURIComponent(manageBookingToken)}/receipt`;
+    const post = async (body: Record<string, unknown>) => {
+      const response = await fetch(base, { method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body) });
+      const payload = await response.json() as {
+        userMessage?: string; storagePath?: string; uploadToken?: string;
+      };
+      if (!response.ok) throw new Error(payload.userMessage ?? "Could not upload receipt.");
+      return payload;
+    };
+    setReplacementUploading(true); setReplacementError(null);
+    try {
+      const upload = await post({ action: "upload", mimeType: file.type });
+      if (!upload.storagePath || !upload.uploadToken) throw new Error("Could not start upload.");
+      const { error } = await createBrowserSupabaseClient().storage.from("deposit-receipts")
+        .uploadToSignedUrl(upload.storagePath, upload.uploadToken, file, { contentType: file.type });
+      if (error) throw error;
+      await post({ action: "complete", storagePath: upload.storagePath });
+      actions.patchIntegratedBooking({ ...successfulBooking, status: "pending_payment_verification",
+        paymentStatus: "pending_verification", paymentRejectionReason: undefined,
+        paymentCorrectionDeadline: undefined,
+        updatedAt: new Date().toISOString() });
+    } catch (error) {
+      setReplacementError(error instanceof Error ? error.message : "Could not upload receipt.");
+    } finally { setReplacementUploading(false); }
+  }
+
   async function confirmBooking() {
     if (isConfirmingBooking || isSwitchingService) {
       return;
@@ -2946,6 +3140,13 @@ export function HaabBookingModule({
 
     if (!validationService) {
       setBookingError(copy.phrases.chooseServiceFirstError);
+      return;
+    }
+
+    if (requiresDepositForSelection && integratedMode && isDedicatedPublicPage &&
+        (!matchingDepositCheckout || !depositProofId || depositUploading || depositLoading)) {
+      setBookingError(lang === "es" ? "Sube el comprobante antes de confirmar."
+        : "Upload receipt before confirming booking.");
       return;
     }
 
@@ -3106,6 +3307,11 @@ export function HaabBookingModule({
               idempotencyKey:
                 typeof crypto.randomUUID === "function" ? crypto.randomUUID() : createId("idem"),
               holdId: ignoredHoldId,
+              ...(requiresDepositForSelection ? {
+                checkoutId: depositCheckout?.checkoutId,
+                checkoutToken: depositCheckout?.checkoutToken,
+                proofId: depositProofId,
+              } : {}),
               attribution: getVisitAttribution() ?? undefined,
             }),
           },
@@ -3846,6 +4052,13 @@ export function HaabBookingModule({
           ]}
           className="justify-self-start"
         />
+        {bookingsLayout !== "list" && bookings.some((booking) =>
+          booking.status === "pending_payment_verification" || booking.status === "payment_action_required") ? (
+          <p className="rounded-xl border border-app-border bg-app-surface px-4 py-3 text-sm text-app-fg-secondary">
+            {lang === "es" ? "Hay depósitos pendientes. Cambia a Lista para revisar comprobantes." :
+              "Deposits need review. Switch to List to inspect receipts."}
+          </p>
+        ) : null}
         {bookingsLayout === "month" ? (
           <BookingsMonth lang={lang} copy={copy} bookings={bookings} todayKey={bookingListTodayKey} />
         ) : bookingsLayout === "week" ? (
@@ -3881,6 +4094,7 @@ export function HaabBookingModule({
             canReschedule={(booking) => !isServiceSingleOccurrence(booking.serviceId)}
             onReschedule={openReschedule}
             onCancel={openCancellation}
+            onPaymentReviewed={integratedMode ? actions.patchIntegratedBooking : undefined}
             review={
               reviewsBookings
                 ? {
@@ -4789,7 +5003,8 @@ export function HaabBookingModule({
             : fillTemplate(t.publicFlow.confirmBooking, { booking: copy.booking }),
       onPrimary: isBookingHoldExpired ? () => void retryExpiredBookingHold() : confirmBooking,
       primaryDisabled:
-        isConfirmingBooking || isCreatingHold || isSwitchingService || (integratedMode && !isNetworkOnline),
+        isConfirmingBooking || isCreatingHold || isSwitchingService || (integratedMode && !isNetworkOnline) ||
+        (requiresDepositForSelection && (!matchingDepositCheckout || !depositProofId || depositLoading || depositUploading)),
       isExpired: isBookingHoldExpired,
       heldText:
         bookingHold && !isBookingHoldExpired
@@ -5063,7 +5278,8 @@ export function HaabBookingModule({
                             isConfirmingBooking ||
                             isCreatingHold ||
                             isSwitchingService ||
-                            (integratedMode && !isNetworkOnline)
+                            (integratedMode && !isNetworkOnline) ||
+                            (requiresDepositForSelection && (!matchingDepositCheckout || !depositProofId || depositLoading || depositUploading))
                           }
                           onClick={
                             isBookingHoldExpired
@@ -5363,6 +5579,65 @@ export function HaabBookingModule({
               ))}
             </div>
           </div>
+        ) : null}
+
+        {resolvedBookingFlow.step === 3 && requiresDepositForSelection &&
+        integratedMode && isDedicatedPublicPage ? (
+          <section className={cn("mx-4 mt-4 sm:mx-8 sm:mt-5", publicElevatedPanelClass)} aria-label={lang === "es" ? "Depósito bancario" : "Bank deposit"}>
+            <h2 className="text-lg font-semibold text-[var(--ink)]">
+              {lang === "es" ? "Depósito bancario" : "Bank deposit"}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {lang === "es" ? "Deposita el importe y sube una foto del comprobante antes de confirmar. Tu reserva quedará pendiente de verificación." :
+                "Deposit the amount, then upload a receipt photo before confirming. Booking stays pending until business verifies payment."}
+            </p>
+            {depositLoading ? <p className="mt-4 text-sm">{lang === "es" ? "Cargando instrucciones…" : "Loading instructions…"}</p> : null}
+            {matchingDepositCheckout && depositCheckout ? (
+              <div className="mt-4 grid gap-3 rounded-2xl bg-[var(--surface-soft)] p-4 text-sm sm:grid-cols-2">
+                {([
+                  [lang === "es" ? "Importe" : "Amount", new Intl.NumberFormat(lang === "es" ? "es-MX" : "en-US", {
+                    style: "currency", currency: depositCheckout.currencyCode,
+                  }).format(depositCheckout.amountMinor / (10 ** (new Intl.NumberFormat("en", { style: "currency", currency: depositCheckout.currencyCode }).resolvedOptions().maximumFractionDigits ?? 2)))],
+                  [lang === "es" ? "Banco" : "Bank", depositCheckout.account.bankName],
+                  [lang === "es" ? "Titular" : "Account holder", depositCheckout.account.accountHolder],
+                  [lang === "es" ? "Cuenta" : "Account number", depositCheckout.account.accountNumber],
+                  ["CLABE", depositCheckout.account.clabe], ["IBAN", depositCheckout.account.iban],
+                  ["SWIFT/BIC", depositCheckout.account.swiftBic],
+                  [lang === "es" ? "Código bancario" : "Routing code", depositCheckout.account.routingCode],
+                  [lang === "es" ? "Referencia" : "Reference", depositCheckout.reference],
+                ] as Array<[string, string | undefined]>).filter(([, value]) => Boolean(value)).map(([label, value]) => (
+                  <div key={label}><span className="block text-xs font-semibold text-[var(--muted)]">{label}</span>
+                    <span className="break-all font-semibold text-[var(--ink)]">{value}</span></div>
+                ))}
+                {(lang === "es" ? depositCheckout.account.instructionsEs : depositCheckout.account.instructionsEn) ? (
+                  <p className="whitespace-pre-wrap sm:col-span-2">{lang === "es" ? depositCheckout.account.instructionsEs : depositCheckout.account.instructionsEn}</p>
+                ) : null}
+              </div>
+            ) : null}
+            {matchingDepositCheckout && depositCheckout ? <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+              <button type="button" onClick={() => void copyDepositReturnLink()}
+                className="rounded-full border border-[var(--line)] px-4 py-2 font-semibold text-[var(--ink)]">
+                {copiedDepositLink ? (lang === "es" ? "Enlace copiado" : "Link copied") :
+                  (lang === "es" ? "Copiar enlace para volver" : "Copy return link")}
+              </button>
+              <span className="text-[var(--muted)]">
+                {lang === "es" ? "Si vuelves después de que venza el plazo de 10 minutos, elige un horario libre de nuevo. El comprobante se conserva." :
+                  "If the 10-minute hold expires, choose an available time again. Your receipt stays saved."}
+              </span>
+            </div> : null}
+            <label className="mt-4 block text-sm font-semibold text-[var(--ink)]">
+              {lang === "es" ? "Foto del comprobante (obligatoria)" : "Receipt photo (required)"}
+              <input className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm"
+                type="file" accept="image/jpeg,image/png,image/webp" disabled={!matchingDepositCheckout || depositUploading}
+                onChange={(event) => void uploadDepositReceipt(event.target.files?.[0])} />
+            </label>
+            <p className="mt-2 text-sm" role="status">
+              {depositUploading ? (lang === "es" ? "Subiendo y verificando imagen…" : "Uploading and checking image…") :
+                depositProofId ? (lang === "es" ? "Comprobante listo. Puedes confirmar la reserva." : "Receipt ready. You can confirm booking.") :
+                (lang === "es" ? "Sube una imagen JPG, PNG o WebP de hasta 10 MB." : "Upload a JPG, PNG, or WebP image up to 10 MB.")}
+            </p>
+            {depositError ? <p className="mt-2 text-sm text-[var(--danger-strong)]" role="alert">{depositError}</p> : null}
+          </section>
         ) : null}
 
         {useDetailsLayout && selectedService ? (
@@ -6075,6 +6350,48 @@ export function HaabBookingModule({
                     : "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.5s_both] space-y-5"
                 }
               >
+                {successfulBooking.paymentStatus ? (
+                  <div role="status" className={cn("rounded-2xl px-5 py-4 text-sm font-semibold",
+                    successfulBooking.paymentStatus === "payment_confirmed"
+                      ? "bg-[var(--accent-soft)] text-[var(--accent-strong)]"
+                      : "bg-[var(--warning-soft)] text-[var(--warning-strong)]")}>
+                    {successfulBooking.paymentStatus === "payment_confirmed"
+                      ? (lang === "es" ? "Pago confirmado por el negocio." : "Payment confirmed by business.")
+                      : successfulBooking.paymentStatus === "receipt_rejected"
+                        ? (lang === "es" ? "Comprobante rechazado. Sube uno nuevo dentro de 24 horas para conservar la reserva." : "Receipt rejected. Upload a corrected receipt within 24 hours to keep booking.")
+                        : successfulBooking.paymentStatus === "refund_due"
+                          ? (lang === "es" ? "Reembolso pendiente del negocio." : "Business owes a refund.")
+                          : (lang === "es" ? "Pago pendiente de verificación por el negocio." : "Payment pending verification by business.")}
+                  </div>
+                ) : null}
+                {successfulBooking.status === "payment_action_required" && manageBookingToken ? (
+                  <section className={cn("rounded-2xl", publicElevatedPanelClass)}>
+                    <h2 className="text-base font-semibold text-[var(--ink)]">
+                      {lang === "es" ? "Sube un nuevo comprobante" : "Upload a new receipt"}
+                    </h2>
+                    {successfulBooking.paymentRejectionReason ? <p className="mt-2 text-sm text-[var(--muted)]">
+                      {lang === "es" ? "Motivo" : "Reason"}: {successfulBooking.paymentRejectionReason}
+                    </p> : null}
+                    <p className="mt-2 text-sm text-[var(--muted)]">
+                      {successfulBooking.paymentCorrectionDeadline
+                        ? (lang === "es" ? `Sube otro comprobante antes del ${new Date(successfulBooking.paymentCorrectionDeadline).toLocaleString("es-MX")}. Tu espacio sigue reservado hasta entonces.` :
+                          `Upload a new receipt by ${new Date(successfulBooking.paymentCorrectionDeadline).toLocaleString("en-US")}. Your slot stays reserved until then.`)
+                        : (lang === "es" ? "El plazo de 24 horas comienza cuando recibas el aviso por correo. Tu espacio sigue reservado." :
+                          "Your 24-hour correction period starts when email notice arrives. Your slot stays reserved.")}
+                    </p>
+                    <label className="mt-3 block text-sm font-semibold text-[var(--ink)]">
+                      {lang === "es" ? "Foto del comprobante" : "Receipt photo"}
+                      <input type="file" accept="image/jpeg,image/png,image/webp"
+                        disabled={replacementUploading}
+                        onChange={(event) => void uploadReplacementReceipt(event.target.files?.[0])}
+                        className="mt-2 block w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm" />
+                    </label>
+                    {replacementUploading ? <p role="status" className="mt-2 text-sm">
+                      {lang === "es" ? "Subiendo comprobante…" : "Uploading receipt…"}
+                    </p> : null}
+                    {replacementError ? <p role="alert" className="mt-2 text-sm text-[var(--danger-strong)]">{replacementError}</p> : null}
+                  </section>
+                ) : null}
                 {(() => {
                   // The booked location, else the service's linked addresses.
                   const successAddresses = successfulBooking.location
@@ -6168,7 +6485,11 @@ export function HaabBookingModule({
                     // key to it (the private link), then what can be changed.
                     const rise =
                       "[animation:haab-rise-in_0.55s_cubic-bezier(0.22,1,0.36,1)_0.35s_both]";
-                    const statusLabel = isSuccessfulBookingCancelled
+                    const statusLabel = successfulBooking.status === "pending_payment_verification"
+                      ? (lang === "es" ? "Reserva recibida · pago pendiente" : "Booking received · payment pending")
+                      : successfulBooking.status === "payment_action_required"
+                        ? (lang === "es" ? "Comprobante necesita corrección" : "Receipt needs correction")
+                      : isSuccessfulBookingCancelled
                       ? (copy.event?.cancelledLabel ?? t.publicFlow.bookingCancelled)
                       : successfulBooking.status === "rescheduled"
                         ? (copy.event?.updatedLabel ?? t.publicFlow.bookingUpdated)
@@ -6336,6 +6657,10 @@ export function HaabBookingModule({
                         confirmationLabel={
                           isSuccessfulBookingCancelled
                             ? (copy.event?.cancelledLabel ?? t.publicFlow.bookingCancelled)
+                            : successfulBooking.status === "pending_payment_verification"
+                              ? (lang === "es" ? "Pago pendiente de verificación" : "Payment pending verification")
+                              : successfulBooking.status === "payment_action_required"
+                                ? (lang === "es" ? "Comprobante necesita corrección" : "Receipt needs correction")
                             : successfulBooking.status === "rescheduled"
                               ? (copy.event?.updatedLabel ?? t.publicFlow.bookingUpdated)
                               : (copy.event?.confirmedLabel ?? t.publicFlow.bookingConfirmed)
@@ -6543,7 +6868,8 @@ export function HaabBookingModule({
                       isConfirmingBooking ||
                       isCreatingHold ||
                       isSwitchingService ||
-                      (integratedMode && !isNetworkOnline)
+                      (integratedMode && !isNetworkOnline) ||
+                      (requiresDepositForSelection && (!matchingDepositCheckout || !depositProofId || depositLoading || depositUploading))
                     }
                     onClick={
                       isBookingHoldExpired

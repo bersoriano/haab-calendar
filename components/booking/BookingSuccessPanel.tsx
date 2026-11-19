@@ -59,18 +59,21 @@ export function BookingSuccessPanel({
   const t = bookingTranslations[lang];
   const ref = useRef<HTMLElement | null>(null);
   const isCancelled = status === "cancelled";
+  const isPaymentPending = status === "pending_payment_verification" || status === "payment_action_required";
 
   useEffect(() => {
     // The flow is already scrolling to the top on this step change.
     ref.current?.focus({ preventScroll: true });
   }, []);
 
-  const headline = getSuccessHeadline(t.publicFlow, {
+  const headline = isPaymentPending
+    ? (lang === "es" ? "Recibimos tu reserva" : "Booking received")
+    : getSuccessHeadline(t.publicFlow, {
     status,
     clientName,
     isEvents,
     booking: copy.booking,
-  });
+    });
   const when = timeLabel
     ? fillTemplate(t.publicFlow.successAt, { date: dateLabel, time: timeLabel })
     : fillTemplate(t.publicFlow.successOnDay, { date: dateLabel });
@@ -80,6 +83,12 @@ export function BookingSuccessPanel({
         eyebrow: "text-[var(--danger-strong)]",
         glow: "rgba(225,29,72,0.14)",
       }
+    : isPaymentPending
+      ? {
+          disc: "bg-[var(--warning-strong)] shadow-[0_0_0_10px_rgba(180,110,10,0.12)]",
+          eyebrow: "text-[var(--warning-strong)]",
+          glow: "rgba(180,110,10,0.14)",
+        }
     : {
         disc: "bg-[var(--action-teal)] shadow-[0_0_0_10px_color-mix(in_srgb,var(--glow-teal)_14%,transparent),0_14px_30px_rgba(0,150,130,0.35)]",
         eyebrow: "text-[var(--action-teal-deep)]",

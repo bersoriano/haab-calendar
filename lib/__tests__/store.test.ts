@@ -498,4 +498,25 @@ describe("normalizeBookings keeps what availability depends on", () => {
 
     expect(normalized.partySize).toBe(4);
   });
+
+  it("keeps payment review state on private and owner pages", () => {
+    const [normalized] = normalizeBookings([{ ...base,
+      status: "payment_action_required", paymentStatus: "receipt_rejected",
+      paymentRejectionReason: "Reference missing", paymentCorrectionDeadline: "2027-01-11T12:00:00Z",
+      amountDueMinor: 125050, currencyCode: "MXN",
+    }]);
+    expect(normalized).toMatchObject({ status: "payment_action_required", paymentStatus: "receipt_rejected",
+      paymentRejectionReason: "Reference missing", paymentCorrectionDeadline: "2027-01-11T12:00:00Z",
+      amountDueMinor: 125050, currencyCode: "MXN" });
+  });
+});
+
+describe("normalizeServices keeps deposit requirement", () => {
+  it("keeps the flag that gates mandatory receipt upload", () => {
+    const [service] = normalizeServices([{
+      id: "deposit-service", name: "Studio", bookingType: "full-day",
+      description: "", depositRequired: true,
+    }]);
+    expect(service.depositRequired).toBe(true);
+  });
 });

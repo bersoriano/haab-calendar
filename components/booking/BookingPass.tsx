@@ -146,6 +146,7 @@ export function BookingPass({
 }) {
   const t = bookingTranslations[lang];
   const isCancelled = booking.status === "cancelled";
+  const isPaymentPending = booking.status === "pending_payment_verification" || booking.status === "payment_action_required";
 
   // Date and time are the same fact split in two — a ticket shows them as a
   // matched pair, not a headline with a caption.
@@ -306,6 +307,10 @@ export function BookingPass({
             >
               {t.publicFlow.statusCancelled}
             </p>
+          ) : isPaymentPending ? (
+            <p className="my-6 rounded-lg border border-[var(--warning-strong)] px-4 py-3 text-center text-sm font-semibold text-[var(--warning-strong)]">
+              {lang === "es" ? "Código disponible al confirmar el pago" : "Code available after payment confirmation"}
+            </p>
           ) : (
             <button
               type="button"
@@ -462,6 +467,7 @@ export function RefinedBookingPass({
 }) {
   const t = bookingTranslations[lang];
   const isCancelled = booking.status === "cancelled";
+  const isPaymentPending = booking.status === "pending_payment_verification" || booking.status === "payment_action_required";
   const hasWhere = addresses.length > 0 || providerPhones.length > 0 || Boolean(providerEmail);
   const hasProse = Boolean(description || notes || cancellationPolicy || clientNotes);
   const headline = cn(
@@ -657,7 +663,9 @@ export function RefinedBookingPass({
         {/* ── Tear-off stub ─────────────────────────────────────── */}
         <div className="haab-pass-stub order-3 mt-5 border-y-2 border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-5 lg:order-none lg:mt-0 lg:border-y-0 lg:border-l-2 lg:p-8">
           <p className="[grid-area:title] text-sm font-semibold text-[var(--ink)]">
-            {t.publicFlow.passShowAtCheckIn}
+            {isPaymentPending
+              ? (lang === "es" ? "Pendiente de verificación" : "Awaiting payment verification")
+              : t.publicFlow.passShowAtCheckIn}
           </p>
 
           {isCancelled ? (
@@ -666,6 +674,10 @@ export function RefinedBookingPass({
               className="[grid-area:qr] max-w-full rotate-[-8deg] justify-self-center rounded-lg border-[3px] border-[var(--danger-strong)] px-2 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--danger-strong)] opacity-80 lg:my-6 lg:px-4 lg:py-2 lg:text-lg lg:tracking-[0.14em]"
             >
               {t.publicFlow.statusCancelled}
+            </p>
+          ) : isPaymentPending ? (
+            <p className="[grid-area:qr] max-w-[176px] justify-self-center rounded-lg border border-[var(--warning-strong)] px-3 py-4 text-center text-xs font-semibold text-[var(--warning-strong)]">
+              {lang === "es" ? "Código disponible al confirmar el pago" : "Code available after payment confirmation"}
             </p>
           ) : (
             <button

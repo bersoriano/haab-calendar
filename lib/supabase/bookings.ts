@@ -34,6 +34,7 @@ import type {
   LocationKey,
   ModuleStore,
   ProviderInfo,
+  RsvpMode,
   Service,
   VerticalId,
   WeekdayKey,
@@ -45,14 +46,15 @@ import { parseRsvpDeadline } from "@/lib/rsvp-deadline";
 import { parseRsvpQuestions } from "@/lib/rsvp-questions";
 import { clampInvitationSeats, parseRsvpMode, parseVocabulary } from "@/lib/rsvp-mode";
 import { normalizeTravelerFields, parseTravelerDetails } from "@/lib/traveler-details";
+import { matchesCheckoutToken } from "@/lib/deposit-receipt-validation";
 
 const PROVIDER_SELECT =
   "id, owner_user_id, full_name, business_name, email, slug, vertical, language, dashboard_language, public_theme, public_footer_text, public_footer_url, vocabulary, rsvp_mode, default_invitation_seats, rsvp_deadline, rsvp_questions, seating_published, story, timezone, booking_window_days, max_bookings_per_day, availability, setup_complete, phone_number_1, phone_number_2, address_1, address_2, logo_image_url, header_image_url, hero_text, gallery_image_urls";
 const PROVIDER_DASHBOARD_SELECT = `${PROVIDER_SELECT}, reminders_enabled, reminder_primary_minutes, reminder_secondary_minutes, reminder_message`;
 const SERVICE_SELECT =
-  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields, reminders_enabled";
+  "id, provider_id, name, slug, booking_type, duration_minutes, description, medical_specialty, capacity, cost, notes, sort_order, occurrence_mode, occurrence_date, weekdays, start_time, end_time, max_spots, capacity_scope, max_party_size, location_prices, linked_address_1, linked_address_2, linked_phone_1, linked_phone_2, custom_address, custom_phone, photo_urls, cancellation_policy, min_group_size, traveler_fields, reminders_enabled, deposit_required, deposit_amount_minor, deposit_currency_code";
 const BOOKING_SELECT =
-  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, reviewed_at, created_at, updated_at";
+  "id, provider_id, service_id, service_name, booking_type, duration_minutes_snapshot, cost_snapshot, capacity_snapshot, client_name, client_email, client_phone, date, start_time, end_time, status, payment_status, payment_request_id, payment_proof_id, amount_due_minor, currency_code, notes, location_snapshot, allows_shared_capacity, details, details_schema_key, details_schema_version, service_snapshot, utm_source, utm_medium, utm_campaign, referrer_host, reviewed_at, created_at, updated_at";
 const BOOKING_HOLD_SELECT =
   "id, provider_id, service_id, booking_type, date, start_time, end_time, expires_at, created_at, extension_count, allows_shared_capacity";
 
@@ -88,7 +90,7 @@ type ProviderRow = {
   hero_text: string | null;
   gallery_image_urls: string[] | null;
   vocabulary: string | null;
-  rsvp_mode?: string | null;
+  rsvp_mode?: RsvpMode | null;
   default_invitation_seats?: number | null;
   rsvp_deadline?: string | null;
   rsvp_questions?: unknown;
@@ -98,6 +100,9 @@ type ProviderRow = {
 
 type ServiceRow = {
   id: string;
+  deposit_required: boolean;
+  deposit_amount_minor: number | null;
+  deposit_currency_code: string | null;
   reminders_enabled?: boolean;
   provider_id: string;
   name: string;
@@ -133,6 +138,11 @@ type ServiceRow = {
 
 type BookingRow = {
   id: string;
+  payment_status: string | null;
+  payment_proof_id: string | null;
+  payment_request_id: string | null;
+  amount_due_minor: number | null;
+  currency_code: string | null;
   provider_id: string;
   service_id: string | null;
   service_name: string;
@@ -201,6 +211,9 @@ export type ConfirmPublicBookingInput = {
   detailsSchemaVersion?: number;
   idempotencyKey?: string;
   holdId?: string;
+  checkoutId?: string;
+  checkoutToken?: string;
+  proofId?: string;
   /** Where the visitor came from; already normalised by the caller. */
   campaign?: BookingCampaign;
 };
@@ -333,6 +346,7 @@ function toProviderInfo(row: ProviderRow, includeEmail: boolean): ProviderInfo {
 function toService(row: ServiceRow): Service {
   return {
     id: row.id,
+    depositRequired: row.deposit_required,
     remindersEnabled: row.reminders_enabled !== false,
     name: row.name,
     slug: row.slug ?? undefined,
@@ -428,6 +442,9 @@ function toBookingRecord(
     cost: row.cost_snapshot ?? "",
     location: row.location_snapshot ?? undefined,
     status: row.status,
+    paymentStatus: row.payment_status ?? undefined,
+    amountDueMinor: row.amount_due_minor ?? undefined,
+    currencyCode: row.currency_code ?? undefined,
     campaign: toBookingCampaign(row),
     reviewedAt: audience === "provider" ? (row.reviewed_at ?? undefined) : undefined,
     createdAt: row.created_at,
@@ -724,7 +741,7 @@ async function getActiveBookingsForDate(
     .select(BOOKING_SELECT)
     .eq("provider_id", providerId)
     .eq("date", dateKey)
-    .in("status", ["confirmed", "rescheduled"])
+    .in("status", ["confirmed", "rescheduled", "pending_payment_verification", "payment_action_required"])
     .returns<BookingRow[]>();
 
   if (error) {
@@ -1142,9 +1159,50 @@ export async function confirmPublicBooking(
   input: ConfirmPublicBookingInput,
 ) {
   const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
+  if (input.checkoutId && input.checkoutToken) {
+    const { data: priorCheckout, error: priorError } = await supabase.from("payment_requests")
+      .select("booking_id, checkout_token_hash")
+      .eq("id", input.checkoutId).eq("provider_id", provider.id).maybeSingle();
+    if (priorError) throw new PublicBookingWriteError("Could not check existing booking.", 500, priorError);
+    if (priorCheckout?.booking_id && matchesCheckoutToken(priorCheckout.checkout_token_hash, input.checkoutToken)) {
+      const { data: priorBooking, error: bookingError } = await supabase.from("bookings")
+        .select(BOOKING_SELECT).eq("id", priorCheckout.booking_id).eq("provider_id", provider.id)
+        .maybeSingle<BookingRow>();
+      if (bookingError) throw new PublicBookingWriteError("Could not load existing booking.", 500, bookingError);
+      if (priorBooking) return {
+        booking: toBookingRecord(priorBooking, input.checkoutToken),
+        canonicalPath: `/${getPublicVerticalSegment(provider.vertical)}/${provider.slug}`,
+        providerId: provider.id,
+      };
+    }
+  }
   const serviceRow = await getServiceForBooking(supabase, provider.id, input.serviceId);
   const service = toService(serviceRow);
   validatePartySize(service, input.partySize);
+
+  let deposit: { requestId: string; proofId: string; amount: number; currency: string } | null = null;
+  if (serviceRow.deposit_required || input.checkoutId) {
+    if (!input.checkoutId || !input.checkoutToken || !input.proofId) {
+      throw new PublicBookingWriteError("Upload receipt before confirming booking.", 400);
+    }
+    const [{ data: request, error: requestError }, { data: proof, error: proofError }] = await Promise.all([
+      supabase.from("payment_requests")
+        .select("id, provider_id, service_id, service_date, amount_minor, currency_code, checkout_token_hash, status, expires_at, booking_id")
+        .eq("id", input.checkoutId).maybeSingle(),
+      supabase.from("payment_proofs").select("id, payment_request_id, status")
+        .eq("id", input.proofId).maybeSingle(),
+    ]);
+    if (requestError || proofError) throw new PublicBookingWriteError("Could not check receipt.", 500);
+    if (!request || !proof || request.provider_id !== provider.id || request.service_id !== service.id ||
+        request.service_date !== input.dateKey || request.status !== "checkout_open" || request.booking_id ||
+        new Date(request.expires_at).getTime() <= Date.now() ||
+        !matchesCheckoutToken(request.checkout_token_hash, input.checkoutToken) ||
+        proof.payment_request_id !== request.id || proof.status !== "staged") {
+      throw new PublicBookingWriteError("Receipt or payment instructions expired. Start again.", 409);
+    }
+    deposit = { requestId: request.id, proofId: proof.id,
+      amount: request.amount_minor, currency: request.currency_code };
+  }
 
   // The free-form payload never gets to set the date of birth itself: only
   // the validated field does.
@@ -1196,7 +1254,7 @@ export async function confirmPublicBooking(
     ignoredHoldId: input.holdId,
   });
 
-  const manageToken = randomToken();
+  const manageToken = deposit ? input.checkoutToken! : randomToken();
   const startTime = service.bookingType === "appointment" ? input.time : undefined;
   const endTime = getBookingEndTime(service, input.time);
 
@@ -1248,7 +1306,12 @@ export async function confirmPublicBooking(
       date: input.dateKey,
       start_time: startTime ?? null,
       end_time: endTime ?? null,
-      status: "confirmed",
+      status: deposit ? "pending_payment_verification" : "confirmed",
+      ...(deposit ? {
+        payment_status: "pending_verification", amount_due_minor: deposit.amount,
+        currency_code: deposit.currency, payment_request_id: deposit.requestId,
+        payment_proof_id: deposit.proofId,
+      } : {}),
       notes: input.notes?.trim() ?? "",
       location_snapshot: input.location?.trim() || null,
       manage_token_hash: hashManageToken(manageToken),
@@ -1356,8 +1419,20 @@ async function updateBookingStatus(
 export async function getManagedBooking(supabase: SupabaseClient, input: ManageBookingInput) {
   const provider = await getPublishedProvider(supabase, input.vertical, input.providerSlug);
   const booking = await getBookingByManageToken(supabase, provider.id, input.token);
-
-  return { booking: toBookingRecord(booking, input.token) };
+  const record = toBookingRecord(booking, input.token);
+  if (booking.payment_status === "receipt_rejected" && booking.payment_proof_id) {
+    const { data: proof } = await supabase.from("payment_proofs")
+      .select("rejection_reason").eq("id", booking.payment_proof_id)
+      .maybeSingle<{ rejection_reason: string | null }>();
+    record.paymentRejectionReason = proof?.rejection_reason ?? undefined;
+    if (booking.payment_request_id) {
+      const { data: request } = await supabase.from("payment_requests")
+        .select("correction_deadline").eq("id", booking.payment_request_id)
+        .maybeSingle<{ correction_deadline: string | null }>();
+      record.paymentCorrectionDeadline = request?.correction_deadline ?? undefined;
+    }
+  }
+  return { booking: record };
 }
 
 /**
@@ -1555,7 +1630,8 @@ async function rescheduleBookingRow(
       date: input.dateKey,
       start_time: startTime ?? null,
       end_time: endTime ?? null,
-      status: "rescheduled",
+      status: booking.status === "pending_payment_verification" || booking.status === "payment_action_required"
+        ? booking.status : "rescheduled",
     })
     .eq("id", booking.id)
     .select(BOOKING_SELECT)
