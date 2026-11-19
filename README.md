@@ -384,6 +384,9 @@ Provider booking analytics continue to use Supabase.
 
 ### Background workers
 
+For reminder timing, settings, and client email content, see
+[booking email reminders](docs/booking-email-reminders.md).
+
 `.github/workflows/scheduled-workers.yml` drives the cron routes every five
 minutes:
 

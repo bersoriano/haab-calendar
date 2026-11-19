@@ -360,7 +360,7 @@ export const translations = {
       words: ["Pacientes", "Invitados", "Clientes", "Asistentes", "Comensales"],
       wordsExample: "“Patient” · “Paciente”",
       selfService: {
-        lock: "Enlace privado · solo para esta reserva",
+        lock: "Recordatorio por correo · enlace privado",
         when: "mar 29 sep · 9:00",
         reschedule: "Reagendar",
         cancel: "Cancelar",
@@ -377,9 +377,9 @@ export const translations = {
           tag: "Lenguaje específico",
         },
         {
-          title: "Ellos arreglan sus cambios.",
-          body: "Cada confirmación lleva un enlace privado para reagendar o cancelar. El cambio llega a tu calendario sin llegar a tu bandeja.",
-          tag: "Autoservicio privado",
+          title: "Recordatorios que permiten actuar.",
+          body: "Envía un recordatorio por correo 24 horas antes de la cita y, si quieres, otro más cerca de la hora. Cada uno incluye un enlace privado para reagendar o cancelar. Tú eliges cuándo enviarlos o los desactivas.",
+          tag: "Recordatorios y autoservicio",
         },
       ],
     },
@@ -895,7 +895,7 @@ export const translations = {
       words: ["Patients", "Guests", "Clients", "Attendees", "Diners"],
       wordsExample: "“Patient” · “Paciente”",
       selfService: {
-        lock: "Private link · only for this booking",
+        lock: "Email reminder · private link",
         when: "Tue 29 Sep · 9:00 AM",
         reschedule: "Reschedule",
         cancel: "Cancel",
@@ -912,9 +912,9 @@ export const translations = {
           tag: "Industry-specific language",
         },
         {
-          title: "They fix their own changes.",
-          body: "Every confirmation carries a private link to reschedule or cancel. The change lands on your calendar without landing in your inbox.",
-          tag: "Private self-service",
+          title: "Reminders clients can act on.",
+          body: "Send an email reminder 24 hours before an appointment, with an optional second reminder closer to the time. Each includes a private link to reschedule or cancel. Set the timing or turn reminders off.",
+          tag: "Reminders and self-service",
         },
       ],
     },
