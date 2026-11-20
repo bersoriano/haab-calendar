@@ -524,7 +524,7 @@ export const translations = {
       items: [
         {
           q: "¿Qué incluye?",
-          a: "Páginas públicas de reservas, disponibilidad en tiempo real, apartados de diez minutos, confirmaciones por correo, cupo para eventos y un enlace privado en cada reserva para que tus clientes la administren solos.",
+          a: "Páginas públicas de reservas, disponibilidad en tiempo real, apartados de diez minutos, confirmaciones por correo, cupo para eventos, sincronización con Google Calendar y un enlace privado en cada reserva para que tus clientes la administren solos.",
         },
         {
           q: "¿Puedo aceptar registros para una clase o evento?",
@@ -1094,7 +1094,7 @@ export const translations = {
       items: [
         {
           q: "What's included?",
-          a: "Public booking pages, real-time availability, ten-minute holds, email confirmations, event capacity, and a private link on every booking so clients can manage it themselves.",
+          a: "Public booking pages, real-time availability, ten-minute holds, email confirmations, event capacity, Google Calendar sync, and a private link on every booking so clients can manage it themselves.",
         },
         {
           q: "Can I take registrations for a class or event?",

@@ -343,7 +343,7 @@ export type BookingDict = {
     googleCalendarDescription: string;
     integrationAvailable: string;
     integrationNotConnected: string;
-    integrationPremiumRequired: string;
+    integrationNotEntitled: string;
     integrationUnavailable: string;
     integrationPublishRequired: string;
     integrationReadOnly: string;
@@ -954,7 +954,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Once connected, Haab will keep your booking availability in step with your Google Calendar.",
       integrationAvailable: "Available",
       integrationNotConnected: "Not connected",
-      integrationPremiumRequired: "Premium feature",
+      integrationNotEntitled: "Turned off for this account",
       integrationUnavailable: "Status unavailable",
       integrationPublishRequired: "Available once your page is published",
       integrationReadOnly: "Read-only while editing an example page",
@@ -1591,7 +1591,7 @@ export const bookingTranslations: Record<Lang, BookingDict> = {
         "Una vez conectado, Haab mantendrá su disponibilidad de reservas al día con su Google Calendar.",
       integrationAvailable: "Disponible",
       integrationNotConnected: "Sin conectar",
-      integrationPremiumRequired: "Función premium",
+      integrationNotEntitled: "Desactivada en esta cuenta",
       integrationUnavailable: "Estado no disponible",
       integrationPublishRequired: "Disponible cuando publique su página",
       integrationReadOnly: "Solo lectura mientras edita una página de ejemplo",

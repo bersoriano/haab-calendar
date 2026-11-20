@@ -5,7 +5,7 @@
 ## How it works
 - [Homepage](https://haabcalendar.com/): One link. No sign-up for clients. No double bookings. Live demos available.
 - [Online booking for doctors](https://haabcalendar.com/en/online-booking-for-doctors): Industry-specific language for healthcare (“patients”, not “customers”).
-- Key features: 10-minute server-side hold, private reschedule/cancel link, appointments + full-day + ticket/event modes on one page, optional Google Calendar sync (client details never written to Google).
+- Key features: 10-minute server-side hold, private reschedule/cancel link, appointments + full-day + ticket/event modes on one page, optional Google Calendar sync included on every plan (client details never written to Google).
 
 ## Use cases
 - Healthcare / doctors and clinics

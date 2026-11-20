@@ -14,11 +14,11 @@ const resolve = (input: Parameters<typeof resolveEntitlements>[0]) =>
   resolveEntitlements({ now: NOW, ...input });
 
 describe("plan-derived entitlements", () => {
-  it("gives a free provider neither feature", () => {
+  it("gives a free provider Google Calendar sync but not a custom slug", () => {
     const snapshot = resolve({ providerId: PROVIDER, planTier: "free", overrides: [] });
 
     expect(snapshot.features.custom_slug).toEqual({ enabled: false, source: "plan" });
-    expect(snapshot.features.google_calendar_sync).toEqual({ enabled: false, source: "plan" });
+    expect(snapshot.features.google_calendar_sync).toEqual({ enabled: true, source: "plan" });
   });
 
   it("gives a premium provider both features", () => {
@@ -44,7 +44,9 @@ describe("plan-derived entitlements", () => {
 
     expect(snapshot.planTier).toBe("free");
     expect(snapshot.features.custom_slug.enabled).toBe(false);
-    expect(snapshot.features.google_calendar_sync.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_sync.enabled).toBe(true);
+    // Falls back to exactly the free plan: nothing premium-only leaks through.
+    expect(snapshot.features.analytics.enabled).toBe(false);
   });
 });
 
@@ -53,10 +55,10 @@ describe("manual overrides", () => {
     const snapshot = resolve({
       providerId: PROVIDER,
       planTier: "free",
-      overrides: [{ featureKey: "google_calendar_sync", enabled: true, expiresAt: null }],
+      overrides: [{ featureKey: "custom_slug", enabled: true, expiresAt: null }],
     });
 
-    expect(snapshot.features.google_calendar_sync).toEqual({
+    expect(snapshot.features.custom_slug).toEqual({
       enabled: true,
       source: "override",
     });
@@ -187,6 +189,7 @@ describe("capability prerequisites", () => {
     // its own is a misconfiguration, and resolving it to "yes" would enable a
     // feature with nothing underneath it.
     const snapshot = resolve([
+      { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
       { featureKey: "google_calendar_busy_blocking", enabled: true, expiresAt: null },
     ]);
 
