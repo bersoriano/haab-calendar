@@ -546,11 +546,25 @@ for (const width of WIDTHS) {
     await page.setViewportSize({ width: width.width, height: width.height });
     await page.goto("/?lang=en");
     const footer = page.getByRole("contentinfo");
-    await expect(footer).toContainText("Haab Calendar. Multi purpose booking application. Developed by");
+    await expect(footer).toContainText("Haab Calendar. Online booking for small businesses. Built by");
     const developer = footer.getByRole("link", { name: "brilliant.dev", exact: true });
     await developer.scrollIntoViewIfNeeded();
     await expectUsable(developer, "the footer's developer link");
     await expect(developer).toHaveAttribute("href", "https://brilliant.dev/");
+  });
+
+  // The Company column lost its "Early access" link when the shipped product
+  // became the base plan; it still carries the blog and both legal pages.
+  test(`landing footer company links at ${width.name} width`, async ({ page }) => {
+    await page.setViewportSize({ width: width.width, height: width.height });
+    await page.goto("/?lang=en");
+    const footer = page.getByRole("contentinfo");
+    for (const name of ["Blog", "Privacy notice", "Terms of service"]) {
+      const link = footer.getByRole("link", { name, exact: true });
+      await link.scrollIntoViewIfNeeded();
+      await expectUsable(link, `the footer's ${name} link`);
+    }
+    await expect(footer.getByRole("link", { name: "Early access" })).toHaveCount(0);
   });
 
   test(`landing footer links to the blog at ${width.name} width`, async ({ page }) => {
