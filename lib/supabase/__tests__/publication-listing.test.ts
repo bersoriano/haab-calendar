@@ -119,7 +119,7 @@ describe("listManagedUsers", () => {
       source: "override",
     });
     expect(user.provider?.entitlements?.features.google_calendar_sync).toEqual({
-      enabled: false,
+      enabled: true,
       source: "plan",
     });
   });

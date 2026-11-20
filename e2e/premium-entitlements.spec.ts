@@ -48,19 +48,14 @@ async function readEntitlements(page: Page, role: E2ERole) {
 test.describe("free provider", () => {
   test.use({ storageState: authStatePath("free") });
 
-  test("sees Google Calendar gated behind premium", async ({ page }) => {
+  // Google Calendar sync is on every plan, so the free plan sees it as available.
+  test("sees Google Calendar as available and not connected", async ({ page }) => {
     await openIntegrations(page);
     const card = integrationCard(page);
 
-    await expect(card).toContainText(/Premium feature|Función premium/);
-    await expect(card).not.toContainText(/Not connected|Sin conectar/);
-  });
-
-  test("has no working connect control", async ({ page }) => {
-    await openIntegrations(page);
-
-    const connect = integrationCard(page).getByRole("button");
-    await expect(connect).toBeDisabled();
+    await expect(card).toContainText(/Available|Disponible/);
+    await expect(card).toContainText(/Not connected|Sin conectar/);
+    await expect(card).not.toContainText(/Turned off for this account|Desactivada en esta cuenta/);
   });
 
   test("can still use the ordinary settings", async ({ page }) => {
@@ -82,26 +77,20 @@ test.describe("free provider", () => {
     expect([401, 403, 404, 405]).toContain(response.status());
   });
 
-  test("is refused when starting the Google OAuth flow directly", async ({ page }) => {
+  test("passes the entitlement check when starting the Google OAuth flow", async ({ page }) => {
     const response = await page.request.get("/api/google/oauth/start", {
       maxRedirects: 0,
     });
 
-    // A disabled button is a courtesy; this is the boundary. A free provider
-    // must not be able to begin a connection by typing the URL.
-    expect([403, 404]).toContain(response.status());
+    // A redirect to Google when configured, 404 when Google is not configured
+    // (as in CI). Never 403: that is the entitlement refusal.
+    expect([302, 303, 307, 404]).toContain(response.status());
   });
 
-  test("is refused when reading the Google connection directly", async ({ page }) => {
+  test("is not refused when reading the Google connection directly", async ({ page }) => {
     const response = await page.request.get("/api/google/connection");
-    const body = await response.json();
 
-    expect([200, 403, 404]).toContain(response.status());
-    // Whatever the status, an unentitled provider is never told a connection is
-    // available to them.
-    if (response.status() === 200) {
-      expect(body.available).toBe(false);
-    }
+    expect(response.status()).toBe(200);
   });
 });
 
@@ -186,12 +175,12 @@ test.describe("billing premium provider", () => {
 test.describe("manual revoke over a paid subscription", () => {
   test.use({ storageState: authStatePath("premiumRevoked") });
 
-  test("reports premium required even though billing is active", async ({ page }) => {
+  test("reports it turned off even though billing is active", async ({ page }) => {
     await openIntegrations(page);
 
     // The subscription row says premium; the override says no, and the override
     // is what the provider sees.
-    await expect(integrationCard(page)).toContainText(/Premium feature|Función premium/);
+    await expect(integrationCard(page)).toContainText(/Turned off for this account|Desactivada en esta cuenta/);
   });
 
   test("cannot start a Google connection despite the active subscription", async ({
@@ -240,24 +229,25 @@ test.describe("manual grant over a free plan", () => {
 test.describe("lapsed subscription with a stale legacy plan", () => {
   test.use({ storageState: authStatePath("billingInactive") });
 
-  test("stays gated, because the subscription decides and it has lapsed", async ({
+  test("falls back to the free plan, which still includes Google Calendar", async ({
     page,
   }) => {
     await openIntegrations(page);
 
-    await expect(integrationCard(page)).toContainText(/Premium feature|Función premium/);
+    await expect(integrationCard(page)).toContainText(/Available|Disponible/);
   });
 });
 
 test.describe("accessibility of the entitlement state", () => {
-  test.use({ storageState: authStatePath("free") });
+  // The revoked account: the only one that still sees the gated state.
+  test.use({ storageState: authStatePath("premiumRevoked") });
 
   test("states the status in text, not colour alone", async ({ page }) => {
     await openIntegrations(page);
     const card = integrationCard(page);
 
     const text = (await card.textContent()) ?? "";
-    expect(text).toMatch(/Premium feature|Función premium/);
+    expect(text).toMatch(/Turned off for this account|Desactivada en esta cuenta/);
   });
 
   test("exposes the disabled control through its accessible role", async ({ page }) => {

@@ -47,7 +47,9 @@ export function isProviderPlanTier(value: unknown): value is ProviderPlanTier {
  * single answer rather than one per call site.
  */
 const PLAN_FEATURES: Record<ProviderPlanTier, readonly FeatureKey[]> = {
-  free: [],
+  // Google Calendar sync is on every plan; busy blocking and two-way sync stay
+  // grant-only (overrides), as before.
+  free: ["google_calendar_sync"],
   // Busy blocking and two-way sync are deliberately absent: they read and act
   // on a provider's wider calendar, and until pricing intent is settled they
   // are reachable only through a manual override. Adding a key here is the one

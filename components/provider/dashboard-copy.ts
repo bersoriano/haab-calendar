@@ -419,7 +419,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       declined: "Google Calendar wasn't connected because access was declined.",
       missing_scopes:
         "Google Calendar needs every permission it asks for. Connect again and allow all of them.",
-      not_entitled: "Google Calendar sync is part of Premium.",
+      not_entitled: "Google Calendar sync is turned off for this account.",
       no_refresh_token: "Google didn't grant lasting access. Connect again to finish.",
       no_provider: "Finish setting up your booking page before connecting Google Calendar.",
       invalid: "That Google sign-in expired. Please connect again.",
@@ -636,7 +636,7 @@ export const dashboardCopy: Record<Lang, DashboardShellCopy> = {
       declined: "Google Calendar no se conectó porque se rechazó el acceso.",
       missing_scopes:
         "Google Calendar necesita todos los permisos que solicita. Conéctelo de nuevo y acéptelos todos.",
-      not_entitled: "La sincronización con Google Calendar es parte de Premium.",
+      not_entitled: "La sincronización con Google Calendar está desactivada en esta cuenta.",
       no_refresh_token: "Google no otorgó acceso permanente. Conéctelo de nuevo para terminar.",
       no_provider: "Termine de configurar su página de reservas antes de conectar Google Calendar.",
       invalid: "Ese inicio de sesión con Google venció. Conéctelo de nuevo.",

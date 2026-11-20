@@ -21,7 +21,7 @@ import type { Lang } from "@/lib/types";
  */
 export type IntegrationAvailability =
   | "available"
-  | "premium_required"
+  | "not_entitled"
   | "unavailable"
   | "publish_required";
 
@@ -51,7 +51,7 @@ export function resolveIntegrationAvailability(input: {
 
   return hasResolvedEntitlement(input.entitlements, input.featureKey)
     ? "available"
-    : "premium_required";
+    : "not_entitled";
 }
 
 /**
@@ -176,14 +176,14 @@ export function ProviderIntegrationsSection({
 
   const statusLabels: Record<IntegrationAvailability, string> = {
     available: t.integrationAvailable,
-    premium_required: t.integrationPremiumRequired,
+    not_entitled: t.integrationNotEntitled,
     unavailable: t.integrationUnavailable,
     publish_required: t.integrationPublishRequired,
   };
 
   const statusTones: Record<IntegrationAvailability, StatusTone> = {
     available: "success",
-    premium_required: "warning",
+    not_entitled: "warning",
     unavailable: "neutral",
     publish_required: "neutral",
   };

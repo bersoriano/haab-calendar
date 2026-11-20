@@ -24,13 +24,6 @@ const ACTIVE_GRANT = [
 const ACTIVE_REVOKE = [
   { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
 ];
-const EXPIRED_GRANT = [
-  {
-    featureKey: "google_calendar_sync",
-    enabled: true,
-    expiresAt: "2026-08-01T00:00:00.000Z",
-  },
-];
 const EXPIRED_REVOKE = [
   {
     featureKey: "google_calendar_sync",
@@ -71,13 +64,21 @@ describe("ProviderIntegrationsSection", () => {
 
     expect(html).toContain(en.integrationAvailable);
     expect(html).toContain(en.integrationNotConnected);
-    expect(html).not.toContain(en.integrationPremiumRequired);
+    expect(html).not.toContain(en.integrationNotEntitled);
   });
 
-  it("reports premium required for a free plan with no override", () => {
+  it("reports available and not connected for a free plan: sync is on every plan", () => {
     const html = render({ entitlements: entitlements("free") });
 
-    expect(html).toContain(en.integrationPremiumRequired);
+    expect(html).toContain(en.integrationAvailable);
+    expect(html).toContain(en.integrationNotConnected);
+    expect(html).not.toContain(en.integrationNotEntitled);
+  });
+
+  it("honours an active revoke on a free plan", () => {
+    const html = render({ entitlements: entitlements("free", ACTIVE_REVOKE) });
+
+    expect(html).toContain(en.integrationNotEntitled);
     expect(html).not.toContain(en.integrationAvailable);
   });
 
@@ -91,13 +92,13 @@ describe("ProviderIntegrationsSection", () => {
   it("honours an active revoke on a premium plan", () => {
     const html = render({ entitlements: entitlements("premium", ACTIVE_REVOKE) });
 
-    expect(html).toContain(en.integrationPremiumRequired);
+    expect(html).toContain(en.integrationNotEntitled);
   });
 
-  it("lets an expired grant fall back to the free plan's answer", () => {
-    const html = render({ entitlements: entitlements("free", EXPIRED_GRANT) });
+  it("lets an expired revoke fall back to the free plan's answer", () => {
+    const html = render({ entitlements: entitlements("free", EXPIRED_REVOKE) });
 
-    expect(html).toContain(en.integrationPremiumRequired);
+    expect(html).toContain(en.integrationAvailable);
   });
 
   it("lets an expired revoke fall back to the premium plan's answer", () => {
@@ -141,7 +142,7 @@ describe("ProviderIntegrationsSection", () => {
   });
 
   it("offers no connect action to a provider without the entitlement", () => {
-    const html = render({ entitlements: entitlements("free") });
+    const html = render({ entitlements: entitlements("free", ACTIVE_REVOKE) });
 
     expect(html).not.toContain("/api/google/oauth/start");
     const buttons = html.match(/<button[^>]*>/g) ?? [];
@@ -158,14 +159,14 @@ describe("ProviderIntegrationsSection", () => {
   });
 
   it("states the status in words rather than colour alone", () => {
-    const free = render({ entitlements: entitlements("free") });
+    const revoked = render({ entitlements: entitlements("free", ACTIVE_REVOKE) });
     const premium = render();
 
     // The same markup with a different class would leave a screen reader with
     // nothing to read, so each state must differ in text.
-    expect(free).toContain(en.integrationPremiumRequired);
+    expect(revoked).toContain(en.integrationNotEntitled);
     expect(premium).toContain(en.integrationAvailable);
-    expect(free).not.toBe(premium);
+    expect(revoked).not.toBe(premium);
   });
 
   it("follows the owner's workspace language", () => {

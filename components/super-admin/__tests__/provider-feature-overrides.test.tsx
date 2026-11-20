@@ -40,13 +40,13 @@ function render(
 }
 
 describe("ProviderFeatureOverrides", () => {
-  it("shows a free plan with every feature off and none overridden", () => {
+  it("shows a free plan with only Google Calendar sync on and none overridden", () => {
     const html = render("free", []);
 
     expect(html).toMatch(/^<dialog/);
     expect(html).toMatch(/<h2[^>]*>Premium access<\/h2>/);
     expect(html).toContain("owner@example.com");
-    expect(html).toContain("0 of 8 enabled");
+    expect(html).toContain("1 of 8 enabled");
     expect(html).toContain('aria-label="Close"');
     expect(html).toContain("Custom URL slug");
     expect(html).toContain("Google Calendar sync");
@@ -91,7 +91,8 @@ describe("ProviderFeatureOverrides", () => {
     ]);
 
     expect(html).not.toContain("Override");
-    expect(html).not.toContain("On<");
+    // Only the free plan's own Google Calendar sync is on; the lapsed slug grant is not.
+    expect(html).toContain("1 of 8 enabled");
   });
 });
 
@@ -116,7 +117,7 @@ describe("FeatureAccessSummary", () => {
 
     expect(html).toContain("free plan");
     // Says what is counted: this sits in the accounts row, away from the dialog.
-    expect(html).toContain("1 of 8 features on");
+    expect(html).toContain("2 of 8 features on");
   });
 });
 
@@ -247,8 +248,13 @@ describe("blockingPrerequisites", () => {
   }
 
   it("names both prerequisites two-way needs when neither is on", () => {
+    // Sync is on every plan, so it has to be withheld for both to be missing.
+    const current = snapshot([
+      { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
+    ]);
+
     expect(
-      blockingPrerequisites(snapshot([]), "google_calendar_two_way_sync"),
+      blockingPrerequisites(current, "google_calendar_two_way_sync"),
     ).toEqual(["google_calendar_sync", "google_calendar_busy_blocking"]);
   });
 
