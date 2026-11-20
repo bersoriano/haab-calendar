@@ -13,9 +13,8 @@ const ICONS = [
 ];
 
 /**
- * Reliability, privacy, and scope. Every claim here describes behavior that
- * ships today; the last item names what does not, which is the part that makes
- * the other three believable while the product is in early access.
+ * Reliability, privacy, and publishing control. Every claim here describes
+ * behavior that ships today.
  */
 export function Trust() {
   const { t } = useLanguage();

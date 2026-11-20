@@ -11,7 +11,7 @@ export const doctorsTranslations = {
     seo: {
       title: "Online Booking for Doctors and Clinics",
       description:
-        "Online booking for doctors and clinics. Patients book open times 24/7 without an account, get a confirmation by email, and reschedule from a private link. Free during early access.",
+        "Online booking for doctors and clinics. Patients book open times 24/7 without an account, get a confirmation by email, and reschedule from a private link.",
       keywords: [
         "online booking for doctors",
         "doctor appointment booking",
@@ -28,7 +28,7 @@ export const doctorsTranslations = {
       ctaPrimary: "Create your booking page",
       ctaSecondary: "See a doctor’s page",
       chips: ["24/7 online booking", "No patient accounts", "Google Calendar sync", "English and Spanish"],
-      fineprint: "Free during early access. No card. Your patients never sign up.",
+      fineprint: "No credit card needed. Your patients never have to sign up.",
     },
     outcomes: {
       eyebrow: "At the front desk",
@@ -49,7 +49,7 @@ export const doctorsTranslations = {
         },
         {
           title: "One agenda",
-          body: "Connect Google Calendar and the times you’re already busy close on your page. Block a vacation where you already plan.",
+          body: "Connect Google Calendar and the times you’re already busy close on your page. Block off a vacation right on the calendar you already use.",
         },
       ],
     },
@@ -152,16 +152,12 @@ export const doctorsTranslations = {
           q: "Does it keep clinical records?",
           a: "No. Haab Calendar handles scheduling only. Keep clinical notes in your clinical record system.",
         },
-        {
-          q: "What does it cost?",
-          a: "Nothing during early access.",
-        },
       ],
     },
     finalCta: {
       titleLines: ["Your hours.", "Their bookings."],
       body: "Create your practice’s page and share the link today.",
-      fineprint: "Free while in early access. No card.",
+      fineprint: "No credit card needed.",
     },
     link: "Online booking for doctors",
   },
@@ -169,7 +165,7 @@ export const doctorsTranslations = {
     seo: {
       title: "Agenda online para médicos y consultorios",
       description:
-        "Agenda online para médicos y consultorios. Tus pacientes reservan 24/7 sin crear cuenta, reciben su confirmación por correo y reagendan desde un enlace privado. Gratis durante el acceso anticipado.",
+        "Agenda online para médicos y consultorios. Tus pacientes reservan 24/7 sin crear cuenta, reciben su confirmación por correo y reagendan desde un enlace privado.",
       keywords: [
         "agenda online para médicos",
         "sistema de citas médicas",
@@ -186,7 +182,7 @@ export const doctorsTranslations = {
       ctaPrimary: "Crear mi página de citas",
       ctaSecondary: "Ver la página de una médica",
       chips: ["Citas en línea 24/7", "Sin cuentas para pacientes", "Sincroniza con Google Calendar", "Español e inglés"],
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta. Tus pacientes nunca se registran.",
+      fineprint: "No necesitas tarjeta de crédito. Tus pacientes no tienen que registrarse.",
     },
     outcomes: {
       eyebrow: "En recepción",
@@ -207,7 +203,7 @@ export const doctorsTranslations = {
         },
         {
           title: "Una sola agenda",
-          body: "Conecta Google Calendar y los horarios en que ya estás ocupado se cierran en tu página. Bloquea unas vacaciones donde ya planeas.",
+          body: "Conecta Google Calendar y los horarios en que ya estás ocupado se cierran en tu página. Bloquea tus vacaciones en el calendario que ya usas.",
         },
       ],
     },
@@ -310,16 +306,12 @@ export const doctorsTranslations = {
           q: "¿Guarda expedientes clínicos?",
           a: "No. Haab Calendar solo maneja las citas. Guarda tus notas clínicas en tu sistema de expediente clínico.",
         },
-        {
-          q: "¿Cuánto cuesta?",
-          a: "Nada durante el acceso anticipado.",
-        },
       ],
     },
     finalCta: {
       titleLines: ["Tus horarios.", "Sus citas."],
       body: "Crea la página de tu consultorio y comparte el enlace hoy.",
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
+      fineprint: "No necesitas tarjeta de crédito.",
     },
     link: "Agenda online para médicos",
   },

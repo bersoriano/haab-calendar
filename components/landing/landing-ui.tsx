@@ -530,13 +530,6 @@ export function Hero() {
           keeps Inter. */}
       <div className="relative mx-auto grid max-w-[1264px] grid-cols-[minmax(0,1fr)] gap-5 px-5 pt-5 sm:px-8 lg:grid-cols-[minmax(0,596fr)_minmax(0,556fr)] lg:items-center lg:gap-x-12 lg:gap-y-7 lg:pt-12">
         <div className={cn(lpBody, "flex flex-col gap-5 lg:col-start-1 lg:row-start-1 lg:gap-7 lg:self-end")}>
-          <div className="flex items-center gap-2 self-start rounded-full border border-[#cde7e0] bg-white py-[5px] pl-[5px] pr-3 text-[12.5px] font-semibold text-[var(--lp-ink-2)] shadow-[0_4px_14px_rgba(0,105,92,0.08)] lg:gap-2.5 lg:py-1.5 lg:pl-1.5 lg:pr-3.5 lg:text-[14px]">
-            <span className="rounded-full bg-[var(--lp-teal-700)] px-2 py-[3px] text-[10.5px] font-bold uppercase tracking-[0.04em] text-white lg:px-2.5 lg:py-1 lg:text-[12px]">
-              {t.hero.badge}
-            </span>
-            <span className="lg:hidden">{t.hero.badgeTextShort}</span>
-            <span className="hidden lg:inline">{t.hero.badgeText}</span>
-          </div>
           <h1
             className={cn(
               lpDisplay,
@@ -749,7 +742,7 @@ export function FinalCTA() {
 
   return (
     <section
-      id="early-access"
+      id="get-started"
       className={cn(lpBody, "scroll-mt-24 bg-white px-5 pb-[72px] sm:px-8 lg:pb-[120px]")}
     >
       <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[var(--lp-teal-700)] px-6 py-12 text-white sm:px-10 lg:rounded-[36px] lg:px-20 lg:py-[88px]">
@@ -877,11 +870,6 @@ export function Footer({
           <div className="flex flex-col gap-1">
             <p className={headingClass}>{t.footer.companyHeading}</p>
             <ul className="flex flex-col">
-              <li>
-                <a href={anchor("early-access")} className={linkClass}>
-                  {t.footer.company.pricing}
-                </a>
-              </li>
               <li>
                 <Link href={`/blog?lang=${lang}`} className={linkClass}>
                   {t.footer.company.blog}

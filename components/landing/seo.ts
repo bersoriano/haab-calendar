@@ -90,7 +90,7 @@ export function buildLandingMetadata(lang: Lang): Metadata {
 }
 
 const ORGANIZATION_DESCRIPTION =
-  "Online booking page for small businesses. One link, no client sign-up, no double bookings. Live availability with 10-minute hold and private reschedule link. Optional Google Calendar sync. Free during early access.";
+  "Online booking page for small businesses. One link, no client sign-up, no double bookings. Live availability with 10-minute hold and private reschedule link. Optional Google Calendar sync.";
 
 /** The topics answer engines should associate with the brand. */
 const ORGANIZATION_KNOWS_ABOUT = [
@@ -127,13 +127,15 @@ export function buildOrganizationJsonLd() {
   };
 }
 
-/** The price, in the words every page that states it uses. */
+/** The base plan every new page starts on. */
+const BASE_PLAN_NAME: Record<Lang, string> = { en: "Base plan", es: "Plan base" };
+
 export function buildAppOffer(lang: Lang) {
   return {
     "@type": "Offer",
     price: "0",
     priceCurrency: "USD",
-    description: translations[lang].hero.badgeText,
+    description: BASE_PLAN_NAME[lang],
   };
 }
 

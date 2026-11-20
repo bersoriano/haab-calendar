@@ -8,7 +8,7 @@
 
 The page was redesigned in `feat/landing-redesign`; the design handoff (spec, reference HTML, tokens) is in `docs/landing-redesign/`. The sections below are the original copy and conversion brief; where they disagree with this block, this block describes what ships.
 
-**Section order and anchors:** sticky nav -> hero -> fact strip -> use cases (`#verticals`, or the dashboard panel for an owner with a page) -> how it works (`#how`) -> demo video (`#demo`, dark band) -> live examples (`#live-examples`) -> why it feels different (`#features`, the dark band) -> Google Calendar (`#google-calendar`) -> trust (`#trust`) -> FAQ (`#faq`) -> final CTA (`#early-access`) -> footer.
+**Section order and anchors:** sticky nav -> hero -> fact strip -> use cases (`#verticals`, or the dashboard panel for an owner with a page) -> how it works (`#how`) -> demo video (`#demo`, dark band) -> live examples (`#live-examples`) -> why it feels different (`#features`, the dark band) -> Google Calendar (`#google-calendar`) -> trust (`#trust`) -> FAQ (`#faq`) -> final CTA (`#get-started`) -> footer.
 
 **Files (`components/landing/`):**
 - `landing-ui.tsx`: actions/dialog context, `StickyNav`, `Hero`, `LiveExamples`, `FAQ`, `FinalCTA`, `Footer`, `LandingPage`.
@@ -36,8 +36,9 @@ The page was redesigned in `feat/landing-redesign`; the design handoff (spec, re
 - **One job of this page:** get a provider to start creating their booking page.
 - **Primary CTA (used everywhere):** `Create your booking page` → scrolls to the required workflow selector. Setup/authentication starts only after the provider chooses a vertical.
 - **Secondary CTA:** `See a live booking page` → opens a demo public flow on the canonical route, for example `/doctors/<demo-slug>`.
+- **Pricing and stage:** the shipped product is the base plan. Don't call it free, beta, or early access anywhere on the landing pages; pricing copy waits until paid plans exist.
 - **Tone:** confident, concrete, calm. Describe working product behavior without implying scale, integrations, or outcomes that are not yet proven.
-- **Proof posture:** Haab is in early access. Lead with the working differentiators: zero client accounts, server-backed 10-minute holds, three booking modes, industry-aware language, and no-login self-service.
+- **Proof posture:** Lead with the working differentiators: zero client accounts, server-backed 10-minute holds, three booking modes, industry-aware language, and no-login self-service.
 
 ---
 
@@ -66,12 +67,12 @@ The page was redesigned in `feat/landing-redesign`; the design handoff (spec, re
 - B: **Appointments, full days, and capacity-based tickets — in one booking flow.**
 
 **Subheadline:**
-Haab Calendar is an early-access platform for appointments, full-day reservations, and capacity-based tickets. Clients see live availability, receive a 10-minute hold while they finish, and get a private link to reschedule or cancel — without creating an account.
+Haab Calendar is a booking platform for appointments, full-day reservations, and capacity-based tickets. Clients see live availability, receive a 10-minute hold while they finish, and get a private link to reschedule or cancel — without creating an account.
 
 **Primary CTA:** `Create your booking page`
 **Secondary CTA:** `See a live booking page →`
 
-**Under-CTA microcopy:** Early access · Core booking flows are live · The product is still evolving.
+**Under-CTA microcopy:** No credit card needed.
 
 **Hero visual (note for implementer):** show the actual public booking flow on a phone frame beside a desktop frame — calendar with real open dates highlighted, a held time slot, and the confirmation screen with QR code. Use the app's real UI, not stock art.
 
@@ -228,8 +229,7 @@ Visual: confirmation screen and the private management page.
 - **Can I take ticket registrations?** Yes. Events support capacity-based registrations. Payment processing is not included yet.
 - **Can I sell full-day bookings, not just appointments?** Yes — appointments and full-day reservations live on the same page.
 - **Can bookings be added to a calendar?** Every confirmation includes an ICS file and QR code. Two-way calendar sync is not claimed yet.
-- **What is available today?** Public pages, holds, confirmations, event capacity, and self-service management are live. Haab remains in early access.
-- **What does it cost?** Haab is free during the current early-access period. Paid plans and limits are not finalized.
+- **What's included?** Public pages, holds, confirmations, event capacity, and self-service management.
 
 **Conversion notes:** answer the *real* hesitations (client friction, double-booking, cost); keep answers short; put a soft CTA below.
 
@@ -255,8 +255,8 @@ Visual: confirmation screen and the private management page.
 
 **Purpose:** state the current stage and limits clearly.
 
-**Heading:** Use the core booking flow while we keep building.
-**Body:** Haab is in early access. Public pages, holds, confirmations, capacity, and self-service work today. Pricing and some integrations are still being defined.
+**Heading:** What you get today.
+**Body:** Public pages, holds, confirmations, capacity, and self-service management.
 
 ---
 
@@ -265,7 +265,7 @@ Visual: confirmation screen and the private management page.
 **Purpose:** last, strongest push for visitors who scrolled the whole way.
 
 **Heading:** Give clients one link — and a way to manage their own booking.
-**Subhead:** Create an early-access page for appointments, full-day reservations, or capacity-based events. Clients do not need an account.
+**Subhead:** Create a page for appointments, full-day reservations, or capacity-based events. Clients do not need an account.
 **Primary CTA:** `Create your booking page`
 **Secondary CTA:** `See a live booking page →`
 
