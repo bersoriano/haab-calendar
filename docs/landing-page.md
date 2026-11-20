@@ -36,7 +36,7 @@ The page was redesigned in `feat/landing-redesign`; the design handoff (spec, re
 - **One job of this page:** get a provider to start creating their booking page.
 - **Primary CTA (used everywhere):** `Create your booking page` → scrolls to the required workflow selector. Setup/authentication starts only after the provider chooses a vertical.
 - **Secondary CTA:** `See a live booking page` → opens a demo public flow on the canonical route, for example `/doctors/<demo-slug>`.
-- **Pricing and stage:** the shipped product is the base plan. Don't call it free, beta, or early access anywhere on the landing pages; pricing copy waits until paid plans exist.
+- **Pricing and stage:** every shipped feature is on the free plan (since 2026-11-20). Say "free" plainly where price comes up (hero and CTA fine print, the cost FAQ, the SEO offer). Never call it beta or early access.
 - **Tone:** confident, concrete, calm. Describe working product behavior without implying scale, integrations, or outcomes that are not yet proven.
 - **Proof posture:** Lead with the working differentiators: zero client accounts, server-backed 10-minute holds, three booking modes, industry-aware language, and no-login self-service.
 

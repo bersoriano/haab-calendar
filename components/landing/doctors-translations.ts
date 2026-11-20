@@ -28,7 +28,7 @@ export const doctorsTranslations = {
       ctaPrimary: "Create your booking page",
       ctaSecondary: "See a doctor’s page",
       chips: ["24/7 online booking", "No patient accounts", "Google Calendar sync", "English and Spanish"],
-      fineprint: "No credit card needed. Your patients never have to sign up.",
+      fineprint: "Free, with no credit card. Your patients never have to sign up.",
     },
     outcomes: {
       eyebrow: "At the front desk",
@@ -125,6 +125,10 @@ export const doctorsTranslations = {
       aside: "The quickest answer is a real page. Book a sample practice like a patient would.",
       items: [
         {
+          q: "How much does it cost?",
+          a: "Nothing. Every feature is on the free plan, including Google Calendar sync and reminders, and you don't need a credit card.",
+        },
+        {
           q: "Do patients need an account to book?",
           a: "No. They book with their name and contact details, and manage the visit from the private link in their confirmation.",
         },
@@ -157,7 +161,7 @@ export const doctorsTranslations = {
     finalCta: {
       titleLines: ["Your hours.", "Their bookings."],
       body: "Create your practice’s page and share the link today.",
-      fineprint: "No credit card needed.",
+      fineprint: "Free. No credit card needed.",
     },
     link: "Online booking for doctors",
   },
@@ -182,7 +186,7 @@ export const doctorsTranslations = {
       ctaPrimary: "Crear mi página de citas",
       ctaSecondary: "Ver la página de una médica",
       chips: ["Citas en línea 24/7", "Sin cuentas para pacientes", "Sincroniza con Google Calendar", "Español e inglés"],
-      fineprint: "No necesitas tarjeta de crédito. Tus pacientes no tienen que registrarse.",
+      fineprint: "Gratis y sin tarjeta de crédito. Tus pacientes no tienen que registrarse.",
     },
     outcomes: {
       eyebrow: "En recepción",
@@ -279,6 +283,10 @@ export const doctorsTranslations = {
       aside: "La respuesta más rápida es una página real. Agenda en un consultorio de muestra como lo haría un paciente.",
       items: [
         {
+          q: "¿Cuánto cuesta?",
+          a: "Nada. Todas las funciones vienen en el plan gratuito, incluidas la sincronización con Google Calendar y los recordatorios, y no necesitas tarjeta de crédito.",
+        },
+        {
           q: "¿Mis pacientes necesitan una cuenta para agendar?",
           a: "No. Agendan con su nombre y datos de contacto, y manejan la cita desde el enlace privado de su confirmación.",
         },
@@ -311,7 +319,7 @@ export const doctorsTranslations = {
     finalCta: {
       titleLines: ["Tus horarios.", "Sus citas."],
       body: "Crea la página de tu consultorio y comparte el enlace hoy.",
-      fineprint: "No necesitas tarjeta de crédito.",
+      fineprint: "Gratis. No necesitas tarjeta de crédito.",
     },
     link: "Agenda online para médicos",
   },

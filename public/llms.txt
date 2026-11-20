@@ -1,11 +1,12 @@
 # Haab Calendar
 
-> Haab Calendar is online booking software for small businesses. You publish one booking page, clients book without creating an account, and confirmed bookings can sync to your Google Calendar. Live availability, a 10-minute hold while they fill details, and a private link to reschedule or cancel. No double bookings. Bilingual (English and Spanish).
+> Haab Calendar is online booking software for small businesses. You publish one booking page, clients book without creating an account, and confirmed bookings can sync to your Google Calendar. Live availability, a 10-minute hold while they fill details, and a private link to reschedule or cancel. No double bookings. Bilingual (English and Spanish). Free: every feature is on the free plan.
 
 ## How it works
 - [Homepage](https://haabcalendar.com/): One link. No sign-up for clients. No double bookings. Live demos available.
 - [Online booking for doctors](https://haabcalendar.com/en/online-booking-for-doctors): Industry-specific language for healthcare (“patients”, not “customers”).
-- Key features: 10-minute server-side hold, private reschedule/cancel link, appointments + full-day + ticket/event modes on one page, optional Google Calendar sync included on every plan (client details never written to Google).
+- Key features: 10-minute server-side hold, private reschedule/cancel link, appointments + full-day + ticket/event modes on one page, optional Google Calendar sync (client details never written to Google).
+- Pricing: free. Every feature is included on the free plan; no credit card needed.
 
 ## Use cases
 - Healthcare / doctors and clinics
@@ -21,4 +22,4 @@
 - Optional Google Calendar integration; disconnect anytime
 
 ## Get started
-- [Create your page](https://haabcalendar.com/): No credit card needed.
+- [Create your page](https://haabcalendar.com/): Free. No credit card needed.

@@ -127,8 +127,8 @@ export function buildOrganizationJsonLd() {
   };
 }
 
-/** The base plan every new page starts on. */
-const BASE_PLAN_NAME: Record<Lang, string> = { en: "Base plan", es: "Plan base" };
+/** The plan every page is on: every shipped feature, at no cost. */
+const BASE_PLAN_NAME: Record<Lang, string> = { en: "Free plan", es: "Plan gratuito" };
 
 export function buildAppOffer(lang: Lang) {
   return {
