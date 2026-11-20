@@ -8,13 +8,8 @@ export type AnalyticsCopy = {
   loading: string;
   loadFailed: string;
   retry: string;
-  premiumTitle: string;
-  premiumBody: string;
-  premiumBenefits: string[];
-  upgradeCta: string;
-  upgradePending: string;
-  upgradeUnavailable: string;
-  upgradeFailed: string;
+  lockedTitle: string;
+  lockedBody: string;
   checkoutSucceeded: string;
   checkoutPending: string;
   checkoutRefresh: string;
@@ -65,18 +60,8 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     loading: "Loading analytics…",
     loadFailed: "Could not load analytics.",
     retry: "Try again",
-    premiumTitle: "See which links bring bookings",
-    premiumBody: "Your visits are counted above. Premium shows what happens next.",
-    premiumBenefits: [
-      "Bookings and conversion rate",
-      "Bookings per campaign link",
-      "Where visitors drop off",
-      "Your most booked services",
-    ],
-    upgradeCta: "Upgrade to Premium",
-    upgradePending: "Opening checkout…",
-    upgradeUnavailable: "Upgrades are not open yet. We'll let you know when they are.",
-    upgradeFailed: "Could not open checkout. Please try again.",
+    lockedTitle: "Full analytics are turned off for this account",
+    lockedBody: "Your visits are still counted above. Ask Haab support to turn the rest back on.",
     checkoutSucceeded: "Welcome to Premium. Your full analytics are below.",
     checkoutPending: "Payment received. Premium turns on in a few seconds.",
     checkoutRefresh: "Refresh",
@@ -130,18 +115,8 @@ export const analyticsCopy: Record<Lang, AnalyticsCopy> = {
     loading: "Cargando analítica…",
     loadFailed: "No se pudo cargar la analítica.",
     retry: "Reintentar",
-    premiumTitle: "Descubre qué enlaces generan reservas",
-    premiumBody: "Arriba están tus visitas. Premium te muestra lo que pasa después.",
-    premiumBenefits: [
-      "Reservas y tasa de conversión",
-      "Reservas por enlace de campaña",
-      "En qué paso se van los visitantes",
-      "Tus servicios más reservados",
-    ],
-    upgradeCta: "Cambiar a Premium",
-    upgradePending: "Abriendo el pago…",
-    upgradeUnavailable: "Las mejoras aún no están abiertas. Te avisaremos cuando lo estén.",
-    upgradeFailed: "No se pudo abrir el pago. Inténtalo de nuevo.",
+    lockedTitle: "La analítica completa está desactivada en esta cuenta",
+    lockedBody: "Tus visitas se siguen contando arriba. Pide al soporte de Haab que active el resto.",
     checkoutSucceeded: "Bienvenido a Premium. Tu analítica completa está abajo.",
     checkoutPending: "Pago recibido. Premium se activa en unos segundos.",
     checkoutRefresh: "Actualizar",

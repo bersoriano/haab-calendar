@@ -12,11 +12,14 @@ import { resolveEntitlements } from "@/lib/entitlements/resolve";
 
 const PROVIDER = "00000000-0000-4000-8000-000000000001";
 
-function entitlements(planTier: "free" | "premium") {
+function entitlements(
+  planTier: "free" | "premium",
+  overrides: Parameters<typeof resolveEntitlements>[0]["overrides"] = [],
+) {
   return resolveEntitlements({
     providerId: PROVIDER,
     planTier,
-    overrides: [],
+    overrides,
     now: new Date("2026-10-08T12:00:00.000Z"),
   });
 }
@@ -44,7 +47,9 @@ describe("ProviderAnalyticsSurface", () => {
       <ProviderAnalyticsSurface
         lang="en"
         integratedMode
-        entitlements={entitlements("free")}
+        entitlements={entitlements("free", [
+          { featureKey: "analytics", enabled: false, expiresAt: null },
+        ])}
         checkoutResult="success"
       />,
     );
@@ -117,7 +122,7 @@ describe("AnalyticsReport", () => {
 });
 
 describe("AnalyticsTeaserReport", () => {
-  it("shows real visit totals and an upgrade offer over sample data", () => {
+  it("shows real visit totals and a turned-off notice over sample data", () => {
     const html = renderToStaticMarkup(
       <AnalyticsTeaserReport
         lang="en"
@@ -126,7 +131,10 @@ describe("AnalyticsTeaserReport", () => {
     );
     expect(html).toContain(">57<");
     expect(html).toContain(">41<");
-    expect(html).toContain("Upgrade to Premium");
+    expect(html).toContain("Full analytics are turned off for this account");
+    // Nothing to buy: every shipped feature is free, so no checkout is offered.
+    expect(html).not.toContain("Upgrade");
+    expect(html).not.toContain("<button");
     expect(html).toContain('aria-hidden="true"');
   });
 });

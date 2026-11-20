@@ -22,7 +22,7 @@ import {
 } from "@/components/app-ui";
 import { analyticsCopy } from "@/components/provider/analytics-copy";
 import { campaignsCopy, type CampaignsCopy } from "@/components/provider/campaigns-copy";
-import { UpgradeCard } from "@/components/provider/ProviderAnalyticsSurface";
+import { LockedFeatureCard } from "@/components/provider/ProviderAnalyticsSurface";
 import { useAnalyticsSummary } from "@/components/provider/use-analytics-summary";
 import {
   ANALYTICS_RANGES,
@@ -184,7 +184,7 @@ function CampaignResultsPanel({ t, lang }: { t: CampaignsCopy; lang: Lang }) {
         <EmptyState title={t.loadFailed} action={<Button onClick={retry}>{t.retry}</Button>} />
       ) : isAnalyticsTeaser(state.summary) ? (
         <CardBody className="flex justify-center">
-          <UpgradeCard t={analyticsCopy[lang]} body={t.lockedBody} />
+          <LockedFeatureCard t={analyticsCopy[lang]} body={t.lockedBody} />
         </CardBody>
       ) : (
         <CampaignResults summary={state.summary} lang={lang} />

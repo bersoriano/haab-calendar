@@ -6,6 +6,11 @@ import { resolveEntitlements } from "@/lib/entitlements/resolve";
 
 const premium = resolveEntitlements({ providerId: "p", planTier: "premium", overrides: [] });
 const free = resolveEntitlements({ providerId: "p", planTier: "free", overrides: [] });
+const revoked = resolveEntitlements({
+  providerId: "p",
+  planTier: "free",
+  overrides: [{ featureKey: "booking_history_retention", enabled: false, expiresAt: null }],
+});
 function render(props: Partial<Parameters<typeof BookingRetentionSettings>[0]> = {}) {
   return renderToStaticMarkup(<BookingRetentionSettings lang="en" enabled={false} savedEnabled={false} entitlements={premium} disabled={false} onChange={() => {}} {...props} />);
 }
@@ -19,9 +24,12 @@ describe("BookingRetentionSettings", () => {
     expect(html).toContain(dashboardCopy.en.retentionMonth);
     expect(html).toContain(dashboardCopy.en.retentionDefaultOff);
   });
-  it("locks the free opt-in but permits switching an old preference off after downgrade", () => {
-    expect(render({ entitlements: free })).toContain('disabled=""');
-    const downgraded = render({ entitlements: free, enabled: true, savedEnabled: true });
+  it("offers the opt-in on the free plan", () => {
+    expect(render({ entitlements: free })).not.toContain('disabled=""');
+  });
+  it("locks a revoked opt-in but permits switching an old preference off", () => {
+    expect(render({ entitlements: revoked })).toContain('disabled=""');
+    const downgraded = render({ entitlements: revoked, enabled: true, savedEnabled: true });
     expect(downgraded).not.toContain('disabled=""');
     expect(downgraded).toContain(dashboardCopy.en.retentionMonth);
     expect(downgraded).not.toContain(dashboardCopy.en.retentionYear);

@@ -53,9 +53,10 @@ describe("ProviderSettingsSurface", () => {
     expect(html.match(/<input[^>]*name="publicFooterText"[^>]*>/)?.[0]).not.toContain('disabled=""');
   });
 
-  it("locks footer customization when premium access is absent", () => {
+  it("locks footer customization when access is absent", () => {
     const html = render();
-    expect(html).toContain("Premium");
+    expect(html).toContain("turned off for this account");
+    expect(html).not.toContain("Premium");
     expect(html.match(/<input[^>]*name="publicFooterText"[^>]*>/)?.[0]).toContain('disabled=""');
     expect(html.match(/<input[^>]*name="publicFooterUrl"[^>]*>/)?.[0]).toContain('disabled=""');
   });

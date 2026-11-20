@@ -24,7 +24,7 @@ import {
 import { analyticsCopy } from "@/components/provider/analytics-copy";
 import { clientsCopy, type ClientsCopy } from "@/components/provider/clients-copy";
 import { dashboardCopy } from "@/components/provider/dashboard-copy";
-import { UpgradeCard } from "@/components/provider/ProviderAnalyticsSurface";
+import { LockedFeatureCard } from "@/components/provider/ProviderAnalyticsSurface";
 import { hasResolvedEntitlement, type ProviderEntitlements } from "@/lib/entitlements/resolve";
 import { filterClients, type ProviderClient } from "@/lib/provider-clients";
 import type { Lang } from "@/lib/types";
@@ -270,12 +270,7 @@ function ClientsPanel({ t, lang, canDownload }: { t: ClientsCopy; lang: Lang; ca
 
         {canDownload ? null : (
           <div className="flex justify-center pt-2">
-            <UpgradeCard
-              t={analyticsCopy[lang]}
-              body={t.downloadLocked}
-              benefits={t.downloadBenefits}
-              returnTab="clients"
-            />
+            <LockedFeatureCard t={analyticsCopy[lang]} body={t.downloadLocked} />
           </div>
         )}
       </CardBody>

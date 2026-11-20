@@ -83,7 +83,7 @@ test.describe("free plan", () => {
   test.use({ storageState: authStatePath("free") });
 
   for (const width of WIDTHS) {
-    test(`sees and can delete clients but cannot download at ${width.name} width`, async ({ page }) => {
+    test(`sees and downloads clients, with no upgrade offer, at ${width.name} width`, async ({ page }) => {
       await page.setViewportSize({ width: width.width, height: width.height });
 
       const seed = providerFor("free");
@@ -109,13 +109,13 @@ test.describe("free plan", () => {
       try {
         await page.goto("/dashboard/clients");
         await expect(page.getByText(email)).toBeVisible();
-        await expect(page.getByRole("button", { name: /^(Download CSV|Descargar CSV)$/ })).toHaveCount(0);
-        await expect(page.getByRole("button", { name: /^(Upgrade to Premium|Cambiar a Premium)$/ })).toBeVisible();
+        // Every shipped feature is on the free plan, CSV export included.
+        await expect(page.getByRole("button", { name: /^(Download CSV|Descargar CSV)$/ })).toBeVisible();
+        await expect(page.getByRole("button", { name: /Upgrade|Premium|Cambiar a Premium/ })).toHaveCount(0);
 
-        // The button being gone proves nothing: the server has to refuse too.
         const response = await page.request.get("/api/provider/clients/export");
-        expect(response.status()).toBe(403);
-        expect(await response.text()).not.toContain(email);
+        expect(response.status()).toBe(200);
+        expect(await response.text()).toContain(email);
 
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

@@ -1,7 +1,7 @@
 "use client";
 
-import { ChartLineUp, Check } from "@phosphor-icons/react";
-import { useCallback, useState, type ReactNode } from "react";
+import { ChartLineUp } from "@phosphor-icons/react";
+import { useState, type ReactNode } from "react";
 
 import {
   Alert,
@@ -202,74 +202,23 @@ export function AnalyticsTeaserReport({ teaser, lang }: { teaser: AnalyticsTease
           <AnalyticsReport summary={SAMPLE_SUMMARY} lang={lang} />
         </div>
         <div className="absolute inset-0 flex items-start justify-center px-4 pt-16">
-          <UpgradeCard t={t} />
+          <LockedFeatureCard t={t} />
         </div>
       </div>
     </div>
   );
 }
 
-/** The Premium offer and its checkout; `body` rewords it for another section. */
-export function UpgradeCard({
-  t,
-  body,
-  benefits,
-  returnTab = "analytics",
-}: {
-  t: AnalyticsCopy;
-  body?: string;
-  benefits?: string[];
-  /** The dashboard section checkout returns to. */
-  returnTab?: string;
-}) {
-  const [status, setStatus] = useState<"idle" | "pending" | "unavailable" | "error">("idle");
-
-  const startCheckout = useCallback(async () => {
-    setStatus("pending");
-    try {
-      const response = await fetch("/api/provider/billing/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ returnTab }),
-      });
-      if (response.status === 503) {
-        setStatus("unavailable");
-        return;
-      }
-      const body = (await response.json()) as { url?: string };
-      if (!response.ok || !body.url) {
-        throw new Error(`checkout ${response.status}`);
-      }
-      window.location.assign(body.url);
-    } catch (error) {
-      console.error("billing_checkout_start_failed", error);
-      setStatus("error");
-    }
-  }, [returnTab]);
-
+/**
+ * Shown where a feature has been turned off for this account. Every shipped
+ * feature is on every plan, so only a support override reaches this, and there
+ * is nothing to buy: no checkout here. `body` rewords it for another section.
+ */
+export function LockedFeatureCard({ t, body }: { t: AnalyticsCopy; body?: string }) {
   return (
     <Card className="w-full max-w-md p-6 text-center shadow-lg">
-      <h3 className="text-lg font-semibold text-app-fg">{t.premiumTitle}</h3>
-      <p className="mt-2 text-sm text-app-fg-muted">{body ?? t.premiumBody}</p>
-      <ul className="mt-4 space-y-1.5 text-left text-sm text-app-fg">
-        {(benefits ?? t.premiumBenefits).map((benefit) => (
-          <li key={benefit} className="flex gap-2">
-            <Check aria-hidden="true" size={16} weight="bold" className="mt-0.5 shrink-0 text-app-accent" />
-            {benefit}
-          </li>
-        ))}
-      </ul>
-      <Button className="mt-5 w-full" loading={status === "pending"} onClick={startCheckout}>
-        {status === "pending" ? t.upgradePending : t.upgradeCta}
-      </Button>
-      {status === "unavailable" ? (
-        <p className="mt-3 text-sm text-app-fg-muted">{t.upgradeUnavailable}</p>
-      ) : null}
-      {status === "error" ? (
-        <p role="alert" className="mt-3 text-sm font-medium text-app-danger-fg">
-          {t.upgradeFailed}
-        </p>
-      ) : null}
+      <h3 className="text-lg font-semibold text-app-fg">{t.lockedTitle}</h3>
+      <p className="mt-2 text-sm text-app-fg-muted">{body ?? t.lockedBody}</p>
     </Card>
   );
 }

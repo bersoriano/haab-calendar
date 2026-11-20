@@ -97,7 +97,7 @@ export const campaignsCopy: Record<Lang, CampaignsCopy> = {
     directNote: "Direct / untagged counts everyone who opened a link with no label, such as your plain booking link.",
     none: "—",
     referrersTitle: "Referring sites",
-    lockedBody: "You can make and share campaign links on any plan. Premium shows the visits and bookings each one brings.",
+    lockedBody: "You can still make and share campaign links. Visit and booking counts per link are turned off for this account.",
   },
   es: {
     previewTitle: "Las campañas necesitan una página publicada",
@@ -161,6 +161,6 @@ export const campaignsCopy: Record<Lang, CampaignsCopy> = {
     none: "—",
     referrersTitle: "Sitios de referencia",
     lockedBody:
-      "Puedes crear y compartir enlaces de campaña en cualquier plan. Premium muestra las visitas y reservas que genera cada uno.",
+      "Puedes seguir creando y compartiendo enlaces de campaña. Las visitas y reservas por enlace están desactivadas en esta cuenta.",
   },
 };
