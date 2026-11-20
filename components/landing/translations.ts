@@ -380,6 +380,49 @@ export const translations = {
         },
       ],
     },
+    featureList: {
+      eyebrow: "Funciones",
+      title: "Todo lo que hace tu página de reservas.",
+      body: "Lo más importante de Haab Calendar, en un solo lugar.",
+      items: [
+        {
+          title: "Disponibilidad en tiempo real",
+          body: "Tus clientes solo ven horarios libres. El horario que eligen queda apartado diez minutos mientras llenan sus datos, y nadie puede reservar la misma hora dos veces.",
+        },
+        {
+          title: "Reservar sin crear cuenta",
+          body: "Nadie se registra ni recuerda contraseñas. Cada reserva trae un enlace privado para reagendar o cancelar sin escribirte.",
+        },
+        {
+          title: "Confirmaciones y recordatorios",
+          body: "Cada confirmación llega por correo con un archivo de calendario y un código QR. Los recordatorios salen 24 horas antes, con un segundo aviso opcional, en el idioma del cliente.",
+        },
+        {
+          title: "Citas, días completos y eventos",
+          body: "Consultas por minuto, rentas por día y registros con cupo conviven en una página. Una clase se cierra sola cuando se llena.",
+        },
+        {
+          title: "Invitaciones con confirmación",
+          body: "Para bodas y eventos privados: lista de invitados, fecha límite, preguntas propias, mesas asignadas y envío por WhatsApp o correo. En la puerta, registra la entrada con QR, incluso sin conexión.",
+        },
+        {
+          title: "Depósitos bancarios",
+          body: "Pide un depósito en los servicios que elijas. El cliente sube su comprobante antes de reservar y tú confirmas el pago al revisar tu cuenta.",
+        },
+        {
+          title: "Sincronización con Google Calendar",
+          body: "Las reservas confirmadas aparecen en tu calendario y lo que ya tienes ahí bloquea esos horarios. Los datos de tus clientes se quedan en Haab.",
+        },
+        {
+          title: "Español e inglés",
+          body: "Toda la página, las confirmaciones y los correos están en los dos idiomas, con la palabra de tu negocio: pacientes, invitados, clientes o comensales.",
+        },
+        {
+          title: "Con el estilo de tu negocio",
+          body: "Elige entre seis temas para tu página pública y cámbialo cuando quieras desde tu panel, sin tocar código.",
+        },
+      ],
+    },
     useCases: {
       eyebrow: "Casos de uso",
       title: "Elige qué reservas. Tu página ya viene configurada.",
@@ -904,6 +947,49 @@ export const translations = {
           title: "Reminders clients can act on.",
           body: "Send an email reminder 24 hours before an appointment, with an optional second reminder closer to the time. Each includes a private link to reschedule or cancel. Set the timing or turn reminders off.",
           tag: "Reminders and self-service",
+        },
+      ],
+    },
+    featureList: {
+      eyebrow: "Features",
+      title: "Everything your booking page does.",
+      body: "The most important parts of Haab Calendar, in one place.",
+      items: [
+        {
+          title: "Real-time availability",
+          body: "Clients only see open times. The time they pick is held for ten minutes while they fill in their details, and no time can be booked twice.",
+        },
+        {
+          title: "Booking without an account",
+          body: "Nobody signs up or remembers a password. Every booking comes with a private link to reschedule or cancel without messaging you.",
+        },
+        {
+          title: "Confirmations and reminders",
+          body: "Every confirmation arrives by email with a calendar file and a QR code. Reminders go out 24 hours before, with an optional second one, in the client's language.",
+        },
+        {
+          title: "Appointments, full days, and events",
+          body: "Timed appointments, full-day rentals, and registrations with a headcount share one page. A class closes on its own once it's full.",
+        },
+        {
+          title: "Invitation-only RSVPs",
+          body: "For weddings and private events: a guest list, an RSVP deadline, your own questions, table seating, and invitations sent by WhatsApp or email. At the door, check guests in by QR, even offline.",
+        },
+        {
+          title: "Bank deposits",
+          body: "Ask for a deposit on the services you choose. Clients upload their receipt before booking, and you confirm payment after checking your bank account.",
+        },
+        {
+          title: "Google Calendar sync",
+          body: "Confirmed bookings show up on your calendar, and anything already there blocks that time on your page. Your clients' details stay in Haab.",
+        },
+        {
+          title: "English and Spanish",
+          body: "The whole page, every confirmation, and every email come in both languages, using your business's word: patients, guests, clients, or diners.",
+        },
+        {
+          title: "A look that fits your business",
+          body: "Pick one of six themes for your public page and change it anytime from your dashboard. No code needed.",
         },
       ],
     },
