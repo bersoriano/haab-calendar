@@ -290,7 +290,7 @@ function FinalCTA() {
   const t = doctorsTranslations[lang];
 
   return (
-    <section id="early-access" className={cn(lpBody, "scroll-mt-24 bg-white px-5 pb-[72px] sm:px-8 lg:pb-[120px]")}>
+    <section id="get-started" className={cn(lpBody, "scroll-mt-24 bg-white px-5 pb-[72px] sm:px-8 lg:pb-[120px]")}>
       <div className="relative mx-auto max-w-[1200px] overflow-hidden rounded-[28px] bg-[var(--lp-teal-700)] px-6 py-12 text-white sm:px-10 lg:rounded-[36px] lg:px-20 lg:py-[88px]">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div className="lp-dot-grid-light absolute inset-0" />

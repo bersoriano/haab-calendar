@@ -132,7 +132,7 @@ function NightCard({
 }
 
 /**
- * "Why it feels different": the page's one dark band. Three cards, each with a
+ * "What makes it different": the page's one dark band. Three cards, each with a
  * small illustration; the existing label, title and body copy sit beside it.
  */
 export function Features() {

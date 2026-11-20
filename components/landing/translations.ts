@@ -142,48 +142,45 @@ export const translations = {
     seo: {
       title: "Página de reservas en línea para negocios",
       description:
-        "Publica tu página de reservas en minutos. Tus clientes reservan con horarios en vivo, sin crear cuenta y sin reservas duplicadas. Gratis en acceso anticipado.",
+        "Publica tu página de reservas en minutos. Tus clientes ven tus horarios en tiempo real y reservan sin crear cuenta. Ningún horario se reserva dos veces.",
       socialImageAlt:
         "Haab Calendar: un enlace, sin registrarse, sin reservas duplicadas. Una página de reservas con horarios en vivo y un apartado de 10 minutos.",
     },
     hero: {
-      badge: "Acceso anticipado",
-      badgeText: "Gratis durante el acceso anticipado · Sin tarjeta",
-      badgeTextShort: "Gratis · Sin tarjeta",
       kicker: "Página de reservas en línea para negocios",
       titleLines: ["Un enlace.", "Sin registrarse.", "Sin reservas duplicadas."],
       title: "Un enlace. Sin registrarse. Sin reservas duplicadas.",
-      body: "Disponibilidad en vivo, un apartado de diez minutos mientras escriben y un enlace privado para reagendar. Tus pacientes y clientes nunca crean una cuenta, y tú nunca confirmas un horario a mano.",
+      body: "Tus clientes ven tu disponibilidad en tiempo real, el horario que eligen queda apartado diez minutos mientras llenan sus datos y reciben un enlace privado para reagendar. Nadie tiene que crear una cuenta y tú ya no confirmas citas a mano.",
       chips: ["Disponibilidad en vivo", "Apartado de 10 minutos", "Enlace privado para reagendar"],
       ctaPrimary: "Crear mi página",
       ctaSecondary: "Ver una página real",
       fineprint: "Sin instalar nada.",
       returningPrompt: "¿Ya tienes una página?",
       returningCta: "Inicia sesión",
-      previewCaption: "La página real de Dra. Maya Rivera. Tócala: está en vivo.",
+      previewCaption: "Esta es la página real de la Dra. Maya Rivera. Pruébala, está en vivo.",
     },
     facts: [
       { value: "10 min", caption: "de apartado en cada horario mientras el cliente escribe" },
       { value: "0", caption: "cuentas o contraseñas de clientes que administrar" },
       { value: "{n}", caption: "páginas de demostración públicas funcionando ahora" },
-      { value: "EN · ES", caption: "cada etiqueta y confirmación, en ambos idiomas" },
+      { value: "ES · EN", caption: "cada etiqueta y confirmación, en español y en inglés" },
     ],
     startDialog: {
-      eyebrow: "Gratis · 20 segundos",
-      title: "Reserva tu enlace.",
+      eyebrow: "Toma unos 20 segundos",
+      title: "Aparta tu enlace.",
       stepVertical: "¿Qué reservas?",
       stepName: "Nombra tu página",
       namePlaceholder: "Consultorio Rivera",
       submit: "Quiero este enlace →",
       submitDisabled: "Elige qué reservas",
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta. Tus clientes nunca se registran.",
+      fineprint: "No necesitas tarjeta de crédito. Tus clientes no tienen que registrarse.",
       close: "Cerrar",
     },
     demoDialog: {
-      title: "Resérvalo tú. 15 segundos.",
-      steps: ["Elige un servicio", "Elige un horario", "Mira arrancar el apartado de 10 minutos"],
-      frameTitle: "Página pública de reservas de Dra. Maya Rivera",
-      disclaimer: "Página real, apartado real. Sin cuenta y sin instalar nada.",
+      title: "Haz una reserva tú mismo. Toma 15 segundos.",
+      steps: ["Elige un servicio", "Elige un horario", "Mira cómo corre el apartado de 10 minutos"],
+      frameTitle: "Página pública de reservas de la Dra. Maya Rivera",
+      disclaimer: "Es una página real con un apartado real. Sin cuenta y sin instalar nada.",
       openFull: "Abrir página completa ↗",
       close: "Cerrar",
     },
@@ -199,20 +196,20 @@ export const translations = {
         { name: "Consulta de seguimiento", meta: "20 min · $65 · 1 paciente" },
       ],
       moreTimes: "+{n} horarios más disponibles",
-      takenNote: "Otra persona acaba de tomar un horario. Desapareció en vivo.",
+      takenNote: "Alguien acaba de reservar un horario y ya no aparece en la lista.",
       holdLabel: "Apartado de la reserva",
       holdIdle: "Elige un horario para apartarlo",
       holdHelper: "El horario queda protegido mientras el cliente completa sus datos.",
       holdExpired: "El apartado venció",
-      holdExpiredHelper: "El horario volvió a estar disponible para todos.",
+      holdExpiredHelper: "El horario quedó libre otra vez para todos.",
       confirmCta: "Confirmar reserva",
       noAccountNote: "Sin crear cuenta",
       restart: "Repetir la demo",
     },
     liveExamples: {
-      eyebrow: "Producto real, no una maqueta",
-      title: "Abre una. Resérvala como lo haría un cliente.",
-      body: "{n} páginas públicas funcionando ahora. Revisa disponibilidad, toma el apartado, confirma y luego reagenda tú mismo.",
+      eyebrow: "Páginas de demostración en vivo",
+      title: "Abre una y resérvala como lo haría un cliente.",
+      body: "{n} páginas públicas que puedes usar ahora mismo. Revisa la disponibilidad, aparta un horario, confirma y luego prueba reagendar.",
       liveBadge: "En vivo",
       items: [
         {
@@ -224,13 +221,13 @@ export const translations = {
         {
           vertical: "Espacios",
           title: "Riverside Padel Club",
-          proof: "Una cancha techada por horario: reservarla la quita del calendario de todos.",
+          proof: "Una cancha techada que se renta por hora. Cuando alguien reserva un horario, nadie más puede tomarlo.",
           cta: "Reservar la cancha",
         },
         {
           vertical: "Servicios profesionales",
           title: "Northstar Strategy",
-          proof: "Sesiones de consultoría con confirmación y gestión privada.",
+          proof: "Sesiones de consultoría con confirmación por correo y un enlace privado para administrarlas.",
           cta: "Probar una sesión",
         },
         {
@@ -254,37 +251,37 @@ export const translations = {
         {
           vertical: "Dental",
           title: "Brightpoint Dental",
-          proof: "Limpiezas y urgencias dentales con horario partido y consultorio único.",
+          proof: "Limpiezas y urgencias dentales, con hora de comida y un solo consultorio.",
           cta: "Agendar una limpieza",
         },
         {
           vertical: "Veterinaria",
           title: "Clínica Veterinaria Patitas",
-          proof: "Consultas, vacunas y limpieza dental para mascotas con precios visibles.",
+          proof: "Consultas, vacunas y limpieza dental para mascotas, con precios a la vista.",
           cta: "Agendar una consulta",
         },
         {
-          vertical: "Peluquería",
+          vertical: "Estética",
           title: "Copperline Hair Studio",
-          proof: "Corte, color y peinado en una silla: cada cita bloquea su propio horario.",
+          proof: "Corte, color y peinado en una sola silla. Cada cita ocupa su propio horario.",
           cta: "Reservar una silla",
         },
         {
           vertical: "Taller mecánico",
           title: "Northgate Auto Service",
-          proof: "Cambio de aceite, frenos y neumáticos con una bahía y un auto por turno.",
-          cta: "Apartar la bahía",
+          proof: "Cambio de aceite, frenos y llantas, con un solo lugar en el taller y un auto por turno.",
+          cta: "Agendar un servicio",
         },
         {
           vertical: "Entrenamiento de golf",
           title: "Fairway Lab Golf",
-          proof: "Clases uno a uno de golf con horarios de mañana y duración por tipo de sesión.",
+          proof: "Clases de golf individuales por la mañana, con precio según la duración.",
           cta: "Reservar una clase",
         },
         {
           vertical: "Restaurante",
           title: "Casa Mirador",
-          proof: "Doce mesas por turno: cada reserva descuenta una, no cierra el horario.",
+          proof: "Doce mesas por turno. Cada reservación ocupa una mesa, no el horario completo.",
           cta: "Reservar una mesa",
         },
         {
@@ -301,14 +298,14 @@ export const translations = {
         },
       ],
       seeAll: "Ver las {n} demos →",
-      note: "No necesitas iniciar sesión. Las {n} páginas usan el flujo público real de Haab.",
+      note: "No necesitas iniciar sesión. Las {n} páginas usan el mismo flujo de reservas que verían tus clientes.",
     },
     gallery: {
       eyebrow: "Todas las demos",
       title: "Cada página de ejemplo, en vivo.",
       body: "{n} negocios distintos sobre el mismo motor de reservas. Abre cualquiera y resérvala como lo haría un cliente.",
       back: "← Volver al inicio",
-      note: "Ninguna requiere cuenta. Todas usan el flujo público real de Haab.",
+      note: "Ninguna pide cuenta. Todas usan el mismo flujo de reservas que verían tus clientes.",
     },
     how: {
       eyebrow: "Cómo funciona",
@@ -324,8 +321,8 @@ export const translations = {
           body: "Tu bio, tus correos, un código QR en la puerta.",
         },
         {
-          title: "Piloto automático.",
-          body: "Ellos reservan, ellos reagendan, a ti te llega una cita al calendario.",
+          title: "Y listo.",
+          body: "Tus clientes reservan y reagendan solos. Tú solo ves la cita en tu calendario.",
         },
       ],
       cta: "Crear mi página",
@@ -338,7 +335,7 @@ export const translations = {
         eventDate: "29",
         eventTitle: "Consulta para pacientes nuevos",
         eventMeta: "9:00 – 9:30 · Reservado por el cliente",
-        added: "Se agrega a tu calendario, sin mensajes de por medio",
+        added: "Se agrega a tu calendario, sin mensajes de ida y vuelta",
       },
     },
     demoVideo: {
@@ -350,7 +347,7 @@ export const translations = {
       download: "Descargar el video (MP4)",
     },
     features: {
-      eyebrow: "Por qué se siente distinto",
+      eyebrow: "Lo que la hace diferente",
       title: "Una sola página que se adapta a tu forma de trabajar.",
       modes: [
         { label: "Hora de consultoría", pill: "Cita" },
@@ -368,12 +365,12 @@ export const translations = {
       items: [
         {
           title: "Citas, días completos y boletos en una página.",
-          body: "Una hora de consultoría, un salón para el sábado y cuarenta lugares en una clase son la misma página y el mismo enlace. Sin un segundo producto para el evento.",
+          body: "Una hora de consultoría, un salón para el sábado y cuarenta lugares en una clase viven en la misma página, con el mismo enlace. No necesitas otra herramienta para tus eventos.",
           tag: "Tres modos, una página",
         },
         {
-          title: "Habla como tu sector.",
-          body: "Pacientes, huéspedes, clientes, asistentes, comensales: cada etiqueta, confirmación y error calza con lo que vendes, en español o en inglés.",
+          title: "Habla como tu negocio.",
+          body: "Pacientes, invitados, clientes, asistentes o comensales: cada etiqueta, confirmación y mensaje de error usa la palabra que le queda a tu negocio, en español o en inglés.",
           tag: "Lenguaje específico",
         },
         {
@@ -385,9 +382,9 @@ export const translations = {
     },
     useCases: {
       eyebrow: "Casos de uso",
-      title: "Elige qué reservas. Tu página llega lista.",
+      title: "Elige qué reservas. Tu página ya viene configurada.",
       body:
-        "Servicios, horarios y reglas ya vienen puestos para tu giro. Cambia lo que quieras.",
+        "Servicios, horarios y reglas ya vienen listos para tu giro. Cambia lo que quieras.",
       cards: [
         {
           title: "Salud — médicos y especialistas",
@@ -403,11 +400,11 @@ export const translations = {
         },
         {
           title: "Eventos — carreras, talleres y clases",
-          body: "Registros únicos o recurrentes con fecha, ubicación, precio y cupo real — la página lleva la cuenta de los lugares por ti.",
+          body: "Registros únicos o recurrentes con fecha, lugar, precio y cupo real. La página lleva la cuenta de los lugares disponibles por ti.",
         },
       ],
       note:
-        "Gana el más parecido. Todo se edita en la configuración.",
+        "Elige el más parecido. Todo se puede cambiar durante la configuración.",
       cta: "Crear mi página",
       healthBadge: "Nuestro sector principal",
       healthLanguage: "Tus pacientes leen “pacientes”, no “clientes”.",
@@ -427,11 +424,11 @@ export const translations = {
         },
         {
           title: "Las reservas salen; los tiempos ocupados regresan.",
-          body: "Haab escribe un evento por cada reserva confirmada y lee los tiempos ocupados de los calendarios que designes, para que un compromiso que ya tienes bloquee ese horario.",
+          body: "Haab escribe un evento por cada reserva confirmada y lee los tiempos ocupados de los calendarios que elijas, para que un compromiso que ya tienes bloquee ese horario en tu página.",
         },
         {
           title: "Los datos de tus clientes nunca salen de Haab.",
-          body: "Los eventos llevan el nombre del servicio y nada más. El nombre, correo, teléfono y notas de un cliente nunca se escriben en Google, porque un calendario puede compartirse y Haab no decide quién puede leerlos.",
+          body: "Los eventos llevan el nombre del servicio y nada más. El nombre, correo, teléfono y notas de un cliente nunca se escriben en Google. Los calendarios se suelen compartir, y Haab no puede controlar quién ve el tuyo.",
         },
       ],
       visual: {
@@ -448,20 +445,20 @@ export const translations = {
     },
     trust: {
       eyebrow: "Confianza y privacidad",
-      title: "Hecho para cuidar un calendario real.",
-      intro: "Sobre todo cuando el calendario es de una clínica y quienes reservan son pacientes.",
+      title: "Hecho para un calendario del que depende tu negocio.",
+      intro: "Y más cuando es un consultorio y quienes reservan son pacientes.",
       items: [
         {
-          title: "Decide el servidor, no el navegador.",
-          body: "Un horario apartado se aparta en el servidor. Cuando dos personas van por el mismo horario, una queda confirmada y a la otra se le avisa de inmediato: la página no puede convencerse sola de duplicar una reserva.",
+          title: "Sin reservas duplicadas, ni al mismo segundo.",
+          body: "Cada apartado se registra en nuestro servidor, no en el navegador de alguien. Si dos personas van por el mismo horario, una se lo queda y a la otra se le avisa de inmediato.",
         },
         {
-          title: "Sin cuentas no hay contraseñas que perder.",
-          body: "Tus clientes nunca se registran, así que no hay contraseña que guardar, filtrar ni restablecer. Llegan a su reserva por un enlace privado que se guarda cifrado, nunca en texto plano.",
+          title: "Sin cuentas, no hay contraseñas que se filtren.",
+          body: "Tus clientes nunca se registran, así que no hay contraseñas que guardar, filtrar ni restablecer. Entran a su reserva con un enlace privado que guardamos cifrado, nunca en texto plano.",
         },
         {
-          title: "Tu página la publicas tú.",
-          body: "Nada es público hasta que lo publicas, y puedes bajarlo desde tu panel sin borrar tu trabajo.",
+          title: "Nada se publica hasta que tú lo decidas.",
+          body: "Tu página es privada hasta que la publicas, y puedes quitarla desde tu panel cuando quieras sin perder tu trabajo.",
         },
       ],
     },
@@ -479,16 +476,16 @@ export const translations = {
     },
     faq: {
       eyebrow: "Preguntas",
-      title: "Preguntas, respondidas.",
-      aside: "La respuesta más rápida suele ser una página real. Reserva una demo como lo haría un cliente.",
+      title: "Preguntas frecuentes",
+      aside: "¿Todavía con dudas? Reserva en una de las páginas de demostración como lo haría un cliente.",
       items: [
         {
-          q: "¿Qué funciona hoy?",
-          a: "Páginas públicas de reservas, disponibilidad en vivo, apartados de diez minutos, confirmaciones, cupo de eventos y un enlace privado de autoservicio en cada reserva.",
+          q: "¿Qué incluye?",
+          a: "Páginas públicas de reservas, disponibilidad en tiempo real, apartados de diez minutos, confirmaciones por correo, cupo para eventos y un enlace privado en cada reserva para que tus clientes la administren solos.",
         },
         {
           q: "¿Puedo aceptar registros para una clase o evento?",
-          a: "Sí. Los eventos descuentan lugares confirmados y apartados de tu cupo, así que una clase se cierra sola cuando se llena.",
+          a: "Sí. Los lugares confirmados y apartados se descuentan de tu cupo, así que la clase se cierra sola cuando se llena.",
         },
         {
           q: "¿Reservas de día completo, no solo citas?",
@@ -496,24 +493,20 @@ export const translations = {
         },
         {
           q: "¿Las reservas se pueden agregar a un calendario?",
-          a: "Sí. Cada confirmación incluye un archivo de calendario. También incluye un QR privado para abrir o verificar la reserva.",
-        },
-        {
-          q: "¿Cuánto cuesta?",
-          a: "Nada durante el acceso anticipado.",
+          a: "Sí. Cada confirmación trae un archivo de calendario y un código QR privado para abrir o verificar la reserva.",
         },
       ],
     },
     finalCta: {
-      title: "Un enlace. Después, piloto automático.",
-      titleLines: ["Un enlace.", "Después, piloto automático."],
-      body: "Nombra tu página y compártela hoy.",
-      ownerBody: "Tu página está en vivo. Comparte el enlace y déjala correr.",
+      title: "Comparte un enlace. Deja que reserven solos.",
+      titleLines: ["Comparte un enlace.", "Deja que reserven solos."],
+      body: "Arma tu página y manda el enlace hoy mismo.",
+      ownerBody: "Tu página ya está en línea. Comparte el enlace y deja que trabaje por ti.",
       ctaPrimary: "Crear mi página",
-      fineprint: "Gratis durante el acceso anticipado. Sin tarjeta.",
+      fineprint: "No necesitas tarjeta de crédito.",
     },
     footer: {
-      tagline: "Un enlace de reservas. Disponibilidad protegida. Sin cuentas para tus clientes.",
+      tagline: "Un enlace de reservas para tu negocio. Sin reservas duplicadas y sin cuentas para tus clientes.",
       getStarted: "Empieza",
       productHeading: "Producto",
       product: {
@@ -524,12 +517,11 @@ export const translations = {
       },
       companyHeading: "Empresa",
       company: {
-        pricing: "Acceso anticipado",
         blog: "Blog",
         privacy: "Aviso de privacidad",
         terms: "Términos de servicio",
       },
-      copyright: "Haab Calendar. Aplicación de reservas multipropósito. Desarrollado por",
+      copyright: "Haab Calendar. Reservas en línea para negocios. Desarrollado por",
       createLink: "Crear mi página →",
     },
   },
@@ -677,48 +669,45 @@ export const translations = {
     seo: {
       title: "Online booking page for small businesses",
       description:
-        "Publish an online booking page in minutes. Clients book live availability without an account, and no time gets double-booked. Free during early access.",
+        "Publish an online booking page in minutes. Clients see real-time availability and book without an account, and no time ever gets booked twice.",
       socialImageAlt:
         "Haab Calendar: one link, no sign-up, no double bookings. A booking page with live times and a 10-minute hold.",
     },
     hero: {
-      badge: "Early access",
-      badgeText: "Free while in early access · No card",
-      badgeTextShort: "Free · No card",
       kicker: "Online booking page for small businesses",
       titleLines: ["One link.", "No sign-up.", "No double bookings."],
       title: "One link. No sign-up. No double bookings.",
-      body: "Live availability, a ten-minute hold while they type, and a private link to reschedule. Your patients and clients never make an account — and you never confirm a time by hand.",
+      body: "Clients see your real-time availability, the time they pick is held for ten minutes while they fill in their details, and they get a private link to reschedule. Nobody has to make an account, and you never confirm a time by hand.",
       chips: ["Live availability", "10-minute hold", "Private reschedule link"],
       ctaPrimary: "Create your page",
       ctaSecondary: "See a real page",
       fineprint: "Nothing to install.",
       returningPrompt: "Already have a page?",
       returningCta: "Log in",
-      previewCaption: "Dr. Maya Rivera's real page. Touch it — it's live.",
+      previewCaption: "This is Dr. Maya Rivera's actual booking page. Go ahead and try it.",
     },
     facts: [
       { value: "10 min", caption: "hold on every slot while a client types" },
       { value: "0", caption: "client accounts or passwords to manage" },
       { value: "{n}", caption: "public demo pages running right now" },
-      { value: "EN · ES", caption: "every label and confirmation, both languages" },
+      { value: "EN · ES", caption: "every label and confirmation, in English and Spanish" },
     ],
     startDialog: {
-      eyebrow: "Free · 20 seconds",
+      eyebrow: "Takes about 20 seconds",
       title: "Claim your booking link.",
       stepVertical: "What do you book?",
       stepName: "Name your page",
       namePlaceholder: "Rivera Family Medicine",
       submit: "Claim this link →",
       submitDisabled: "Pick what you book",
-      fineprint: "Free while in early access. No card. Your clients never sign up.",
+      fineprint: "No credit card needed. Your clients never have to sign up.",
       close: "Close",
     },
     demoDialog: {
-      title: "Book it yourself. 15 seconds.",
+      title: "Try booking it yourself. It takes 15 seconds.",
       steps: ["Pick a service", "Pick a time", "Watch the 10-minute hold start"],
       frameTitle: "Live public booking page for Dr. Maya Rivera",
-      disclaimer: "Real page, real hold. No account, nothing to install.",
+      disclaimer: "This is a real page with a real hold. No account, nothing to install.",
       openFull: "Open full page ↗",
       close: "Close",
     },
@@ -734,20 +723,20 @@ export const translations = {
         { name: "Follow-up visit", meta: "20 min · $65 · 1 patient" },
       ],
       moreTimes: "+{n} more times available",
-      takenNote: "Someone else just took a time. It disappeared live.",
+      takenNote: "Someone just booked a time, so it's gone from the list.",
       holdLabel: "Booking hold",
       holdIdle: "Pick a time to hold it",
       holdHelper: "The time stays protected while the client fills in their details.",
       holdExpired: "Hold expired",
-      holdExpiredHelper: "The time went back on sale for everyone.",
+      holdExpiredHelper: "The time is open again for everyone.",
       confirmCta: "Confirm booking",
       noAccountNote: "No account needed",
       restart: "Run the demo again",
     },
     liveExamples: {
-      eyebrow: "Real product, not a mockup",
-      title: "Open one. Book it like a client would.",
-      body: "{n} public pages, running right now. Check availability, take the hold, confirm, then reschedule yourself.",
+      eyebrow: "Live demo pages",
+      title: "Open one and book it like a client would.",
+      body: "{n} public pages you can use right now. Check availability, hold a time, confirm, then try rescheduling.",
       liveBadge: "Live",
       items: [
         {
@@ -759,13 +748,13 @@ export const translations = {
         {
           vertical: "Spaces",
           title: "Riverside Padel Club",
-          proof: "One indoor court by the hour — booking it takes that time off every list.",
+          proof: "One indoor court rented by the hour. Once someone books a time, nobody else can take it.",
           cta: "Book the court",
         },
         {
           vertical: "Professional services",
           title: "Northstar Strategy",
-          proof: "Consulting sessions with confirmation and private management.",
+          proof: "Consulting sessions with an email confirmation and a private link to manage them.",
           cta: "Try a session",
         },
         {
@@ -795,31 +784,31 @@ export const translations = {
         {
           vertical: "Veterinary",
           title: "Clínica Veterinaria Patitas",
-          proof: "Pet check-ups, vaccines, and dental work with prices stated up front.",
+          proof: "Pet check-ups, vaccines, and dental cleanings, with prices shown up front.",
           cta: "Book a check-up",
         },
         {
           vertical: "Hair salon",
           title: "Copperline Hair Studio",
-          proof: "Cut, colour, and blow-dry in one chair — each booking holds its own slot.",
+          proof: "Cut, color, and blowout in one chair. Each booking gets its own time slot.",
           cta: "Book the chair",
         },
         {
           vertical: "Auto service",
           title: "Northgate Auto Service",
-          proof: "Oil, brakes, and tires with one bay and one vehicle per slot.",
+          proof: "Oil changes, brakes, and tires, with one service bay and one car per slot.",
           cta: "Book the bay",
         },
         {
           vertical: "Golf coaching",
           title: "Fairway Lab Golf",
-          proof: "One-on-one golf lessons on early hours, priced by session length.",
+          proof: "One-on-one golf lessons in the morning, priced by session length.",
           cta: "Book a lesson",
         },
         {
           vertical: "Restaurant",
           title: "Casa Mirador",
-          proof: "Twelve tables per seating — each reservation takes one, not the hour.",
+          proof: "Twelve tables per seating. Each reservation takes one table, not the whole hour.",
           cta: "Reserve a table",
         },
         {
@@ -836,14 +825,14 @@ export const translations = {
         },
       ],
       seeAll: "See all {n} demos →",
-      note: "No sign-in required. All {n} pages use Haab's real public booking flow.",
+      note: "No sign-in required. All {n} pages use the same booking flow your clients would see.",
     },
     gallery: {
       eyebrow: "Every demo",
       title: "Every example page, live.",
       body: "{n} different businesses on one booking engine. Open any of them and book it the way a client would.",
       back: "← Back to home",
-      note: "None of them need an account. All use Haab's real public booking flow.",
+      note: "None of them need an account. All of them use the same booking flow your clients would see.",
     },
     how: {
       eyebrow: "How it works",
@@ -859,8 +848,8 @@ export const translations = {
           body: "Your bio, your emails, a QR code on the door.",
         },
         {
-          title: "Switch on autopilot.",
-          body: "They book, they reschedule, you get a calendar entry.",
+          title: "Let it run.",
+          body: "Clients book and reschedule on their own. You see it on your calendar.",
         },
       ],
       cta: "Create your page",
@@ -873,7 +862,7 @@ export const translations = {
         eventDate: "29",
         eventTitle: "New patient consultation",
         eventMeta: "9:00 – 9:30 AM · Booked by the client",
-        added: "Added to your calendar — no message needed",
+        added: "Added to your calendar, no back-and-forth",
       },
     },
     demoVideo: {
@@ -885,8 +874,8 @@ export const translations = {
       download: "Download the video (MP4)",
     },
     features: {
-      eyebrow: "Why it feels different",
-      title: "One page that fits the way you actually work.",
+      eyebrow: "What makes it different",
+      title: "One page that fits the way you work.",
       modes: [
         { label: "Consulting hour", pill: "Appointment" },
         { label: "Venue for a Saturday", pill: "Full day" },
@@ -896,19 +885,19 @@ export const translations = {
       wordsExample: "“Patient” · “Paciente”",
       selfService: {
         lock: "Email reminder · private link",
-        when: "Tue 29 Sep · 9:00 AM",
+        when: "Tue, Sep 29 · 9:00 AM",
         reschedule: "Reschedule",
         cancel: "Cancel",
       },
       items: [
         {
           title: "Appointments, full days, and tickets on one page.",
-          body: "A consulting hour, a venue for a Saturday, and forty seats at a class are the same page and the same link. No second product for the event.",
+          body: "A consulting hour, a venue for a Saturday, and forty seats at a class all live on the same page, under the same link. You don't need a separate tool for events.",
           tag: "Three modes, one page",
         },
         {
-          title: "It speaks your industry.",
-          body: "Patients, guests, clients, attendees, diners — every label, confirmation, and error matches what you actually sell, in English or Spanish.",
+          title: "Uses the words your business uses.",
+          body: "Patients, guests, clients, attendees, or diners: every label, confirmation, and error message uses the word that fits your business, in English or Spanish.",
           tag: "Industry-specific language",
         },
         {
@@ -920,7 +909,7 @@ export const translations = {
     },
     useCases: {
       eyebrow: "Use cases",
-      title: "Pick what you book. Your page arrives filled in.",
+      title: "Pick what you book. Your page comes set up.",
       body:
         "Services, hours, and booking rules come pre-set for your line of work. Change anything you like.",
       cards: [
@@ -938,11 +927,11 @@ export const translations = {
         },
         {
           title: "Events — races, workshops & classes",
-          body: "One-time or recurring registrations with a date, location, price, and real capacity — the page tracks spots left for you.",
+          body: "One-time or recurring registrations with a date, location, price, and a real headcount. The page keeps track of open spots for you.",
         },
       ],
       note:
-        "Closest match wins. Everything is editable during setup.",
+        "Pick the closest match. You can change everything during setup.",
       cta: "Create your page",
       healthBadge: "Our core industry",
       healthLanguage: "Patients see “patients,” not “customers.”",
@@ -962,18 +951,18 @@ export const translations = {
         },
         {
           title: "Bookings go out; busy times come back.",
-          body: "Haab writes one event per confirmed booking and reads busy times from the calendars you nominate, so a commitment already on your calendar blocks that slot.",
+          body: "Haab writes one event per confirmed booking and reads busy times from the calendars you pick, so anything already on your calendar blocks that time on your page.",
         },
         {
           title: "Your clients' details never leave Haab.",
-          body: "Events carry the service name and nothing else. A client's name, email, phone, and notes are never written to Google, because a calendar can be shared and Haab does not decide who may read them.",
+          body: "Events carry the service name and nothing else. A client's name, email, phone, and notes are never written to Google. Calendars often get shared, and Haab can't control who sees yours.",
         },
       ],
       visual: {
         calendar: "Your Google Calendar",
         day: "Tue 29",
         hours: ["8 AM", "9 AM", "10 AM", "11 AM"],
-        busy: "Busy — already on your calendar",
+        busy: "Busy: already on your calendar",
         event: "New patient consultation",
         eventNote: "Service name only",
         stays: "Stays in Haab",
@@ -983,20 +972,20 @@ export const translations = {
     },
     trust: {
       eyebrow: "Trust & privacy",
-      title: "Built to be trusted with a real calendar.",
-      intro: "Especially when the calendar belongs to a clinic, and the people booking are patients.",
+      title: "Built for a calendar your business depends on.",
+      intro: "That matters even more when it's a clinic and the people booking are patients.",
       items: [
         {
-          title: "The server decides, not the browser.",
-          body: "A held slot is held on the server. When two people reach for the same time, one is confirmed and the other is told immediately — the page cannot talk itself into a double booking.",
+          title: "No double bookings, even at the same second.",
+          body: "Every hold is placed on our server, not in someone's browser. If two people go for the same time, one gets it and the other is told right away.",
         },
         {
-          title: "No accounts means no passwords to lose.",
-          body: "Your clients never register, so there is no client password to store, leak, or reset. Their booking is reached through a private link that is stored hashed, never in plain text.",
+          title: "No client accounts, no passwords to leak.",
+          body: "Your clients never sign up, so there's no password to store, leak, or reset. They get to their booking through a private link, which we store hashed, never in plain text.",
         },
         {
-          title: "Your page is yours to publish.",
-          body: "Nothing is public until you publish it, and you can take it down again from your dashboard without deleting your work.",
+          title: "Nothing goes live until you say so.",
+          body: "Your page stays private until you publish it, and you can take it down from your dashboard anytime without losing your work.",
         },
       ],
     },
@@ -1014,16 +1003,16 @@ export const translations = {
     },
     faq: {
       eyebrow: "FAQ",
-      title: "Questions, answered.",
-      aside: "The quickest answer is usually a real page. Book one of the demos like a client would.",
+      title: "Common questions",
+      aside: "Still not sure? Book one of the demo pages the way a client would.",
       items: [
         {
-          q: "What works today?",
-          a: "Public booking pages, live availability, ten-minute holds, confirmations, event capacity, and a private self-service link on every booking.",
+          q: "What's included?",
+          a: "Public booking pages, real-time availability, ten-minute holds, email confirmations, event capacity, and a private link on every booking so clients can manage it themselves.",
         },
         {
           q: "Can I take registrations for a class or event?",
-          a: "Yes. Events count confirmed and held spots against your capacity, so a class closes itself when it fills.",
+          a: "Yes. Confirmed and held spots count against your capacity, so a class closes on its own once it's full.",
         },
         {
           q: "Full-day bookings, not just appointments?",
@@ -1031,24 +1020,20 @@ export const translations = {
         },
         {
           q: "Can bookings be added to a calendar?",
-          a: "Yes. Every confirmation includes a calendar file. It also includes a private QR for opening or verifying the booking.",
-        },
-        {
-          q: "What does it cost?",
-          a: "Nothing during early access.",
+          a: "Yes. Every confirmation comes with a calendar file and a private QR code for opening or checking the booking.",
         },
       ],
     },
     finalCta: {
-      title: "One link. Then autopilot.",
-      titleLines: ["One link.", "Then autopilot."],
-      body: "Name your page and share it today.",
-      ownerBody: "Your page is live. Share the link and let it run.",
+      title: "Share one link. Let clients book themselves.",
+      titleLines: ["Share one link.", "Let clients book themselves."],
+      body: "Set up your page and send out the link today.",
+      ownerBody: "Your page is live. Share the link and let it do the work.",
       ctaPrimary: "Create your page",
-      fineprint: "Free while in early access. No card.",
+      fineprint: "No credit card needed.",
     },
     footer: {
-      tagline: "One booking link. Protected availability. No client accounts.",
+      tagline: "One booking link for your business. No double bookings, and no accounts for your clients.",
       getStarted: "Get started",
       productHeading: "Product",
       product: {
@@ -1059,12 +1044,11 @@ export const translations = {
       },
       companyHeading: "Company",
       company: {
-        pricing: "Early access",
         blog: "Blog",
         privacy: "Privacy notice",
         terms: "Terms of service",
       },
-      copyright: "Haab Calendar. Multi purpose booking application. Developed by",
+      copyright: "Haab Calendar. Online booking for small businesses. Built by",
       createLink: "Create your page →",
     },
   },

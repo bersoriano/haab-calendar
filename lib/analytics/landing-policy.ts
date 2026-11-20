@@ -22,7 +22,7 @@ export const isAnalyticsPath = (pathname: string) => ANALYTICS_PATHS.includes(pa
 /** The only landing data allowed to leave the browser. No account identity. */
 export const LANDING_SECTIONS = [
   "header", "hero", "facts", "verticals", "how", "demo", "live-examples",
-  "features", "google-calendar", "trust", "blog", "faq", "early-access", "footer",
+  "features", "google-calendar", "trust", "blog", "faq", "get-started", "footer",
   // The doctors page's own sections.
   "front-desk", "for-practices",
 ] as const;
