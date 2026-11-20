@@ -16,7 +16,7 @@ import type { Lang } from "@/lib/types";
 export const LEGAL_CONTACT_EMAIL = "bsorianodev@gmail.com";
 
 /** Bump whenever the substance changes; the pages render it verbatim. */
-export const LEGAL_UPDATED = "2026-11-18";
+export const LEGAL_UPDATED = "2026-11-20";
 
 export type LegalSection = {
   /** Stable across languages. Doubles as the heading anchor. */
@@ -119,7 +119,7 @@ const EN_PRIVACY: LegalDocument = {
       heading: "How long data is kept, and deletion",
       body: [
         "Account data is kept while the account is active. Booking records are permanently deleted during daily cleanup once their scheduled date is more than one calendar month in the past, using the business timezone. Future bookings are kept regardless of when they were created. Records exactly at the cutoff are kept; cleanup may run later.",
-        "Premium businesses can enable one calendar year of booking history in Settings. This option is off by default and takes effect after saving. Turning it off or losing Premium access restores one-month retention at the next cleanup. Deleted bookings cannot be recovered. Related booking history and internal integration records are removed with the booking; anonymous page analytics retain their separate 13-month policy. Cleanup does not delete events already held in an external Google Calendar.",
+        "Any business can enable one calendar year of booking history in Settings. This option is off by default and takes effect after saving. Turning it off restores one-month retention at the next cleanup. Deleted bookings cannot be recovered. Related booking history and internal integration records are removed with the booking; anonymous page analytics retain their separate 13-month policy. Cleanup does not delete events already held in an external Google Calendar.",
         "Bank deposit receipt images and payment review records have a separate audit period: every submitted image attempt, including rejected replacements, is scheduled for deletion twelve calendar months after the later of the service date or the last payment resolution. If a payment or refund remains unresolved, deletion is scheduled twelve months after the service date. The business receives a notice before scheduled deletion. Unsubmitted checkout uploads are removed sooner. Actual cleanup can be delayed by an operational failure and retried.",
         "Client records are separate from bookings and are not removed by this cleanup. A client record is kept until the business deletes it or its account is deleted. If the same email address books again after that, a new record is created.",
         "Deleting an account is permanent. It removes the account, the booking page and its configuration, the bookings and client records held under it, and the uploaded images, and it revokes any connected Google account. There is no recovery afterwards.",
@@ -222,7 +222,7 @@ const EN_TERMS: LegalDocument = {
       id: "plans",
       heading: "Plans and payment",
       body: [
-        "Some features are available only on a paid plan. Prices and what each plan includes are shown in the application before purchase.",
+        "Every feature currently offered is included on the free plan. If paid plans are offered later, their prices and what each includes will be shown in the application before purchase.",
         "Payments are processed by Stripe. Card details are handled by Stripe directly and never reach Haab Calendar.",
         "A subscription continues until cancelled. Cancelling stops future charges and the paid features end when the paid period does; the account itself remains.",
       ],
@@ -368,7 +368,7 @@ const ES_PRIVACY: LegalDocument = {
       heading: "Cuánto tiempo se conservan los datos, y su eliminación",
       body: [
         "Los datos de la cuenta se conservan mientras esté activa. Las reservas se eliminan permanentemente durante la limpieza diaria cuando su fecha programada tiene más de un mes calendario de antigüedad, según la zona horaria del negocio. Las reservas futuras se conservan sin importar cuándo se crearon. Las reservas justo en el límite se conservan; la limpieza puede ejecutarse después.",
-        "Los negocios Premium pueden activar un año calendario de historial de reservas en Ajustes. Esta opción está desactivada por defecto y se aplica al guardar. Desactivarla o perder el acceso Premium restablece la conservación de un mes en la siguiente limpieza. Las reservas eliminadas no se pueden recuperar. El historial asociado y los registros internos de integración se eliminan con la reserva; la analítica anónima mantiene su política independiente de 13 meses. La limpieza no elimina eventos ya guardados en un calendario externo de Google.",
+        "Cualquier negocio puede activar un año calendario de historial de reservas en Ajustes. Esta opción está desactivada por defecto y se aplica al guardar. Desactivarla restablece la conservación de un mes en la siguiente limpieza. Las reservas eliminadas no se pueden recuperar. El historial asociado y los registros internos de integración se eliminan con la reserva; la analítica anónima mantiene su política independiente de 13 meses. La limpieza no elimina eventos ya guardados en un calendario externo de Google.",
         "Las imágenes de comprobantes de depósito y los registros de revisión de pagos tienen un periodo de auditoría independiente: cada imagen enviada, incluidos los reemplazos rechazados, se programa para eliminación doce meses calendario después de la fecha del servicio o de la última resolución del pago, lo que ocurra después. Si un pago o reembolso sigue sin resolverse, la eliminación se programa doce meses después de la fecha del servicio. El negocio recibe un aviso antes de la eliminación programada. Las cargas de pagos no enviados se eliminan antes. Una falla operativa puede retrasar la limpieza y provocar un nuevo intento.",
         "Los registros de cliente son independientes de las reservas y esta limpieza no los elimina. Un registro de cliente se conserva hasta que el negocio lo elimina o se elimina su cuenta. Si el mismo correo electrónico vuelve a reservar después de eso, se crea un registro nuevo.",
         "Eliminar una cuenta es permanente. Se eliminan la cuenta, la página de reservas y su configuración, las reservas y los registros de cliente asociados y las imágenes subidas, y se revoca cualquier cuenta de Google conectada. Después no hay recuperación posible.",
@@ -471,7 +471,7 @@ const ES_TERMS: LegalDocument = {
       id: "plans",
       heading: "Planes y pago",
       body: [
-        "Algunas funciones solo están disponibles en un plan de paga. Los precios y lo que incluye cada plan se muestran en la aplicación antes de la compra.",
+        "Todas las funciones que se ofrecen actualmente están incluidas en el plan gratuito. Si más adelante se ofrecen planes de paga, sus precios y lo que incluye cada uno se mostrarán en la aplicación antes de la compra.",
         "Los pagos los procesa Stripe. Los datos de tarjeta los trata Stripe directamente y nunca llegan a Haab Calendar.",
         "Una suscripción continúa hasta que se cancele. Cancelar detiene los cargos futuros y las funciones de paga terminan cuando concluye el periodo pagado; la cuenta permanece.",
       ],

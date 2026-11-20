@@ -132,7 +132,7 @@ offline page reaches the same answer as the server for the data it can see.
 Bookings move to the dashboard Archive after seven days. Archive is a view, not
 permanent storage: daily cleanup deletes records whose scheduled date is more
 than one calendar month in the past, in the provider timezone. Future bookings
-are protected. Premium businesses may enable one calendar year in Settings;
+are protected. Any business may enable one calendar year in Settings;
 this preference is off by default and applies only after saving. Disabling it
 or losing entitlement restores the month policy at the next cleanup. Deletion
 is permanent and includes related internal booking history. See
