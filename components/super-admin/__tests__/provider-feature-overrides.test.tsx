@@ -40,17 +40,17 @@ function render(
 }
 
 describe("ProviderFeatureOverrides", () => {
-  it("shows a free plan with only Google Calendar sync on and none overridden", () => {
+  it("shows a free plan with every feature on and none overridden", () => {
     const html = render("free", []);
 
     expect(html).toMatch(/^<dialog/);
-    expect(html).toMatch(/<h2[^>]*>Premium access<\/h2>/);
+    expect(html).toMatch(/<h2[^>]*>Feature access<\/h2>/);
     expect(html).toContain("owner@example.com");
-    expect(html).toContain("1 of 8 enabled");
+    expect(html).toContain("8 of 8 enabled");
     expect(html).toContain('aria-label="Close"');
     expect(html).toContain("Custom URL slug");
     expect(html).toContain("Google Calendar sync");
-    expect(html).toContain("Off");
+    expect(html).toContain("On");
     expect(html).not.toContain("Override");
     expect(html).toContain("Change access");
   });
@@ -91,8 +91,8 @@ describe("ProviderFeatureOverrides", () => {
     ]);
 
     expect(html).not.toContain("Override");
-    // Only the free plan's own Google Calendar sync is on; the lapsed slug grant is not.
-    expect(html).toContain("1 of 8 enabled");
+    // The free plan's own answer: everything on, with no override shown.
+    expect(html).toContain("8 of 8 enabled");
   });
 });
 
@@ -117,7 +117,7 @@ describe("FeatureAccessSummary", () => {
 
     expect(html).toContain("free plan");
     // Says what is counted: this sits in the accounts row, away from the dialog.
-    expect(html).toContain("2 of 8 features on");
+    expect(html).toContain("8 of 8 features on");
   });
 });
 
@@ -189,7 +189,12 @@ describe("prerequisite chain", () => {
   it("says a granted feature is off, and names what it needs", () => {
     // The support case this exists to prevent: two-way granted, two-way off,
     // and nothing on screen connecting the two.
-    const html = render("free", GRANT_TWO_WAY);
+    // Sync and busy blocking are on every plan, so they are withheld here.
+    const html = render("free", [
+      { featureKey: "google_calendar_sync", enabled: false, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: false, expiresAt: null },
+      ...GRANT_TWO_WAY,
+    ]);
 
     expect(html).toContain("Blocked");
     expect(html).toContain("Granted, but off: needs");
@@ -261,6 +266,7 @@ describe("blockingPrerequisites", () => {
   it("names only the one still missing", () => {
     const current = snapshot([
       { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: false, expiresAt: null },
     ]);
 
     expect(

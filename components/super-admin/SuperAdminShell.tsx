@@ -33,7 +33,7 @@ const PAGES: SuperAdminPage[] = [
     id: "accounts",
     href: "/super-admin/accounts",
     title: "Accounts",
-    description: "Publishing access, premium overrides and account deletion.",
+    description: "Publishing access, feature overrides and account deletion.",
   },
   {
     id: "demo-pages",

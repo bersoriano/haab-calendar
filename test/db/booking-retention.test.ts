@@ -49,8 +49,7 @@ describe("booking retention database policy", () => {
     select pg_temp.assert_dates(array['2026-02-28','2026-03-01']::date[]);
   `));
 
-  it("keeps Premium default off and applies one year only after opt-in, including leap day", () => check(`
-    update public.providers set plan_tier = 'premium' where id = '${provider}';
+  it("keeps the option default off on the free plan and applies one year only after opt-in, including leap day", () => check(`
     do $$ begin if (select keep_booking_history_one_year from public.providers where id = '${provider}') then raise exception 'Not default off'; end if; end $$;
     select pg_temp.book('2023-02-27'), pg_temp.book('2023-02-28'), pg_temp.book('2024-02-28');
     update public.providers set keep_booking_history_one_year = true where id = '${provider}';
@@ -61,13 +60,13 @@ describe("booking retention database policy", () => {
     select pg_temp.assert_dates(array['2024-02-28']::date[]);
   `));
 
-  it("honors billing downgrade over legacy Premium and manual revocation", () => check(`
+  it("keeps one year through a billing downgrade, because free includes it, and honors manual revocation", () => check(`
     update public.providers set plan_tier = 'premium', keep_booking_history_one_year = true where id = '${provider}';
     insert into public.provider_billing_subscriptions (provider_id, stripe_subscription_id, status, plan_tier, last_event_id, last_event_created_at)
     values ('${provider}', 'sub_retention_local', 'canceled', 'free', 'evt_local', now());
     select pg_temp.book('2026-08-01');
     select public.purge_expired_bookings('2026-10-09T12:00:00Z', 500);
-    select pg_temp.assert_dates('{}');
+    select pg_temp.assert_dates(array['2026-08-01']::date[]);
     delete from public.provider_billing_subscriptions where provider_id = '${provider}';
     insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason)
     values ('${provider}', 'booking_history_retention', false, 'Local revoke');
@@ -76,35 +75,38 @@ describe("booking retention database policy", () => {
     select pg_temp.assert_dates('{}');
   `));
 
-  it("honors active grants and treats expired overrides as expired", () => check(`
-    insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason, expires_at)
-    values ('${provider}', 'booking_history_retention', true, 'Local grant', now() + interval '1 day');
+  it("honors active revocations and treats expired ones as expired", () => check(`
     update public.providers set keep_booking_history_one_year = true where id = '${provider}';
+    insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason, expires_at)
+    values ('${provider}', 'booking_history_retention', false, 'Local revoke', now() + interval '1 day');
+    select pg_temp.book('2026-08-01');
+    select public.purge_expired_bookings('2026-10-09T12:00:00Z', 500);
+    select pg_temp.assert_dates('{}');
+    update public.provider_feature_overrides set expires_at = '2026-10-09T12:00:00Z' where provider_id = '${provider}';
     select pg_temp.book('2026-08-01');
     select public.purge_expired_bookings('2026-10-09T12:00:00Z', 500);
     select pg_temp.assert_dates(array['2026-08-01']::date[]);
-    update public.provider_feature_overrides set expires_at = '2026-10-09T12:00:00Z' where provider_id = '${provider}';
-    select public.purge_expired_bookings('2026-10-09T12:00:00Z', 500);
-    select pg_temp.assert_dates('{}');
   `));
 
-  it("rejects direct free opt-in and grants cleanup only to service role", () => check(`
+  it("rejects a revoked opt-in, allows a free one, and grants cleanup only to service role", () => check(`
+    insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason)
+    values ('${provider}', 'booking_history_retention', false, 'Local revoke');
     select set_config('request.jwt.claim.sub', '${owner}', true);
     set local role authenticated;
     do $$ begin
       begin
         update public.providers set keep_booking_history_one_year = true where id = '${provider}';
-        raise exception 'Free opt-in succeeded';
+        raise exception 'Revoked opt-in succeeded';
       exception when insufficient_privilege then null; end;
       if has_function_privilege('authenticated', 'public.purge_expired_bookings(timestamptz,integer)', 'EXECUTE') then raise exception 'Public cleanup exposed'; end if;
       if has_function_privilege('anon', 'public.purge_expired_bookings(timestamptz,integer)', 'EXECUTE') then raise exception 'Anon cleanup exposed'; end if;
     end $$;
     reset role;
-    update public.providers set plan_tier = 'premium' where id = '${provider}';
+    delete from public.provider_feature_overrides where provider_id = '${provider}';
     set local role authenticated;
     update public.providers set keep_booking_history_one_year = true where id = '${provider}';
     reset role;
-    do $$ begin if not (select keep_booking_history_one_year from public.providers where id = '${provider}') then raise exception 'Premium opt-in failed'; end if; end $$;
+    do $$ begin if not (select keep_booking_history_one_year from public.providers where id = '${provider}') then raise exception 'Free opt-in failed'; end if; end $$;
   `));
 
   it("bounds each batch and reports remaining eligible records", () => check(`

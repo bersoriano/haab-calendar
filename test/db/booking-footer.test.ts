@@ -17,16 +17,7 @@ function check(sql: string) {
 }
 
 describe("booking footer database access", () => {
-  it("rejects direct customization by free owners and permits Premium owners", () => check(`
-    set local role authenticated;
-    do $$ begin
-      begin
-        update public.providers set public_footer_text = 'Acme' where id = '${provider}';
-        raise exception 'Free customization succeeded';
-      exception when insufficient_privilege then null; end;
-    end $$;
-    reset role;
-    update public.providers set plan_tier = 'premium' where id = '${provider}';
+  it("lets a free owner customize the footer, and refuses a revoked owner", () => check(`
     set local role authenticated;
     update public.providers set public_footer_text = 'Acme', public_footer_url = 'https://acme.example' where id = '${provider}';
     reset role;
@@ -34,39 +25,49 @@ describe("booking footer database access", () => {
     do $$ begin
       if (select public_footer_text from public.public_providers where id = '${provider}') is distinct from 'Acme' then raise exception 'Custom footer not public'; end if;
     end $$;
+    reset role;
+    insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason)
+      values ('${provider}', 'custom_booking_footer', false, 'Footer test');
+    set local role authenticated;
+    do $$ begin
+      begin
+        update public.providers set public_footer_text = 'Revoked' where id = '${provider}';
+        raise exception 'Revoked customization succeeded';
+      exception when insufficient_privilege then null; end;
+    end $$;
   `));
 
-  it("restores defaults after billing downgrade while allowing unrelated profile saves", () => check(`
+  it("keeps the footer through a billing downgrade, because free includes it", () => check(`
     update public.providers set plan_tier = 'premium', public_footer_text = 'Acme' where id = '${provider}';
     insert into public.provider_billing_subscriptions (provider_id, stripe_subscription_id, status, plan_tier, last_event_id, last_event_created_at)
       values ('${provider}', 'sub_footer_local', 'canceled', 'free', 'evt_footer', now());
     set local role anon;
     do $$ begin
-      if (select public_footer_text from public.public_providers where id = '${provider}') is not null then raise exception 'Downgraded footer still customized'; end if;
+      if (select public_footer_text from public.public_providers where id = '${provider}') is distinct from 'Acme' then raise exception 'Downgrade hid a free footer'; end if;
     end $$;
     reset role;
     set local role authenticated;
-    update public.providers set business_name = 'Renamed', public_footer_text = 'Acme' where id = '${provider}';
-    update public.providers set public_footer_text = null, public_footer_url = null where id = '${provider}';
+    update public.providers set business_name = 'Renamed', public_footer_text = 'Acme 2' where id = '${provider}';
   `));
 
-  it("honors grants, revocations, and expired overrides on public reads", () => check(`
+  it("restores defaults under a revocation and honors its expiry on public reads", () => check(`
+    update public.providers set public_footer_text = 'Custom' where id = '${provider}';
     insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason)
-      values ('${provider}', 'custom_booking_footer', true, 'Footer test');
-    set local role authenticated;
-    update public.providers set public_footer_text = 'Granted' where id = '${provider}';
-    reset role;
-    update public.provider_feature_overrides set expires_at = now() where provider_id = '${provider}';
-    set local role anon;
-    do $$ begin
-      if (select public_footer_text from public.public_providers where id = '${provider}') is not null then raise exception 'Expired grant still active'; end if;
-    end $$;
-    reset role;
-    update public.providers set plan_tier = 'premium' where id = '${provider}';
-    update public.provider_feature_overrides set enabled = false, expires_at = null where provider_id = '${provider}';
+      values ('${provider}', 'custom_booking_footer', false, 'Footer test');
     set local role anon;
     do $$ begin
       if (select public_footer_text from public.public_providers where id = '${provider}') is not null then raise exception 'Revocation ignored'; end if;
+    end $$;
+    reset role;
+    set local role authenticated;
+    update public.providers set business_name = 'Renamed' where id = '${provider}';
+    update public.providers set public_footer_text = null, public_footer_url = null where id = '${provider}';
+    reset role;
+    update public.providers set public_footer_text = 'Custom' where id = '${provider}';
+    update public.provider_feature_overrides set expires_at = now() where provider_id = '${provider}';
+    set local role anon;
+    do $$ begin
+      if (select public_footer_text from public.public_providers where id = '${provider}') is distinct from 'Custom' then raise exception 'Expired revocation still active'; end if;
     end $$;
   `));
 

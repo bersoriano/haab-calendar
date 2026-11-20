@@ -14,11 +14,12 @@ const resolve = (input: Parameters<typeof resolveEntitlements>[0]) =>
   resolveEntitlements({ now: NOW, ...input });
 
 describe("plan-derived entitlements", () => {
-  it("gives a free provider Google Calendar sync but not a custom slug", () => {
+  it("gives a free provider every shipped feature", () => {
     const snapshot = resolve({ providerId: PROVIDER, planTier: "free", overrides: [] });
 
-    expect(snapshot.features.custom_slug).toEqual({ enabled: false, source: "plan" });
-    expect(snapshot.features.google_calendar_sync).toEqual({ enabled: true, source: "plan" });
+    for (const featureKey of FEATURE_KEYS) {
+      expect(snapshot.features[featureKey]).toEqual({ enabled: true, source: "plan" });
+    }
   });
 
   it("gives a premium provider both features", () => {
@@ -35,7 +36,7 @@ describe("plan-derived entitlements", () => {
     expect(Object.keys(snapshot.features).sort()).toEqual([...FEATURE_KEYS].sort());
   });
 
-  it("fails closed on a plan it does not recognise", () => {
+  it("treats a plan it does not recognise as the free plan", () => {
     const snapshot = resolve({
       providerId: PROVIDER,
       planTier: "enterprise" as never,
@@ -43,10 +44,9 @@ describe("plan-derived entitlements", () => {
     });
 
     expect(snapshot.planTier).toBe("free");
-    expect(snapshot.features.custom_slug.enabled).toBe(false);
-    expect(snapshot.features.google_calendar_sync.enabled).toBe(true);
-    // Falls back to exactly the free plan: nothing premium-only leaks through.
-    expect(snapshot.features.analytics.enabled).toBe(false);
+    expect(snapshot.features).toEqual(
+      resolve({ providerId: PROVIDER, planTier: "free", overrides: [] }).features,
+    );
   });
 });
 
@@ -105,11 +105,11 @@ describe("manual overrides", () => {
       providerId: PROVIDER,
       planTier: "free",
       overrides: [
-        { featureKey: "custom_slug", enabled: true, expiresAt: NOW.toISOString() },
+        { featureKey: "custom_slug", enabled: false, expiresAt: NOW.toISOString() },
       ],
     });
 
-    expect(snapshot.features.custom_slug).toEqual({ enabled: false, source: "plan" });
+    expect(snapshot.features.custom_slug).toEqual({ enabled: true, source: "plan" });
   });
 
   it("ignores an override that has already expired", () => {
@@ -214,6 +214,7 @@ describe("capability prerequisites", () => {
   it("refuses two-way sync without busy blocking", () => {
     const snapshot = resolve([
       { featureKey: "google_calendar_sync", enabled: true, expiresAt: null },
+      { featureKey: "google_calendar_busy_blocking", enabled: false, expiresAt: null },
       { featureKey: "google_calendar_two_way_sync", enabled: true, expiresAt: null },
     ]);
 
@@ -255,17 +256,15 @@ describe("capability prerequisites", () => {
     expect(snapshot.features.google_calendar_busy_blocking.source).toBe("override");
   });
 
-  it("leaves the new capabilities off for a premium plan", () => {
-    // Deliberate: they read a provider's wider calendar, and pricing intent for
-    // them is not settled. Only a manual override turns them on today.
+  it("turns the whole Google chain on for a free plan", () => {
     const snapshot = resolveEntitlements({
       providerId: PROVIDER,
-      planTier: "premium",
+      planTier: "free",
       overrides: [],
     });
 
     expect(snapshot.features.google_calendar_sync.enabled).toBe(true);
-    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(false);
-    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(false);
+    expect(snapshot.features.google_calendar_busy_blocking.enabled).toBe(true);
+    expect(snapshot.features.google_calendar_two_way_sync.enabled).toBe(true);
   });
 });

@@ -56,7 +56,7 @@ export function blockingPrerequisites(
   );
 }
 
-/** The accounts row's one line about premium access. */
+/** The accounts row's one line about feature access. */
 export function FeatureAccessSummary({ entitlements }: { entitlements: ProviderEntitlements }) {
   return (
     <span className="flex flex-wrap items-center gap-2">
@@ -302,7 +302,7 @@ export function ProviderFeatureOverrides({
       onClose={() => {
         if (!busy) onClose();
       }}
-      title="Premium access"
+      title="Feature access"
       description={
         <>
           <span className="break-words">{ownerEmail}</span> · {snapshot.planTier} plan ·{" "}
