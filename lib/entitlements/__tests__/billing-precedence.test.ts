@@ -99,7 +99,8 @@ describe("entitlement precedence", () => {
     );
 
     expect(snapshot.planTier).toBe("free");
-    expect(snapshot.features.custom_slug.enabled).toBe(false);
+    expect(snapshot.features.custom_slug.enabled).toBe(true);
+    // Free still includes every shipped feature; the tier is what lapsed.
   });
 
   it("falls back to the legacy column for an account that predates billing", async () => {

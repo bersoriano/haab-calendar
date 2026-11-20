@@ -10,10 +10,10 @@ describe("booking history retention preference and access", () => {
     expect(normalizeProvider({ keepBookingHistoryOneYear: "true" as never }).keepBookingHistoryOneYear).toBe(false);
   });
 
-  it("includes extended history in Premium but not free", () => {
+  it("includes extended history on every plan", () => {
     for (const planTier of ["free", "premium"] as const) {
       const access = resolveEntitlements({ providerId: "p", planTier, overrides: [] });
-      expect(access.features.booking_history_retention?.enabled).toBe(planTier === "premium");
+      expect(access.features.booking_history_retention?.enabled).toBe(true);
     }
   });
 
@@ -25,10 +25,14 @@ describe("booking history retention preference and access", () => {
 
   it("requires both preference and current access for one year", () => {
     const premium = resolveEntitlements({ providerId: "p", planTier: "premium", overrides: [] });
-    const free = resolveEntitlements({ providerId: "p", planTier: "free", overrides: [] });
+    const revoked = resolveEntitlements({
+      providerId: "p",
+      planTier: "free",
+      overrides: [{ featureKey: "booking_history_retention", enabled: false, expiresAt: null }],
+    });
     expect(isExtendedBookingRetentionEnabled(false, premium)).toBe(false);
     expect(isExtendedBookingRetentionEnabled(true, premium)).toBe(true);
-    expect(isExtendedBookingRetentionEnabled(true, free)).toBe(false);
+    expect(isExtendedBookingRetentionEnabled(true, revoked)).toBe(false);
     expect(isExtendedBookingRetentionEnabled(true, undefined)).toBe(false);
     expect(getBookingRetentionPolicy(true, undefined)).toBe("unknown");
     expect(getBookingRetentionPolicy(false, undefined)).toBe("month");

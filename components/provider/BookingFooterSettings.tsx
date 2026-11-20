@@ -7,13 +7,13 @@ import type { Lang, ProviderInfo } from "@/lib/types";
 
 const copy = {
   en: {
-    text: "Footer text", url: "Footer link", help: "Premium accounts can customize the text and link on every public booking page. Blank fields restore Haab branding.",
-    locked: "Premium is required to customize this footer. Without Premium access, public pages show Haab branding.",
+    text: "Footer text", url: "Footer link", help: "Customize the text and link on every public booking page. Blank fields restore Haab branding.",
+    locked: "Footer customization is turned off for this account, so public pages show Haab branding.",
     invalid: "Enter a complete http:// or https:// link without a username or password.", preview: "Preview",
   },
   es: {
-    text: "Texto del pie de página", url: "Enlace del pie de página", help: "Las cuentas Premium pueden personalizar el texto y enlace de todas sus páginas públicas de reservas. Los campos vacíos restauran la marca de Haab.",
-    locked: "Se requiere Premium para personalizar este pie de página. Sin acceso Premium, las páginas públicas muestran la marca de Haab.",
+    text: "Texto del pie de página", url: "Enlace del pie de página", help: "Personaliza el texto y enlace de todas tus páginas públicas de reservas. Los campos vacíos restauran la marca de Haab.",
+    locked: "La personalización del pie de página está desactivada en esta cuenta, así que las páginas públicas muestran la marca de Haab.",
     invalid: "Introduce un enlace completo http:// o https:// sin usuario ni contraseña.", preview: "Vista previa",
   },
 };

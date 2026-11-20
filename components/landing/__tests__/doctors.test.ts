@@ -98,10 +98,10 @@ describe("online booking for doctors: copy", () => {
     }
   });
 
-  it("claims only what Haab ships: no reminders, payments, reviews, or certifications", () => {
+  it("claims only what Haab ships for clinics: no payments, reviews, or certifications", () => {
     const copy = [...strings(doctorsTranslations.en), ...strings(doctorsTranslations.es)].join("\n");
     expect(copy).not.toMatch(
-      /\b(reminders?|recordatorios?|HIPAA|SOC 2|NOM-024|payments?|pagos?|reviews?|reseñas?|telemedicine|telemedicina)\b/i,
+      /\b(HIPAA|SOC 2|NOM-024|payments?|pagos?|reviews?|reseñas?|telemedicine|telemedicina)\b/i,
     );
   });
 

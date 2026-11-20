@@ -70,36 +70,36 @@ test("disabling publishing asks first, and enabling does not", async ({ page }) 
   await expect(row).toContainText("Enabled");
 });
 
-test("the Features dialog grants a feature and clears the override", async ({ page }) => {
+test("the Features dialog withholds a feature and clears the override", async ({ page }) => {
   await openAccounts(page);
   const row = targetRow(page);
-  // The free plan includes Google Calendar sync, so one feature is on before any grant.
-  await expect(row).toContainText("1 of 8 features on");
+  // Every shipped feature is on the free plan, so all are on before any override.
+  await expect(row).toContainText("8 of 8 features on");
 
   await row.getByRole("button", { name: `Features for ${target.email}` }).click();
-  const dialog = page.getByRole("dialog", { name: "Premium access" });
+  const dialog = page.getByRole("dialog", { name: "Feature access" });
   const slug = dialog.getByRole("listitem").filter({ hasText: "Custom URL slug" });
-  await expect(slug.getByText("Off", { exact: true })).toBeVisible();
+  await expect(slug.getByText("On", { exact: true })).toBeVisible();
 
   await slug.getByRole("button", { name: "Change access" }).click();
-  await dialog.getByLabel("Reason").fill("E2E: grant for the super-admin spec");
-  await slug.getByRole("button", { name: "Grant" }).click();
-  await expect(dialog.getByRole("status")).toContainText("Feature granted.");
-  await expect(slug.getByText("On", { exact: true })).toBeVisible();
+  await dialog.getByLabel("Reason").fill("E2E: withhold for the super-admin spec");
+  await slug.getByRole("button", { name: "Withhold" }).click();
+  await expect(dialog.getByRole("status")).toContainText("Feature withheld.");
+  await expect(slug.getByText("Off", { exact: true })).toBeVisible();
   await expect(slug.getByText("Override", { exact: true })).toBeVisible();
 
   // The row reports what the server returned, not what was clicked.
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
-  await expect(row).toContainText("2 of 8 features on");
+  await expect(row).toContainText("7 of 8 features on");
 
   await row.getByRole("button", { name: `Features for ${target.email}` }).click();
   await slug.getByRole("button", { name: "Change access" }).click();
-  await dialog.getByLabel("Reason").fill("E2E: undo the grant");
+  await dialog.getByLabel("Reason").fill("E2E: undo the withhold");
   await slug.getByRole("button", { name: "Clear override" }).click();
   await expect(dialog.getByRole("status")).toContainText("Override cleared.");
   await expect(slug.getByText("Override", { exact: true })).toHaveCount(0);
-  await expect(slug.getByText("Off", { exact: true })).toBeVisible();
+  await expect(slug.getByText("On", { exact: true })).toBeVisible();
 });
 
 test("deleting an account stays locked until its email is typed", async ({ page }) => {

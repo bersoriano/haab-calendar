@@ -47,14 +47,13 @@ export function isProviderPlanTier(value: unknown): value is ProviderPlanTier {
  * single answer rather than one per call site.
  */
 const PLAN_FEATURES: Record<ProviderPlanTier, readonly FeatureKey[]> = {
-  // Google Calendar sync is on every plan; busy blocking and two-way sync stay
-  // grant-only (overrides), as before.
-  free: ["google_calendar_sync"],
-  // Busy blocking and two-way sync are deliberately absent: they read and act
-  // on a provider's wider calendar, and until pricing intent is settled they
-  // are reachable only through a manual override. Adding a key here is the one
-  // change that turns them on for every premium provider at once.
-  premium: ["custom_slug", "google_calendar_sync", "analytics", "booking_history_retention", "custom_booking_footer", "client_export"],
+  // Every feature shipped so far is on every plan. Premium stays as a tier for
+  // features still to come; until then it includes exactly what free does. An
+  // override can still turn any of these off for one account. The database
+  // mirrors this for the footer and one-year history
+  // (20261120120000_free_plan_includes_all_features.sql).
+  free: FEATURE_KEYS,
+  premium: FEATURE_KEYS,
 };
 
 /**

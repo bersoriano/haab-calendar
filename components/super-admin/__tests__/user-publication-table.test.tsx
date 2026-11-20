@@ -110,7 +110,7 @@ describe("UserPublicationTable", () => {
     expect(html).toMatch(/<a[^>]*href="\/professional\/haab-admin"[^>]*target="_blank"/);
   });
 
-  it("opens premium access from a Features button once a provider exists", () => {
+  it("opens feature access from a Features button once a provider exists", () => {
     const withProvider: ManagedUserSummary = {
       ...users[1],
       provider: {
@@ -128,7 +128,7 @@ describe("UserPublicationTable", () => {
 
     expect(html).toMatch(/>Features<span class="sr-only"> for new-user@example.com<\/span><\/button>/);
     expect(html).toContain("free plan");
-    expect(html).toContain("1 of 8 features on");
+    expect(html).toContain("8 of 8 features on");
   });
 
   it("says when a search matches nobody", () => {

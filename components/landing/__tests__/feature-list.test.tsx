@@ -35,11 +35,12 @@ describe("landing feature list", () => {
     expect(translations.es.featureList.items).toHaveLength(translations.en.featureList.items.length);
   });
 
-  // The product is sold on a base plan now; the list must not promise otherwise.
-  it.each(LANGS)("makes no free or early-access claims in %s", (lang) => {
+  // Every feature is on the free plan; the product is not a beta or early access.
+  it.each(LANGS)("says it is on the free plan, without early-access claims, in %s", (lang) => {
     const text = JSON.stringify(translations[lang].featureList);
 
-    expect(text).not.toMatch(/\b(free|gratis|early access|beta)\b/i);
+    expect(text).toMatch(lang === "en" ? /free plan/ : /plan gratuito/);
+    expect(text).not.toMatch(/\b(early access|beta|acceso anticipado)\b/i);
   });
 });
 

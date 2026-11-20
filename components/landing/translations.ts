@@ -142,7 +142,7 @@ export const translations = {
     seo: {
       title: "Página de reservas en línea para negocios",
       description:
-        "Publica tu página de reservas en minutos. Tus clientes ven tus horarios en tiempo real y reservan sin crear cuenta. Ningún horario se reserva dos veces.",
+        "Publica gratis tu página de reservas en minutos. Tus clientes ven tus horarios en tiempo real y reservan sin crear cuenta. Ningún horario se reserva dos veces.",
       socialImageAlt:
         "Haab Calendar: un enlace, sin registrarse, sin reservas duplicadas. Una página de reservas con horarios en vivo y un apartado de 10 minutos.",
     },
@@ -154,7 +154,7 @@ export const translations = {
       chips: ["Disponibilidad en vivo", "Apartado de 10 minutos", "Enlace privado para reagendar"],
       ctaPrimary: "Crear mi página",
       ctaSecondary: "Ver una página real",
-      fineprint: "Sin instalar nada.",
+      fineprint: "Gratis. Sin instalar nada.",
       returningPrompt: "¿Ya tienes una página?",
       returningCta: "Inicia sesión",
       previewCaption: "Esta es la página real de la Dra. Maya Rivera. Pruébala, está en vivo.",
@@ -173,7 +173,7 @@ export const translations = {
       namePlaceholder: "Consultorio Rivera",
       submit: "Quiero este enlace →",
       submitDisabled: "Elige qué reservas",
-      fineprint: "No necesitas tarjeta de crédito. Tus clientes no tienen que registrarse.",
+      fineprint: "Gratis y sin tarjeta de crédito. Tus clientes no tienen que registrarse.",
       close: "Cerrar",
     },
     demoDialog: {
@@ -383,7 +383,7 @@ export const translations = {
     featureList: {
       eyebrow: "Funciones",
       title: "Todo lo que hace tu página de reservas.",
-      body: "Lo más importante de Haab Calendar, en un solo lugar.",
+      body: "Lo más importante de Haab Calendar. Todo viene en el plan gratuito.",
       items: [
         {
           title: "Disponibilidad en tiempo real",
@@ -523,8 +523,12 @@ export const translations = {
       aside: "¿Todavía con dudas? Reserva en una de las páginas de demostración como lo haría un cliente.",
       items: [
         {
-          q: "¿Qué incluye?",
-          a: "Páginas públicas de reservas, disponibilidad en tiempo real, apartados de diez minutos, confirmaciones por correo, cupo para eventos, sincronización con Google Calendar y un enlace privado en cada reserva para que tus clientes la administren solos.",
+          q: "¿Cuánto cuesta?",
+          a: "Nada. Todas las funciones vienen en el plan gratuito, sin tarjeta de crédito.",
+        },
+        {
+          q: "¿Qué incluye el plan gratuito?",
+          a: "Todo: páginas públicas de reservas, disponibilidad en tiempo real, apartados de diez minutos, confirmaciones y recordatorios por correo, cupo para eventos, invitaciones con confirmación, depósitos bancarios, sincronización con Google Calendar, analítica de tu página, enlaces de campaña, tu lista de clientes en CSV, tu propio enlace y pie de página, un año de historial de reservas y un enlace privado en cada reserva para que tus clientes la administren solos.",
         },
         {
           q: "¿Puedo aceptar registros para una clase o evento?",
@@ -546,7 +550,7 @@ export const translations = {
       body: "Arma tu página y manda el enlace hoy mismo.",
       ownerBody: "Tu página ya está en línea. Comparte el enlace y deja que trabaje por ti.",
       ctaPrimary: "Crear mi página",
-      fineprint: "No necesitas tarjeta de crédito.",
+      fineprint: "Gratis. No necesitas tarjeta de crédito.",
     },
     footer: {
       tagline: "Un enlace de reservas para tu negocio. Sin reservas duplicadas y sin cuentas para tus clientes.",
@@ -712,7 +716,7 @@ export const translations = {
     seo: {
       title: "Online booking page for small businesses",
       description:
-        "Publish an online booking page in minutes. Clients see real-time availability and book without an account, and no time ever gets booked twice.",
+        "Publish a free online booking page in minutes. Clients see real-time availability and book without an account, and no time ever gets booked twice.",
       socialImageAlt:
         "Haab Calendar: one link, no sign-up, no double bookings. A booking page with live times and a 10-minute hold.",
     },
@@ -724,7 +728,7 @@ export const translations = {
       chips: ["Live availability", "10-minute hold", "Private reschedule link"],
       ctaPrimary: "Create your page",
       ctaSecondary: "See a real page",
-      fineprint: "Nothing to install.",
+      fineprint: "Free. Nothing to install.",
       returningPrompt: "Already have a page?",
       returningCta: "Log in",
       previewCaption: "This is Dr. Maya Rivera's actual booking page. Go ahead and try it.",
@@ -743,7 +747,7 @@ export const translations = {
       namePlaceholder: "Rivera Family Medicine",
       submit: "Claim this link →",
       submitDisabled: "Pick what you book",
-      fineprint: "No credit card needed. Your clients never have to sign up.",
+      fineprint: "Free, with no credit card. Your clients never have to sign up.",
       close: "Close",
     },
     demoDialog: {
@@ -953,7 +957,7 @@ export const translations = {
     featureList: {
       eyebrow: "Features",
       title: "Everything your booking page does.",
-      body: "The most important parts of Haab Calendar, in one place.",
+      body: "The most important parts of Haab Calendar. All of it is on the free plan.",
       items: [
         {
           title: "Real-time availability",
@@ -1093,8 +1097,12 @@ export const translations = {
       aside: "Still not sure? Book one of the demo pages the way a client would.",
       items: [
         {
-          q: "What's included?",
-          a: "Public booking pages, real-time availability, ten-minute holds, email confirmations, event capacity, Google Calendar sync, and a private link on every booking so clients can manage it themselves.",
+          q: "How much does it cost?",
+          a: "Nothing. Every feature is on the free plan, and you don't need a credit card.",
+        },
+        {
+          q: "What's on the free plan?",
+          a: "Everything: public booking pages, real-time availability, ten-minute holds, email confirmations and reminders, event capacity, invitation-only RSVPs, bank deposits, Google Calendar sync, page analytics, campaign links, a CSV export of your clients, your own link and footer, a year of booking history, and a private link on every booking so clients can manage it themselves.",
         },
         {
           q: "Can I take registrations for a class or event?",
@@ -1116,7 +1124,7 @@ export const translations = {
       body: "Set up your page and send out the link today.",
       ownerBody: "Your page is live. Share the link and let it do the work.",
       ctaPrimary: "Create your page",
-      fineprint: "No credit card needed.",
+      fineprint: "Free. No credit card needed.",
     },
     footer: {
       tagline: "One booking link for your business. No double bookings, and no accounts for your clients.",

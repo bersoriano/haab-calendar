@@ -29,8 +29,8 @@ const EXPIRED_REVOKE = [
 ];
 
 describe("custom slug authorization", () => {
-  it("denies a free plan with no override", () => {
-    expect(canUseCustomProviderSlug(entitlements("free"))).toBe(false);
+  it("allows a free plan with no override: every shipped feature is free", () => {
+    expect(canUseCustomProviderSlug(entitlements("free"))).toBe(true);
   });
 
   it("allows a premium plan with no override", () => {
@@ -46,19 +46,23 @@ describe("custom slug authorization", () => {
   });
 
   it("ignores an expired grant and lets the free plan decide", () => {
-    expect(canUseCustomProviderSlug(entitlements("free", EXPIRED_GRANT))).toBe(false);
+    expect(canUseCustomProviderSlug(entitlements("free", EXPIRED_GRANT))).toBe(true);
   });
 
   it("ignores an expired revoke and lets the premium plan decide", () => {
     expect(canUseCustomProviderSlug(entitlements("premium", EXPIRED_REVOKE))).toBe(true);
   });
 
-  it("fails closed on a plan that is not in the catalog", () => {
-    expect(canUseCustomProviderSlug(entitlements("enterprise"))).toBe(false);
+  it("treats a plan that is not in the catalog as the free plan", () => {
+    expect(canUseCustomProviderSlug(entitlements("enterprise"))).toBe(true);
+  });
+
+  it("denies a free plan carrying an active revoke", () => {
+    expect(canUseCustomProviderSlug(entitlements("free", ACTIVE_REVOKE))).toBe(false);
   });
 
   it("does not name a plan when refusing, because an override may be the reason", () => {
-    const result = validateCustomProviderSlug("dr-ahmad", entitlements("free"));
+    const result = validateCustomProviderSlug("dr-ahmad", entitlements("free", ACTIVE_REVOKE));
 
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("Expected the slug to be refused.");
@@ -116,7 +120,7 @@ describe("prepareProviderSlugChange", () => {
     const result = await prepareProviderSlugChange(client, {
       vertical: "healthcare",
       requestedSlug: "dr-ahmad",
-      entitlements: entitlements("free"),
+      entitlements: entitlements("free", ACTIVE_REVOKE),
       currentProviderId: PROVIDER,
     });
 
