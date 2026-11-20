@@ -70,7 +70,7 @@ describe("booking retention database policy", () => {
     delete from public.provider_billing_subscriptions where provider_id = '${provider}';
     insert into public.provider_feature_overrides (provider_id, feature_key, enabled, reason)
     values ('${provider}', 'booking_history_retention', false, 'Local revoke');
-    select pg_temp.book('2026-08-01');
+    select pg_temp.book('2026-08-02');
     select public.purge_expired_bookings('2026-10-09T12:00:00Z', 500);
     select pg_temp.assert_dates('{}');
   `));

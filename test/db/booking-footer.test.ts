@@ -63,8 +63,8 @@ describe("booking footer database access", () => {
     update public.providers set business_name = 'Renamed' where id = '${provider}';
     update public.providers set public_footer_text = null, public_footer_url = null where id = '${provider}';
     reset role;
-    update public.providers set public_footer_text = 'Custom' where id = '${provider}';
     update public.provider_feature_overrides set expires_at = now() where provider_id = '${provider}';
+    update public.providers set public_footer_text = 'Custom' where id = '${provider}';
     set local role anon;
     do $$ begin
       if (select public_footer_text from public.public_providers where id = '${provider}') is distinct from 'Custom' then raise exception 'Expired revocation still active'; end if;
