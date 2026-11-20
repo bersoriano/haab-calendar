@@ -27,6 +27,7 @@ import { FactStrip } from "./fact-strip";
 import { GoogleIntegration } from "./google-integration";
 import { HowItWorks } from "./how-it-works";
 import { DemoVideo } from "./demo-video";
+import { FeatureList } from "./feature-list";
 import { Features } from "./night-features";
 import { HeadlineUnderline, HeroBackdrop } from "./hero-art";
 import { LangPill } from "./lang-pill";
@@ -950,6 +951,7 @@ export function LandingPage({
           <DemoVideo />
           <LiveExamples featured={featuredDemos} />
           <Features />
+          <FeatureList />
           <GoogleIntegration />
           <Trust />
           <FeaturedPost />
