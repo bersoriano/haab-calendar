@@ -74,7 +74,7 @@ test("the Features dialog grants a feature and clears the override", async ({ pa
   await openAccounts(page);
   const row = targetRow(page);
   // The free plan includes Google Calendar sync, so one feature is on before any grant.
-  await expect(row).toContainText("2 of 8 features on");
+  await expect(row).toContainText("1 of 8 features on");
 
   await row.getByRole("button", { name: `Features for ${target.email}` }).click();
   const dialog = page.getByRole("dialog", { name: "Premium access" });
@@ -91,7 +91,7 @@ test("the Features dialog grants a feature and clears the override", async ({ pa
   // The row reports what the server returned, not what was clicked.
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
-  await expect(row).toContainText("1 of 8 features on");
+  await expect(row).toContainText("2 of 8 features on");
 
   await row.getByRole("button", { name: `Features for ${target.email}` }).click();
   await slug.getByRole("button", { name: "Change access" }).click();
