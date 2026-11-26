@@ -6,7 +6,7 @@
 
 **Status note (2026-08-04):** the original local engine has since gained canonical Supabase-backed public routes, server-authoritative holds and writes, customer manage links, event capacity, and resilient hold recovery. Sections explicitly labeled planned or future are historical design context; `docs/booking-process.md` records shipped public behavior.
 
-**Scope of this document:** the booking engine itself. Visual styling, individual screen layouts, and per-surface UI choices are out of scope and live in `UX_RECOMMENDATIONS.md` / `liquid-glass-style-guide.md`.
+**Scope of this document:** the booking engine itself. Visual styling, individual screen layouts, and per-surface UI choices are out of scope and live in `liquid-glass-style-guide.md`.
 
 ---
 
@@ -264,7 +264,7 @@ Today, both products read and write the same `ModuleStore` directly because ther
 | Public  | Slot availability updates while the user is picking a time (so they don't pick a slot another user just took); their own booking's status if it changes (admin-side cancellation while they have the manage page open). |
 | Admin   | New bookings and cancellations as they happen; live calendar updates; provider's setup state across devices (so settings changes propagate to other admin tabs). |
 
-The Supabase Realtime plan (`BACKEND_RECOMMENDATIONS.md`) covers both, but the public subscription should be filtered to **only** the data that's safe to broadcast (slot availability for the active service/date), not the full bookings table.
+A Realtime design should cover both, but the public subscription should be filtered to **only** the data that's safe to broadcast (slot availability for the active service/date), not the full bookings table.
 
 ---
 
@@ -317,7 +317,7 @@ cancelled                  TERMINAL — no transitions out
 
 `isActiveBooking(b)` is true for `confirmed` and `rescheduled`, false for `cancelled`. Only active bookings block availability.
 
-The current model has **no audit log** — once a booking moves to `rescheduled`, the original `dateKey`/`startTime` are overwritten and lost. Capturing this history is tracked separately (`UX_RECOMMENDATIONS.md` § 6.3 / § 8.3).
+In the local store, a reschedule overwrites the original `dateKey`/`startTime`. Supabase-backed bookings keep their history in `public.booking_events`, which appends one row per change (created, rescheduled, cancelled, note added).
 
 ---
 
@@ -448,7 +448,7 @@ The `storage` event in browsers fires only in *other* tabs (not the writer's own
 
 ## 9. Persistence Path — Online (Historical Design Notes)
 
-This section records the earlier synchronization proposal from `BACKEND_RECOMMENDATIONS.md`; it is not the current public booking implementation. Canonical public routes now use request/response server authority and do not queue offline booking confirmation. See `docs/booking-process.md` and `docs/backend-offline-interaction.md` for shipped behavior.
+This section records an earlier synchronization proposal; it is not the current public booking implementation. Canonical public routes now use request/response server authority and do not queue offline booking confirmation. See `docs/booking-process.md` and `docs/backend-offline-interaction.md` for shipped behavior.
 
 ### Hard requirements driven by the offline-first principle
 
@@ -471,7 +471,7 @@ local mutation
 
 The idempotency key is critical: a sync op for "create booking X" must be safe to retry. Use the local `BookingRecord.id` as the idempotency key on insert.
 
-### Schema (from BACKEND_RECOMMENDATIONS, slightly updated for the manage-booking feature)
+### Schema (early proposal, slightly updated for the manage-booking feature)
 
 ```sql
 providers     (id, owner_user_id FK auth.users, full_name, business_name, email, slug UNIQUE,

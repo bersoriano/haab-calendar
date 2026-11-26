@@ -82,13 +82,11 @@ Haab Calendar is a booking platform for appointments, full-day reservations, and
 
 ---
 
-## 3. Early-Access Proof Bar
+## 3. Proof Bar
 
 **Purpose:** reduce risk without inventing customer traction.
 
-**Copy:** `0 client accounts required` · `10-minute soft hold` · `3 booking modes`.
-
-**Stage note:** The core public flow works today. More integrations and administration tools are still being built.
+**Copy:** `10 min` hold on every slot · `0` client accounts · `{n}` live demo pages · `ES · EN`.
 
 **Conversion notes:** these are product facts, not customer metrics. Replace them with audited traction only when real data exists.
 
@@ -122,7 +120,7 @@ Haab Calendar is a booking platform for appointments, full-day reservations, and
 **Section heading:** Publish one page, then let clients handle the routine.
 
 **Step 1 — Add what you offer.**
-Choose healthcare, spaces, professional services, or events. Then set services, duration, capacity, price, and weekly availability.
+Choose healthcare, spaces, professional services, events, or restaurants. Then set services, duration, capacity, price, and weekly availability.
 
 **Step 2 — Share one link.**
 You get a clean public booking page at your own address. Drop it in your bio, your emails, a QR code on the door. Clients book themselves.
@@ -226,10 +224,10 @@ Visual: confirmation screen and the private management page.
 - **Do my clients need an account?** No. They pick a slot, enter their details, and they're booked. No signups, no passwords.
 - **How are double-bookings prevented?** Selecting a slot holds it for 10 minutes with a live countdown. Availability is computed live, so taken and held times never show as open.
 - **Can clients reschedule or cancel themselves?** Yes — every booking includes a private management link to reschedule or cancel, with no login.
-- **Can I take ticket registrations?** Yes. Events support capacity-based registrations. Payment processing is not included yet.
+- **Can I take ticket registrations?** Yes. Events support capacity-based registrations. Online payment is not included.
 - **Can I sell full-day bookings, not just appointments?** Yes — appointments and full-day reservations live on the same page.
-- **Can bookings be added to a calendar?** Every confirmation includes an ICS file and QR code. Two-way calendar sync is not claimed yet.
-- **What's included?** Public pages, holds, confirmations, event capacity, and self-service management.
+- **Can bookings be added to a calendar?** Every confirmation includes an ICS file and QR code, and confirmed bookings can sync to Google Calendar.
+- **How much does it cost?** Nothing. Every feature is on the free plan, and no credit card is needed.
 
 **Conversion notes:** answer the *real* hesitations (client friction, double-booking, cost); keep answers short; put a soft CTA below.
 
@@ -251,16 +249,7 @@ Visual: confirmation screen and the private management page.
 
 ---
 
-## 12. Early-Access Teaser
-
-**Purpose:** state the current stage and limits clearly.
-
-**Heading:** What you get today.
-**Body:** Public pages, holds, confirmations, capacity, and self-service management.
-
----
-
-## 13. Final CTA (closing band)
+## 12. Final CTA (closing band)
 
 **Purpose:** last, strongest push for visitors who scrolled the whole way.
 
@@ -273,7 +262,7 @@ Visual: confirmation screen and the private management page.
 
 ---
 
-## 14. Footer
+## 13. Footer
 
 **Purpose:** close out with navigation and credibility.
 
@@ -287,11 +276,11 @@ Visual: confirmation screen and the private management page.
 
 ---
 
-## 15. Section Order Summary (for layout)
+## 14. Section Order Summary (for layout)
 
 1. Sticky nav
 2. Hero + trust strip
-3. Social proof bar
+3. Proof bar
 4. Problem / agitation
 5. How it works (3 steps) → CTA
 6. Core features
@@ -300,8 +289,7 @@ Visual: confirmation screen and the private management page.
 9. Mobile section
 10. FAQ / objections
 11. Testimonials
-12. Early-access teaser
-13. Final CTA band
-14. Footer
+12. Final CTA band
+13. Footer
 
 **Global conversion principles applied:** single value prop; one repeated primary CTA; benefit-first copy; specific over vague; proof early and again late; objections handled before the close; mobile-first; honest placeholders instead of fabricated claims.

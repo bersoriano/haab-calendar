@@ -20,10 +20,10 @@ Verified against `haab-calendar` `main @ 50fa348c` (2026-11-20).
 - `references/rsvp-and-deposits.md`: invitation-only RSVPs and bank deposit receipts.
 - `references/differentiators.md`: positioning, ten differentiators with proof, message hierarchy, objections.
 - `references/voice-and-copy.md`: voice, CTAs, banned claims, Spanish rules, locked language decisions, test-pinned copy.
-- `references/current-status.md`: stage, timeline, known limits, not-built list, stale repo docs.
+- `references/current-status.md`: stage, timeline, known limits, not-built list.
 - `references/support-playbook.md`: client and owner answers, operator troubleshooting, reply template.
 - `references/architecture.md`: stack, modes, authority, security invariants, workers, file map.
 - `evals/triggers.json`: positive and negative trigger cases.
 
 ### Notes
-- Corrects stale repo docs: Google busy blocking and two-way sync are on the free plan (not override-only), and the landing brief's early-access framing is retired.
+- The same change removed out-of-date repo docs: the June–August planning docs (`STRATEGIC_PRODUCT_ROADMAP.md`, `EPICS_AND_STORIES.md`, `UX_RECOMMENDATIONS.md`, `BACKEND_RECOMMENDATIONS.md`, `docs/future-features.md`) were deleted. The Google and premium tutorials, `docs/landing-page.md`, `docs/booking-process.md` and `docs/ARCHITECTURE.md` were corrected to current behavior. The skill no longer needs a stale-sources list.

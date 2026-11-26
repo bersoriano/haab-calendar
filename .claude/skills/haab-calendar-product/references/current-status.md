@@ -7,7 +7,6 @@
 - Shipped timeline
 - Known limits
 - Not built
-- Stale sources
 
 ## Stage
 
@@ -60,13 +59,4 @@
 - Wallet passes (Apple/Google Wallet): design note only, not scheduled
 - Component slot overrides and feature flags for child projects (planned seams)
 
-## Stale sources (don't quote as current)
-
-| File | Stale because |
-| --- | --- |
-| `docs/future-features.md` (Jul) | Lists notifications as unbuilt; they shipped |
-| `STRATEGIC_PRODUCT_ROADMAP.md`, `EPICS_AND_STORIES.md`, `UX_RECOMMENDATIONS.md`, `BACKEND_RECOMMENDATIONS.md` (Jun–Aug) | Early plans; many items are now shipped |
-| `docs/tutorials/google-calendar-integration.md`, `premium-features.md` | Say busy blocking and two-way are override-only and Google sync is premium; all are free now |
-| `docs/landing-page.md` sections 3, 10, 12 | Early-access framing and "two-way sync not claimed". The "Current implementation" block at the top is current. |
-| `docs/booking-process.md` §10b | Says Google adapter doesn't exist; it does |
-| `docs/superpowers/specs/*` | Design intent; check the code for what shipped |
+Specs in `docs/superpowers/specs/` record design intent. Check the code for what shipped.

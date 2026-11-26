@@ -1,6 +1,6 @@
 # Google Calendar sync
 
-Sources: `docs/tutorials/google-calendar-integration.md` (deep design), `lib/google/*`, `lib/entitlements/catalog.ts`. The tutorial predates 2026-11-20 and calls busy blocking and two-way sync "override only". That is stale: all three capabilities are on the free plan now.
+Sources: `docs/tutorials/google-calendar-integration.md` (deep design), `lib/google/*`, `lib/entitlements/catalog.ts`.
 
 ## Contents
 - Three capabilities
