@@ -207,12 +207,12 @@ app/api/cron/integration-outbox/route.ts   # Bearer CRON_SECRET, fails closed
   marked succeeded to tidy the queue.
 - **Entitlements are not consulted at enqueue time.** The trigger stays
   deterministic and transaction-local; a plan or override can change after the
-  event exists. The future Google handler re-resolves provider, connection, and
+  event exists. The Google handler re-resolves provider, connection, and
   `google_calendar_sync` server-side, at delivery time.
-- **Today's behaviour: every event is `skipped`** with `no_active_integrations`,
-  because no adapter is registered. That is correct — when the Google adapter
-  lands, its connection flow performs an initial reconciliation, so the skipped
-  history needs no replay.
+- **Handlers:** Google Calendar projection, booking emails, and deposit status
+  emails (`lib/integrations/outbox/handlers.ts`). An event no handler can act on
+  is `skipped` with `no_active_integrations`. That is correct — connecting
+  Google runs an initial reconciliation, so skipped history needs no replay.
 
 ---
 
@@ -491,6 +491,5 @@ flow components has one less piece of tangled state to carry.
 - `docs/booking-process.md` — current end-to-end public booking lifecycle and server boundaries.
 - `docs/superpowers/plans/2026-05-29-monolith-decomposition-plan.md` — full phased roadmap.
 - `docs/superpowers/plans/2026-06-06-backend-implementation-plan.md` — phased Supabase backend implementation plan.
-- `BACKEND_RECOMMENDATIONS.md` — Supabase migration target (slots into the `useModuleStore` seam).
 - `TESTING_RECOMMENDATIONS.md` — testing strategy background.
-- `liquid-glass-style-guide.md` / `UX_RECOMMENDATIONS.md` — visual/UX guidance.
+- `liquid-glass-style-guide.md` — visual/UX guidance.

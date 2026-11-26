@@ -92,4 +92,4 @@ Until automated coverage exists, this is the verification checklist for the mana
 - Visual regression tooling (Percy, Chromatic, Loki).
 - Performance testing (Lighthouse CI, web-vitals assertions).
 - Load testing (only relevant once Supabase is in production at meaningful scale).
-- Accessibility testing automation (axe-core integration) — flagged because the accessibility recommendations in `UX_RECOMMENDATIONS.md` section 3 will benefit from automated guardrails once tests exist.
+- Accessibility testing automation (axe-core integration) — flagged because accessibility work benefits from automated guardrails.

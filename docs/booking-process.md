@@ -22,7 +22,7 @@ Canonical public URLs are:
 /{verticalSegment}/{providerSlug}/manage/{token}
 ```
 
-Supported public vertical segments are `doctors`, `spaces`, `professionals`, and `events`. `?lang=en` and `?lang=es` select the public language without creating a separate route hierarchy.
+Supported public vertical segments are `doctors`, `spaces`, `professionals`, `events`, and `restaurants`. `?lang=en` and `?lang=es` select the public language without creating a separate route hierarchy.
 
 ## 2. Booking modes
 
@@ -347,8 +347,11 @@ trigger. Nothing in the booking flow calls an outside system during the request.
 - The event carries identifiers only. Client name, email, phone, notes, and
   details stay in `bookings`.
 - A background worker delivers events at-least-once with leases and bounded
-  retries. Until a Google Calendar adapter exists, every event terminates as
-  `skipped` / `no_active_integrations`.
+  retries to the registered handlers (`lib/integrations/outbox/handlers.ts`):
+  Google Calendar projection, booking emails, and deposit status emails. An
+  event no handler can act on — for example, a provider with no Google
+  connection — terminates as `skipped` / `no_active_integrations`, so an
+  unconnected account leaves no backlog.
 - `public.booking_events` is unchanged and remains the provider-visible audit
   history. The outbox is private operational state.
 

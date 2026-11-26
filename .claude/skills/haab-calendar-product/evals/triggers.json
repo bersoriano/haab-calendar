@@ -1,0 +1,113 @@
+{
+  "skill": "haab-calendar-product",
+  "version": "1.0.0",
+  "description": "Trigger evals. should_trigger is the primary assertion. expected_references and facts are optional content checks: an answer produced with the skill loaded should read those files and state those facts.",
+  "cases": [
+    {
+      "id": "pos-landing-hero",
+      "query": "Write three alternative hero headlines and a subheadline for the Haab Calendar landing page aimed at physiotherapy clinics.",
+      "should_trigger": true,
+      "expected_references": ["differentiators.md", "voice-and-copy.md", "industries.md"],
+      "facts": ["no client accounts", "10-minute hold", "uses 'patients' not 'customers'", "free", "no HIPAA or certification claims"]
+    },
+    {
+      "id": "pos-support-hold-expired",
+      "query": "A client emailed us: 'I was filling in my details on your booking page and my time slot vanished.' Draft a reply.",
+      "should_trigger": true,
+      "expected_references": ["support-playbook.md", "booking-flow.md"],
+      "facts": ["10-minute hold", "one 5-minute extension", "form is kept", "hold this time again"]
+    },
+    {
+      "id": "pos-payments-question",
+      "query": "Can Haab Calendar take card payments when a client books a padel court?",
+      "should_trigger": true,
+      "expected_references": ["features.md", "current-status.md", "rsvp-and-deposits.md"],
+      "facts": ["no online payments", "bank deposit receipt with manual owner review", "spaces is eligible for deposits"]
+    },
+    {
+      "id": "pos-google-privacy-es",
+      "query": "¿Haab envía los datos de mis pacientes a Google Calendar si conecto mi cuenta?",
+      "should_trigger": true,
+      "expected_references": ["google-sync.md"],
+      "facts": ["only the service name goes to Google", "name, email, phone and notes never leave Haab", "busy blocking is opt-in", "answer in Spanish with tú"]
+    },
+    {
+      "id": "pos-wedding-planner",
+      "query": "I'm a wedding planner. Could I use Haab to collect RSVPs for a 150-guest wedding with plus-ones and a menu choice?",
+      "should_trigger": true,
+      "expected_references": ["rsvp-and-deposits.md", "industries.md"],
+      "facts": ["invitation-only RSVP mode on events", "seat limit per invitation", "RSVP questions", "seating and QR door check-in", "one wedding per account", "reminders are sent by the planner"]
+    },
+    {
+      "id": "pos-pricing",
+      "query": "What's on the Haab Calendar premium plan versus free?",
+      "should_trigger": true,
+      "expected_references": ["features.md", "current-status.md"],
+      "facts": ["every feature is on the free plan", "premium currently equals free", "never call it beta"]
+    },
+    {
+      "id": "pos-product-decision-hotels",
+      "query": "Should we add a hotel demo to the Haab gallery? What would the booking model need?",
+      "should_trigger": true,
+      "expected_references": ["industries.md", "current-status.md", "architecture.md"],
+      "facts": ["a booking carries one date", "multi-night stays are not supported", "no hotel demo by design"]
+    },
+    {
+      "id": "pos-blog-post",
+      "query": "Draft a blog post for haabcalendar.com about how restaurants can stop double-booking tables.",
+      "should_trigger": true,
+      "expected_references": ["differentiators.md", "voice-and-copy.md", "industries.md", "booking-flow.md"],
+      "facts": ["tables per seating", "dining room and terrace counted separately", "party size", "comensales in Spanish", "no customer metrics"]
+    },
+    {
+      "id": "pos-architecture-holds",
+      "query": "For our architecture review: how does Haab guarantee two people can't book the last workshop seat at the same time?",
+      "should_trigger": true,
+      "expected_references": ["booking-flow.md", "architecture.md"],
+      "facts": ["server-authoritative hold", "capacity trigger with advisory lock", "409 on conflict", "app check narrows, database decides"]
+    },
+    {
+      "id": "pos-feature-question-sms",
+      "query": "Does Haab send SMS or WhatsApp reminders to clients before their appointment?",
+      "should_trigger": true,
+      "expected_references": ["features.md", "current-status.md"],
+      "facts": ["email reminders only", "24 hours by default with optional second", "WhatsApp only for sharing RSVP invitations"]
+    },
+    {
+      "id": "neg-mayan-calendar",
+      "query": "Explain how the Maya Haab' calendar's 18 months and Wayeb' days work.",
+      "should_trigger": false,
+      "reason": "Same word, unrelated topic (Mesoamerican calendar)."
+    },
+    {
+      "id": "neg-generic-tsc-error",
+      "query": "Fix this TypeScript error: Type 'string | undefined' is not assignable to type 'string' in lib/date.ts line 42.",
+      "should_trigger": false,
+      "reason": "Code mechanics inside the repo with no product question."
+    },
+    {
+      "id": "neg-google-api-generic",
+      "query": "How do I paginate events.list with syncToken in the Google Calendar API?",
+      "should_trigger": false,
+      "reason": "Generic Google API usage, not Haab product behavior."
+    },
+    {
+      "id": "neg-other-product-copy",
+      "query": "Write landing page copy for my dog-walking marketplace app.",
+      "should_trigger": false,
+      "reason": "Marketing for a different product."
+    },
+    {
+      "id": "neg-competitor-howto",
+      "query": "How do I set up round-robin scheduling in Calendly?",
+      "should_trigger": false,
+      "reason": "Another booking product's how-to; Haab knowledge does not apply."
+    },
+    {
+      "id": "neg-supabase-rls-generic",
+      "query": "Write an RLS policy so users can only read their own rows in a Supabase table.",
+      "should_trigger": false,
+      "reason": "Generic Supabase task."
+    }
+  ]
+}

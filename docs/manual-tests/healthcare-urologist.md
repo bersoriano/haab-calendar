@@ -6,7 +6,7 @@ UM Grupo Médico). Exercises the healthcare vertical: medical specialty,
 appointment vs follow-up pricing, and a service linked to two clinic addresses.
 
 Last run: 2026-06-16 · Result: **PASS** (1 known limitation: per-location
-pricing is free-text only — see findings + future-features).
+pricing was free-text only at the time — see findings).
 
 ---
 
@@ -67,7 +67,7 @@ Medical services tab. Edit the two seeded entries:
 | # | Severity | Finding | Status |
 |---|---|---|---|
 | 1 | — | Healthcare vertical handles two visit types, medical specialty, and a service linked to two addresses cleanly. | **Pass** |
-| 2 | Medium (limitation) | The Edomex location is "75% of the price", but **pricing is one `cost` string per service** — there is no structured per-location price. Encoded here as free-text ("$100 CDMX / $75 Edomex"). The public flow does not let the patient pick a location or compute the discounted price. | Open — see future-features "per-location pricing". |
+| 2 | Medium (limitation) | The Edomex location is "75% of the price", but **pricing is one `cost` string per service** — there is no structured per-location price. Encoded here as free-text ("$100 CDMX / $75 Edomex"). The public flow does not let the patient pick a location or compute the discounted price. | Addressed since: services carry a price per location (`lib/locations.ts`). |
 
 ### Notes
 

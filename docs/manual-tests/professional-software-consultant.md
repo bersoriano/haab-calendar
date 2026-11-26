@@ -62,11 +62,11 @@ Services tab.
 |---|---|---|---|
 | 1 | — | Professional vertical handles a paid + free service, weekday scheduling, and the full book→confirm→manage flow cleanly. | **Pass** |
 | 2 | — | "Free" works as a free-text Total (shown as "Free" on cards, step 2/3, confirmation). | **Pass** (free-text) |
-| 3 | Medium | **No online / video-call location.** Remote consultants have no street address; the only way to convey "this is a Google Meet/Zoom call" is to type it into the address field (which also promotes to a provider address slot). There's no structured meeting link, no "online" location type, and the join URL is not put into the `.ics` as a real join link. | Open — see future-features "Online / video-call location". |
+| 3 | Medium | **No online / video-call location.** Remote consultants have no street address; the only way to convey "this is a Google Meet/Zoom call" is to type it into the address field (which also promotes to a provider address slot). There's no structured meeting link, no "online" location type, and the join URL is not put into the `.ics` as a real join link. | Open. |
 | 4 | Low | **No real "free" concept.** Price is free-text, so "Free" is just text — no payment-free flag, no validation that free events skip cost. Fine for now. | Open (covered by structured-pricing future work). |
 | 5 | Low (cosmetic) | Professional details + confirmation still read "About the Appointment" / "Type: Appointment" rather than session/professional wording (events were reworded; professional/spaces were not). | Open — extend the event-wording rework to all non-healthcare verticals, or make it copy-driven. |
 | 6 | Low | Phone number is **required** to book. For a remote recruiter intro, phone may be irrelevant; email would suffice. | Open — consider making phone optional per service/vertical. |
-| — | n/a | Timezone (cross-tz recruiter calls) and notifications ("link sent after booking" can't actually send) are already tracked in future-features. | Deferred |
+| — | n/a | Timezone (cross-tz recruiter calls) is still open. Notifications have since shipped (email confirmations and reminders). | Deferred |
 
 ### Notes
 
